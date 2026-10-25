@@ -2805,19 +2805,35 @@ try{
     if(!name){newMapMsg('Enter a name for the map.','err');try{$('newmapname').focus();}catch(e){}return;}
     if(!(w>0)||!(h>0)){newMapMsg('Width and height must be greater than 0.','err');return;}
     $('newmapgo').disabled=true;newMapMsg('Creating\u2026','');
-    http('POST','/addmap2.htm',{mapurl_:newMapGuid(),name_:name,width_:String(w),height_:String(h),pubaccess_:'0'}).then(function(){
+    /* addmap2.htm creates the map then issues a redirect to map.htm?id=...,
+       which fetch() follows automatically; whatever that followed response's
+       status turns out to be (often not a plain 200 in a bare-fetch context)
+       is NOT a reliable signal that the map wasn't created. So a POST error
+       here is remembered but not trusted on its own -- the map list is
+       re-queried either way, and that's what decides success or failure. */
+    var before={}; (S.maps||[]).forEach(function(m){before[m.objid]=true;});
+    var postErr=null;
+    http('POST','/addmap2.htm',{mapurl_:newMapGuid(),name_:name,width_:String(w),height_:String(h),pubaccess_:'0'}).catch(function(e){postErr=e;}).then(function(){
       return http('GET','/api/table.json',{content:'maps',columns:'name,objid'});
     }).then(function(t){
-      var j=parseJson(t,'The list of maps'), maps=(j&&j.maps)||[], sel=$('pushmap'), match=null;
+      var j=parseJson(t,'The list of maps'), maps=(j&&j.maps)||[], sel=$('pushmap');
+      var newMatch=null, anyMatch=null;
       sel.innerHTML='';
-      maps.forEach(function(m){var o=document.createElement('option');o.value=String(m.objid);o.textContent=m.name;sel.appendChild(o);if(m.name===name&&!match)match=m;});
+      maps.forEach(function(m){
+        var o=document.createElement('option');o.value=String(m.objid);o.textContent=m.name;sel.appendChild(o);
+        if(m.name!==name)return;
+        if(!before[m.objid]&&(!newMatch||Number(m.objid)>Number(newMatch.objid)))newMatch=m;
+        if(!anyMatch||Number(m.objid)>Number(anyMatch.objid))anyMatch=m;
+      });
+      var match=newMatch||anyMatch;
       S.maps=maps;
-      if(match)sel.value=String(match.objid);
+      if(!match){throw postErr||new Error('PRTG did not report an error, but the new map could not be found afterward.');}
+      sel.value=String(match.objid);
       S.reviewed=null;S.cls=null;$('pushgo').hidden=true;$('pushlist').hidden=true;
       if(typeof exClear==='function')exClear();
       updateTarget();updateButtons();
       $('newmapname').value='';$('newmapForm').hidden=true;newMapMsg('');
-      say(match?('Created \u201C'+name+'\u201D and selected it.'):('Created \u201C'+name+'\u201D, but could not find it again in the map list \u2014 pick it manually above.'),match?'ok':'err');
+      say('Created \u201C'+name+'\u201D and selected it.','ok');
     }).catch(function(err){
       if(err&&err.status===401)authNeeded();
       newMapMsg((err&&err.message)||'Could not create the map.','err');
