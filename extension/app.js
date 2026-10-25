@@ -2609,6 +2609,7 @@ try{
   function updateButtons(){
     var ready=!!(S.maps&&S.objFile&&mapId());
     $('pushmap').disabled=!(S.maps&&S.maps.length)||S.busy;
+    $('newmapToggle').disabled=!S.maps||S.busy;
     $('pushreview').disabled=!ready||S.busy;
     $('objsamples').disabled=!(S.maps&&mapId())||S.busy;
     $('exload').disabled=!(S.maps&&mapId())||S.busy;
@@ -2785,6 +2786,50 @@ try{
     t.textContent=(m.disabled||!m.options.length)?'No map chosen yet. Choose one in the Add tab, under Existing PRTG maps.':'Pushes to the map \u201C'+m.options[m.selectedIndex].text+'\u201D. Change it in the Add tab, under Existing PRTG maps.';
   }
   $('pushmap').addEventListener('change',function(){updateTarget();});
+  /* PRTG's own "Add Map" dialog (addmap.htm) posts to addmap2.htm with these
+     exact field names; mapurl_ is a GUID PRTG's page normally generates
+     server-side into a hidden field, so we generate one the same shape here.
+     No background-image upload (upfile_) support -- that field is optional
+     on PRTG's own form too, and multipart handling isn't worth adding for it. */
+  function newMapGuid(){
+    if(window.crypto&&crypto.randomUUID)return crypto.randomUUID();
+    var s=[], i, c='0123456789abcdef';
+    for(i=0;i<36;i++)s.push(c[Math.floor(Math.random()*16)]);
+    s[8]=s[13]=s[18]=s[23]='-';
+    return s.join('');
+  }
+  function newMapMsg(text,kind){var n=$('newmapmsg');n.textContent=text||'';n.className='note pst'+(kind?' '+kind:'');}
+  function createMap(){
+    var name=String($('newmapname').value||'').trim();
+    var w=parseInt($('newmapw').value,10)||0, h=parseInt($('newmaph').value,10)||0;
+    if(!name){newMapMsg('Enter a name for the map.','err');try{$('newmapname').focus();}catch(e){}return;}
+    if(!(w>0)||!(h>0)){newMapMsg('Width and height must be greater than 0.','err');return;}
+    $('newmapgo').disabled=true;newMapMsg('Creating\u2026','');
+    http('POST','/addmap2.htm',{mapurl_:newMapGuid(),name_:name,width_:String(w),height_:String(h),pubaccess_:'0'}).then(function(){
+      return http('GET','/api/table.json',{content:'maps',columns:'name,objid'});
+    }).then(function(t){
+      var j=parseJson(t,'The list of maps'), maps=(j&&j.maps)||[], sel=$('pushmap'), match=null;
+      sel.innerHTML='';
+      maps.forEach(function(m){var o=document.createElement('option');o.value=String(m.objid);o.textContent=m.name;sel.appendChild(o);if(m.name===name&&!match)match=m;});
+      S.maps=maps;
+      if(match)sel.value=String(match.objid);
+      S.reviewed=null;S.cls=null;$('pushgo').hidden=true;$('pushlist').hidden=true;
+      if(typeof exClear==='function')exClear();
+      updateTarget();updateButtons();
+      $('newmapname').value='';$('newmapForm').hidden=true;newMapMsg('');
+      say(match?('Created \u201C'+name+'\u201D and selected it.'):('Created \u201C'+name+'\u201D, but could not find it again in the map list \u2014 pick it manually above.'),match?'ok':'err');
+    }).catch(function(err){
+      if(err&&err.status===401)authNeeded();
+      newMapMsg((err&&err.message)||'Could not create the map.','err');
+    }).then(function(){$('newmapgo').disabled=false;});
+  }
+  $('newmapToggle').addEventListener('click',function(){
+    $('newmapForm').hidden=!$('newmapForm').hidden;
+    if(!$('newmapForm').hidden)try{$('newmapname').focus();}catch(e){}
+  });
+  $('newmapcancel').addEventListener('click',function(){$('newmapForm').hidden=true;newMapMsg('');});
+  $('newmapgo').addEventListener('click',createMap);
+  $('newmapname').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();createMap();}});
   function objNoteText(){
     return S.catalog?('PRTG lists '+S.catalog.length+(S.catalog.length===1?' object file.':' object files.')+' Pick one and add it to the canvas, then choose what it shows. Files you design in the Objects tab appear here once they are in PRTG\u2019s mapobjects folder.'):'Switch PRTG on at the top of this tab to load the objects PRTG has. Files you design in the Objects tab appear here once they are in PRTG\u2019s mapobjects folder.';
   }
@@ -3706,6 +3751,7 @@ try{
   function disconnect(){
     S.maps=null;S.objFile=null;S.catalog=null;S.reviewed=null;S.cls=null;S.lastErr=null;S.tgt={};
     $('pushmap').innerHTML='';$('pushgo').hidden=true;$('pushlist').hidden=true;
+    $('newmapForm').hidden=true;$('newmapname').value='';$('newmapmsg').textContent='';
     PV.cache={};PV.pending={};PV.inflight={};PV.queue=[];PV.applied={};trReset();
     exClear();say('Disconnected.','');updateButtons();renderObjList();pickerSync();pvSync();
   }

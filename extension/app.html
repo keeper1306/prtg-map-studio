@@ -573,6 +573,20 @@ body.dash #dtabs{display:grid;grid-template-columns:repeat(4,1fr)}
     <p class="note">Choose the map in PRTG this canvas belongs to. Showing what is already on it, the previews and Push to PRTG all use this choice.</p>
     <label for="pushmap">Choose the map</label>
     <select id="pushmap" disabled></select>
+    <div class="row" style="margin-top:6px"><button class="btn ghost" id="newmapToggle" type="button" disabled>+ Create new map&hellip;</button></div>
+    <div id="newmapForm" hidden style="margin-top:8px">
+      <label for="newmapname">Name</label>
+      <input type="text" id="newmapname" placeholder="e.g. Customer Overview" spellcheck="false">
+      <div class="row">
+        <div><label for="newmapw">Width</label><input type="number" id="newmapw" min="100" max="8000" step="10" value="1300"></div>
+        <div><label for="newmaph">Height</label><input type="number" id="newmaph" min="100" max="8000" step="10" value="900"></div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button class="btn" id="newmapgo" type="button">Create</button>
+        <button class="btn ghost" id="newmapcancel" type="button">Cancel</button>
+      </div>
+      <p class="note pst" id="newmapmsg"></p>
+    </div>
       <div id="exfs">
     <p class="note">Shows what is already on the map chosen above, behind your own items. <strong>Click an item on the canvas</strong> to select it, drag it to move it, drag its corner to resize it, press Delete to mark it for deletion, arrow keys to nudge it. Nothing is written to PRTG until you press Review and then Apply, and each change can be undone.</p>
     <div class="row" style="margin-top:8px"><button class="btn ghost" id="exload" type="button" disabled>Show items already on this map</button></div>
