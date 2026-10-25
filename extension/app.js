@@ -2799,6 +2799,28 @@ try{
     return s.join('');
   }
   function newMapMsg(text,kind){var n=$('newmapmsg');n.textContent=text||'';n.className='note pst'+(kind?' '+kind:'');}
+  /* addmap2.htm's own form (addmap.htm) is enctype="multipart/form-data",
+     and PRTG's server-side handler for it does not tolerate being sent
+     application/x-www-form-urlencoded instead -- it crashes with an access
+     violation (null-pointer read) trying to parse the body as multipart
+     regardless. http()'s shared POST path always sends urlencoded, so this
+     endpoint needs its own multipart-encoded POST, built with FormData so
+     the browser sets the correct multipart boundary automatically. */
+  function httpMultipart(path,params){
+    var b=base(), p=withAuth(params), url=b+path;
+    var fd=new FormData(), k;
+    for(k in p)fd.append(k,p[k]);
+    var headers={'X-Requested-With':'XMLHttpRequest','Accept':'*/*'};
+    return csrf().then(function(tok){
+      if(tok)headers['anti-csrf-token']=tok;
+      return fetch(url,{method:'POST',credentials:b?'include':'same-origin',headers:headers,body:fd});
+    }).then(function(r){
+      return r.text().then(function(t){
+        if(!r.ok){var e=new Error('PRTG answered '+r.status+' for '+path+'.');e.status=r.status;throw e;}
+        return t;
+      });
+    },function(){throw new Error(cannotReach(b));});
+  }
   function createMap(){
     var name=String($('newmapname').value||'').trim();
     var w=parseInt($('newmapw').value,10)||0, h=parseInt($('newmaph').value,10)||0;
@@ -2813,7 +2835,7 @@ try{
        re-queried either way, and that's what decides success or failure. */
     var before={}; (S.maps||[]).forEach(function(m){before[m.objid]=true;});
     var postErr=null;
-    http('POST','/addmap2.htm',{mapurl_:newMapGuid(),name_:name,width_:String(w),height_:String(h),pubaccess_:'0'}).catch(function(e){postErr=e;}).then(function(){
+    httpMultipart('/addmap2.htm',{mapurl_:newMapGuid(),name_:name,width_:String(w),height_:String(h),pubaccess_:'0'}).catch(function(e){postErr=e;}).then(function(){
       return http('GET','/api/table.json',{content:'maps',columns:'name,objid'});
     }).then(function(t){
       var j=parseJson(t,'The list of maps'), maps=(j&&j.maps)||[], sel=$('pushmap');
