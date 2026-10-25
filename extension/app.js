@@ -2854,8 +2854,10 @@ try{
       S.reviewed=null;S.cls=null;$('pushgo').hidden=true;$('pushlist').hidden=true;
       if(typeof exClear==='function')exClear();
       updateTarget();updateButtons();
-      $('newmapname').value='';$('newmapForm').hidden=true;newMapMsg('');
+      $('newmapname').value='';
+      newMapMsg('Map successfully added.','ok');
       say('Created \u201C'+name+'\u201D and selected it.','ok');
+      setTimeout(function(){$('newmapForm').hidden=true;newMapMsg('');},1800);
     }).catch(function(err){
       if(err&&err.status===401)authNeeded();
       newMapMsg((err&&err.message)||'Could not create the map.','err');
