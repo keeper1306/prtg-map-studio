@@ -2442,7 +2442,7 @@ try{
 try{
   var $=function(id){return document.getElementById(id);};
   var KEY=CFG.keys.pushes, SKEY=CFG.keys.sync;
-  var S={maps:null,objFile:null,catalog:null,tgt:{},reviewed:null,cls:null,busy:false,forgetArm:null};
+  var S={maps:null,objFile:null,catalog:null,tgt:{},reviewed:null,cls:null,busy:false,forgetArm:null,deleteArm:null};
   var bannerT=null;
   /* a result or an error shows over the Dashboard, whichever sections are open; a new action clears the last one */
   function banner(msg,kind){
@@ -2536,6 +2536,21 @@ try{
   }
   function withAuth(params){var o={},k,a=authParams();for(k in (params||{}))o[k]=params[k];for(k in a)o[k]=a[k];return o;}
   function qstring(p,raw){return Object.keys(p).map(function(k){var v=encodeURIComponent(p[k]);if(raw)v=v.replace(/%2C/gi,',');return encodeURIComponent(k)+'='+v;}).join('&');}
+  /* fetch() rejects with the same generic TypeError for every network-level
+     failure -- a bad/untrusted certificate, DNS failure, connection refused,
+     a timeout, CORS -- the browser deliberately doesn't expose which one, so
+     there is no way to show a cert-specific message vs. a DNS-specific one.
+     cannotReach() below covers the realistic causes in one message instead.
+     A hard timeout is added here (fetch has none of its own) so a slow or
+     stalled connection always surfaces a clear error rather than leaving
+     "Connecting..." on screen forever with no feedback. */
+  var HTTP_TIMEOUT_MS=20000;
+  function fetchWithTimeout(url,init){
+    if(!(window.AbortController))return fetch(url,init);
+    var ac=new AbortController(), t=setTimeout(function(){ac.abort();},HTTP_TIMEOUT_MS);
+    init=Object.assign({},init,{signal:ac.signal});
+    return fetch(url,init).then(function(r){clearTimeout(t);return r;},function(e){clearTimeout(t);throw e;});
+  }
   function http(method,path,params){
     var b=base(), p=withAuth(params), url=b+path;
     var headers={'X-Requested-With':'XMLHttpRequest','Accept':(method==='GET')?'application/json, text/javascript, */*; q=0.01':'*/*'};
@@ -2543,12 +2558,12 @@ try{
       var init={method:method,credentials:b?'include':'same-origin',headers:headers};
       if(method==='POST'){headers['Content-Type']='application/x-www-form-urlencoded; charset=UTF-8';if(tok)headers['anti-csrf-token']=tok;init.body=qstring(p,false);}
       else{var qs=qstring(p,true);if(qs)url+=(url.indexOf('?')>-1?'&':'?')+qs;}
-      return fetch(url,init).then(function(r){
+      return fetchWithTimeout(url,init).then(function(r){
         return r.text().then(function(t){
           if(!r.ok){var e=new Error('PRTG answered '+r.status+' for '+path+'.');e.status=r.status;throw e;}
           return t;
         });
-      },function(){throw new Error(cannotReach(b));});
+      },function(e){throw new Error((e&&e.name==='AbortError')?('Timed out waiting for '+(b||'your PRTG server')+' to answer ('+(HTTP_TIMEOUT_MS/1000)+'s). '+cannotReach(b)):cannotReach(b));});
     };
     return method==='POST'?csrf().then(go):go('');
   }
@@ -2610,6 +2625,7 @@ try{
     var ready=!!(S.maps&&S.objFile&&mapId());
     $('pushmap').disabled=!(S.maps&&S.maps.length)||S.busy;
     $('newmapToggle').disabled=!S.maps||S.busy;
+    $('deleteMapBtn').disabled=!S.maps||S.busy||!$('pushmap').value;
     $('pushreview').disabled=!ready||S.busy;
     $('objsamples').disabled=!(S.maps&&mapId())||S.busy;
     $('exload').disabled=!(S.maps&&mapId())||S.busy;
@@ -2745,6 +2761,35 @@ try{
       });
     });
   }
+  /* remembers the last-used server address (always), and -- only when the
+     "Remember this server, username and passhash" checkbox is on -- the
+     username and passhash too, in chrome.storage.local: local to this
+     device/browser profile, never synced anywhere. Both are read back on
+     load to prefill the login card and, when credentials were remembered,
+     to retry connecting automatically instead of always starting from a
+     blank login gate. */
+  var STORE_KEYS=['pm_lastServer','pm_remember','pm_user','pm_secret'];
+  function storageGet(cb){
+    if(!(window.chrome&&chrome.storage&&chrome.storage.local)){cb({});return;}
+    try{chrome.storage.local.get(STORE_KEYS,function(items){cb(items||{});});}catch(e){cb({});}
+  }
+  function storageSet(obj){
+    if(!(window.chrome&&chrome.storage&&chrome.storage.local))return;
+    try{chrome.storage.local.set(obj);}catch(e){}
+  }
+  function storageRemove(keys){
+    if(!(window.chrome&&chrome.storage&&chrome.storage.local))return;
+    try{chrome.storage.local.remove(keys);}catch(e){}
+  }
+  function rememberConnection(){
+    var b=base();if(!b)return;
+    if($('pushremember').checked){
+      storageSet({pm_lastServer:b,pm_remember:true,pm_user:String($('pushuser').value||''),pm_secret:String($('pushsecret').value||'')});
+    }else{
+      storageSet({pm_lastServer:b,pm_remember:false});
+      storageRemove(['pm_user','pm_secret']);
+    }
+  }
   function connect(){
     describeWhere();
     if(!pageOrigin()&&!base()){say('Enter your PRTG server\u2019s address below, then press Connect.','err');S.lastErr='enter a server address';$('prtgpop').hidden=false;try{$('pushserver').focus();}catch(e){}swSync();return;}
@@ -2764,6 +2809,7 @@ try{
         var catj=parseJson(t,'The list of object files');
         S.objFile=findCustomHtml(catj);S.catalog=parseCatalog(catj);S.tgt={};
         openApp();
+        rememberConnection();
         if(!S.maps.length)say('Connected, but there are no maps. Create an empty map in PRTG first.','err');
         else if(!S.objFile)say('Connected, but PRTG\u2019s object list has no \u201CCustom HTML element\u201D, so nothing can be pushed.','err');
         else say('Connected. '+S.maps.length+(S.maps.length===1?' map':' maps')+' found.','ok');
@@ -2870,6 +2916,48 @@ try{
   $('newmapcancel').addEventListener('click',function(){$('newmapForm').hidden=true;newMapMsg('');});
   $('newmapgo').addEventListener('click',createMap);
   $('newmapname').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();createMap();}});
+  /* deletes the currently-selected map via PRTG's own deleteobject.htm?id=&approve=1
+     (confirmed from PRTG's own deleteobject.htm webroot template -- a plain GET,
+     no CSRF token required there, unlike the POST-based add/edit endpoints).
+     Armed with a second click within 4s, mirroring the existing "Forget what was
+     pushed" confirm pattern (S.forgetArm) rather than a native confirm() dialog. */
+  function deleteMapMsg(text,kind){var n=$('deleteMapMsg');n.textContent=text||'';n.className='note pst'+(kind?' '+kind:'');}
+  function deleteMap(){
+    var sel=$('pushmap'), id=sel.value, name=sel.options.length&&sel.selectedIndex>-1?sel.options[sel.selectedIndex].text:'';
+    if(!id)return;
+    if(!S.deleteArm){
+      S.deleteArm=setTimeout(function(){S.deleteArm=null;$('deleteMapBtn').classList.remove('armed');$('deleteMapBtn').textContent='Delete this map';},4000);
+      $('deleteMapBtn').classList.add('armed');$('deleteMapBtn').textContent='Click again to delete “'+name+'”';
+      return;
+    }
+    clearTimeout(S.deleteArm);S.deleteArm=null;
+    $('deleteMapBtn').classList.remove('armed');$('deleteMapBtn').textContent='Delete this map';
+    $('deleteMapBtn').disabled=true;deleteMapMsg('Deleting…','');
+    http('GET','/deleteobject.htm',{id:id,approve:'1'}).then(function(){
+      return http('GET','/api/table.json',{content:'maps',columns:'name,objid'});
+    }).then(function(t){
+      var j=parseJson(t,'The list of maps'), maps=(j&&j.maps)||[], sel2=$('pushmap');
+      sel2.innerHTML='';
+      maps.forEach(function(m){var o=document.createElement('option');o.value=String(m.objid);o.textContent=m.name;sel2.appendChild(o);});
+      S.maps=maps;
+      if(maps.some(function(m){return String(m.objid)===id;})){
+        deleteMapMsg('PRTG did not report an error, but “'+name+'” is still in the map list.','err');
+      }else{
+        S.reviewed=null;S.cls=null;$('pushgo').hidden=true;$('pushlist').hidden=true;
+        if(typeof exClear==='function')exClear();
+        deleteMapMsg('Deleted “'+name+'”.','ok');
+      }
+      updateTarget();updateButtons();
+    }).catch(function(err){
+      if(err&&err.status===401)authNeeded();
+      deleteMapMsg((err&&err.message)||'Could not delete the map.','err');
+    }).then(function(){updateButtons();});
+  }
+  $('deleteMapBtn').addEventListener('click',deleteMap);
+  $('pushmap').addEventListener('change',function(){
+    if(S.deleteArm){clearTimeout(S.deleteArm);S.deleteArm=null;$('deleteMapBtn').classList.remove('armed');$('deleteMapBtn').textContent='Delete this map';}
+    deleteMapMsg('');
+  });
   function objNoteText(){
     return S.catalog?('PRTG lists '+S.catalog.length+(S.catalog.length===1?' object file.':' object files.')+' Pick one and add it to the canvas, then choose what it shows. Files you design in the Objects tab appear here once they are in PRTG\u2019s mapobjects folder.'):'Switch PRTG on at the top of this tab to load the objects PRTG has. Files you design in the Objects tab appear here once they are in PRTG\u2019s mapobjects folder.';
   }
@@ -3779,11 +3867,11 @@ try{
   $('exbardisc').addEventListener('click',function(){XE.stage={};if(XE.sel&&XE.cur[XE.sel])xePopulate();xeStaged();});
   /* ---- the PRTG switch at the top of the Dashboard tab ---- */
   function swSync(){
-    var connected=!!(S&&S.maps&&S.objFile), busy=!!$('pushconnect').disabled&&!connected, err=S&&S.lastErr, sw=$('prtgsw');
-    sw.checked=connected||busy;sw.disabled=busy;
+    var connected=!!(S&&S.maps&&S.objFile), busy=!!$('pushconnect').disabled&&!connected, err=S&&S.lastErr;
     $('prtgdot').className='pdot '+(connected?'ok':(busy?'busy':(err?'err':'off')));
-    $('prtgtxt').textContent=connected?('Connected \u00B7 '+S.maps.length+(S.maps.length===1?' map':' maps')):(busy?'Connecting\u2026':(err?('Not connected \u00B7 '+String(err).slice(0,48)):'Not connected'));
+    $('prtgtxt').textContent=connected?('Connected to '+(base()||pageOrigin()||'PRTG')+' \u00B7 '+S.maps.length+(S.maps.length===1?' map':' maps')):(busy?'Connecting\u2026':(err?('Not connected \u00B7 '+String(err).slice(0,48)):'Not connected'));
     $('prtgtxt').title=connected?('Connected to '+(base()||pageOrigin()||'PRTG')):String(err||'');
+    $('prtgswitch').hidden=!connected;$('prtgdisconnect').hidden=!connected;
     if(S.needLogin&&!connected&&!busy){$('prtgpop').hidden=false;}
     if(connected)S.needLogin=false;
     if(connected&&!busy&&S.reauth){S.reauth=false;$('prtgpop').hidden=true;}   /* a connect that followed a refused login has worked: the panel has done its job */
@@ -3792,6 +3880,8 @@ try{
     S.maps=null;S.objFile=null;S.catalog=null;S.reviewed=null;S.cls=null;S.lastErr=null;S.tgt={};
     $('pushmap').innerHTML='';$('pushgo').hidden=true;$('pushlist').hidden=true;
     $('newmapForm').hidden=true;$('newmapname').value='';$('newmapmsg').textContent='';
+    if(S.deleteArm){clearTimeout(S.deleteArm);S.deleteArm=null;}
+    $('deleteMapBtn').classList.remove('armed');$('deleteMapBtn').textContent='Delete this map';$('deleteMapMsg').textContent='';
     PV.cache={};PV.pending={};PV.inflight={};PV.queue=[];PV.applied={};trReset();
     exClear();say('Disconnected.','');updateButtons();renderObjList();pickerSync();pvSync();
   }
@@ -3804,8 +3894,9 @@ try{
   new MutationObserver(placePop).observe($('prtgmsg'),{attributes:true,attributeFilter:['hidden']});
   window.addEventListener('resize',placePop);
   $('prtgmsgx').addEventListener('click',function(){$('prtgmsg').hidden=true;$('prtgbar').style.setProperty('--msgH','0px');});
-  $('prtgsw').addEventListener('change',function(){if(this.checked)$('pushconnect').click();else disconnect();});
   $('prtgcog').addEventListener('click',function(e){e.stopPropagation();$('prtgpop').hidden=!$('prtgpop').hidden;});
+  $('prtgswitch').addEventListener('click',function(e){e.stopPropagation();$('prtgpop').hidden=false;try{$('pushserver').focus();$('pushserver').select();}catch(err){}});
+  $('prtgdisconnect').addEventListener('click',function(e){e.stopPropagation();disconnect();});
   document.addEventListener('click',function(e){var p=$('prtgpop');if(!p.hidden&&!p.classList.contains('gate')&&!(e.target.closest&&e.target.closest('#prtgbar')))p.hidden=true;});
   swSync();
   window.EXAPI={state:EX,edit:XE,parse:exParse,headers:exHeaders,load:exLoad,clear:exClear,pick:exPick,label:exLabel};
@@ -4442,6 +4533,16 @@ try{
   describeWhere();
   window.PUSHAPI={state:S,connect:connect,review:review,push:push,undo:undo,normalize:normalize,csrf:csrf,renderObjList:renderObjList};
   updateButtons();
+  storageGet(function(items){
+    if(items.pm_lastServer){$('pushserver').value=items.pm_lastServer;}
+    if(items.pm_remember){
+      $('pushremember').checked=true;
+      if(items.pm_user)$('pushuser').value=items.pm_user;
+      if(items.pm_secret)$('pushsecret').value=items.pm_secret;
+    }
+    describeWhere();
+    if(items.pm_lastServer&&items.pm_remember&&loginFilled())connect();
+  });
 }catch(err){if(window.console)console.error('push module',err);}
 })();
 /* @endregion: push */
