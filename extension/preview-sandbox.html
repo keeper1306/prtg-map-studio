@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8">
+<style>html,body{margin:0;padding:0;background:transparent}</style>
+</head>
+<body>
+<script>
+  /* Declared as a manifest "sandbox" page, so this document runs with Chrome's
+     relaxed sandbox CSP (script-src 'self' 'unsafe-inline' 'unsafe-eval') instead
+     of the extension's normal strict MV3 CSP. app.js postMessages it the HTML a
+     PRTG preview/export call returned (which may contain inline <script>, exactly
+     as PRTG sends it); this page builds the real preview inside a nested srcdoc
+     iframe using the SAME sandbox="" / "allow-scripts" attribute app.js already
+     decided (preserving the existing Custom-HTML script-blocking behaviour
+     exactly), then tells app.js once that nested iframe has loaded.
+
+     allowSameOrigin is only ever set true for the interactive object-preview
+     panes (pvDoc), which need app.js to read the rendered content's geometry
+     back out afterward; export previews (exDoc) never set it, so they keep the
+     original, more isolated sandboxing untouched. */
+  window.addEventListener('message', function (e) {
+    if (!e.data || e.data.type !== 'pv-write') return;
+    var seq = e.data.seq;
+    document.body.innerHTML = '';
+    var inner = document.createElement('iframe');
+    var sb = 'allow-scripts' + (e.data.allowSameOrigin ? ' allow-same-origin' : '');
+    inner.setAttribute('sandbox', e.data.allowScripts ? sb : '');
+    inner.setAttribute('scrolling', 'no');
+    inner.setAttribute('tabindex', '-1');
+    inner.setAttribute('aria-hidden', 'true');
+    inner.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;border:0;margin:0;padding:0;background:transparent';
+    var source = e.source;
+    inner.addEventListener('load', function () {
+      try { source.postMessage({ type: 'pv-ready', seq: seq }, '*'); } catch (err) {}
+    });
+    document.body.appendChild(inner);
+    inner.srcdoc = e.data.html;
+  });
+</script>
+</body>
+</html>
