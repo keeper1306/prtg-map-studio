@@ -304,12 +304,17 @@ p.note:not(.pst){display:none!important}
 #infotip .tipnote{margin:0}
 .grp{padding:16px 20px 6px;font-size:11px;font-weight:600;letter-spacing:.7px;text-transform:uppercase;color:#8b90a0;background:#fff}
 .undoredo{display:flex;gap:6px}
-.ico{width:30px;height:30px;padding:0;border:1px solid var(--g20);border-radius:50%;background:#fff;color:var(--blue);cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.ico{width:30px;height:30px;padding:0;border:1px solid var(--g20);border-radius:50%;background:#fff;color:var(--blue);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
 .ico svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .ico:hover:not(:disabled){border-color:var(--cyan);color:var(--cyan)}
 .ico:disabled{opacity:.35;cursor:default}
-#prtgbar{display:none;position:relative;align-items:center;gap:10px;padding:9px 16px;border-top:1px solid var(--g10);background:#fafbfc;font-size:12px}
+.ico.sm{width:25px;height:25px}
+.ico.sm svg{width:13px;height:13px}
+#prtgbar{display:none;flex-direction:column;gap:7px;padding:9px 16px;border-top:1px solid var(--g10);background:#fafbfc;font-size:12px}
 body.dash #prtgbar{display:flex}
+.pbrow{display:flex;align-items:center;gap:7px;min-width:0}
+.pbmap select{flex:1 1 auto;min-width:0;height:25px;font:inherit;font-size:11px;padding:0 6px;border-radius:6px;border:1px solid var(--g20);background:#fff;color:#2b3242}
+.pbmap select:disabled{opacity:.5}
 #prtgtxt{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#44505e}
 .swt{position:relative;display:inline-block;width:38px;height:22px;flex:0 0 auto;cursor:pointer}
 .swt input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
@@ -487,10 +492,18 @@ body.dash #dtabs{display:grid;grid-template-columns:repeat(4,1fr)}
       <button type="button" id="mDash">Dashboard</button>
     </div>
     <div id="prtgbar">
-      <span id="prtgdot" class="pdot off"></span><span id="prtgtxt">Not connected</span>
-      <button type="button" class="btn ghost sm" id="prtgswitch" hidden>Connect to another server</button>
-      <button type="button" class="btn ghost sm" id="prtgdisconnect" hidden>Disconnect</button>
-      <button type="button" class="ico" id="prtgcog" title="Server and login" aria-label="Server and login"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+      <div class="pbrow pbconn">
+        <span id="prtgdot" class="pdot off"></span><span id="prtgtxt">Not connected</span>
+        <button type="button" class="ico sm" id="prtgswitch" title="Connect to another server" aria-label="Connect to another server" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h11M15 3l4 4-4 4"/><path d="M17 17H6M9 21l-4-4 4-4"/></svg></button>
+        <button type="button" class="ico sm" id="prtgdisconnect" title="Disconnect" aria-label="Disconnect" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v8"/><path d="M18.4 6.6a9 9 0 1 1-12.8 0"/></svg></button>
+        <button type="button" class="ico sm" id="prtgcog" title="Server and login" aria-label="Server and login"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+      </div>
+      <div class="pbrow pbmap">
+        <select id="pushmap" disabled></select>
+        <button type="button" class="ico sm" id="newmapToggle" title="Create new map" aria-label="Create new map" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+        <button type="button" class="ico sm" id="deleteMapBtn" title="Delete this map" aria-label="Delete this map" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/><path d="M10 11v6M14 11v6"/></svg></button>
+        <button type="button" class="ico sm" id="exload" title="Show items already on this map" aria-label="Show items already on this map" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+      </div>
     </div>
     <div id="prtgmsg" hidden><span id="prtgmsgtext"></span><button type="button" class="ico" id="prtgmsgx" aria-label="Dismiss" title="Dismiss">&times;</button></div>
     <div id="editbar" hidden><span class="et" id="edittitle">Editing a dashboard item</span><button type="button" id="editcancel">Cancel</button><button type="button" id="editdone" class="solid">Done</button></div>
@@ -587,13 +600,7 @@ body.dash #dtabs{display:grid;grid-template-columns:repeat(4,1fr)}
     
     <fieldset id="mapfs">
     <legend>Existing PRTG maps</legend>
-    <p class="note">Choose the map in PRTG this canvas belongs to. Showing what is already on it, the previews and Push to PRTG all use this choice.</p>
-    <label for="pushmap">Choose the map</label>
-    <select id="pushmap" disabled></select>
-    <div class="row" style="margin-top:6px">
-      <button class="btn ghost" id="newmapToggle" type="button" disabled>+ Create new map&hellip;</button>
-      <button class="btn ghost" id="deleteMapBtn" type="button" disabled>Delete this map</button>
-    </div>
+    <p class="note">Choose the map in PRTG this canvas belongs to, using the dropdown at the top of this tab. Showing what is already on it, the previews and Push to PRTG all use this choice.</p>
     <p class="note pst" id="deleteMapMsg"></p>
     <div id="newmapForm" hidden style="margin-top:8px">
       <label for="newmapname">Name</label>
@@ -609,8 +616,7 @@ body.dash #dtabs{display:grid;grid-template-columns:repeat(4,1fr)}
       <p class="note pst" id="newmapmsg"></p>
     </div>
       <div id="exfs">
-    <p class="note">Shows what is already on the map chosen above, behind your own items. <strong>Click an item on the canvas</strong> to select it, drag it to move it, drag its corner to resize it, press Delete to mark it for deletion, arrow keys to nudge it. Nothing is written to PRTG until you press Review and then Apply, and each change can be undone.</p>
-    <div class="row" style="margin-top:8px"><button class="btn ghost" id="exload" type="button" disabled>Show items already on this map</button></div>
+    <p class="note">Shows what is already on the map chosen above, behind your own items (use the eye icon at the top of this tab). <strong>Click an item on the canvas</strong> to select it, drag it to move it, drag its corner to resize it, press Delete to mark it for deletion, arrow keys to nudge it. Nothing is written to PRTG until you press Review and then Apply, and each change can be undone.</p>
     <p class="note pst" id="exmsg"></p>
     <div class="inline" id="exonrow" hidden><input type="checkbox" id="exon" checked><label for="exon">Show them on the canvas</label></div>
     <div class="inline" id="exdimrow" hidden><input type="checkbox" id="exdim"><label for="exdim">Dim them</label></div>

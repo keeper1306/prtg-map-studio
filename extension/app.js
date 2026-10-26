@@ -2951,12 +2951,12 @@ try{
     var sel=$('pushmap'), id=sel.value, name=sel.options.length&&sel.selectedIndex>-1?sel.options[sel.selectedIndex].text:'';
     if(!id)return;
     if(!S.deleteArm){
-      S.deleteArm=setTimeout(function(){S.deleteArm=null;$('deleteMapBtn').classList.remove('armed');$('deleteMapBtn').textContent='Delete this map';},4000);
-      $('deleteMapBtn').classList.add('armed');$('deleteMapBtn').textContent='Click again to delete “'+name+'”';
+      S.deleteArm=setTimeout(function(){S.deleteArm=null;$('deleteMapBtn').classList.remove('armed');$('deleteMapBtn').title='Delete this map';},4000);
+      $('deleteMapBtn').classList.add('armed');$('deleteMapBtn').title='Click again to delete “'+name+'”';
       return;
     }
     clearTimeout(S.deleteArm);S.deleteArm=null;
-    $('deleteMapBtn').classList.remove('armed');$('deleteMapBtn').textContent='Delete this map';
+    $('deleteMapBtn').classList.remove('armed');$('deleteMapBtn').title='Delete this map';
     $('deleteMapBtn').disabled=true;deleteMapMsg('Deleting…','');
     http('GET','/deleteobject.htm',{id:id,approve:'1'}).then(function(){
       return http('GET','/api/table.json',{content:'maps',columns:'name,objid'});
@@ -2980,7 +2980,7 @@ try{
   }
   $('deleteMapBtn').addEventListener('click',deleteMap);
   $('pushmap').addEventListener('change',function(){
-    if(S.deleteArm){clearTimeout(S.deleteArm);S.deleteArm=null;$('deleteMapBtn').classList.remove('armed');$('deleteMapBtn').textContent='Delete this map';}
+    if(S.deleteArm){clearTimeout(S.deleteArm);S.deleteArm=null;$('deleteMapBtn').classList.remove('armed');$('deleteMapBtn').title='Delete this map';}
     deleteMapMsg('');
   });
   function objNoteText(){
@@ -3906,7 +3906,7 @@ try{
     $('pushmap').innerHTML='';$('pushgo').hidden=true;$('pushlist').hidden=true;
     $('newmapForm').hidden=true;$('newmapname').value='';$('newmapmsg').textContent='';
     if(S.deleteArm){clearTimeout(S.deleteArm);S.deleteArm=null;}
-    $('deleteMapBtn').classList.remove('armed');$('deleteMapBtn').textContent='Delete this map';$('deleteMapMsg').textContent='';
+    $('deleteMapBtn').classList.remove('armed');$('deleteMapBtn').title='Delete this map';$('deleteMapMsg').textContent='';
     PV.cache={};PV.pending={};PV.inflight={};PV.queue=[];PV.applied={};trReset();
     exClear();say('Disconnected.','');updateButtons();renderObjList();pickerSync();pvSync();
   }
@@ -3920,7 +3920,12 @@ try{
   window.addEventListener('resize',placePop);
   $('prtgmsgx').addEventListener('click',function(){$('prtgmsg').hidden=true;$('prtgbar').style.setProperty('--msgH','0px');});
   $('prtgcog').addEventListener('click',function(e){e.stopPropagation();$('prtgpop').hidden=!$('prtgpop').hidden;});
-  $('prtgswitch').addEventListener('click',function(e){e.stopPropagation();$('prtgpop').hidden=false;try{$('pushserver').focus();$('pushserver').select();}catch(err){}});
+  $('prtgswitch').addEventListener('click',function(e){
+    e.stopPropagation();
+    var willShow=$('prtgpop').hidden;
+    $('prtgpop').hidden=!willShow;
+    if(willShow){try{$('pushserver').focus();$('pushserver').select();}catch(err){}}
+  });
   $('prtgdisconnect').addEventListener('click',function(e){e.stopPropagation();disconnect();});
   document.addEventListener('click',function(e){var p=$('prtgpop');if(!p.hidden&&!p.classList.contains('gate')&&!(e.target.closest&&e.target.closest('#prtgbar')))p.hidden=true;});
   swSync();
