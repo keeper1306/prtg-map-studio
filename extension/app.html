@@ -248,6 +248,9 @@ body.dash #typegrid,body.editing #typegrid{display:none}
 #exrev .xl b{font-weight:600}
 .exrow small{display:block;color:#8b90a0;font-size:12px}
 .dprevitem iframe{border:0;position:absolute;background:transparent}
+#dcanvas .dguide{position:absolute;pointer-events:none;z-index:99998;box-sizing:border-box}
+#dcanvas .dguide.v{width:0;border-left:1px dashed #3b6fe0}
+#dcanvas .dguide.h{height:0;border-top:1px dashed #e0483e}
 #dselbox{position:absolute;pointer-events:none;z-index:99999;box-sizing:border-box;border:2px solid var(--cyan2);display:none}
 #dhandle{position:absolute;pointer-events:auto;cursor:nwse-resize;background:var(--cyan);border:2px solid #fff;border-radius:3px;box-sizing:border-box}
 .addgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
@@ -1077,6 +1080,7 @@ fieldset{border-bottom-color:var(--line)}
     </div>
     <div id="exbar" hidden><span id="exbartext"></span><button class="btn ghost" id="exbarrev" type="button">Review changes</button><button class="btn" id="exbarapply" type="button" hidden>Apply</button><button class="btn ghost" id="exbardisc" type="button">Discard all</button></div>
     <div id="dscroll"><div id="dwrap"><div id="dcanvas"><div id="dselbox"><div id="dhandle"></div></div></div></div></div>
+    <p class="note"><strong>Guides:</strong> while you drag or resize, an item snaps to the edges and centres of the others, and a dashed line shows what it lines up with. Hold Alt to move freely.</p>
     <p class="note"><strong>Keys:</strong> arrow keys nudge the selected item (Shift = 10 px), Delete removes it, Ctrl+Z and Ctrl+Y undo and redo, Ctrl+D duplicates, Ctrl+C, Ctrl+X and Ctrl+V copy, cut and paste. Double-click a label or button to type its text; its style is open under it. Moving a frame moves what is inside it.</p>
     <p class="note warn"><strong>Stacking order:</strong> frames sit at the back, number tiles above them, then labels, buttons and status chips. Inside a group, items go in the order you added them. That is the order they will be sent to PRTG.</p>
   </div>

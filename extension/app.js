@@ -1584,6 +1584,37 @@ try{
     renderAll();buildForm();commit();
   }
   function snapV(v){return D.grid>0?Math.round(v/D.grid)*D.grid:Math.round(v);}
+  /* ---- alignment guides: while an item is dragged or resized, its edges and centre snap to those of the other items (and the canvas), and a dashed line shows what it lines up with. Hold Alt to drag freely. ---- */
+  var GL={v:null,h:null};
+  function guidesOff(){['v','h'].forEach(function(k){if(GL[k])GL[k].style.display='none';});}
+  function guideLine(k){
+    if(!GL[k]){var d=el_('div','dguide '+k);canvas.insertBefore(d,selBox);GL[k]=d;}
+    return GL[k];
+  }
+  function guideSnap(it,nx,ny,nw,nh,skip,mode){
+    var thr=7/scale, tg=[{x:0,y:0,w:D.w,h:D.h}], i, o, t, k, mxs, mys, bx=null, by=null, d, r;
+    for(i=0;i<D.items.length;i++){o=D.items[i];if(o.id===it.id||skip[o.id])continue;tg.push({x:o.x,y:o.y,w:o.w,h:o.h});}
+    mxs=(mode==='size')?[nx+nw]:[nx,nx+nw/2,nx+nw];
+    mys=(mode==='size')?[ny+nh]:[ny,ny+nh/2,ny+nh];
+    tg.forEach(function(t){
+      [t.x,t.x+t.w/2,t.x+t.w].forEach(function(tx){mxs.forEach(function(mx){d=tx-mx;if(Math.abs(d)<=thr&&(bx===null||Math.abs(d)<Math.abs(bx.d)))bx={d:d,at:tx};});});
+      [t.y,t.y+t.h/2,t.y+t.h].forEach(function(ty){mys.forEach(function(my){d=ty-my;if(Math.abs(d)<=thr&&(by===null||Math.abs(d)<Math.abs(by.d)))by={d:d,at:ty};});});
+    });
+    if(bx){if(mode==='size')nw+=bx.d;else nx+=bx.d;}
+    if(by){if(mode==='size')nh+=by.d;else ny+=by.d;}
+    var bw=Math.max(1,1/scale), ext;
+    if(bx){
+      var y0=ny,y1=ny+nh;
+      tg.forEach(function(t){if([t.x,t.x+t.w/2,t.x+t.w].some(function(v){return Math.abs(v-bx.at)<0.5;})){y0=Math.min(y0,t.y);y1=Math.max(y1,t.y+t.h);}});
+      r=guideLine('v');r.style.display='block';r.style.left=bx.at+'px';r.style.top=y0+'px';r.style.height=(y1-y0)+'px';r.style.borderLeftWidth=bw+'px';
+    }else if(GL.v)GL.v.style.display='none';
+    if(by){
+      var x0=nx,x1=nx+nw;
+      tg.forEach(function(t){if([t.y,t.y+t.h/2,t.y+t.h].some(function(v){return Math.abs(v-by.at)<0.5;})){x0=Math.min(x0,t.x);x1=Math.max(x1,t.x+t.w);}});
+      r=guideLine('h');r.style.display='block';r.style.top=by.at+'px';r.style.left=x0+'px';r.style.width=(x1-x0)+'px';r.style.borderTopWidth=bw+'px';
+    }else if(GL.h)GL.h.style.display='none';
+    return {x:nx,y:ny,w:nw,h:nh};
+  }
   function reparentTarget(it){
     if(it.type==='frame'&&it.p.group===false&&!it.p.shape)return null;
     var cx=it.x+it.w/2, cy=it.y+it.h/2, best=null, area=1e18;
@@ -2418,7 +2449,9 @@ try{
     if(!it)return;
     if(D.sel!==it.id)select(it.id);
     var kids=isGroupFrame(it)?descendants(it.id):[];
+    var skip={};kids.forEach(function(k){skip[k.id]=1;});
     drag={mode:'move',sx:e.clientX,sy:e.clientY,it:it,ox:it.x,oy:it.y,moved:false,
+      skip:skip,
       kids:kids.map(function(k){return {k:k,x:k.x,y:k.y};})};
   });
   canvas.addEventListener('click',function(e){e.preventDefault();});
@@ -2476,21 +2509,24 @@ try{
       if(!drag.moved&&(Math.abs(dx)+Math.abs(dy))<3)return;
       drag.moved=true;
       var nx=snapV(drag.ox+dx), ny=snapV(drag.oy+dy);
+      if(e.altKey)guidesOff();else{var gs=guideSnap(drag.it,nx,ny,drag.it.w,drag.it.h,drag.skip||{},'move');nx=gs.x;ny=gs.y;}
       var ddx=nx-drag.ox, ddy=ny-drag.oy;
       drag.it.x=nx;drag.it.y=ny;place(drag.it);
       drag.kids.forEach(function(o){o.k.x=o.x+ddx;o.k.y=o.y+ddy;place(o.k);});
       updateSel();
     }else if(drag.mode==='size'){
+      var nw=snapV(drag.ow+dx), nh=snapV(drag.oh+dy);
+      if(e.altKey)guidesOff();else{var gz=guideSnap(drag.it,drag.it.x,drag.it.y,nw,nh,{},'size');nw=gz.w;nh=gz.h;}
       if(isBox(drag.it)){
-        drag.it.w=Math.max(40,snapV(drag.ow+dx));
-        drag.it.h=Math.max(40,snapV(drag.oh+dy));
-      }else setBoxSize(drag.it,Math.max(20,snapV(drag.ow+dx)),Math.max(20,snapV(drag.oh+dy)));
+        drag.it.w=Math.max(40,nw);
+        drag.it.h=Math.max(40,nh);
+      }else setBoxSize(drag.it,Math.max(20,nw),Math.max(20,nh));
       refreshItem(drag.it);
     }
   });
   document.addEventListener('mouseup',function(){
     if(!drag)return;
-    var d=drag;drag=null;
+    var d=drag;drag=null;guidesOff();
     if(d.mode==='move'&&d.moved){d.it.parent=reparentTarget(d.it);renderAll();buildForm();commit();}
     else if(d.mode==='size'){buildForm();buildList();commit();}
   });
