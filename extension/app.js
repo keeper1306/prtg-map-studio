@@ -3434,6 +3434,34 @@ try{
       f.setAttribute('src',PVSBX_URL);
     }
   }
+  /* PRTG's stylesheet with its fonts inlined. A preview frame has no origin of its own and PRTG sends no CORS header, so the browser refuses the fonts the stylesheet links to (icons and text then fall back). This page may read them, so it fetches them and puts them in the stylesheet itself. */
+  var CSSX={origin:'',style:'',busy:null,busyFor:''};
+  function b64(buf){var a=new Uint8Array(buf),s='',i;for(i=0;i<a.length;i+=0x8000)s+=String.fromCharCode.apply(null,a.subarray(i,i+0x8000));return btoa(s);}
+  function prtgCss(){
+    var origin=(base()||pageOrigin()||''), cred=base()?'omit':'same-origin';
+    if(CSSX.origin===origin&&CSSX.style)return Promise.resolve(CSSX.style);
+    if(CSSX.busy&&CSSX.busyFor===origin)return CSSX.busy;
+    CSSX.busyFor=origin;
+    CSSX.busy=fetchWithTimeout(origin+'/css/prtg0.css',{credentials:cred}).then(function(r){if(!r.ok)throw new Error('css');return r.text();}).then(function(css){
+      var jobs=[], mimes={woff2:'font/woff2',woff:'font/woff',ttf:'font/ttf',otf:'font/otf'};
+      var out=css.replace(/url\(\s*(['"]?)([^'")]+)\1\s*\)/g,function(m,q,u){
+        var abs, ext, key;
+        if(/^(data:|https?:|\/\/)/i.test(u))return m;
+        try{abs=new URL(u,origin+'/css/').href;}catch(e){return m;}
+        ext=(/\.([a-z0-9]+)(?:[?#]|$)/i.exec(u)||[])[1];ext=ext&&ext.toLowerCase();
+        if(mimes[ext]){key='@@F'+jobs.length+'@@';jobs.push({key:key,url:abs,mime:mimes[ext]});return 'url('+key+')';}
+        return 'url("'+abs+'")';
+      });
+      return Promise.all(jobs.map(function(j){
+        return fetchWithTimeout(j.url,{credentials:'omit'}).then(function(r){return r.ok?r.arrayBuffer():null;}).then(function(buf){j.data=buf?('data:'+j.mime+';base64,'+b64(buf)):j.url;},function(){j.data=j.url;});
+      })).then(function(){
+        jobs.forEach(function(j){out=out.split(j.key).join(j.data);});
+        CSSX.origin=origin;CSSX.style='<style>'+out+'</style>';return CSSX.style;
+      });
+    }).catch(function(){return '';}).then(function(s){CSSX.busy=null;return s;});
+    return CSSX.busy;
+  }
+  function cssHead(origin){return (CSSX.origin===origin&&CSSX.style)||'<link rel="stylesheet" href="/css/prtg0.css">';}
   /* PRTG's own page scripts (the plugins that draw gauges, donuts and status dots) come from PRTG's View Map page. They are read once per server and added to the head of each preview that may run scripts. */
   function exLibs(){
     var origin=(base()||pageOrigin()||'');
@@ -3450,7 +3478,7 @@ try{
   function exWantsScripts(it){return $('exscr').checked&&(!it||it.cat!=='Custom HTML');}
   function exDoc(it,w,h){
     var origin=(base()||pageOrigin()||''), libs=exWantsScripts(it)?EX.libs:'';
-    return '<!DOCTYPE html><html><head><meta charset="utf-8"><base href="'+origin+'/"><link rel="stylesheet" href="/css/prtg0.css">'
+    return '<!DOCTYPE html><html><head><meta charset="utf-8"><base href="'+origin+'/">'+cssHead(origin)+''
       +'<style>html,body,#mapshow,#mapshow .view,#mapview{margin:0;padding:0;background:transparent!important;box-shadow:none!important;border:0!important}html,body{overflow:hidden}'
       +'#mapview{position:relative;width:'+w+'px;height:'+h+'px}#mapview .map_object{position:absolute!important;left:0!important;top:0!important;margin:0!important;width:'+w+'px!important;height:'+h+'px!important}</style>'+EX.styles+libs
       +'</head><body id="mainbody" data-theme="0" class="language_en"><div id="mapshow"><div class="view" style="position:static;overflow:visible"><div id="mapview">'+it.outer+'</div></div></div></body></html>';
@@ -3552,7 +3580,7 @@ try{
       EX.items=exParse(o.body||'');EX.map=id;
       m=/<svg\b[^>]*\bwidth="(\d+)px"/i.exec(o.body||'');n=/<svg\b[^>]*\bheight="(\d+)px"/i.exec(o.body||'');
       EX.mapW=m?parseInt(m[1],10):0;EX.mapH=n?parseInt(n[1],10):0;
-      (EX.items.length&&$('exscr').checked?exLibs():Promise.resolve()).then(function(){if(EX.map===id)exRender();});
+      Promise.all([prtgCss(),EX.items.length&&$('exscr').checked?exLibs():null]).then(function(){if(EX.map===id)exRender();});
       exNames().then(function(m){if(m===EX.map)exRender(true);});
       $('exsize').hidden=!(EX.mapW&&EX.mapH);
       $('exmsg').textContent=EX.items.length?(EX.items.length+(EX.items.length===1?' item':' items')+' on \u201C'+mapName()+'\u201D'+(EX.mapW?'. The map is '+EX.mapW+' \u00D7 '+EX.mapH+' px.':'.')+' Click one in the list to find it on the canvas.'):('There is nothing on \u201C'+mapName()+'\u201D yet.');
@@ -3911,6 +3939,7 @@ try{
     $('prtgtxt').textContent=connected?('Connected to '+hostOf(base()||pageOrigin()||'PRTG')):(busy?'Connecting\u2026':(err?('Not connected \u00B7 '+String(err).slice(0,48)):'Not connected'));
     $('prtgtxt').dataset.tip=connected?('Connected to '+(base()||pageOrigin()||'PRTG')+' \u00B7 '+S.maps.length+(S.maps.length===1?' map':' maps')):String(err||'');
     $('prtgswitch').hidden=!connected;$('prtgdisconnect').hidden=!connected;$('prtgcog').hidden=connected;
+    if(connected&&CSSX&&CSSX.origin!==(base()||pageOrigin()||''))try{prtgCss();}catch(e){}
     window.PRTGSTATE={connected:connected,map:connected&&!!$('pushmap').value};
     $('next2').disabled=!window.PRTGSTATE.map;
     try{document.dispatchEvent(new CustomEvent('prtgstate',{detail:window.PRTGSTATE}));}catch(e){}
@@ -3968,7 +3997,7 @@ try{
   function pvDoc(ent,o){
     var origin=(base()||pageOrigin()||''), box=(o.mode!=='content'), w=box?o.w:1400, h=box?o.h:900,
       size=box?('width:'+o.w+'px!important;height:'+o.h+'px!important;'):'';
-    return '<!DOCTYPE html><html><head><meta charset="utf-8"><base href="'+origin+'/"><link rel="stylesheet" href="/css/prtg0.css">'
+    return '<!DOCTYPE html><html><head><meta charset="utf-8"><base href="'+origin+'/">'+cssHead(origin)+''
       +'<style>html,body,#mapshow,#mapshow .view,#mapview{margin:0;padding:0;background:transparent!important;box-shadow:none!important;border:0!important}html,body{overflow:hidden}'
       +'#pvhost .map_object{position:absolute!important;left:'+PAD+'px!important;top:'+PAD+'px!important;margin:0!important;'+size+'}</style></head>'
       +'<body id="mainbody" data-theme="0" class="language_en"><div id="mapshow"><div class="view" style="position:static;overflow:visible"><div id="mapview" style="position:relative;width:'+(w+2*PAD)+'px;height:'+(h+2*PAD)+'px;overflow:visible"><div id="pvhost">'+ent.inner+'</div></div></div></div></body></html>';
