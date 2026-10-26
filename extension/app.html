@@ -479,6 +479,7 @@ body.dash #dtabs{display:grid;grid-template-columns:repeat(3,1fr)}
 #objfs.folded{display:none}
 #showexisting.on{color:var(--cyan);border-color:var(--cyan);background:#eaf5fc}
 #dashpanel .addgrid{grid-template-columns:repeat(3,1fr);gap:6px}
+#dashpanel label.bgpick{cursor:pointer}.bgpick input[type=color]{width:34px;height:18px;padding:0;border:1px solid var(--g20);border-radius:3px;background:none;cursor:pointer}.bgpick input[type=color]:disabled{opacity:.45;cursor:not-allowed}
 #dashpanel .addgrid .btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:9px 2px 7px;font-size:11px;font-weight:500;letter-spacing:.2px;text-transform:none;border-radius:6px;line-height:1.15;min-width:0}
 #dashpanel .addgrid .btn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
 #dashpanel .addgrid .btn:hover{color:var(--cyan);border-color:var(--cyan)}
@@ -611,11 +612,12 @@ body.dash #dtabs{display:grid;grid-template-columns:repeat(3,1fr)}
         <button class="btn ghost" type="button" data-add="frame">Frame</button>
         <button class="btn ghost" type="button" data-add="label">Label</button>
         <button class="btn ghost" type="button" data-add="button">Button</button>
-        <button class="btn ghost" type="button" data-add="bg">Background</button>
+        <label class="btn ghost bgpick" id="mapbgbtn" data-tip="Connect and choose a map first"><span>Background</span><input type="color" id="mapbgcolor" value="#dad7d7" disabled></label>
         <button class="btn ghost" type="button" data-add="shape">Shape</button>
         <button class="btn ghost" type="button" id="showexisting" aria-expanded="false" aria-controls="objfs">Existing PRTG objects</button>
       </div>
       <p class="note">With a frame selected, new items go inside it.</p>
+      <p class="note pst" id="mapbgmsg" hidden></p>
     </fieldset>
     <fieldset id="objfs">
     <legend>Existing PRTG objects</legend>

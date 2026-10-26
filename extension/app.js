@@ -3379,6 +3379,55 @@ try{
     },function(){return {bg:'',color:'',conn:null};});
   }
   var LINKCOL={up:'#b4cc38',down:'#d71920',warning:'#ffd400',unusual:'#f5821f',paused:'#3b8dd0',unknown:'#9aa4af'};
+  /* the picture and colour behind the items, drawn at the map's size as the first thing in the layer */
+  function exPaintBg(){
+    var l=$('dexist'), b;
+    if(!l)return;
+    b=l.querySelector('.dexbg');
+    if(!(EX.bg||EX.bgColor)||!EX.mapW){if(b)b.parentNode.removeChild(b);return;}
+    if(!b){b=document.createElement('div');b.className='dexbg';l.insertBefore(b,l.firstChild);}
+    b.style.cssText='position:absolute;left:0;top:0;pointer-events:none;width:'+EX.mapW+'px;height:'+EX.mapH+'px;'+(EX.bgColor?'background-color:'+EX.bgColor.replace(/[;"<>]/g,'')+';':'')+(EX.bg?'background-image:url("'+EX.bg+'");background-repeat:no-repeat;background-position:0 0':'');
+  }
+  /* The map's background colour is a PRTG map setting (Map settings, Background Color). PRTG saves that whole form at once, so this reads the form as it stands, changes the one field and sends it all back. */
+  function hex6(c){c=String(c||'').trim();var m=/^#([0-9a-f]{3})$/i.exec(c);if(m)c='#'+m[1].replace(/./g,function(x){return x+x;});return /^#[0-9a-f]{6}$/i.test(c)?c.toLowerCase():'';}
+  function mapForm(id){
+    return http('GET','/controls/objectdata.htm',{objecttype:'map',id:id}).then(function(t){
+      var d=new DOMParser().parseFromString(t,'text/html'), f=d.querySelector('form[action="/editsettings"]')||d.querySelector('form'), p={}, ok=false;
+      if(!f)throw new Error('PRTG did not send the map settings.');
+      [].forEach.call(f.querySelectorAll('input,select,textarea'),function(e){
+        var n=e.getAttribute('name'), ty=(e.getAttribute('type')||'').toLowerCase(), o;
+        if(!n||e.disabled||ty==='file'||ty==='submit'||ty==='button')return;
+        if(ty==='radio'||ty==='checkbox'){if(e.hasAttribute('checked'))p[n]=e.getAttribute('value')==null?'on':e.getAttribute('value');return;}
+        if(e.tagName==='SELECT'){o=e.querySelector('option[selected]')||e.options[0];if(o)p[n]=o.getAttribute('value')!=null?o.getAttribute('value'):o.textContent;return;}
+        p[n]=(e.tagName==='TEXTAREA')?e.value:(e.getAttribute('value')||'');
+      });
+      if('bgcolor_' in p)ok=true;
+      if(!ok)throw new Error('This PRTG version has no background colour setting for maps.');
+      p.id=String(id);
+      return p;
+    });
+  }
+  function bgMsg(text,kind){var n=$('mapbgmsg');if(!n)return;n.hidden=!text;n.textContent=text||'';n.className='note pst'+(kind?' '+kind:'');}
+  function setMapBg(color){
+    var id=mapId(), c=hex6(color);
+    if(!id||!c)return;
+    bgMsg('Changing the background…','');
+    $('mapbgcolor').disabled=true;
+    mapForm(id).then(function(p){
+      p.bgcolor_=c;
+      return httpMultipart('/editsettings',p);
+    }).then(function(){return mapForm(id);}).then(function(p){
+      if(hex6(p.bgcolor_)!==c)throw new Error('PRTG did not keep the new colour.');
+      EX.bgColor=c;
+      exPaintBg();
+      if(!$('dexist')){try{$('dcanvas').style.backgroundColor=c;}catch(e){}}
+      bgMsg('Background changed to '+c.toUpperCase()+' on “'+mapName()+'”.','ok');
+    }).catch(function(e){
+      bgMsg((e&&e.message)||'Could not change the background.','err');
+      if(EX.bgColor&&hex6(EX.bgColor))$('mapbgcolor').value=hex6(EX.bgColor);
+    }).then(function(){swSync();});
+  }
+  $('mapbgcolor').addEventListener('change',function(){setMapBg(this.value);});
   var LINKST={g:'up',r:'down',y:'warning',o:'unusual',b:'paused',bl:'paused',gr:'unknown'};
   function exLinks(conn){
     var by={}, defs='', body='', n=0;
@@ -3586,7 +3635,7 @@ try{
     var frames=CFG.preview.maxFrames;
     if(!keepLayer){
       layer.textContent='';
-      if((EX.bg||EX.bgColor)&&EX.mapW){var bg=document.createElement('div');bg.className='dexbg';bg.style.cssText='position:absolute;left:0;top:0;pointer-events:none;width:'+EX.mapW+'px;height:'+EX.mapH+'px;'+(EX.bgColor?'background-color:'+EX.bgColor.replace(/[;"<>]/g,'')+';':'')+(EX.bg?'background-image:url("'+EX.bg+'");background-repeat:no-repeat;background-position:0 0':'');layer.appendChild(bg);}
+      exPaintBg();
       if(EX.lines)layer.insertAdjacentHTML('beforeend',EX.lines);
     }
     list.textContent='';
@@ -3628,7 +3677,7 @@ try{
       EX.items=exParse(o.body||'');EX.map=id;EX.bg='';EX.bgColor='';EX.lines='';
       m=/<svg\b[^>]*\bwidth="(\d+)px"/i.exec(o.body||'');n=/<svg\b[^>]*\bheight="(\d+)px"/i.exec(o.body||'');
       EX.mapW=m?parseInt(m[1],10):0;EX.mapH=n?parseInt(n[1],10):0;
-      Promise.all([prtgCss(),EX.items.length&&$('exscr').checked?exLibs():null,exMapView(id).then(function(v){if(EX.map!==id)return;if(EX.bg&&EX.bg!==v.bg){try{URL.revokeObjectURL(EX.bg);}catch(e){}}EX.bg=v.bg;EX.bgColor=v.color;EX.lines=exLinks(v.conn);},function(){EX.bg='';})]).then(function(){if(EX.map===id)exRender();});
+      Promise.all([prtgCss(),EX.items.length&&$('exscr').checked?exLibs():null,exMapView(id).then(function(v){if(EX.map!==id)return;if(EX.bg&&EX.bg!==v.bg){try{URL.revokeObjectURL(EX.bg);}catch(e){}}EX.bg=v.bg;EX.bgColor=v.color;EX.lines=exLinks(v.conn);if(hex6(v.color))$('mapbgcolor').value=hex6(v.color);bgMsg('','');},function(){EX.bg='';})]).then(function(){if(EX.map===id)exRender();});
       exNames().then(function(m){if(m===EX.map)exRender(true);});
       $('exsize').hidden=!(EX.mapW&&EX.mapH);
       $('exmsg').textContent=EX.items.length?(EX.items.length+(EX.items.length===1?' item':' items')+' on \u201C'+mapName()+'\u201D'+(EX.mapW?'. The map is '+EX.mapW+' \u00D7 '+EX.mapH+' px.':'.')+' Click one in the list to find it on the canvas.'):('There is nothing on \u201C'+mapName()+'\u201D yet.');
@@ -3990,6 +4039,7 @@ try{
     if(connected&&CSSX&&CSSX.origin!==(base()||pageOrigin()||''))try{prtgCss();}catch(e){}
     window.PRTGSTATE={connected:connected,map:connected&&!!$('pushmap').value};
     $('next2').disabled=!window.PRTGSTATE.map;
+    $('mapbgcolor').disabled=!window.PRTGSTATE.map;$('mapbgbtn').dataset.tip=window.PRTGSTATE.map?'Change the map\u2019s background colour':'Connect and choose a map first';
     try{document.dispatchEvent(new CustomEvent('prtgstate',{detail:window.PRTGSTATE}));}catch(e){}
     if(S.needLogin&&!connected&&!busy){$('prtgpop').hidden=false;}
     if(connected)S.needLogin=false;
