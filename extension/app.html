@@ -411,7 +411,8 @@ body.dash #prtgbar{display:flex}
 .gl-g img{position:absolute;inset:0;width:100%;height:100%}
 .gl-n{transform-origin:43.48% 62.94%;animation:glrev 2.8s cubic-bezier(.55,.05,.35,1) infinite}
 @keyframes glrev{0%,8%{transform:rotate(0deg)}45%{transform:rotate(148deg)}53%{transform:rotate(130deg)}60%{transform:rotate(138deg)}72%{transform:rotate(138deg)}100%{transform:rotate(0deg)}}
-@media (prefers-reduced-motion:reduce){.gl-n{animation:glpulse 1.6s ease-in-out infinite}@keyframes glpulse{50%{opacity:.35}}}
+/* with "reduce motion" on (a Windows VM or remote session often reports it) the needle still sweeps, only slower and over a shorter arc: it is the sign that something is loading */
+@media (prefers-reduced-motion:reduce){.gl-n{animation:glcalm 3.6s ease-in-out infinite}@keyframes glcalm{0%,100%{transform:rotate(0deg)}50%{transform:rotate(60deg)}}}
 
 #prtgmsg{display:none;align-items:flex-start;gap:10px;padding:9px 16px;font-size:12px;line-height:1.45;border-top:1px solid var(--g10)}
 body.dash #prtgmsg:not([hidden]){display:flex}
