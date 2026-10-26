@@ -2513,11 +2513,9 @@ try{
     if(window.navigator&&navigator.onLine===false){
       return 'This device has no network connection right now. Check your connection, then press Connect again.';
     }
-    return 'Could not reach '+addr+'. The browser does not say why — that detail is deliberately withheld from any page’s own code — so check these in order:\n'
-      +'1. If this is the first time connecting to this address, open '+addr+' in a new tab once. If Chrome shows “Your connection is not private,” click Advanced, then proceed anyway — PRTG’s own certificate is usually self-signed and needs this once per address. Close that tab and press Connect again here.\n'
-      +'2. Check the address and port are correct, and that PRTG is actually running there.\n'
-      +'3. Make sure you allowed this extension to reach that address when Chrome asked (a permission prompt). If unsure, press Connect again.\n'
-      +'4. If none of that is it, a firewall or VPN between this device and the server is the next most likely cause.';
+    return 'Could not reach '+addr+'.\n'
+      +'• First time connecting here? Open '+addr+' in a new tab, click through the certificate warning, then press Connect again.\n'
+      +'• Otherwise, check the address/port, that PRTG is running there, and that this extension has permission for that address.';
   }
   /* PRTG's own pages add an anti-CSRF token to every request that is not a GET (it comes from a <meta name="csrf-token"> tag). The loader keeps the token
      before it replaces the page; failing that, it is read from the page, or from a PRTG page fetched once. */
