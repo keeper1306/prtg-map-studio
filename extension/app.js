@@ -5899,13 +5899,13 @@ try{
   }
 
   /* ====================== donuts ====================== */
-  var DSTATES=[['down','Down'],['warning','Warning'],['unusual','Unusual'],['up','Up'],['paused','Paused'],['unknown','Unknown']];
-  var DALARM={down:1,warning:1,unusual:1};
+  var DSTATES=[['down','Down'],['ack','Down (Acknowledged)'],['warning','Warning'],['unusual','Unusual'],['up','Up'],['paused','Paused'],['unknown','Unknown']];
+  var DALARM={down:1,ack:1,warning:1,unusual:1};
   var DENGINES=[['ring','Ring donut: drawn by the tool, follows the look'],['prtg','PRTG donut: PRTG\u2019s own include, restyled around it']];
   var DLEGENDS=[['right','Right of the ring'],['below','Below the ring'],['none','No legend']];
   var DCENTERS=[['total','Number of sensors shown'],['percentup','Percent of sensors that are up'],['none','Nothing']];
   /* ====================== status counts: tiles of sensors by status ====================== */
-  var SKEYS=[['up','Up'],['warning','Warning'],['down','Down'],['paused','Paused'],['unusual','Unusual'],['unknown','Unknown'],['total','Total'],['pctup','% Up']];
+  var SKEYS=[['up','Up'],['warning','Warning'],['down','Down'],['ack','Down (Acknowledged)'],['paused','Paused'],['unusual','Unusual'],['unknown','Unknown'],['total','Total'],['pctup','% Up']];
   var SPRESETS=[
     {id:'status',name:'Sensor status',tiles:['up','warning','down','paused'],reqTag:'',nameHas:'',cap:'of'},
     {id:'interfaces',name:'Interfaces',tiles:['up','down','total'],reqTag:'bandwidthsensor',nameHas:'',cap:'of'},
@@ -5991,8 +5991,8 @@ try{
     var NS='http://www.w3.org/2000/svg';
     var svg=root.querySelector('.dsvg'), legend=root.querySelector('.dlegend');
     if(!svg)return;
-    var ORDER=[['down','Down'],['warning','Warning'],['unusual','Unusual'],['up','Up'],['paused','Paused'],['unknown','Unknown']];
-    var ALARM={down:1,warning:1,unusual:1};
+    var ORDER=[['down','Down'],['ack','Down (Acknowledged)'],['warning','Warning'],['unusual','Unusual'],['up','Up'],['paused','Paused'],['unknown','Unknown']];
+    var ALARM={down:1,ack:1,warning:1,unusual:1};
     function el(tag,attrs,text){var e=document.createElementNS(NS,tag);for(var k in attrs){e.setAttribute(k,attrs[k]);}if(text!=null)e.textContent=text;return e;}
     function clear(n){while(n&&n.firstChild)n.removeChild(n.firstChild);}
     function say(t){clear(svg);clear(legend);svg.setAttribute('viewBox','0 0 100 100');svg.appendChild(el('text',{x:50,y:52,'text-anchor':'middle','class':'dl','font-size':6},t));root.setAttribute('data-donut','message');}
@@ -6015,7 +6015,8 @@ try{
         if(n===3)return 'up';
         if(n===4)return 'warning';
         if(n===10)return 'unusual';
-        if(n===5||n===13||n===14)return 'down';
+        if(n===13)return 'ack';
+        if(n===5||n===14)return 'down';
         if(n===7||n===8||n===9||n===11||n===12)return 'paused';
         return 'unknown';
       }
@@ -6025,7 +6026,7 @@ try{
         if(t.indexOf('unknown')===0)return 'unknown';
         if(t.indexOf('up')===0)return 'up';
         if(t.indexOf('warn')===0)return 'warning';
-        if(t.indexOf('down')===0)return 'down';
+        if(t.indexOf('down')===0)return /acknowledg|\back\b/.test(t)?'ack':'down';
         if(t.indexOf('pause')===0)return 'paused';
       }
       return null;
@@ -6037,7 +6038,7 @@ try{
       var data=JSON.parse(raw), box=(data&&data.objects)?data.objects:data;
       var list=box&&box.sensors;
       if(!list||typeof list.length!=='number'){say('No sensor data');return;}
-      var counts={down:0,warning:0,unusual:0,up:0,paused:0,unknown:0}, parsed=0, i;
+      var counts={down:0,ack:0,warning:0,unusual:0,up:0,paused:0,unknown:0}, parsed=0, i;
       for(i=0;i<list.length;i++){var k=classify(list[i]);if(k){counts[k]++;parsed++;}}
       if(list.length>0&&parsed===0){say('Could not read sensor states');return;}
       var alarms=(C.mode==='alarms'), shown=[], total=0;
@@ -6167,7 +6168,7 @@ try{
   function statusRuntime(root,C){
     var body=root.querySelector('.sbody');
     if(!body)return;
-    var LABEL={up:'Up',warning:'Warning',down:'Down',paused:'Paused',unusual:'Unusual',unknown:'Unknown'};
+    var LABEL={up:'Up',warning:'Warning',down:'Down',ack:'Acknowledged',paused:'Paused',unusual:'Unusual',unknown:'Unknown'};
     function clear(n){while(n&&n.firstChild)n.removeChild(n.firstChild);}
     function say(t){clear(body);var d=document.createElement('div');d.className='snone';d.textContent=t;body.appendChild(d);root.setAttribute('data-status','message');}
     function findJson(){
@@ -6189,7 +6190,8 @@ try{
         if(n===3)return 'up';
         if(n===4)return 'warning';
         if(n===10)return 'unusual';
-        if(n===5||n===13||n===14)return 'down';
+        if(n===13)return 'ack';
+        if(n===5||n===14)return 'down';
         if(n===7||n===8||n===9||n===11||n===12)return 'paused';
         return 'unknown';
       }
@@ -6199,7 +6201,7 @@ try{
         if(t.indexOf('unknown')===0)return 'unknown';
         if(t.indexOf('up')===0)return 'up';
         if(t.indexOf('warn')===0)return 'warning';
-        if(t.indexOf('down')===0)return 'down';
+        if(t.indexOf('down')===0)return /acknowledg|\back\b/.test(t)?'ack':'down';
         if(t.indexOf('pause')===0)return 'paused';
       }
       return null;
@@ -6209,7 +6211,7 @@ try{
       if(!raw){say('No sensor data');return;}
       var data=JSON.parse(raw), box=(data&&data.objects)?data.objects:data, list=box&&box.sensors;
       if(!list||typeof list.length!=='number'){say('No sensor data');return;}
-      var counts={down:0,warning:0,unusual:0,up:0,paused:0,unknown:0}, parsed=0, i, k;
+      var counts={down:0,ack:0,warning:0,unusual:0,up:0,paused:0,unknown:0}, parsed=0, i, k;
       for(i=0;i<list.length;i++){k=classify(list[i]);if(k){counts[k]++;parsed++;}}
       if(list.length>0&&parsed===0){say('Could not read sensor states');return;}
       if(parsed===0){say('No sensors');return;}
@@ -6236,11 +6238,11 @@ try{
       root.setAttribute('data-status','ok');
     }catch(err){say('Could not read sensor states');}
   }
-  var STILES=['up','warning','down','paused','unusual','unknown','total','pctup'];
+  var STILES=['up','warning','down','ack','paused','unusual','unknown','total','pctup'];
   function sEffLook(S){var L=S.look;if(L.mode==='prtg'){var m=lookOf('Light card');return m;}return L;}
   function sClassOf(S){return 'pst_'+slugOf(S.name);}
   function statusConfig(S,L){
-    var P=donutPalette(L), c={down:P.down,warning:P.warning,unusual:P.unusual,up:P.up,paused:P.paused,unknown:P.unknown,total:(L.accent||L.link||'#007DB8')}, fg={}, tiles=[], k;
+    var P=donutPalette(L), c={down:P.down,ack:P.ack,warning:P.warning,unusual:P.unusual,up:P.up,paused:P.paused,unknown:P.unknown,total:(L.accent||L.link||'#007DB8')}, fg={}, tiles=[], k;
     STILES.forEach(function(x){if((S.tiles||[]).indexOf(x)>-1)tiles.push(x);});
     if(!tiles.length)tiles=['up'];
     for(k in c)fg[k]=readableOn(c[k]);
@@ -6312,7 +6314,7 @@ try{
     {id:'paused',  label:'Paused',       sens:['sensb'],          has:['hasblue']},
     {id:'unusual', label:'Unusual',      sens:['sensp'],          has:['hasorange']},
     {id:'warning', label:'Warning',      sens:['sensy'],          has:['hasyellow']},
-    {id:'ack',     label:'Acknowledged', sens:['senso'],          has:['hasack']},
+    {id:'ack',     label:'Down (Acknowledged)', sens:['senso'],          has:['hasack']},
     {id:'down',    label:'Down',         sens:['sensr','sensq'],  has:['hasred','haspartialred']}
   ];
   var IORDER=['up','warning','down','ack','unusual','paused','unknown'];
@@ -7412,7 +7414,7 @@ try{
 
   /* ---------- donut preview ---------- */
   function sampleSensors(){
-    var c={up:214,warning:9,down:3,paused:12,unusual:2,unknown:1}, codes={up:3,warning:4,down:5,paused:7,unusual:10,unknown:1}, out=[], k, i;
+    var c={up:214,warning:9,down:3,ack:2,paused:12,unusual:2,unknown:1}, codes={up:3,warning:4,down:5,ack:13,paused:7,unusual:10,unknown:1}, out=[], k, i;
     for(k in c)for(i=0;i<c[k];i++)out.push({objid:out.length+1,status:codes[k]});
     return out;
   }
@@ -7486,7 +7488,7 @@ try{
   }
 
   /* ---------- status icon preview and style gallery ---------- */
-  var ICSTRIP=[['Up','sensg'],['Warning','sensy'],['Down','sensr'],['Acknowledged','senso'],['Unusual','sensp'],['Paused','sensb'],['Unknown','sensx'],['Group: green + yellow','hasgreen hasyellow'],['Group: green + red','hasgreen hasred']];
+  var ICSTRIP=[['Up','sensg'],['Warning','sensy'],['Down','sensr'],['Down (Acknowledged)','senso'],['Unusual','sensp'],['Paused','sensb'],['Unknown','sensx'],['Group: green + yellow','hasgreen hasyellow'],['Group: green + red','hasgreen hasred']];
   function iconPreviewInner(I,idx){
     var Ip=Object.assign({},I,{link:'none',tip:'none'});
     return iconBodyLines(Ip,'pv'+idx).join('').replace(/<#objectproperty name="Name" id="<@objectid>">/g,'Core switch');
