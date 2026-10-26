@@ -7882,7 +7882,7 @@ try{
           pv.style.background=q.fill;card.style.cssText='width:56%;height:56%;border-radius:4px;background:'+(lookOf(name).cardBg||'#FFFFFF')+';border:1px solid '+(lookOf(name).border||lookOf(name).line||'#E3E5E9')+';';pv.appendChild(card);
         }else if(kind==='shape'){
           var sk=FRc().p.shape, hz=!(FRc().p.dir==='down'||FRc().p.dir==='up'), sw=Math.max(2,Math.min(8,Math.round((q.thick||6)/1.5)));
-          pv.style.background=lookOf(name).stage||'#F3F4F6';
+          pv.style.background=(/^#?f/i.test(String(readableOn(q.fill||q.color||'#000000')).replace('#','')))?'#F3F4F6':'#2B2F3A';   /* a shape is drawn on its own, with no background behind it, so the preview sits on a plain neutral ground that keeps it visible rather than on the look's stage */
           if(sk==='rect'||sk==='round'||sk==='pill'||sk==='circle'){
             card.style.cssText='width:'+(sk==='circle'?'46px':'74%')+';height:'+(sk==='circle'?'46px':'58%')+';display:flex;align-items:center;justify-content:center;font:600 10px/1 Arial,sans-serif;color:'+q.tcolor+';background:'+q.fill+';border-radius:'+(sk==='rect'?'0':(sk==='pill'?'99px':(sk==='circle'?'50%':Math.min(q.radius,14)+'px')))+';box-shadow:'+(SH[q.shadow]||'')+';';
             card.textContent='Aa';
