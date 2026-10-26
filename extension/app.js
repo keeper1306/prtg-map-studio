@@ -3361,7 +3361,7 @@ try{
   function exMapView(id){
     var origin=(base()||pageOrigin()||'');
     function grab1(path,cred){
-      var qs=qstring(withAuth({}),true);
+      var qs=qstring(withAuth({id:id,cachebreaker:String(Date.now())}),true);
       return fetchWithTimeout(origin+path+(qs?'?'+qs:''),{method:'GET',credentials:cred}).then(function(r){
         if(!r.ok)throw new Error('no');
         return r.blob();
@@ -3523,7 +3523,7 @@ try{
   function exDoc(it,w,h){
     var origin=(base()||pageOrigin()||''), libs=exWantsScripts(it)?EX.libs:'';
     return '<!DOCTYPE html><html><head><meta charset="utf-8"><base href="'+origin+'/">'+cssHead(origin)+''
-      +'<style>html,body,#mapshow,#mapshow .view,#mapview{margin:0;padding:0;background:transparent!important;box-shadow:none!important;border:0!important}html,body{overflow:hidden}'
+      +'<style>html,body,#mapshow,#mapshow .view,#mapview{margin:0;padding:0;background:transparent!important;box-shadow:none!important;border:0!important}html,body{overflow:hidden}#mapshow,#mapshow .view,#mapview,#mapview .map_object{overflow:visible!important}'
       +'#mapview{position:relative;width:'+w+'px;height:'+h+'px}#mapview .map_object{position:absolute!important;left:0!important;top:0!important;margin:0!important;width:'+w+'px!important;height:'+h+'px!important}</style>'+EX.styles+libs
       +'</head><body id="mainbody" data-theme="0" class="language_en"><div id="mapshow"><div class="view" style="position:static;overflow:visible"><div id="mapview">'+it.outer+'</div></div></div></body></html>';
   }
