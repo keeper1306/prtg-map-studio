@@ -1527,6 +1527,11 @@ try{
       var pv=(DASHAPI.pv||{})[it.id];
       return (pv&&pv.autoContent)?'content':'box';
     }
+    function canSize(it){return isBox(it)||it.type==='label'||it.type==='button';}   /* labels and buttons take a fixed box (width and height) when dragged */
+    function setBoxSize(it,w,h){
+      var v=it.state.v, a=(it.type==='button')?'bw':'lw', b=(it.type==='button')?'bh':'lh';
+      v[a]=String(Math.max(20,Math.round(w)));v[b]=String(Math.max(20,Math.round(h)));
+    }
     function isBox(it){return it.type==='frame'||it.type==='tile'||(it.type==='prtgobj'&&objMode(it)==='box');}   /* items with a size of their own, which you can resize */
   function order(){
     var arr=[];
@@ -1853,10 +1858,10 @@ try{
     selBox.style.left=it.x+'px';selBox.style.top=it.y+'px';
     selBox.style.width=it.w+'px';selBox.style.height=it.h+'px';
     selBox.style.borderWidth=Math.max(1,2/scale)+'px';
-    var hs=14/scale;
+    var hs=20/scale;
     handle.style.width=hs+'px';handle.style.height=hs+'px';
     handle.style.right=(-hs/2)+'px';handle.style.bottom=(-hs/2)+'px';
-    handle.style.display=isBox(it)?'block':'none';
+    handle.style.display=canSize(it)?'block':'none';
   }
   function applyScale(){
     var avail=stageEl.clientWidth-4;
@@ -1973,12 +1978,13 @@ try{
     ['x','y','w','h'].forEach(function(k){
       var f=el_('div');f.appendChild(el_('label',null,k.toUpperCase()));
       var inp=el_('input');inp.type='number';inp.value=Math.round(it[k]);
-      var fixed=(k==='w'||k==='h')&&!isBox(it);
+      var fixed=(k==='w'||k==='h')&&!canSize(it);
       if(fixed){inp.disabled=true;inp.title='Set by the content';}
       inp.addEventListener('input',function(){
         var v=parseFloat(inp.value);if(isNaN(v))return;
         if(k==='w'||k==='h')v=Math.max(20,v);
         var delta=v-it[k];
+        if((k==='w'||k==='h')&&!isBox(it)){setBoxSize(it,k==='w'?v:it.w,k==='h'?v:it.h);renderAll();return;}
         it[k]=v;
         if((k==='x'||k==='y')&&isGroupFrame(it)){descendants(it.id).forEach(function(c){c[k]+=delta;});}
         renderAll();
@@ -2475,8 +2481,10 @@ try{
       drag.kids.forEach(function(o){o.k.x=o.x+ddx;o.k.y=o.y+ddy;place(o.k);});
       updateSel();
     }else if(drag.mode==='size'){
-      drag.it.w=Math.max(40,snapV(drag.ow+dx));
-      drag.it.h=Math.max(40,snapV(drag.oh+dy));
+      if(isBox(drag.it)){
+        drag.it.w=Math.max(40,snapV(drag.ow+dx));
+        drag.it.h=Math.max(40,snapV(drag.oh+dy));
+      }else setBoxSize(drag.it,Math.max(20,snapV(drag.ow+dx)),Math.max(20,snapV(drag.oh+dy)));
       refreshItem(drag.it);
     }
   });
