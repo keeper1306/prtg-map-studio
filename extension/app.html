@@ -403,6 +403,16 @@ body.dash #prtgbar{display:flex}
 .lgmore summary{cursor:pointer;display:inline-block;padding:2px 0}
 .lgmore input{width:100%;height:36px;box-sizing:border-box;margin-top:6px;border:1px solid #cdd3dd;border-radius:10px;padding:0 12px;font-size:12px}
 #prtgpop[hidden]{display:none}
+/* the gauge loader: a dial whose needle sweeps while something loads (connecting, reading a map) */
+#prtgpop .lgcard,#dscroll{position:relative}
+.gl-ov{position:absolute;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(255,255,255,.94);border-radius:inherit;color:#383B47;font-size:14px;font-weight:500;text-align:center;padding:12px}
+.gl-g{position:relative;width:120px;height:120px;flex:none}
+.gl-ov.gl-sm .gl-g{width:96px;height:96px}
+.gl-g img{position:absolute;inset:0;width:100%;height:100%}
+.gl-n{transform-origin:43.48% 62.94%;animation:glrev 2.8s cubic-bezier(.55,.05,.35,1) infinite}
+@keyframes glrev{0%,8%{transform:rotate(0deg)}45%{transform:rotate(148deg)}53%{transform:rotate(130deg)}60%{transform:rotate(138deg)}72%{transform:rotate(138deg)}100%{transform:rotate(0deg)}}
+@media (prefers-reduced-motion:reduce){.gl-n{animation:glpulse 1.6s ease-in-out infinite}@keyframes glpulse{50%{opacity:.35}}}
+
 #prtgmsg{display:none;align-items:flex-start;gap:10px;padding:9px 16px;font-size:12px;line-height:1.45;border-top:1px solid var(--g10)}
 body.dash #prtgmsg:not([hidden]){display:flex}
 #prtgmsg.err{background:#fef2f2;color:#991b1b}
