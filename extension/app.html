@@ -248,6 +248,16 @@ body.dash #typegrid,body.editing #typegrid{display:none}
 #exrev .xl b{font-weight:600}
 .exrow small{display:block;color:#8b90a0;font-size:12px}
 .dprevitem iframe{border:0;position:absolute;background:transparent}
+#dalign{display:flex;align-items:center;gap:4px;margin:0 0 8px;padding:5px 8px;background:#fff;border:1px solid #E3E5E9;border-radius:8px;box-shadow:0 1px 3px rgba(15,23,42,.08)}
+#dalign[hidden]{display:none}
+#dalign .alcount{font-size:12px;color:#686B76;margin-right:6px}
+#dalign button{width:30px;height:28px;display:inline-flex;align-items:center;justify-content:center;border:1px solid transparent;background:transparent;border-radius:6px;cursor:pointer;color:#31343F;padding:0}
+#dalign button:hover:not(:disabled){background:#EEF3FF;border-color:#C9D8FF}
+#dalign button:disabled{opacity:.35;cursor:default}
+#dalign button svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+#dalign button#dalignclear{width:auto;padding:0 10px;font-size:12px;margin-left:auto}
+#dalign i{width:1px;height:18px;background:#E3E5E9;margin:0 4px}
+#dcanvas .ditem.msel{outline:2px dashed #0F67FF;outline-offset:1px}
 #dcanvas .dguide{position:absolute;pointer-events:none;z-index:99998;box-sizing:border-box}
 #dcanvas .dguide.v{width:0;border-left:1px dashed #3b6fe0}
 #dcanvas .dguide.h{height:0;border-top:1px dashed #e0483e}
@@ -1075,12 +1085,25 @@ fieldset{border-bottom-color:var(--line)}
   </div>
   <div id="dashstage">
     <div class="stage-head">
-      <h2>Dashboard <span style="font-weight:300;color:#8b90a0;font-size:12px;">&mdash; drag items, drag the square corner of a frame or tile to resize</span></h2>
+      <h2>Canvas <span style="font-weight:300;color:#8b90a0;font-size:12px;">&mdash; drag items, drag the square corner to resize, Shift+click to select several</span></h2>
       <div class="undoredo"><button class="ico" id="dundo" type="button" data-tip="Undo (Ctrl+Z)" aria-label="Undo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button><button class="ico" id="dredo" type="button" data-tip="Redo (Ctrl+Y)" aria-label="Redo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button></div>
     </div>
     <div id="exbar" hidden><span id="exbartext"></span><button class="btn ghost" id="exbarrev" type="button">Review changes</button><button class="btn" id="exbarapply" type="button" hidden>Apply</button><button class="btn ghost" id="exbardisc" type="button">Discard all</button></div>
+    <div id="dalign" hidden><span class="alcount"></span>
+      <button type="button" data-al="l" title="Align left edges" aria-label="Align left"><svg viewBox="0 0 24 24"><path d="M4 3v18"/><rect x="7" y="6" width="12" height="4"/><rect x="7" y="14" width="7" height="4"/></svg></button>
+      <button type="button" data-al="c" title="Align centres horizontally" aria-label="Align centre"><svg viewBox="0 0 24 24"><path d="M12 3v18"/><rect x="5" y="6" width="14" height="4"/><rect x="8" y="14" width="8" height="4"/></svg></button>
+      <button type="button" data-al="r" title="Align right edges" aria-label="Align right"><svg viewBox="0 0 24 24"><path d="M20 3v18"/><rect x="5" y="6" width="12" height="4"/><rect x="10" y="14" width="7" height="4"/></svg></button>
+      <i></i>
+      <button type="button" data-al="t" title="Align top edges" aria-label="Align top"><svg viewBox="0 0 24 24"><path d="M3 4h18"/><rect x="6" y="7" width="4" height="12"/><rect x="14" y="7" width="4" height="7"/></svg></button>
+      <button type="button" data-al="m" title="Align centres vertically" aria-label="Align middle"><svg viewBox="0 0 24 24"><path d="M3 12h18"/><rect x="6" y="5" width="4" height="14"/><rect x="14" y="8" width="4" height="8"/></svg></button>
+      <button type="button" data-al="b" title="Align bottom edges" aria-label="Align bottom"><svg viewBox="0 0 24 24"><path d="M3 20h18"/><rect x="6" y="5" width="4" height="12"/><rect x="14" y="10" width="4" height="7"/></svg></button>
+      <i></i>
+      <button type="button" data-al="dh" data-dist="1" title="Space out horizontally (3 or more)" aria-label="Distribute horizontally"><svg viewBox="0 0 24 24"><path d="M3 4v16M21 4v16"/><rect x="9" y="7" width="6" height="10"/></svg></button>
+      <button type="button" data-al="dv" data-dist="1" title="Space out vertically (3 or more)" aria-label="Distribute vertically"><svg viewBox="0 0 24 24"><path d="M4 3h16M4 21h16"/><rect x="7" y="9" width="10" height="6"/></svg></button>
+      <button type="button" id="dalignclear" title="Clear the selection" aria-label="Clear selection">Clear</button>
+    </div>
     <div id="dscroll"><div id="dwrap"><div id="dcanvas"><div id="dselbox"><div id="dhandle"></div></div></div></div></div>
-    <p class="note"><strong>Guides:</strong> while you drag or resize, an item snaps to the edges and centres of the others, and a dashed line shows what it lines up with. Hold Alt to move freely.</p>
+    <p class="note"><strong>Guides:</strong> while you drag or resize, an item snaps to the edges and centres of the others, and a dashed line shows what it lines up with. Hold Alt to move freely. Shift+click adds items to a selection: they move together, and the bar above the canvas aligns or spaces them out.</p>
     <p class="note"><strong>Keys:</strong> arrow keys nudge the selected item (Shift = 10 px), Delete removes it, Ctrl+Z and Ctrl+Y undo and redo, Ctrl+D duplicates, Ctrl+C, Ctrl+X and Ctrl+V copy, cut and paste. Double-click a label or button to type its text; its style is open under it. Moving a frame moves what is inside it.</p>
     <p class="note warn"><strong>Stacking order:</strong> frames sit at the back, number tiles above them, then labels, buttons and status chips. Inside a group, items go in the order you added them. That is the order they will be sent to PRTG.</p>
   </div>

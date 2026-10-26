@@ -1584,6 +1584,47 @@ try{
     renderAll();buildForm();commit();
   }
   function snapV(v){return D.grid>0?Math.round(v/D.grid)*D.grid:Math.round(v);}
+  /* ---- several items at once: Shift+click adds or removes an item; the bar above the canvas then aligns or spaces them out ---- */
+  var MS={};
+  function msIds(){return Object.keys(MS).map(Number).filter(function(id){return !!byId(id);});}
+  function msClear(){if(Object.keys(MS).length){MS={};msPaint();}}
+  function msPaint(){
+    var ns=canvas.querySelectorAll('.ditem'), i, ids=msIds(), bar=document.getElementById('dalign');
+    for(i=0;i<ns.length;i++){var on=!!MS[ns[i].getAttribute('data-id')];if(ns[i].classList.contains('msel')!==on)ns[i].classList.toggle('msel',on);}
+    if(bar){bar.hidden=ids.length<2;var n=bar.querySelector('.alcount');if(n)n.textContent=ids.length+' selected';var dd=bar.querySelectorAll('[data-dist]');for(i=0;i<dd.length;i++)dd[i].disabled=ids.length<3;}
+  }
+  function msToggle(it){
+    if(!Object.keys(MS).length&&D.sel!=null&&D.sel!==it.id)MS[D.sel]=1;
+    if(MS[it.id])delete MS[it.id];else MS[it.id]=1;
+    msPaint();
+  }
+  function msMove(it,dx,dy,ids){
+    it.x+=dx;it.y+=dy;
+    if(isGroupFrame(it))descendants(it.id).forEach(function(c){if(!ids[c.id]){c.x+=dx;c.y+=dy;}});
+  }
+  function msAlign(how){
+    var ids=msIds(), set={}, its, L, R, T, B, i;
+    if(ids.length<2)return;
+    ids.forEach(function(id){set[id]=1;});
+    its=ids.map(byId);
+    L=Math.min.apply(null,its.map(function(o){return o.x;}));R=Math.max.apply(null,its.map(function(o){return o.x+o.w;}));
+    T=Math.min.apply(null,its.map(function(o){return o.y;}));B=Math.max.apply(null,its.map(function(o){return o.y+o.h;}));
+    if(how==='dh'||how==='dv'){
+      var hz=(how==='dh'), key=hz?'x':'y', sz=hz?'w':'h', sorted=its.slice().sort(function(a,b){return a[key]-b[key];}), total=0, gap, pos;
+      if(sorted.length<3)return;
+      sorted.forEach(function(o){total+=o[sz];});
+      gap=((hz?R-L:B-T)-total)/(sorted.length-1);pos=hz?L:T;
+      sorted.forEach(function(o){var d=Math.round(pos)-o[key];if(hz)msMove(o,d,0,set);else msMove(o,0,d,set);pos+=o[sz]+gap;});
+    }else{
+      its.forEach(function(o){
+        var dx=0, dy=0;
+        if(how==='l')dx=L-o.x;else if(how==='c')dx=(L+R)/2-(o.x+o.w/2);else if(how==='r')dx=R-(o.x+o.w);
+        else if(how==='t')dy=T-o.y;else if(how==='m')dy=(T+B)/2-(o.y+o.h/2);else if(how==='b')dy=B-(o.y+o.h);
+        msMove(o,Math.round(dx),Math.round(dy),set);
+      });
+    }
+    renderAll();msPaint();commit();
+  }
   /* ---- alignment guides: while an item is dragged or resized, its edges and centre snap to those of the other items (and the canvas), and a dashed line shows what it lines up with. Hold Alt to drag freely. ---- */
   var GL={v:null,h:null};
   function guidesOff(){['v','h'].forEach(function(k){if(GL[k])GL[k].style.display='none';});}
@@ -1870,7 +1911,7 @@ try{
     var ord=order();
     for(var i=0;i<ord.length;i++)canvas.appendChild(makeNode(ord[i],i+1));
     canvas.appendChild(selBox);
-    measure();updateSel();buildList();updateFonts();syncCode();
+    measure();updateSel();buildList();updateFonts();syncCode();msPaint();
     try{document.dispatchEvent(new Event('dashrender'));}catch(e){}
   }
   function refreshItem(it){
@@ -2442,19 +2483,32 @@ try{
     if(t===handle||(handle.contains&&handle.contains(t)))return;
     if(TE&&t.closest&&t.closest('.teedit'))return;   /* the caret goes where it is clicked */
     var n=t.closest?t.closest('.ditem'):null;
-    if(!n){if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();select(null);return;}
+    if(!n){if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();if(!e.shiftKey){msClear();select(null);}return;}
     e.preventDefault();
     if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();
     var it=byId(parseInt(n.getAttribute('data-id'),10));
     if(!it)return;
+    if(e.shiftKey){msToggle(it);if(MS[it.id]&&D.sel!==it.id)select(it.id);return;}
+    if(Object.keys(MS).length&&!MS[it.id])msClear();
     if(D.sel!==it.id)select(it.id);
     var kids=isGroupFrame(it)?descendants(it.id):[];
+    if(MS[it.id]&&msIds().length>1){   /* the whole selection moves together */
+      var seenK={};kids.forEach(function(k){seenK[k.id]=1;});
+      msIds().forEach(function(id){
+        var o=byId(id);if(o.id===it.id||seenK[o.id])return;seenK[o.id]=1;kids.push(o);
+        if(isGroupFrame(o))descendants(o.id).forEach(function(c){if(!seenK[c.id]&&c.id!==it.id){seenK[c.id]=1;kids.push(c);}});
+      });
+    }
     var skip={};kids.forEach(function(k){skip[k.id]=1;});
     drag={mode:'move',sx:e.clientX,sy:e.clientY,it:it,ox:it.x,oy:it.y,moved:false,
       skip:skip,
       kids:kids.map(function(k){return {k:k,x:k.x,y:k.y};})};
   });
   canvas.addEventListener('click',function(e){e.preventDefault();});
+  (function(){
+    var bar=document.getElementById('dalign');if(!bar)return;
+    bar.addEventListener('click',function(e){var b=e.target.closest?e.target.closest('button'):null;if(!b||b.disabled)return;if(b.id==='dalignclear'){msClear();return;}if(b.getAttribute('data-al'))msAlign(b.getAttribute('data-al'));});
+  })();
   /* ---------- typing the text of a label or button on the canvas ----------
      Double-click it, type, and press Esc or click away. The text goes to the label tool's text box, so the item, its code and the undo list follow. */
   var TE=null;
