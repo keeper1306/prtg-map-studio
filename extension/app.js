@@ -574,8 +574,8 @@ function applyShapeDefaults(){
 
 
 var BTN_PRESETS=[
- {n:'Primary solid',sw:'background:#2563EB;color:#fff;border-radius:8px;padding:7px 14px;font-size:11px;',
-  v:{bw:0,bh:0,bstyle:'flat',bshape:'rect',bface:'#2563EB',bhover:'#1D4ED8',blabel:'#FFFFFF',radius:8,padx:26,pady:13,bwidth:0,bdrop:true,weight:'500',fam:'Inter',size:17}},
+ {n:'PRTG blue',tip:'The blue button of the new PRTG interface.',sw:'background:#0F67FF;color:#fff;border-radius:4px;padding:7px 14px;font-size:11px;font-weight:700;',
+  v:{bw:0,bh:0,bstyle:'flat',bshape:'rect',bface:'#0F67FF',bhover:'#0A52CC',blabel:'#FFFFFF',radius:4,padx:26,pady:12,bwidth:0,bdrop:false,weight:'700',fam:'Roboto',size:16,loadfont:false}},
  {n:'Indigo 3D',sw:'background:#4F46E5;color:#fff;border-radius:8px;padding:7px 14px;font-size:11px;box-shadow:0 3px 0 #3730A3;',
   v:{bw:0,bh:0,bstyle:'raised',bshape:'rect',bface:'#4F46E5',bhover:'#6366F1',blabel:'#FFFFFF',radius:8,padx:26,pady:13,bdepth:4,bpress:2,bdrop:true,weight:'600',fam:'Inter',size:17}},
  {n:'Pill CTA',sw:'background:#0F172A;color:#fff;border-radius:999px;padding:7px 16px;font-size:11px;',
@@ -602,7 +602,7 @@ var CHIP_V=function(bg,fg){return {lw:0,lh:0,usebg:true,bg:bg,bgalpha:100,color:
 var LBL_PRESETS=[
  /* ---- Basic ---- */
  {g:'Basic',n:'Site caption',sw:'color:#0F172A;font-size:13px;font-weight:600;',
-  v:{lw:0,lh:0,usebg:false,color:'#0F172A',fam:'Inter',size:22,weight:'600',spacing:0,upper:false,padx:4,pady:2,radius:0,bwidth:0,shadow:false,italic:false}},
+  v:{lw:0,lh:0,usebg:false,color:'#050F34',fam:'Roboto',size:22,weight:'500',spacing:0,upper:false,padx:4,pady:2,radius:0,bwidth:0,shadow:false,italic:false,loadfont:false}},
  {g:'Basic',n:'Section label',sw:'color:#64748B;font-size:10px;letter-spacing:1.4px;font-weight:600;',
   v:{lw:0,lh:0,usebg:false,color:'#64748B',fam:'Inter',size:14,weight:'500',spacing:1.5,upper:true,padx:4,pady:2,radius:0,bwidth:0,shadow:false,italic:false}},
  {g:'Basic',n:'Map title',sw:'color:#0F172A;font-size:14px;font-weight:700;letter-spacing:.4px;',
@@ -637,8 +637,8 @@ var LBL_PRESETS=[
  {g:'Status chips',n:'Info chip',sw:'background:#DBEAFE;color:#1E40AF;border-radius:999px;padding:5px 12px;font-size:10px;font-weight:600;',v:CHIP_V('#DBEAFE','#1E40AF')},
  {g:'Status chips',n:'Neutral chip',sw:'background:#E2E8F0;color:#334155;border-radius:999px;padding:5px 12px;font-size:10px;font-weight:600;',v:CHIP_V('#E2E8F0','#334155')},
  /* ---- the looks used by tables, gauges and frames ---- */
- {g:'Table, gauge and frame looks',n:'Agency light',sw:'background:#FFFFFF;color:#1B2A4A;border:1px solid #DDE3EA;border-radius:6px;padding:6px 12px;font-size:11px;font-weight:600;box-shadow:'+SOFT_SH,
-  v:CARD_V({fam:'Roboto',size:17,padx:20,pady:12,bg:'#FFFFFF',color:'#1B2A4A',bcolor:'#DDE3EA',bwidth:1,radius:6,boxshadow:'soft',loadfont:false})},
+ {g:'Table, gauge and frame looks',n:'PRTG new UI',tip:'The colours and look of the new PRTG interface: white card, thin grey line, navy heading, Roboto.',sw:'background:#FFFFFF;color:#050F34;border:1px solid #E3E5E9;border-radius:4px;padding:6px 12px;font-size:11px;font-weight:500;box-shadow:'+SOFT_SH,
+  v:CARD_V({fam:'Roboto',size:17,padx:20,pady:12,bg:'#FFFFFF',color:'#050F34',bcolor:'#E3E5E9',bwidth:1,radius:4,boxshadow:'soft',loadfont:false})},
  {g:'Table, gauge and frame looks',n:'Clean card',sw:'background:#FFFFFF;color:#111827;border:1px solid #E5E7EB;border-radius:10px;padding:6px 12px;font-size:11px;font-weight:600;box-shadow:'+SOFT_SH,
   v:CARD_V({fam:'Roboto',size:17,padx:20,pady:12,bg:'#FFFFFF',color:'#111827',bcolor:'#E5E7EB',bwidth:1,radius:10,boxshadow:'soft',loadfont:false})},
  {g:'Table, gauge and frame looks',n:'Corporate blue',sw:'background:#1F3864;color:#FFFFFF;border-radius:2px;padding:6px 12px;font-size:11px;font-weight:600;box-shadow:'+SOFT_SH,
@@ -679,8 +679,8 @@ BTN_PRESETS=BTN_PRESETS.concat([
  {g:'Status buttons',n:'Alert button',sw:'background:#FEE2E2;color:#991B1B;border-radius:999px;padding:5px 12px;font-size:10px;font-weight:600;',v:BTN_PILL('#FEE2E2','#FECACA','#991B1B')},
  {g:'Status buttons',n:'Info button',sw:'background:#DBEAFE;color:#1E40AF;border-radius:999px;padding:5px 12px;font-size:10px;font-weight:600;',v:BTN_PILL('#DBEAFE','#BFDBFE','#1E40AF')},
  {g:'Status buttons',n:'Neutral button',sw:'background:#E2E8F0;color:#334155;border-radius:999px;padding:5px 12px;font-size:10px;font-weight:600;',v:BTN_PILL('#E2E8F0','#CBD5E1','#334155')},
- {g:'Table, gauge and frame looks',n:'Agency light',sw:'background:#FFFFFF;color:#1B2A4A;border:1px solid #DDE3EA;border-radius:6px;padding:6px 12px;font-size:11px;font-weight:600;box-shadow:'+SOFT_SH,
-  v:BTN_V({fam:'Roboto',bface:'#FFFFFF',bhover:'#F5F8FB',blabel:'#1B2A4A',bcolor:'#DDE3EA',bwidth:1,radius:6,boxshadow:'soft',loadfont:false})},
+ {g:'Table, gauge and frame looks',n:'PRTG new UI',tip:'The look of the new PRTG interface: white face, thin grey line, navy text, Roboto.',sw:'background:#FFFFFF;color:#050F34;border:1px solid #E3E5E9;border-radius:4px;padding:6px 12px;font-size:11px;font-weight:500;box-shadow:'+SOFT_SH,
+  v:BTN_V({fam:'Roboto',bface:'#FFFFFF',bhover:'#F4F7FF',blabel:'#050F34',bcolor:'#E3E5E9',bwidth:1,radius:4,boxshadow:'soft',weight:'500',loadfont:false})},
  {g:'Table, gauge and frame looks',n:'Clean card',sw:'background:#FFFFFF;color:#111827;border:1px solid #E5E7EB;border-radius:10px;padding:6px 12px;font-size:11px;font-weight:600;box-shadow:'+SOFT_SH,
   v:BTN_V({fam:'Roboto',bface:'#FFFFFF',bhover:'#F3F4F6',blabel:'#111827',bcolor:'#E5E7EB',bwidth:1,radius:10,boxshadow:'soft',loadfont:false})},
  {g:'Table, gauge and frame looks',n:'Corporate blue',sw:'background:#1F3864;color:#FFFFFF;border-radius:2px;padding:6px 12px;font-size:11px;font-weight:600;box-shadow:'+SOFT_SH,
@@ -2601,7 +2601,17 @@ try{
     v=String(v||'').trim();if(!v)return '';
     try{return new URL(/^[a-z][a-z0-9+.-]*:\/\//i.test(v)?v:'https://'+v).origin;}catch(e){return v.replace(/\/+$/,'');}
   }
-  function base(){return normalize($('pushserver').value);}
+  /* PRTG's new interface (for example https://localhost:1616) is a separate front end. It answers every address it does not know with its own page, and serves the classic server (the one that holds maps, objects and settings) under /api/v1. So on such an address every request goes to /api/v1/ plus the classic path. Found once per address, when connecting. */
+  var UIPFX={};
+  function rawBase(){return normalize($('pushserver').value);}
+  function base(){var o=rawBase();return o?o+(UIPFX[o]||''):'';}
+  function newUI(){var o=rawBase();return !!(o&&UIPFX[o]);}
+  function detectUI(o){
+    if(!o||Object.prototype.hasOwnProperty.call(UIPFX,o))return Promise.resolve();
+    return fetchWithTimeout(o+'/',{credentials:'omit'}).then(function(r){return r.text();}).then(function(t){
+      UIPFX[o]=/PRTG UI is loading|\/bundle\/main-/.test(t)?'/api/v1':'';
+    }).catch(function(){});
+  }
   /* this page always runs as a chrome-extension:// page now, never opened from
      PRTG itself, so pageOrigin() is always null here; a server address is
      always required, and the old "copy this file into PRTG's webroot" note
@@ -2609,7 +2619,7 @@ try{
   function describeWhere(){
     var b=base(), n=$('pushwhere');
     $('pushhow').hidden=true;
-    if(b){n.textContent='Will connect to '+b+'.';n.className='note pst';}
+    if(b){n.textContent='Will connect to '+rawBase()+(newUI()?' (the new PRTG interface; maps and objects are read through its classic service).':'.');n.className='note pst';}
     else{n.textContent='Enter your PRTG server\u2019s address below.';n.className='note pst';}
   }
   /* browsers deliberately reject every network-level fetch() failure with the
@@ -2921,7 +2931,7 @@ try{
     try{chrome.storage.local.remove(keys);}catch(e){}
   }
   function rememberConnection(){
-    var b=base();if(!b)return;
+    var b=rawBase();if(!b)return;
     if($('pushremember').checked){
       storageSet({pm_lastServer:b,pm_remember:true,pm_user:String($('pushuser').value||''),pm_secret:String($('pushsecret').value||'')});
     }else{
@@ -2936,9 +2946,9 @@ try{
     loginMark(false,false);
     say('Connecting\u2026','');
     $('pushconnect').disabled=true;S.maps=null;S.objFile=null;S.reviewed=null;S.cls=null;$('pushgo').hidden=true;$('pushlist').hidden=true;S.lastErr=null;S.reauth=!$('prtgpop').hidden;S.authAsked=false;swSync();
-    ensureHostPermission(base()).then(function(ok){
+    ensureHostPermission(rawBase()).then(function(ok){
       if(!ok){$('pushconnect').disabled=false;say('This page needs permission to talk to that server. Press Connect again and allow it when Chrome asks.','err');S.lastErr='permission not granted';swSync();return;}
-      http('GET','/api/table.json',{content:'maps',columns:'name,objid'}).then(function(t){
+      detectUI(rawBase()).then(function(){describeWhere();return http('GET','/api/table.json',{content:'maps',columns:'name,objid'});}).then(function(t){
         var j=parseJson(t,'The list of maps'), maps=(j&&j.maps)||[], sel=$('pushmap');
         sel.innerHTML='';
         maps.forEach(function(m){var o=document.createElement('option');o.value=String(m.objid);o.textContent=m.name;sel.appendChild(o);});
@@ -3544,7 +3554,7 @@ try{
   }
   $('mapbgcolor').addEventListener('change',function(){setMapBg(this.value);});
   /* background presets: the stage colour each look in the Objects tab was drawn for, plus PRTG's own grey and white */
-  var BGPRE=[['PRTG default','#DAD7D7'],['White','#FFFFFF'],['Agency light','#EDF0F4'],['Clean card','#F3F4F6'],['Corporate blue','#F2F4F7'],['Executive dark','#171926'],['Indigo board','#161240'],['Slate fintech','#2B2D3C'],['Neon plum','#2A1838'],['Teal glass','#2A3B4C'],['Wall display','#0B1220'],['Brand navy','#050F34']];
+  var BGPRE=[['PRTG default','#DAD7D7'],['White','#FFFFFF'],['PRTG new UI','#F9F9FA'],['Clean card','#F3F4F6'],['Corporate blue','#F2F4F7'],['Executive dark','#171926'],['Indigo board','#161240'],['Slate fintech','#2B2D3C'],['Neon plum','#2A1838'],['Teal glass','#2A3B4C'],['Wall display','#0B1220'],['Brand navy','#050F34']];
   function bgPreSync(){
     var cur=hex6(EX.bgColor)||hex6($('mapbgcolor').value), on=!$('mapbgcolor').disabled;
     $('mapbgnow').style.background=cur||'';
@@ -5047,9 +5057,9 @@ try{
   function mix(a,b){var o={};for(var k in a)o[k]=a[k];for(var j in b)o[j]=b[j];return o;}
   var LOOKS={
     'PRTG default':{mode:'prtg'},
-    'Agency light':{cardBg:'#FFFFFF',border:'#DDE3EA',radius:6,shadow:'soft',titleStyle:'heading',titleText:'#1B2A4A',titleSize:17,cardPad:16,
-      headStyle:'plain',headColor:'#6B778C',headUpper:false,text:'#1B2A4A',link:'#0B6BCB',line:'#E8ECF1',hover:'#F5F8FB',pad:11,cellX:10,
-      status:'dot',stage:'#EDF0F4',muted:'#5A667B',accent:'#0B6BCB'},
+    'PRTG new UI':{font:'Roboto',cardBg:'#FFFFFF',border:'#E3E5E9',radius:4,shadow:'soft',titleStyle:'heading',titleText:'#050F34',titleSize:16,cardPad:16,
+      headStyle:'plain',headColor:'#686B76',headUpper:false,text:'#31343F',link:'#0F67FF',line:'#EFEEEE',hover:'#F4F7FF',pad:10,cellX:10,
+      status:'dot',stage:'#F9F9FA',muted:'#686B76',accent:'#0F67FF'},
     'Clean card':{cardBg:'#FFFFFF',border:'#E5E7EB',radius:10,shadow:'soft',titleStyle:'divider',titleText:'#111827',titleSize:16,cardPad:18,
       headStyle:'plain',headColor:'#6B7280',headUpper:true,text:'#374151',link:'#2563EB',line:'#F1F3F5',hover:'#F9FAFB',pad:10,cellX:10,
       status:'pill',stage:'#F3F4F6',muted:'#5F6672',accent:'#2563EB'},
@@ -5084,7 +5094,7 @@ try{
       status:'dot',stage:'#050F34',muted:'#8C9AC2',accent:'#00AEEF',font:'Inter',
       c:{up:'#3CCF8E',warning:'#FFC233',down:'#E60060',unusual:'#FF8A3D',paused:'#00AEEF',unknown:'#6B7699'}}
   };
-  var LOOKORDER=['Agency light','Clean card','Corporate blue','Executive dark','Indigo board','Slate fintech','Neon plum','Teal glass','Light card','Dark card','Minimal','Wall display','Brand navy','PRTG default'];
+  var LOOKORDER=['PRTG new UI','Clean card','Corporate blue','Executive dark','Indigo board','Slate fintech','Neon plum','Teal glass','Light card','Dark card','Minimal','Wall display','Brand navy','PRTG default'];
   function lookOf(name){var l=mix(LOOKBASE,LOOKS[name]||{});l.c=mix(LOOKBASE.c,(LOOKS[name]||{}).c||{});l.name=name;return l;}
   function slugOf(s){var t=String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');return t||'table';}
   function clean(s){return String(s==null?'':s).replace(/[<>"]/g,'').replace(/\s+/g,' ').trim();}
@@ -5386,7 +5396,7 @@ try{
       cols:['status','device'],sortBy:'status',sortDir:'asc',count:0,status:[],mapTags:true,reqTag:'',nameContains:'',onlyValue:false,onlyFav:false,extra:[],
       links:false,sortable:false,refreshable:true,infoheader:false,box:'maptablecontainer',checks:'probenode,group,device',initW:600,initH:330,
       rot:0,tOffX:0,tOffY:0,tAlign:'',
-      look:lookOf('Light card'),fname:''};
+      look:lookOf('PRTG new UI'),fname:''};
   }
   function fromPreset(p){
     var T=blankT();
@@ -5415,7 +5425,7 @@ try{
       kind:'sensor-primary',small:false,prio:3,plgPrio:false,mapTags:true,reqTag:'',count:0,hideSettings:true,strip:'thin',scale:1,
       channel:'primary',channelName:'',rangeMode:'channel',min:0,max:100,limits:'channel',dir:'above',warn:70,err:90,
       shape:'ring',thick:14,style:'progress',colorMode:'status',needle:true,showMinMax:true,label:'channel',labelText:'',initW:300,initH:260,
-      look:lookOf('Light card')};
+      look:lookOf('PRTG new UI')};
   }
   function gaugeFromPreset(p){
     var G=blankG();
@@ -5720,7 +5730,7 @@ try{
   function periodTag(p){return p===0?'<#lang key="html.sensor.livwdata" default="Live Data">':'<#system type="'+(p+1)+'period">';}
   function blankGR(){
     return {type:'graph',kind:'sensor',cat:'Graphs',name:'Sensor graph',fname:'',period:0,fontSize:12,legend:true,axis:true,tooltips:false,check:true,extra:[],
-      layout:'card',titleMode:'object',title:'',invert:'auto',tileW:336,tileH:175,mapTags:true,initW:520,initH:300,look:lookOf('Light card')};
+      layout:'card',titleMode:'object',title:'',invert:'auto',tileW:336,tileH:175,mapTags:true,initW:520,initH:300,look:lookOf('PRTG new UI')};
   }
   function graphFromPreset(p){
     var G=blankGR();
@@ -5902,7 +5912,7 @@ try{
   ];
   function blankSC(){
     return {type:'status',cat:'Status Counts',name:'Sensor status',fname:'',titleMode:'object',title:'',sub:'',tiles:['up','warning','down','paused'],quiet:true,cap:'of',
-      mapTags:true,reqTag:'',nameHas:'',initW:420,initH:200,look:lookOf('Light card')};
+      mapTags:true,reqTag:'',nameHas:'',initW:420,initH:200,look:lookOf('PRTG new UI')};
   }
   function statusFromPreset(id){
     var S=blankSC(), p=null;
@@ -5913,7 +5923,7 @@ try{
   function blankD(){
     return {type:'donut',engine:'ring',cat:'Donuts',name:'Sensor states donut',fname:'',titleMode:'object',title:'',
       mode:'all',center:'total',caption:'',thick:28,gap:2,legend:'right',hideZero:true,showCounts:true,mapTags:true,reqTag:'',
-      light:false,withName:false,initW:340,initH:220,look:lookOf('Light card')};
+      light:false,withName:false,initW:340,initH:220,look:lookOf('PRTG new UI')};
   }
   function donutFromPreset(p){
     var D=blankD();
