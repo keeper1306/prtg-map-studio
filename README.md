@@ -17,6 +17,12 @@ It works with the classic PRTG interface and with the new PRTG interface
 ### 1. Install the extension
 
 1. Download or clone this repository.
+
+   > **Only official copy:** `https://github.com/keeper1306/prtg-map-studio`
+   > is the only official source of PRTG Map Studio. The extension asks for your
+   > PRTG username and passhash, so a modified copy could steal them. Do not
+   > install it from anywhere else, and be careful with forks or copies shared
+   > by other people.
 2. In Chrome, open `chrome://extensions`.
 3. Turn on **Developer mode** (top right).
 4. Click **Load unpacked** and select the `extension/` folder.
@@ -31,6 +37,9 @@ It works with the classic PRTG interface and with the new PRTG interface
 
 1. Enter your **PRTG server address**, for example `prtg.example.com` or
    `https://192.168.1.10:8443`. If you leave out `https://`, it is added for you.
+   **Use `https://`.** If you type an address that starts with `http://`, the app
+   shows a warning, because your username and passhash would then be sent
+   without encryption and could be read by anyone on the network.
 2. Enter your **username**.
 3. Enter your **passhash**. You find it on your **My Account** page in PRTG.
    (It is not your password.)

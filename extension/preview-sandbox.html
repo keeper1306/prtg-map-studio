@@ -19,6 +19,7 @@
      back out afterward; export previews (exDoc) never set it, so they keep the
      original, more isolated sandboxing untouched. */
   window.addEventListener('message', function (e) {
+    if (e.source !== window.parent) return;   // only the app page that holds this frame may write to it
     if (!e.data || e.data.type !== 'pv-write') return;
     var seq = e.data.seq;
     document.body.innerHTML = '';
