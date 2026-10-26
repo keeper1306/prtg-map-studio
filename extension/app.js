@@ -2953,12 +2953,13 @@ try{
     var sel=$('pushmap'), id=sel.value, name=sel.options.length&&sel.selectedIndex>-1?sel.options[sel.selectedIndex].text:'';
     if(!id)return;
     if(!S.deleteArm){
-      S.deleteArm=setTimeout(function(){S.deleteArm=null;$('deleteMapBtn').classList.remove('armed');$('deleteMapBtn').title='Delete this map';},4000);
-      $('deleteMapBtn').classList.add('armed');$('deleteMapBtn').title='Click again to delete “'+name+'”';
+      S.deleteArm=setTimeout(function(){S.deleteArm=null;$('deleteMapBtn').classList.remove('armed');$('deleteMapBtn').dataset.tip='Delete this map';},4000);
+      $('deleteMapBtn').classList.add('armed');$('deleteMapBtn').dataset.tip='Click again to delete “'+name+'”';
+      deleteMapMsg('Click the trash icon again to delete “'+name+'”.','warn');
       return;
     }
     clearTimeout(S.deleteArm);S.deleteArm=null;
-    $('deleteMapBtn').classList.remove('armed');$('deleteMapBtn').title='Delete this map';
+    $('deleteMapBtn').classList.remove('armed');$('deleteMapBtn').dataset.tip='Delete this map';
     $('deleteMapBtn').disabled=true;deleteMapMsg('Deleting…','');
     http('GET','/deleteobject.htm',{id:id,approve:'1'}).then(function(){
       return http('GET','/api/table.json',{content:'maps',columns:'name,objid'});
@@ -2982,7 +2983,7 @@ try{
   }
   $('deleteMapBtn').addEventListener('click',deleteMap);
   $('pushmap').addEventListener('change',function(){
-    if(S.deleteArm){clearTimeout(S.deleteArm);S.deleteArm=null;$('deleteMapBtn').classList.remove('armed');$('deleteMapBtn').title='Delete this map';}
+    if(S.deleteArm){clearTimeout(S.deleteArm);S.deleteArm=null;$('deleteMapBtn').classList.remove('armed');$('deleteMapBtn').dataset.tip='Delete this map';}
     deleteMapMsg('');
   });
   function objNoteText(){
@@ -3266,7 +3267,7 @@ try{
     var l=$('dexist'),x=$('exlist');
     EX.items=[];EX.mapW=0;EX.mapH=0;EX.map=null;EX.target={};
     if(l&&l.parentNode)l.parentNode.removeChild(l);
-    x.hidden=true;x.textContent='';$('exonrow').hidden=true;$('exdimrow').hidden=true;$('exscrrow').hidden=true;$('exclearrow').hidden=true;$('exsize').hidden=true;$('exmsg').textContent='';
+    x.hidden=true;x.textContent='';$('exonrow').hidden=true;$('exdimrow').hidden=true;$('exscrrow').hidden=true;$('exsize').hidden=true;$('exmsg').textContent='';
     if(typeof xeReset0==='function')xeReset0();
     try{document.dispatchEvent(new Event('exchanged'));}catch(e){}
   }
@@ -3515,7 +3516,7 @@ try{
       row.addEventListener('click',function(){if(XE.sel===it.subid)exUnpick();else exPick(it.subid);});
       list.appendChild(row);
     });
-    list.hidden=!items.length;$('exonrow').hidden=!items.length;$('exdimrow').hidden=!items.length;$('exscrrow').hidden=!items.length;$('exclearrow').hidden=!items.length;
+    list.hidden=!items.length;$('exonrow').hidden=!items.length;$('exdimrow').hidden=!items.length;$('exscrrow').hidden=!items.length;
     xeDecorate();
     try{document.dispatchEvent(new Event('exchanged'));}catch(e){}
   }
@@ -3550,18 +3551,6 @@ try{
   $('exon').addEventListener('change',exLayerSync);
   $('exdim').addEventListener('change',exLayerSync);
   $('exscr').addEventListener('change',function(){if(EX.items.length)exRender();});
-  /* take the shown items off the canvas again. Changes you staged on them (moves, resizes, deletions) are not applied yet and would be lost, so the first press only asks. */
-  (function(){
-    var b=$('exclear'), t=null, label=CFG.existing.clearLabel;
-    b.title=label;
-    function reset(){if(t){clearTimeout(t);t=null;}b.classList.remove('armed');b.title=label;}
-    b.addEventListener('click',function(){
-      var n=Object.keys(XE.stage||{}).length;
-      if(n&&!t){b.classList.add('armed');b.title='Discard '+n+(n===1?' unapplied change':' unapplied changes')+' and clear? Click again';t=setTimeout(reset,CFG.existing.confirmMs);return;}
-      reset();exClear();
-      $('exmsg').textContent='Cleared. Press Show items already on this map to read the map again.';$('exmsg').className='note pst';
-    });
-  })();
   $('exsize').addEventListener('click',function(){
     var w=$('dw'),h=$('dh');
     if(!EX.mapW||!EX.mapH)return;
@@ -3596,7 +3585,7 @@ try{
   function xeButtons(){
     var e=xeLast(), n=e?((e.updated||[]).length+(e.removed||[]).length):0, ok=!!(S.maps&&mapId());
     $('xeundo').disabled=!e||!ok||XE.busy;
-    $('xeundo').title='Undo last change'+(n?' ('+n+(n===1?' item':' items')+')':'');
+    $('xeundo').dataset.tip='Undo last change'+(n?' ('+n+(n===1?' item':' items')+')':'');
     $('xereview').disabled=XE.busy||!Object.keys(XE.stage).length||xeInvalid();
     $('xeapply').disabled=XE.busy;
     xeBar();
@@ -3902,7 +3891,7 @@ try{
     var connected=!!(S&&S.maps&&S.objFile), busy=!!$('pushconnect').disabled&&!connected, err=S&&S.lastErr;
     $('prtgdot').className='pdot '+(connected?'ok':(busy?'busy':(err?'err':'off')));
     $('prtgtxt').textContent=connected?'Connected':(busy?'Connecting\u2026':(err?('Not connected \u00B7 '+String(err).slice(0,48)):'Not connected'));
-    $('prtgtxt').title=connected?('Connected to '+(base()||pageOrigin()||'PRTG')+' \u00B7 '+S.maps.length+(S.maps.length===1?' map':' maps')):String(err||'');
+    $('prtgtxt').dataset.tip=connected?('Connected to '+(base()||pageOrigin()||'PRTG')+' \u00B7 '+S.maps.length+(S.maps.length===1?' map':' maps')):String(err||'');
     $('prtgswitch').hidden=!connected;$('prtgdisconnect').hidden=!connected;
     if(S.needLogin&&!connected&&!busy){$('prtgpop').hidden=false;}
     if(connected)S.needLogin=false;
@@ -3914,7 +3903,7 @@ try{
     $('newmapForm').hidden=true;$('newmapToggle').classList.remove('active');$('newmapname').value='';$('newmapmsg').textContent='';
     $('exfs').hidden=true;$('exload').classList.remove('active');
     if(S.deleteArm){clearTimeout(S.deleteArm);S.deleteArm=null;}
-    $('deleteMapBtn').classList.remove('armed');$('deleteMapBtn').title='Delete this map';deleteMapMsg('');
+    $('deleteMapBtn').classList.remove('armed');$('deleteMapBtn').dataset.tip='Delete this map';deleteMapMsg('');
     PV.cache={};PV.pending={};PV.inflight={};PV.queue=[];PV.applied={};trReset();
     exClear();say('Disconnected.','');updateButtons();renderObjList();pickerSync();pvSync();
   }
