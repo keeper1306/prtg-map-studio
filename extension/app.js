@@ -2928,17 +2928,19 @@ try{
       $('newmapname').value='';
       newMapMsg('Map successfully added.','ok');
       say('Created \u201C'+name+'\u201D and selected it.','ok');
-      setTimeout(function(){$('newmapForm').hidden=true;newMapMsg('');},1800);
+      setTimeout(function(){$('newmapForm').hidden=true;$('newmapToggle').classList.remove('active');newMapMsg('');},1800);
     }).catch(function(err){
       if(err&&err.status===401)authNeeded();
       newMapMsg((err&&err.message)||'Could not create the map.','err');
     }).then(function(){$('newmapgo').disabled=false;});
   }
   $('newmapToggle').addEventListener('click',function(){
-    $('newmapForm').hidden=!$('newmapForm').hidden;
-    if(!$('newmapForm').hidden)try{$('newmapname').focus();}catch(e){}
+    var willOpen=$('newmapForm').hidden;
+    $('exfs').hidden=true;$('exload').classList.remove('active');
+    $('newmapForm').hidden=!willOpen;$('newmapToggle').classList.toggle('active',willOpen);
+    if(willOpen)try{$('newmapname').focus();}catch(e){}
   });
-  $('newmapcancel').addEventListener('click',function(){$('newmapForm').hidden=true;newMapMsg('');});
+  $('newmapcancel').addEventListener('click',function(){$('newmapForm').hidden=true;$('newmapToggle').classList.remove('active');newMapMsg('');});
   $('newmapgo').addEventListener('click',createMap);
   $('newmapname').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();createMap();}});
   /* deletes the currently-selected map via PRTG's own deleteobject.htm?id=&approve=1
@@ -2946,7 +2948,7 @@ try{
      no CSRF token required there, unlike the POST-based add/edit endpoints).
      Armed with a second click within 4s, mirroring the existing "Forget what was
      pushed" confirm pattern (S.forgetArm) rather than a native confirm() dialog. */
-  function deleteMapMsg(text,kind){var n=$('deleteMapMsg');n.textContent=text||'';n.className='note pst'+(kind?' '+kind:'');}
+  function deleteMapMsg(text,kind){var n=$('deleteMapMsg');n.textContent=text||'';n.className='note pst'+(kind?' '+kind:'');n.hidden=!text;}
   function deleteMap(){
     var sel=$('pushmap'), id=sel.value, name=sel.options.length&&sel.selectedIndex>-1?sel.options[sel.selectedIndex].text:'';
     if(!id)return;
@@ -3538,7 +3540,12 @@ try{
       $('exmsg').className='note pst ok';
     });
   }
-  $('exload').addEventListener('click',exLoad);
+  $('exload').addEventListener('click',function(){
+    var willOpen=$('exfs').hidden;
+    $('newmapForm').hidden=true;$('newmapToggle').classList.remove('active');
+    $('exfs').hidden=!willOpen;$('exload').classList.toggle('active',willOpen);
+    if(willOpen)exLoad();
+  });
   function exLayerSync(){var l=$('dexist');if(l)l.className=exLayerClass();xeDecorate();}
   $('exon').addEventListener('change',exLayerSync);
   $('exdim').addEventListener('change',exLayerSync);
@@ -3546,11 +3553,11 @@ try{
   /* take the shown items off the canvas again. Changes you staged on them (moves, resizes, deletions) are not applied yet and would be lost, so the first press only asks. */
   (function(){
     var b=$('exclear'), t=null, label=CFG.existing.clearLabel;
-    b.textContent=label;
-    function reset(){if(t){clearTimeout(t);t=null;}b.textContent=label;}
+    b.title=label;
+    function reset(){if(t){clearTimeout(t);t=null;}b.classList.remove('armed');b.title=label;}
     b.addEventListener('click',function(){
       var n=Object.keys(XE.stage||{}).length;
-      if(n&&!t){b.textContent='Discard '+n+(n===1?' unapplied change':' unapplied changes')+' and clear? Press again';t=setTimeout(reset,CFG.existing.confirmMs);return;}
+      if(n&&!t){b.classList.add('armed');b.title='Discard '+n+(n===1?' unapplied change':' unapplied changes')+' and clear? Click again';t=setTimeout(reset,CFG.existing.confirmMs);return;}
       reset();exClear();
       $('exmsg').textContent='Cleared. Press Show items already on this map to read the map again.';$('exmsg').className='note pst';
     });
@@ -3589,7 +3596,7 @@ try{
   function xeButtons(){
     var e=xeLast(), n=e?((e.updated||[]).length+(e.removed||[]).length):0, ok=!!(S.maps&&mapId());
     $('xeundo').disabled=!e||!ok||XE.busy;
-    $('xeundo').textContent='Undo last change'+(n?' ('+n+(n===1?' item':' items')+')':'');
+    $('xeundo').title='Undo last change'+(n?' ('+n+(n===1?' item':' items')+')':'');
     $('xereview').disabled=XE.busy||!Object.keys(XE.stage).length||xeInvalid();
     $('xeapply').disabled=XE.busy;
     xeBar();
@@ -3894,8 +3901,8 @@ try{
   function swSync(){
     var connected=!!(S&&S.maps&&S.objFile), busy=!!$('pushconnect').disabled&&!connected, err=S&&S.lastErr;
     $('prtgdot').className='pdot '+(connected?'ok':(busy?'busy':(err?'err':'off')));
-    $('prtgtxt').textContent=connected?('Connected to '+(base()||pageOrigin()||'PRTG')+' \u00B7 '+S.maps.length+(S.maps.length===1?' map':' maps')):(busy?'Connecting\u2026':(err?('Not connected \u00B7 '+String(err).slice(0,48)):'Not connected'));
-    $('prtgtxt').title=connected?('Connected to '+(base()||pageOrigin()||'PRTG')):String(err||'');
+    $('prtgtxt').textContent=connected?'Connected':(busy?'Connecting\u2026':(err?('Not connected \u00B7 '+String(err).slice(0,48)):'Not connected'));
+    $('prtgtxt').title=connected?('Connected to '+(base()||pageOrigin()||'PRTG')+' \u00B7 '+S.maps.length+(S.maps.length===1?' map':' maps')):String(err||'');
     $('prtgswitch').hidden=!connected;$('prtgdisconnect').hidden=!connected;
     if(S.needLogin&&!connected&&!busy){$('prtgpop').hidden=false;}
     if(connected)S.needLogin=false;
@@ -3904,9 +3911,10 @@ try{
   function disconnect(){
     S.maps=null;S.objFile=null;S.catalog=null;S.reviewed=null;S.cls=null;S.lastErr=null;S.tgt={};
     $('pushmap').innerHTML='';$('pushgo').hidden=true;$('pushlist').hidden=true;
-    $('newmapForm').hidden=true;$('newmapname').value='';$('newmapmsg').textContent='';
+    $('newmapForm').hidden=true;$('newmapToggle').classList.remove('active');$('newmapname').value='';$('newmapmsg').textContent='';
+    $('exfs').hidden=true;$('exload').classList.remove('active');
     if(S.deleteArm){clearTimeout(S.deleteArm);S.deleteArm=null;}
-    $('deleteMapBtn').classList.remove('armed');$('deleteMapBtn').title='Delete this map';$('deleteMapMsg').textContent='';
+    $('deleteMapBtn').classList.remove('armed');$('deleteMapBtn').title='Delete this map';deleteMapMsg('');
     PV.cache={};PV.pending={};PV.inflight={};PV.queue=[];PV.applied={};trReset();
     exClear();say('Disconnected.','');updateButtons();renderObjList();pickerSync();pvSync();
   }

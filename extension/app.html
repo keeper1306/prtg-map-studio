@@ -109,7 +109,7 @@ body.dash #typegrid,body.editing #typegrid{display:none}
 #newmapmsg.ok{color:#1c7a3f}
 #deleteMapMsg.err{color:#b4232b}
 #deleteMapMsg.ok{color:#1c7a3f}
-#deleteMapBtn.armed{color:#b4232b;border-color:#b4232b}
+#deleteMapBtn.armed,#exclear.armed{color:#b4232b;border-color:#b4232b}
 .lgremember{display:flex;align-items:flex-start;gap:7px;font-size:12px;color:#59616d;margin:4px 0 14px;cursor:pointer;line-height:1.35}
 .lgremember input{margin-top:2px;flex-shrink:0}
 #prtgpop .lgcard>.pst.err{background:#fdecec;border:1px solid #f3c6c6;color:#9c1f27;border-radius:8px;padding:9px 11px;font-weight:500;line-height:1.5;white-space:pre-line}
@@ -310,7 +310,12 @@ p.note:not(.pst){display:none!important}
 .ico:disabled{opacity:.35;cursor:default}
 .ico.sm{width:25px;height:25px}
 .ico.sm svg{width:13px;height:13px}
+.ico.active,input[type=checkbox]:checked + label.ico{border-color:var(--cyan);color:var(--cyan);background:#eaf7fd}
 #prtgbar{display:none;flex-direction:column;gap:7px;padding:9px 16px;border-top:1px solid var(--g10);background:#fafbfc;font-size:12px}
+#prtgbar #newmapForm,#prtgbar #exfs{border-top:1px dashed var(--g20);margin-top:2px;padding-top:9px;max-height:360px;overflow-y:auto}
+.extools{display:flex;align-items:center;gap:6px;margin:4px 0 2px;flex-wrap:wrap}
+.extools .exsep{width:1px;height:17px;background:var(--g20);flex:0 0 auto}
+.extools .exspacer{flex:1 1 auto}
 body.dash #prtgbar{display:flex}
 .pbrow{display:flex;align-items:center;gap:7px;min-width:0}
 .pbmap select{flex:1 1 auto;min-width:0;height:25px;font:inherit;font-size:11px;padding:0 6px;border-radius:6px;border:1px solid var(--g20);background:#fff;color:#2b3242}
@@ -504,6 +509,63 @@ body.dash #dtabs{display:grid;grid-template-columns:repeat(4,1fr)}
         <button type="button" class="ico sm" id="deleteMapBtn" title="Delete this map" aria-label="Delete this map" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/><path d="M10 11v6M14 11v6"/></svg></button>
         <button type="button" class="ico sm" id="exload" title="Show items already on this map" aria-label="Show items already on this map" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
       </div>
+      <p class="note pst" id="deleteMapMsg" hidden></p>
+      <div id="newmapForm" hidden>
+        <label for="newmapname">Name</label>
+        <input type="text" id="newmapname" placeholder="e.g. Customer Overview" spellcheck="false">
+        <div class="row">
+          <div><label for="newmapw">Width</label><input type="number" id="newmapw" min="100" max="8000" step="10" value="1300"></div>
+          <div><label for="newmaph">Height</label><input type="number" id="newmaph" min="100" max="8000" step="10" value="900"></div>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <button class="btn" id="newmapgo" type="button">Create</button>
+          <button class="btn ghost" id="newmapcancel" type="button">Cancel</button>
+        </div>
+        <p class="note pst" id="newmapmsg"></p>
+      </div>
+      <div id="exfs" hidden>
+        <p class="note pst" id="exmsg"></p>
+        <div class="extools">
+          <span id="exonrow" hidden><input type="checkbox" id="exon" checked hidden><label for="exon" class="ico sm" title="Show them on the canvas" aria-label="Show them on the canvas"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></label></span>
+          <span id="exdimrow" hidden><input type="checkbox" id="exdim" hidden><label for="exdim" class="ico sm" title="Dim them" aria-label="Dim them"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9c0-.3 0-.6 0-.9A5.5 5.5 0 0 1 14.9 5 9 9 0 0 0 12 3z"/></svg></label></span>
+          <span id="exscrrow" hidden><input type="checkbox" id="exscr" hidden><label for="exscr" class="ico sm" title="Run the items&rsquo; own scripts in the preview (gauges and donuts that draw themselves need this)" aria-label="Run the items&rsquo; own scripts in the preview"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3l14 9-14 9V3z"/></svg></label></span>
+          <span class="exsep"></span>
+          <button type="button" class="ico sm" id="exsize" title="Set the canvas to this map&rsquo;s size" aria-label="Set the canvas to this map&rsquo;s size" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></button>
+          <span class="exsep"></span>
+          <span class="exspacer"></span>
+          <span id="exclearrow" hidden><button type="button" class="ico sm" id="exclear" aria-label="Clear items from the canvas"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button></span>
+          <button type="button" class="ico sm" id="xeundo" title="Undo last change" aria-label="Undo last change" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10h11a5 5 0 0 1 0 10H9"/><path d="M3 10l5-5M3 10l5 5"/></svg></button>
+        </div>
+        <div id="exlist" class="exlist" hidden></div>
+        <div id="exedit" class="exedit" hidden>
+          <h4 id="exedtitle"></h4>
+          <div class="row3">
+            <div><label for="xeleft">Left</label><input type="number" id="xeleft" step="1" min="0" max="9999"></div>
+            <div><label for="xetop">Top</label><input type="number" id="xetop" step="1" min="0" max="9999"></div>
+            <div><label for="xez">Layer</label><input type="number" id="xez" step="1" min="0" max="9999"></div>
+          </div>
+          <div class="row">
+            <div><label for="xewidth">Width</label><input type="number" id="xewidth" step="1" min="1" max="9999"></div>
+            <div><label for="xeheight">Height</label><input type="number" id="xeheight" step="1" min="1" max="9999"></div>
+          </div>
+          <label for="xelink">Link</label>
+          <input type="text" id="xelink" spellcheck="false">
+          <label for="xebefore">HTML Before</label>
+          <textarea id="xebefore" rows="4" spellcheck="false"></textarea>
+          <label for="xeafter">HTML After</label>
+          <textarea id="xeafter" rows="2" spellcheck="false"></textarea>
+          <div class="row" style="margin-top:8px"><button class="btn ghost" id="xedel" type="button">Mark for deletion</button><button class="btn ghost" id="xereset" type="button">Discard changes to this item</button></div>
+          <p class="note pst" id="xenote"></p>
+        </div>
+        <div id="exchg" hidden>
+          <p class="note pst" id="exchgsum"></p>
+          <div class="row"><button class="btn ghost" id="xereview" type="button">Review changes</button></div>
+          <div id="exrev" hidden></div>
+          <div class="inline" id="xermrow" hidden><input type="checkbox" id="xerm"><label for="xerm">Also delete the items marked for deletion (a backup file is saved first)</label></div>
+          <div class="row" style="margin-top:8px"><button class="btn" id="xeapply" type="button" hidden>Apply</button></div>
+        </div>
+        <p class="note pst" id="xemsg"></p>
+      </div>
     </div>
     <div id="prtgmsg" hidden><span id="prtgmsgtext"></span><button type="button" class="ico" id="prtgmsgx" aria-label="Dismiss" title="Dismiss">&times;</button></div>
     <div id="editbar" hidden><span class="et" id="edittitle">Editing a dashboard item</span><button type="button" id="editcancel">Cancel</button><button type="button" id="editdone" class="solid">Done</button></div>
@@ -596,65 +658,6 @@ body.dash #dtabs{display:grid;grid-template-columns:repeat(4,1fr)}
       </div>
       <div class="inline"><input type="checkbox" id="ddark"><label for="ddark">Dark preview background</label></div>
     </fieldset>
-    <div class="grp">On the map in PRTG</div>
-    
-    <fieldset id="mapfs">
-    <legend>Existing PRTG maps</legend>
-    <p class="note">Choose the map in PRTG this canvas belongs to, using the dropdown at the top of this tab. Showing what is already on it, the previews and Push to PRTG all use this choice.</p>
-    <p class="note pst" id="deleteMapMsg"></p>
-    <div id="newmapForm" hidden style="margin-top:8px">
-      <label for="newmapname">Name</label>
-      <input type="text" id="newmapname" placeholder="e.g. Customer Overview" spellcheck="false">
-      <div class="row">
-        <div><label for="newmapw">Width</label><input type="number" id="newmapw" min="100" max="8000" step="10" value="1300"></div>
-        <div><label for="newmaph">Height</label><input type="number" id="newmaph" min="100" max="8000" step="10" value="900"></div>
-      </div>
-      <div class="row" style="margin-top:8px">
-        <button class="btn" id="newmapgo" type="button">Create</button>
-        <button class="btn ghost" id="newmapcancel" type="button">Cancel</button>
-      </div>
-      <p class="note pst" id="newmapmsg"></p>
-    </div>
-      <div id="exfs">
-    <p class="note">Shows what is already on the map chosen above, behind your own items (use the eye icon at the top of this tab). <strong>Click an item on the canvas</strong> to select it, drag it to move it, drag its corner to resize it, press Delete to mark it for deletion, arrow keys to nudge it. Nothing is written to PRTG until you press Review and then Apply, and each change can be undone.</p>
-    <p class="note pst" id="exmsg"></p>
-    <div class="inline" id="exonrow" hidden><input type="checkbox" id="exon" checked><label for="exon">Show them on the canvas</label></div>
-    <div class="inline" id="exdimrow" hidden><input type="checkbox" id="exdim"><label for="exdim">Dim them</label></div>
-    <div class="inline" id="exscrrow" hidden><input type="checkbox" id="exscr"><label for="exscr">Run the items&rsquo; own scripts in the preview (gauges and donuts that draw themselves need this)</label></div>
-    <div class="row" id="exclearrow" style="margin-top:8px" hidden><button class="btn ghost" id="exclear" type="button">Clear items from the canvas</button></div>
-    <div class="row" style="margin-top:8px"><button class="btn ghost" id="exsize" type="button" hidden>Set the canvas to this map&rsquo;s size</button></div>
-    <div id="exlist" class="exlist" hidden></div>
-    <div id="exedit" class="exedit" hidden>
-      <h4 id="exedtitle"></h4>
-      <div class="row3">
-        <div><label for="xeleft">Left</label><input type="number" id="xeleft" step="1" min="0" max="9999"></div>
-        <div><label for="xetop">Top</label><input type="number" id="xetop" step="1" min="0" max="9999"></div>
-        <div><label for="xez">Layer</label><input type="number" id="xez" step="1" min="0" max="9999"></div>
-      </div>
-      <div class="row">
-        <div><label for="xewidth">Width</label><input type="number" id="xewidth" step="1" min="1" max="9999"></div>
-        <div><label for="xeheight">Height</label><input type="number" id="xeheight" step="1" min="1" max="9999"></div>
-      </div>
-      <label for="xelink">Link</label>
-      <input type="text" id="xelink" spellcheck="false">
-      <label for="xebefore">HTML Before</label>
-      <textarea id="xebefore" rows="4" spellcheck="false"></textarea>
-      <label for="xeafter">HTML After</label>
-      <textarea id="xeafter" rows="2" spellcheck="false"></textarea>
-      <div class="row" style="margin-top:8px"><button class="btn ghost" id="xedel" type="button">Mark for deletion</button><button class="btn ghost" id="xereset" type="button">Discard changes to this item</button></div>
-      <p class="note pst" id="xenote"></p>
-    </div>
-    <div id="exchg" hidden>
-      <p class="note pst" id="exchgsum"></p>
-      <div class="row"><button class="btn ghost" id="xereview" type="button">Review changes</button></div>
-      <div id="exrev" hidden></div>
-      <div class="inline" id="xermrow" hidden><input type="checkbox" id="xerm"><label for="xerm">Also delete the items marked for deletion (a backup file is saved first)</label></div>
-      <div class="row" style="margin-top:8px"><button class="btn" id="xeapply" type="button" hidden>Apply</button></div>
-    </div>
-    <div class="row" style="margin-top:8px"><button class="btn ghost" id="xeundo" type="button" disabled>Undo last change</button></div>
-    <p class="note pst" id="xemsg"></p>
-  </div>
-  </fieldset>
   <fieldset id="pushfs">
     <legend>Push to PRTG</legend>
     <p class="note" id="pushnote">Adds the items on this canvas to a map in PRTG, back to front: pasted pieces as Custom HTML elements, PRTG objects by their file. Pushing again <strong>updates the items it added before</strong>, as long as you keep the same layout: after a push, copy the layout (Save and load layout, above) and load it next time.</p>
