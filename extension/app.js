@@ -6168,7 +6168,7 @@ try{
   function statusRuntime(root,C){
     var body=root.querySelector('.sbody');
     if(!body)return;
-    var LABEL={up:'Up',warning:'Warning',down:'Down',ack:'Acknowledged',paused:'Paused',unusual:'Unusual',unknown:'Unknown'};
+    var LABEL={up:'Up',warning:'Warning',down:'Down',ack:'Ack',paused:'Paused',unusual:'Unusual',unknown:'Unknown'};
     function clear(n){while(n&&n.firstChild)n.removeChild(n.firstChild);}
     function say(t){clear(body);var d=document.createElement('div');d.className='snone';d.textContent=t;body.appendChild(d);root.setAttribute('data-status','message');}
     function findJson(){
