@@ -538,6 +538,28 @@ fieldset{border-bottom-color:var(--line)}
 #modebar .tabs button{letter-spacing:.4px}
 .mapmode,.mmbtn{border-radius:8px}
 #bgpanel{border-radius:12px}
+
+/* ---- Objects tab: your objects and install ---- */
+#ocodebox{margin:0 0 14px}#ocodebox .ocodebar{display:flex;gap:8px;margin-bottom:8px}
+.ocard{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 20px;margin:0 0 16px;max-width:760px}
+.ocardhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.ocardhead h3{margin:0;font-size:14px;font-weight:600;color:var(--ink)}
+.ocount{display:inline-block;min-width:20px;padding:1px 7px;border-radius:10px;background:#e8f4fb;color:var(--cyan);font-size:12px;font-weight:600;text-align:center;margin-left:6px}
+#olistwrap{margin:0 0 16px}
+#olist{margin:0;border:0;max-height:260px;border-radius:0;background:none}
+#olist .orow{display:flex;gap:14px;align-items:center;padding:9px 12px;border:1px solid var(--line);border-radius:8px;margin-bottom:6px;font-size:13px;background:var(--soft)}
+#olist .ofn{font-weight:600}
+#olist .oempty{padding:14px;border:1px dashed #cfd5e3;border-radius:8px;color:#6b7080;font-size:13px;text-align:center}
+.ostep{display:flex;gap:14px;padding:12px 0;border-top:1px solid var(--line)}
+.ostep:first-of-type{border-top:0}
+.onum{flex:0 0 26px;height:26px;border-radius:50%;background:var(--cyan);color:#fff;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.obody{flex:1;min-width:0;font-size:13px}.obody b{display:block;margin-bottom:6px;font-size:13.5px;color:var(--ink)}
+.obody input{width:100%;font-family:Consolas,monospace;font-size:12.5px}
+.ohint{margin:6px 0 0;font-size:12px;color:#6b7080;display:block}.ohint code{font-size:11.5px;word-break:break-all}
+.oways{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.oway{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--soft)}
+.owayt{font-weight:600;font-size:12.5px;color:var(--ink)}
+.oway .btn:disabled{opacity:.45;cursor:not-allowed}
 </style>
 </head>
 <body>
@@ -1019,11 +1041,28 @@ fieldset{border-bottom-color:var(--line)}
     <div id="ocanvas"><div id="opreview"></div></div>
     <div class="stage-head" style="margin-top:26px">
       <h2><span id="ofheadtext">File</span> <span id="ofname" style="font-weight:500;color:var(--cyan)"></span> <span id="ofnote" style="font-weight:300;color:#8b90a0;font-size:12px"></span></h2>
-      <div style="display:flex;gap:10px"><button class="btn ghost" id="ocopy" type="button">Copy code</button><button class="btn primary" id="odl" type="button">Download .htm</button><button class="btn ghost" id="odlall" type="button" hidden>Download all</button><button class="btn ghost" id="oscript" type="button" title="Copies a PowerShell script that writes every file in your list into the mapobjects folder. Paste it into PowerShell opened as administrator.">Copy install script</button></div>
+      <div style="display:flex;gap:10px"><button class="btn primary" id="oadd" type="button" title="Keeps this object in Your objects, ready to install">Add to this list</button><button class="btn ghost" id="oshowcode" type="button" aria-expanded="false">Show code</button></div>
     </div>
-    <div id="olistwrap" hidden><button class="linkbtn" id="olisttoggle" type="button"></button><div id="olist" hidden></div></div>
-    <textarea id="ocode" readonly spellcheck="false"></textarea>
-    <p class="note" id="oinstall"><strong>Install:</strong> save the file in <code>\webroot\mapobjects</code> on the PRTG core server. Reload the Map Designer and the object appears under the category you chose. If Download is blocked in your viewer, use Copy code and save it under the file name shown. To skip the copying, press <strong>Copy install script</strong> and paste it into PowerShell opened as administrator: it writes every file in your list into that folder and keeps a backup of any file it replaces.</p>
+    <div id="ocodebox" hidden><div class="ocodebar"><button class="btn ghost sm" id="ocopy" type="button">Copy code</button><button class="btn ghost sm" id="odl" type="button">Download .htm</button></div><textarea id="ocode" readonly spellcheck="false"></textarea></div>
+    <div class="ocard" id="olistwrap">
+      <div class="ocardhead"><h3>Your objects <span class="ocount" id="ocount"></span></h3><button class="linkbtn" id="oclear" type="button" hidden>Clear the list</button></div>
+      <div id="olist"></div>
+    </div>
+    <div class="ocard" id="oinstallcard">
+      <div class="ocardhead"><h3>Install on your PRTG server</h3></div>
+      <div class="ostep"><span class="onum">1</span><div class="obody"><b>Where is PRTG installed?</b>
+        <input type="text" id="ofolder" spellcheck="false" aria-label="PRTG installation folder">
+        <p class="ohint">The usual folder is filled in. Change it only if you chose another one. The install script looks for PRTG on the server itself first and only uses this folder if it cannot.</p>
+        <p class="ohint">Files go to <code id="opath"></code></p></div></div>
+      <div class="ostep"><span class="onum">2</span><div class="obody"><b>Put the files there</b>
+        <div class="oways">
+          <div class="oway"><span class="owayt">On the PRTG server itself</span><button class="btn" id="oscript" type="button">Copy install script</button><span class="ohint">Open PowerShell as administrator, paste, press Enter. Replaced files are backed up first.</span></div>
+          <div class="oway"><span class="owayt">By hand, or from another computer</span><button class="btn ghost" id="odlall" type="button">Download ZIP</button><span class="ohint">Unzip it into the folder above on the server.</span></div>
+        </div></div></div>
+      <div class="ostep"><span class="onum">3</span><div class="obody"><b>Reload the Map Designer</b>
+        <p class="ohint">The objects appear under the category you chose. On the Dashboard, Existing PRTG objects has a Refresh object list button.</p></div></div>
+    </div>
+    <p class="note" id="oinstall"></p>
   </div>
   <div id="dashstage">
     <div class="stage-head">

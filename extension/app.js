@@ -4398,7 +4398,7 @@ try{
     var missing=Object.keys(lib).filter(function(f){return !S.catalog.some(function(c){return keyOf(c.cat,c.name)===keyOf(lib[f].cat,lib[f].name);});});
     if(missing.length){
       n.hidden=false;n.className='note pst err';
-      n.textContent='Not in PRTG yet: '+missing.map(function(f){return f+' ('+lib[f].cat+': '+lib[f].name+')';}).join(', ')+'. Copy '+(missing.length===1?'the file':'the files')+' into PRTG\u2019s mapobjects folder (Download all in the Objects tab gives you a zip), then press Connect again.';
+      n.textContent='Not in PRTG yet: '+missing.map(function(f){return f+' ('+lib[f].cat+': '+lib[f].name+')';}).join(', ')+'. Copy '+(missing.length===1?'the file':'the files')+' into PRTG\u2019s mapobjects folder (Download ZIP in the Objects tab gives you a zip), then press Connect again.';
     }else if(Object.keys(lib).length){n.hidden=false;n.className='note pst ok';n.textContent='Every object you designed here is in PRTG\u2019s list.';}
     else n.hidden=true;
     box.scrollTop=top;
@@ -4868,16 +4868,15 @@ try{
   }
   /* the first line of every object file is <!--Category: Name-->, which is how PRTG lists it */
   function parseHead(code){var m=/^\s*<!--\s*([^:]+?)\s*:\s*(.+?)\s*-->/.exec(code);return m?{cat:m[1],name:m[2]}:null;}
-  function refresh(){var lib=load(), n=Object.keys(lib).length, b=$('odlall');b.hidden=!n;b.textContent='Download all ('+n+')';listRender(lib,n);}
-  /* the files behind Download all: see them, drop one, or clear the lot. This only changes what the tool remembers; PRTG's mapobjects folder is not touched. */
-  var listOpen=false, armed=null;
+  function refresh(){var lib=load(), n=Object.keys(lib).length;listRender(lib,n);syncInstall();}
+  /* the files behind the install step: see them, drop one, or clear the lot. This only changes what the tool remembers; PRTG's mapobjects folder is not touched. */
+  var armed=null;
   function dropped(){refresh();if(window.PUSHAPI&&PUSHAPI.renderObjList)PUSHAPI.renderObjList();}
   function listRender(lib,n){
-    var box=$('olist'), names=Object.keys(lib).sort(), foot, clr, note;
-    $('olistwrap').hidden=!n;
-    $('olisttoggle').textContent=(listOpen?'Hide':'Show')+' the files in your list ('+n+')';
-    box.hidden=!(listOpen&&n);
+    var box=$('olist'), names=Object.keys(lib).sort(), clr=$('oclear');
+    $('ocount').textContent=n;$('ocount').hidden=!n;clr.hidden=!n;
     box.textContent='';
+    if(!n){var em=document.createElement('div');em.className='oempty';em.textContent='Nothing here yet. Make an object, then press “Add to this list”.';box.appendChild(em);return;}
     names.forEach(function(f){
       var row=document.createElement('div'), a=document.createElement('span'), c=document.createElement('span'), x=document.createElement('button');
       row.className='orow';a.className='ofn';c.className='ofc';x.className='linkbtn';x.type='button';
@@ -4885,17 +4884,29 @@ try{
       x.addEventListener('click',function(){var o=load();delete o[f];save(o);dropped();});
       row.appendChild(a);row.appendChild(c);row.appendChild(x);box.appendChild(row);
     });
-    foot=document.createElement('div');foot.className='ofoot';
-    clr=document.createElement('button');clr.className='linkbtn';clr.type='button';clr.textContent='Clear the list';
-    clr.addEventListener('click',function(){
-      if(!armed){clr.textContent='Click again to clear the list';armed=setTimeout(function(){armed=null;clr.textContent='Clear the list';},3500);return;}
-      clearTimeout(armed);armed=null;save({});dropped();
-    });
-    note=document.createElement('p');
-    note.textContent='Removing a file only makes this tool forget it. Files already in PRTG\u2019s mapobjects folder stay where they are. The Dashboard also uses this list to tell which PRTG objects you made.';
-    foot.appendChild(clr);foot.appendChild(note);box.appendChild(foot);
   }
-  $('olisttoggle').addEventListener('click',function(){listOpen=!listOpen;refresh();});
+  $('oclear').addEventListener('click',function(){
+    var clr=$('oclear');
+    if(!armed){clr.textContent='Click again to clear the list';armed=setTimeout(function(){armed=null;clr.textContent='Clear the list';},3500);return;}
+    clearTimeout(armed);armed=null;clr.textContent='Clear the list';save({});dropped();
+  });
+  /* where PRTG is installed: remembered, and turned into the mapobjects folder */
+  var FKEY='pm_prtgdir', DEFBASE=CFG.install.dir.replace(/[\\\/]+webroot[\\\/]+mapobjects[\\\/]*$/i,'');
+  function baseGet(){var v='';try{v=localStorage.getItem(FKEY)||'';}catch(e){}return v||DEFBASE;}
+  function mapDir(){
+    var v=String($('ofolder').value||'').trim().replace(/[\\\/]+webroot[\\\/]+mapobjects[\\\/]*$/i,'').replace(/[\\\/]+$/,'');
+    return (v||DEFBASE)+'\\webroot\\mapobjects';
+  }
+  function syncInstall(){
+    var n=Object.keys(load()).length;
+    $('opath').textContent=mapDir();
+    $('oscript').disabled=!n;$('odlall').disabled=!n;
+    $('oscript').title=n?'':'Add an object to your list first';$('odlall').title=n?'':'Add an object to your list first';
+  }
+  $('ofolder').value=baseGet();
+  $('ofolder').addEventListener('input',function(){try{localStorage.setItem(FKEY,String($('ofolder').value||'').trim());}catch(e){}syncInstall();});
+  /* the code stays out of the way until asked for */
+  $('oshowcode').addEventListener('click',function(){var box=$('ocodebox'), on=box.hidden;box.hidden=!on;this.textContent=on?'Hide code':'Show code';this.setAttribute('aria-expanded',on?'true':'false');});
   /* a zip with the files stored as they are (no compression), written here so nothing is needed from outside */
   var CRCT=null;
   function crc32(b){
@@ -4932,7 +4943,7 @@ try{
     if(window.PUSHAPI&&PUSHAPI.renderObjList)PUSHAPI.renderObjList();
     return true;
   }
-  $('odl').addEventListener('click',function(){remember();},true);
+  $('oadd').addEventListener('click',function(){if(remember())OBJAPI.toast('Added to Your objects');else OBJAPI.toast('Nothing to add yet.');});
   /* a PowerShell script that writes the files itself. Each file travels as base64 of its UTF-8 bytes, the same bytes Download saves, so no character can break the paste. */
   function b64(text){
     var bytes=new TextEncoder().encode(text), s='', i;
@@ -4940,11 +4951,13 @@ try{
     return btoa(s);
   }
   function psq(x){return "'"+String(x).replace(/'/g,"''")+"'";}
-  function installScript(files){
+  function installScript(files,dir){
     var o=[], i, j, b;
     o.push('function Install-PrtgMapObjects {');
-    o.push('  $dir = '+psq(CFG.install.dir));
-    o.push("  if (-not (Test-Path -LiteralPath $dir)) { Write-Host 'Folder not found:' $dir; Write-Host 'Change the $dir line near the top of this script and paste it again.'; return }");
+    o.push('  $dir = $null');
+    o.push("  try { $svc = Get-CimInstance Win32_Service -Filter \"Name='PRTGCoreService'\" -ErrorAction Stop; if ($svc.PathName -match '^\"?([^\"]+\\.exe)') { $cand = Join-Path (Split-Path -Parent $Matches[1]) 'webroot\\mapobjects'; if (Test-Path -LiteralPath $cand) { $dir = $cand; Write-Host ('Found PRTG here: ' + $dir) } } } catch { }");
+    o.push('  if (-not $dir) { $dir = '+psq(dir||CFG.install.dir)+'; Write-Host (\'PRTG was not found as a service on this computer. Using the folder you typed: \' + $dir) }');
+    o.push("  if (-not (Test-Path -LiteralPath $dir)) { Write-Host ('Folder not found: ' + $dir); Write-Host 'Fix the folder in step 1 of the tool, copy the script again and paste it.'; return }");
     o.push("  $admin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)");
     o.push("  if (-not $admin) { Write-Host 'This PowerShell window is not running as administrator. Close it, open PowerShell as administrator and paste the script again.'; return }");
     o.push("  $backup = Join-Path $env:TEMP ('PrtgMapToolBackup-' + (Get-Date -Format 'yyyyMMdd-HHmmss'))");
@@ -4980,12 +4993,11 @@ try{
   }
   $('oscript').addEventListener('click',function(){
     var lib, names, files, text;
-    remember();
     lib=load();names=Object.keys(lib).sort();
-    if(!names.length){OBJAPI.toast('Nothing to install yet. Make an object first.');return;}
+    if(!names.length){OBJAPI.toast('Nothing to install yet. Add an object to your list first.');return;}
     files=names.map(function(f){return {name:f,text:lib[f].code};});
-    text=installScript(files);
-    if(text.length>CFG.install.maxChars){OBJAPI.toast('Too long to paste ('+files.length+' file'+(files.length===1?'':'s')+'). Use Download all.');return;}
+    text=installScript(files,mapDir());
+    if(text.length>CFG.install.maxChars){OBJAPI.toast('Too long to paste ('+files.length+' file'+(files.length===1?'':'s')+'). Use Download ZIP.');return;}
     OBJAPI.copyText(text,'Install script copied ('+files.length+' file'+(files.length===1?'':'s')+')');
   });
   $('odlall').addEventListener('click',function(){
@@ -4995,8 +5007,7 @@ try{
     a.href=url;a.download='prtg-map-objects.zip';document.body.appendChild(a);a.click();document.body.removeChild(a);
     setTimeout(function(){URL.revokeObjectURL(url);},2000);
   });
-  /* the Download button is hidden for the pasted types (Frame, Background); Download all follows it */
-  function followDownload(){var d=($('odl').style.display==='none')?'none':'';$('odlall').style.display=d;$('oscript').style.display=d;$('olistwrap').style.display=d;}
+  function followDownload(){var d=($('odl').style.display==='none')?'none':'';$('oadd').style.display=d;}
   try{new MutationObserver(followDownload).observe($('odl'),{attributes:true,attributeFilter:['style']});}catch(e){}
   followDownload();
   refresh();
@@ -7589,6 +7600,7 @@ try{
   function buildTypeGrid(){
     var host=document.getElementById('typegrid');if(!host)return;
     TYPES.forEach(function(g,gi){
+      if(gi===1)return;   /* labels, buttons, frames, backgrounds and shapes are built on the Dashboard tab */
       var paste=(gi===1), hd=GRIDHEAD[gi], head=h('div','tgh'+(paste?' p':''));
       head.title=hd[1];head.innerHTML='<i class="sq"></i>'+hd[0]+hd[2];
       var row=h('div','tgr');row.style.gridTemplateColumns='repeat('+g[1].length+',1fr)';
