@@ -7882,7 +7882,7 @@ try{
           pv.style.background=q.fill;card.style.cssText='width:56%;height:56%;border-radius:4px;background:'+(lookOf(name).cardBg||'#FFFFFF')+';border:1px solid '+(lookOf(name).border||lookOf(name).line||'#E3E5E9')+';';pv.appendChild(card);
         }else if(kind==='shape'){
           var sk=FRc().p.shape, hz=!(FRc().p.dir==='down'||FRc().p.dir==='up'), sw=Math.max(2,Math.min(8,Math.round((q.thick||6)/1.5)));
-          pv.style.background=(/^#?f/i.test(String(readableOn(q.fill||q.color||'#000000')).replace('#','')))?'#F3F4F6':'#2B2F3A';   /* a shape is drawn on its own, with no background behind it, so the preview sits on a plain neutral ground that keeps it visible rather than on the look's stage */
+          pv.style.background='#F3F4F6';   /* a shape has no background of its own, so every preview sits on the same plain ground; a light shape gets a thin dark edge to stay visible */
           if(sk==='rect'||sk==='round'||sk==='pill'||sk==='circle'){
             card.style.cssText='width:'+(sk==='circle'?'46px':'74%')+';height:'+(sk==='circle'?'46px':'58%')+';display:flex;align-items:center;justify-content:center;font:600 10px/1 Arial,sans-serif;color:'+q.tcolor+';background:'+q.fill+';border-radius:'+(sk==='rect'?'0':(sk==='pill'?'99px':(sk==='circle'?'50%':Math.min(q.radius,14)+'px')))+';box-shadow:'+(SH[q.shadow]||'')+';';
             card.textContent='Aa';
@@ -7893,6 +7893,7 @@ try{
           }else{
             card.innerHTML='<svg viewBox="0 0 40 16" width="56" height="22" aria-hidden="true"><g fill="none" stroke="'+q.color+'" stroke-width="'+Math.max(2,sw-1)+'" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3l6 5-6 5" opacity=".3"/><path d="M17 3l6 5-6 5" opacity=".6"/><path d="M28 3l6 5-6 5"/></g></svg>';
           }
+          if(/^#?f/i.test(String(readableOn(q.fill||q.color||'#000000')).replace('#','')))card.style.filter='none';else card.style.filter='drop-shadow(0 0 1px rgba(0,0,0,.6))';
           pv.appendChild(card);
         }else{
           pv.style.background='#F3F4F6';
