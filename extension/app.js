@@ -4324,6 +4324,18 @@ try{
     var e=(S.catalog||[]).filter(function(x){return x.value===file;})[0], text=(e?e.cat+' '+e.name:'')+' '+String(file||'');
     return (new RegExp(CFG.preview.countPattern,'i').test(text))?CFG.preview.countFull:5;
   }
+  /* a graph drawn by the tool asks for its history from inside the preview frame; the tool makes the (read-only) request with its own login and answers */
+  window.addEventListener('message',function(e){
+    var d=e.data, path, p={}, k, src=e.source, ok={id:/^\d{1,9}$/,avg:/^\d{1,6}$/,usecaption:/^[01]$/,sdate:/^[\d-]{10,24}$/,edate:/^[\d-]{10,24}$/,content:/^channels$/,columns:/^[a-z,_]{1,40}$/};
+    if(!d||d.type!=='pm-hist'||!src||typeof d.id!=='string'||!d.params)return;
+    path=d.path;
+    if(path!=='/api/historicdata.json'&&path!=='/api/table.json')return;
+    for(k in d.params){if(!ok[k]||!ok[k].test(String(d.params[k])))return;p[k]=String(d.params[k]);}
+    sampleGet({kind:'history',label:'history',path:path,params:p}).then(function(r){
+      var j=null;try{j=JSON.parse(r.body);}catch(x){}
+      src.postMessage({type:'pm-hist-r',id:d.id,ok:!!(j&&!r.error&&r.status>=200&&r.status<300),json:j},'*');
+    }).catch(function(){try{src.postMessage({type:'pm-hist-r',id:d.id,ok:false},'*');}catch(x){}});
+  });
   function pvAsk(o){   /* one request for PRTG's drawing of an object, as the designer makes it */
     return sampleGet({kind:'preview',label:'preview',path:'/controls/mapobjectpreview.htm',
       params:{id:mapId(),count:pvCountFor(o.file),dependency_:o.target,width:o.w,height:o.h,selected:'',mapelements:',*'+o.file+'*',maptitles:',*'+o.name+'*'}}).then(function(r){
@@ -5915,11 +5927,26 @@ try{
       s.forEach(function(q){var m=0;q.v.forEach(function(x){if(x!==null&&Math.abs(x)>m)m=Math.abs(x);});q.max=m;});
       return {rows:rows,s:s};
     }
+    function ask(path,params){   /* in the designer's preview the item sits in a sandboxed frame with no PRTG session, so the tool fetches for it and sends the answer back */
+      return new Promise(function(res,rej){
+        var id='h'+Math.random().toString(36).slice(2);
+        function on(e){var d=e.data;if(!d||d.type!=='pm-hist-r'||d.id!==id)return;window.removeEventListener('message',on);if(d.ok)res(d.json);else rej(new Error('x'));}
+        window.addEventListener('message',on);
+        window.top.postMessage({type:'pm-hist',id:id,path:path,params:params},'*');
+        setTimeout(function(){window.removeEventListener('message',on);rej(new Error('t'));},20000);
+      });
+    }
+    function getJ(path,params){
+      var q=[],k,pre;
+      if(location.protocol==='about:')return ask(path,params);
+      for(k in params)q.push(k+'='+encodeURIComponent(params[k]));
+      pre=/^\/api\/v1\//.test(location.pathname)?'/api/v1':'';
+      return fetch(pre+path+'?'+q.join('&'),{credentials:'include'}).then(function(r){if(!r.ok)throw new Error('http');return r.json();});
+    }
     function load(){
       if(C.sample){D=build(sample());draw();return;}
-      var id=root.getAttribute('objectid'), pre=/^\/api\/v1\//.test(location.pathname)?'/api/v1':'', now=new Date(), pad=14*3600000, rng=C.range*1000, avg=C.avg,
-          q='id='+encodeURIComponent(id)+'&avg='+avg+'&sdate='+ds(new Date(now.getTime()-rng-pad))+'&edate='+ds(new Date(now.getTime()+pad))+'&usecaption=1';
-      fetch(pre+'/api/historicdata.json?'+q,{credentials:'include'}).then(function(r){if(!r.ok)throw new Error('http');return r.json();}).then(function(j){
+      var id=root.getAttribute('objectid'), now=new Date(), pad=14*3600000, rng=C.range*1000;
+      getJ('/api/historicdata.json',{id:id,avg:C.avg,sdate:ds(new Date(now.getTime()-rng-pad)),edate:ds(new Date(now.getTime()+pad)),usecaption:1}).then(function(j){
         var rows=j&&(j.histdata||j.values), last=-1, i, n, keep;
         if(!rows)throw new Error('none');
         for(i=rows.length-1;i>=0;i--){var r=rows[i],k,has=false;for(k in r){if(k!=='datetime'&&k!=='coverage'&&r[k]!==''&&r[k]!==null){has=true;break;}}if(has){last=i;break;}}
@@ -5928,7 +5955,7 @@ try{
         D=build(keep);
         if(!D){say('No data yet');return;}
         draw();
-        if(C.legendValues)return fetch(pre+'/api/table.json?content=channels&columns=name,lastvalue&id='+encodeURIComponent(id),{credentials:'include'}).then(function(r){return r.ok?r.json():null;}).then(function(t){
+        if(C.legendValues)return getJ('/api/table.json',{content:'channels',columns:'name,lastvalue',id:id}).then(function(t){
           if(t&&t.channels){lastv={};t.channels.forEach(function(c){lastv[c.name]=c.lastvalue;});draw();}
         }).catch(function(){});
       }).catch(function(){fall();});
