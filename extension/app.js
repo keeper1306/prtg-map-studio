@@ -5060,7 +5060,7 @@ try{
     'PRTG new UI':{font:'Roboto',cardBg:'#FFFFFF',border:'#E3E5E9',radius:4,shadow:'soft',titleStyle:'heading',titleText:'#050F34',titleSize:16,cardPad:16,
       headStyle:'plain',headColor:'#686B76',headUpper:false,text:'#31343F',link:'#0F67FF',line:'#EFEEEE',hover:'#F4F7FF',pad:10,cellX:10,
       status:'dot',stage:'#F9F9FA',muted:'#686B76',accent:'#0F67FF',
-      c:{up:'#B4BC14',warning:'#F2BE25',down:'#E3063D',unusual:'#F07000',paused:'#448CFC',unknown:'#A4A6AF'}},
+      c:{up:'#B4BC14',warning:'#F2BE25',down:'#E3063D',unusual:'#F07000',paused:'#448CFC',unknown:'#A4A6AF',ack:'#F37176'}},
     'Clean card':{cardBg:'#FFFFFF',border:'#E5E7EB',radius:10,shadow:'soft',titleStyle:'divider',titleText:'#111827',titleSize:16,cardPad:18,
       headStyle:'plain',headColor:'#6B7280',headUpper:true,text:'#374151',link:'#2563EB',line:'#F1F3F5',hover:'#F9FAFB',pad:10,cellX:10,
       status:'pill',stage:'#F3F4F6',muted:'#5F6672',accent:'#2563EB'},
@@ -5943,7 +5943,7 @@ try{
      so the donut derives an orange between warning and down for Unusual, and moves Unknown from the paused color toward the text color */
   function donutPalette(L){
     var c=L.c;
-    return {down:c.down,warning:c.warning,unusual:blend(c.warning,c.down,0.5),up:c.up,paused:c.paused,unknown:blend(c.paused,L.text,0.5)};
+    return {down:c.down,warning:c.warning,unusual:(c.unusual&&c.unusual!==c.warning)?c.unusual:blend(c.warning,c.down,0.5),up:c.up,paused:c.paused,unknown:(c.unknown&&c.unknown!==c.paused&&String(c.unknown).toUpperCase()!==String(c.paused).toUpperCase())?c.unknown:blend(c.paused,L.text,0.5),ack:c.ack||blend(c.down,'#FFFFFF',0.35)};
   }
   function donutCssRing(D,cls,L){
     var r='.'+cls, c=gFrameCss({engine:'ring'},cls,L), bar=(L.titleStyle==='bar'), muted=(L.muted||L.headColor);
@@ -6303,7 +6303,7 @@ try{
 
   /* ====================== status icons ====================== */
   /* PRTG's own colours for the state classes (main.css, .map_iconcolor_*) */
-  var IPRTG={up:'#B8C419',warning:'#F5C500',down:'#E30613',ack:'#E67278',unusual:'#F59C00',paused:'#477EC0',unknown:'#878787'};
+  var IPRTG={up:'#B4BC14',warning:'#F2BE25',down:'#E3063D',ack:'#F37176',unusual:'#F07000',paused:'#448CFC',unknown:'#A4A6AF'};
   /* ascending severity, which is the order PRTG's own maps script uses when an object carries several state classes
      (_Prtg.Maps.js: red, then acknowledged, yellow, unusual, blue, undefined, and green last). CSS written in this order lets the worst state win. */
   var ISTATES=[
@@ -6367,7 +6367,7 @@ try{
   function iconPalette(I,L){
     if(I.palette==='prtg')return {up:IPRTG.up,warning:IPRTG.warning,down:IPRTG.down,ack:IPRTG.ack,unusual:IPRTG.unusual,paused:IPRTG.paused,unknown:IPRTG.unknown};
     var P=donutPalette(L), cf=(L.cardBg&&String(L.cardBg).charAt(0)==='#')?L.cardBg:'#FFFFFF';
-    return {up:P.up,warning:P.warning,down:P.down,ack:blend(P.down,'#FFFFFF',0.35),unusual:P.unusual,paused:P.paused,unknown:P.unknown};
+    return {up:P.up,warning:P.warning,down:P.down,ack:P.ack,unusual:P.unusual,paused:P.paused,unknown:P.unknown};
   }
   /* a solid fill with a glyph or text on it must read (4.5:1). If a colour falls a little short, nudge it a few percent away from the text colour. */
   function fitFill(c){
