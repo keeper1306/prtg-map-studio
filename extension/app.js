@@ -3425,9 +3425,23 @@ try{
     }).catch(function(e){
       bgMsg((e&&e.message)||'Could not change the background.','err');
       if(EX.bgColor&&hex6(EX.bgColor))$('mapbgcolor').value=hex6(EX.bgColor);
-    }).then(function(){swSync();});
+    }).then(function(){swSync();bgPreSync();});
   }
   $('mapbgcolor').addEventListener('change',function(){setMapBg(this.value);});
+  /* background presets: the stage colour each look in the Objects tab was drawn for, plus PRTG's own grey and white */
+  var BGPRE=[['PRTG default','#DAD7D7'],['White','#FFFFFF'],['Agency light','#EDF0F4'],['Clean card','#F3F4F6'],['Corporate blue','#F2F4F7'],['Executive dark','#171926'],['Indigo board','#161240'],['Slate fintech','#2B2D3C'],['Neon plum','#2A1838'],['Teal glass','#2A3B4C'],['Wall display','#0B1220'],['Brand navy','#050F34']];
+  function bgPreSync(){
+    var cur=hex6(EX.bgColor)||hex6($('mapbgcolor').value), on=!$('mapbgcolor').disabled;
+    [].forEach.call($('bgpresets').children,function(b){b.classList.toggle('on',hex6(b.getAttribute('data-c'))===cur);b.disabled=!on;});
+  }
+  (function(){
+    var box=$('bgpresets');
+    BGPRE.forEach(function(p){
+      var b=document.createElement('button');b.type='button';b.className='bgchip';b.setAttribute('data-c',p[1]);b.style.background=p[1];b.dataset.tip=p[0]+' · '+p[1];b.setAttribute('aria-label',p[0]);
+      b.addEventListener('click',function(){$('mapbgcolor').value=p[1].toLowerCase();setMapBg(p[1]);});
+      box.appendChild(b);
+    });
+  })();
   var LINKST={g:'up',r:'down',y:'warning',o:'unusual',b:'paused',bl:'paused',gr:'unknown'};
   function exLinks(conn){
     var by={}, defs='', body='', n=0;
@@ -3677,7 +3691,7 @@ try{
       EX.items=exParse(o.body||'');EX.map=id;EX.bg='';EX.bgColor='';EX.lines='';
       m=/<svg\b[^>]*\bwidth="(\d+)px"/i.exec(o.body||'');n=/<svg\b[^>]*\bheight="(\d+)px"/i.exec(o.body||'');
       EX.mapW=m?parseInt(m[1],10):0;EX.mapH=n?parseInt(n[1],10):0;
-      Promise.all([prtgCss(),EX.items.length&&$('exscr').checked?exLibs():null,exMapView(id).then(function(v){if(EX.map!==id)return;if(EX.bg&&EX.bg!==v.bg){try{URL.revokeObjectURL(EX.bg);}catch(e){}}EX.bg=v.bg;EX.bgColor=v.color;EX.lines=exLinks(v.conn);if(hex6(v.color))$('mapbgcolor').value=hex6(v.color);bgMsg('','');},function(){EX.bg='';})]).then(function(){if(EX.map===id)exRender();});
+      Promise.all([prtgCss(),EX.items.length&&$('exscr').checked?exLibs():null,exMapView(id).then(function(v){if(EX.map!==id)return;if(EX.bg&&EX.bg!==v.bg){try{URL.revokeObjectURL(EX.bg);}catch(e){}}EX.bg=v.bg;EX.bgColor=v.color;EX.lines=exLinks(v.conn);if(hex6(v.color))$('mapbgcolor').value=hex6(v.color);bgMsg('','');bgPreSync();},function(){EX.bg='';})]).then(function(){if(EX.map===id)exRender();});
       exNames().then(function(m){if(m===EX.map)exRender(true);});
       $('exsize').hidden=!(EX.mapW&&EX.mapH);
       $('exmsg').textContent=EX.items.length?(EX.items.length+(EX.items.length===1?' item':' items')+' on \u201C'+mapName()+'\u201D'+(EX.mapW?'. The map is '+EX.mapW+' \u00D7 '+EX.mapH+' px.':'.')+' Click one in the list to find it on the canvas.'):('There is nothing on \u201C'+mapName()+'\u201D yet.');
@@ -4039,7 +4053,7 @@ try{
     if(connected&&CSSX&&CSSX.origin!==(base()||pageOrigin()||''))try{prtgCss();}catch(e){}
     window.PRTGSTATE={connected:connected,map:connected&&!!$('pushmap').value};
     $('next2').disabled=!window.PRTGSTATE.map;
-    $('mapbgcolor').disabled=!window.PRTGSTATE.map;$('mapbgbtn').dataset.tip=window.PRTGSTATE.map?'Change the map\u2019s background colour':'Connect and choose a map first';
+    $('mapbgcolor').disabled=!window.PRTGSTATE.map;try{bgPreSync();}catch(e){}$('mapbgbtn').dataset.tip=window.PRTGSTATE.map?'Change the map\u2019s background colour':'Connect and choose a map first';
     try{document.dispatchEvent(new CustomEvent('prtgstate',{detail:window.PRTGSTATE}));}catch(e){}
     if(S.needLogin&&!connected&&!busy){$('prtgpop').hidden=false;}
     if(connected)S.needLogin=false;
