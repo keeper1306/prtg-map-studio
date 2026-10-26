@@ -1685,6 +1685,11 @@ try{
   function blankLiveTable(){
     return {title:'Live sensor table',cols:['status','device','sensor','lastvalue'],count:20,sortBy:'status',sortDir:'asc',statuses:[],nameContains:'',tags:'',refresh:15};
   }
+  function ltCleanTags(str){   /* a local copy: the objects region's cleanTags()/cleanTag() live in a different closure and are not reachable from here */
+    var parts=String(str||'').split(/[\s,]+/), out=[];
+    parts.forEach(function(x){x=String(x||'').replace(/[^A-Za-z0-9_\-]/g,'');if(x&&out.indexOf(x)<0)out.push(x);});
+    return out;
+  }
   function liveTableHTML(it){
     var p=it.p||{};
     var LABEL={status:'Status',device:'Device',group:'Group',probe:'Probe',sensor:'Sensor',message:'Message',lastvalue:'Last value'};
@@ -1696,7 +1701,7 @@ try{
     var qs='content=sensors&columns='+encodeURIComponent(apiCols.join(','))+'&count='+count+'&sortby='+encodeURIComponent((p.sortDir==='desc'?'-':'')+sortBy);
     var nm=String(p.nameContains||'').replace(/[<>"()]/g,'').trim();
     if(nm)qs+='&filter_name='+encodeURIComponent('@sub('+nm+')');
-    cleanTags(p.tags).forEach(function(t){qs+='&filter_tags='+encodeURIComponent(t);});
+    ltCleanTags(p.tags).forEach(function(t){qs+='&filter_tags='+encodeURIComponent(t);});
     qs+='&output=json';
     var title=String(p.title||'').trim();
     var head='';cols.forEach(function(c){head+='<th style="text-align:left;padding:5px 8px;font-weight:600;color:#475569;border-bottom:1px solid #e2e8f0;white-space:nowrap">'+oe(LABEL[c]||c)+'</th>';});
