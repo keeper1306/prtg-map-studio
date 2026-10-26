@@ -2498,8 +2498,26 @@ try{
     if(b){n.textContent='Will connect to '+b+'.';n.className='note pst';}
     else{n.textContent='Enter your PRTG server\u2019s address below.';n.className='note pst';}
   }
+  /* browsers deliberately reject every network-level fetch() failure with the
+     same generic error, whatever the real cause -- an untrusted certificate,
+     DNS failure, connection refused, a firewall -- so a page's own JS (this
+     extension included) cannot tell which one happened; that's intentional,
+     the same kind of restriction as the CSRF-token redaction seen earlier
+     while testing, just enforced by the browser instead of a dev tool. The
+     one case that IS genuinely detectable (no network at all) is split out;
+     everything else becomes an ordered checklist instead of one paragraph,
+     cert-trust first since that's by far the most common cause here (PRTG's
+     default self-signed certificate). */
   function cannotReach(b){
-    return 'Could not reach '+(b||'your PRTG server')+'. Check the address, that PRTG is running, and that you allowed this extension to reach that server when Chrome asked. If PRTG uses a certificate your browser does not already trust, open '+(b||'that address')+' in a new tab once, click through the warning, then press Connect again.';
+    var addr=b||'your PRTG server';
+    if(window.navigator&&navigator.onLine===false){
+      return 'This device has no network connection right now. Check your connection, then press Connect again.';
+    }
+    return 'Could not reach '+addr+'. The browser does not say why — that detail is deliberately withheld from any page’s own code — so check these in order:\n'
+      +'1. If this is the first time connecting to this address, open '+addr+' in a new tab once. If Chrome shows “Your connection is not private,” click Advanced, then proceed anyway — PRTG’s own certificate is usually self-signed and needs this once per address. Close that tab and press Connect again here.\n'
+      +'2. Check the address and port are correct, and that PRTG is actually running there.\n'
+      +'3. Make sure you allowed this extension to reach that address when Chrome asked (a permission prompt). If unsure, press Connect again.\n'
+      +'4. If none of that is it, a firewall or VPN between this device and the server is the next most likely cause.';
   }
   /* PRTG's own pages add an anti-CSRF token to every request that is not a GET (it comes from a <meta name="csrf-token"> tag). The loader keeps the token
      before it replaces the page; failing that, it is read from the page, or from a PRTG page fetched once. */
