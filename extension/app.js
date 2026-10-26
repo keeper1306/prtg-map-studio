@@ -2527,7 +2527,7 @@ try{
     var t=null;
     try{t=window.__prtgCsrf||((document.querySelector('meta[name="csrf-token"]')||{}).content)||null;}catch(e){}
     if(t){tokenPromise=Promise.resolve(t);return tokenPromise;}
-    tokenPromise=fetch(base()+'/index.htm',{credentials:base()?'include':'same-origin',headers:{'X-Requested-With':'XMLHttpRequest'}}).then(function(r){return r.text();}).then(function(h){
+    tokenPromise=fetch(base()+'/index.htm',{credentials:base()?'omit':'same-origin',headers:{'X-Requested-With':'XMLHttpRequest'}}).then(function(r){return r.text();}).then(function(h){
       var m=/<meta[^>]+name=["']csrf-token["'][^>]*content=["']([^"']+)["']/i.exec(h)||/<meta[^>]+content=["']([^"']+)["'][^>]*name=["']csrf-token["']/i.exec(h);
       return m?m[1]:'';
     }).catch(function(){return '';});
@@ -2569,11 +2569,20 @@ try{
     init=Object.assign({},init,{signal:ac.signal});
     return fetch(url,init).then(function(r){clearTimeout(t);return r;},function(e){clearTimeout(t);throw e;});
   }
+  /* credentials:'omit' (not 'include') for a cross-origin server -- this page
+     always runs from chrome-extension://..., so b is always set and this is
+     always the live branch. 'include' would send any existing PRTG session
+     cookie for that origin (e.g. from the user being logged in via a normal
+     browser tab) along with every request, which lets a stale cookie session
+     authenticate the request regardless of what's typed in the login card --
+     wrong credentials would silently "work". 'omit' makes the typed
+     username/passhash (or API token) the only thing that can authenticate a
+     request here, matching what the login card already tells the person. */
   function http(method,path,params){
     var b=base(), p=withAuth(params), url=b+path;
     var headers={'X-Requested-With':'XMLHttpRequest','Accept':(method==='GET')?'application/json, text/javascript, */*; q=0.01':'*/*'};
     var go=function(tok){
-      var init={method:method,credentials:b?'include':'same-origin',headers:headers};
+      var init={method:method,credentials:b?'omit':'same-origin',headers:headers};
       if(method==='POST'){headers['Content-Type']='application/x-www-form-urlencoded; charset=UTF-8';if(tok)headers['anti-csrf-token']=tok;init.body=qstring(p,false);}
       else{var qs=qstring(p,true);if(qs)url+=(url.indexOf('?')>-1?'&':'?')+qs;}
       return fetchWithTimeout(url,init).then(function(r){
@@ -2877,7 +2886,7 @@ try{
     var headers={'X-Requested-With':'XMLHttpRequest','Accept':'*/*'};
     return csrf().then(function(tok){
       if(tok)headers['anti-csrf-token']=tok;
-      return fetch(url,{method:'POST',credentials:b?'include':'same-origin',headers:headers,body:fd});
+      return fetch(url,{method:'POST',credentials:b?'omit':'same-origin',headers:headers,body:fd});
     }).then(function(r){
       return r.text().then(function(t){
         if(!r.ok){var e=new Error('PRTG answered '+r.status+' for '+path+'.');e.status=r.status;throw e;}
@@ -3170,7 +3179,7 @@ try{
     var out={kind:job.kind,label:job.label,request:shown};
     if(job.item)out.item=job.item;
     if(qs)url+=(url.indexOf('?')>-1?'&':'?')+qs;
-    return fetch(url,{method:'GET',credentials:b?'include':'same-origin',headers:{'X-Requested-With':'XMLHttpRequest','Accept':'text/html, */*; q=0.01'}}).then(function(r){
+    return fetch(url,{method:'GET',credentials:b?'omit':'same-origin',headers:{'X-Requested-With':'XMLHttpRequest','Accept':'text/html, */*; q=0.01'}}).then(function(r){
       return r.text().then(function(t){out.status=r.status;out.type=r.headers.get('content-type')||'';out.length=t.length;out.body=t;return out;});
     },function(){out.error=cannotReach(b);return out;});
   }
