@@ -3098,20 +3098,37 @@ try{
       storageRemove(['pm_user','pm_secret']);
     }
   }
+  /* the gauge loader (img/gauge.png with the needle img/gauge-needle.png sweeping over it). gloadShow puts it over a host element after a short wait, so a quick
+     answer never flashes it; the same key shows it again with new words; gloadHide removes it. */
+  var GLOAD={};
+  function gloadShow(host,key,text,small){
+    var n=GLOAD[key];
+    if(!n){
+      n=document.createElement('div');n.setAttribute('role','status');n.setAttribute('aria-live','polite');
+      n.innerHTML='<div class="gl-g" aria-hidden="true"><img src="img/gauge.png" alt=""><img class="gl-n" src="img/gauge-needle.png" alt=""></div><span class="gl-t"></span>';
+      n.style.display='none';host.appendChild(n);GLOAD[key]=n;
+      n._t=setTimeout(function(){n.style.display='';},150);
+    }
+    n.className='gl-ov'+(small?' gl-sm':'');
+    n.querySelector('.gl-t').textContent=text||'Loading\u2026';
+  }
+  function gloadHide(key){var n=GLOAD[key];if(!n)return;clearTimeout(n._t);if(n.parentNode)n.parentNode.removeChild(n);delete GLOAD[key];}
   function connect(){
     describeWhere();
     if(!pageOrigin()&&!base()){say('Enter your PRTG server\u2019s address below, then press Connect.','err');S.lastErr='enter a server address';$('prtgpop').hidden=false;try{$('pushserver').focus();}catch(e){}swSync();return;}
     if(CFG.connection.loginRequired&&!loginFilled()){loginMissing();return;}
     loginMark(false,false);
     say('Connecting\u2026','');
+    gloadShow($('prtgpop').querySelector('.lgcard'),'conn','Connecting to PRTG\u2026');
     $('pushconnect').disabled=true;S.maps=null;S.objFile=null;S.reviewed=null;S.cls=null;$('pushgo').hidden=true;$('pushlist').hidden=true;S.lastErr=null;S.reauth=!$('prtgpop').hidden;S.authAsked=false;swSync();
     ensureHostPermission(rawBase()).then(function(ok){
-      if(!ok){$('pushconnect').disabled=false;say('This page needs permission to talk to that server. Press Connect again and allow it when Chrome asks.','err');S.lastErr='permission not granted';swSync();return;}
-      detectUI(rawBase()).then(function(){describeWhere();return http('GET','/api/table.json',{content:'maps',columns:'name,objid'});}).then(function(t){
+      if(!ok){gloadHide('conn');$('pushconnect').disabled=false;say('This page needs permission to talk to that server. Press Connect again and allow it when Chrome asks.','err');S.lastErr='permission not granted';swSync();return;}
+      detectUI(rawBase()).then(function(){describeWhere();gloadShow($('prtgpop').querySelector('.lgcard'),'conn','Reading your maps\u2026');return http('GET','/api/table.json',{content:'maps',columns:'name,objid'});}).then(function(t){
         var j=parseJson(t,'The list of maps'), maps=(j&&j.maps)||[], sel=$('pushmap');
         sel.innerHTML='';
         maps.forEach(function(m){var o=document.createElement('option');o.value=String(m.objid);o.textContent=m.name;sel.appendChild(o);});
         S.maps=maps;
+        gloadShow($('prtgpop').querySelector('.lgcard'),'conn','Reading the object list\u2026');
         return http('GET','/api/mapobject.json');
       }).then(function(t){
         var catj=parseJson(t,'The list of object files');
@@ -3129,6 +3146,7 @@ try{
           else say('PRTG refused the request (401: not authorised), even though you are logged in here. Enter your username and passhash (or an API token) below, then press Connect again. In PRTG, your passhash is on your My Account page.','err');
         }else say(err.message,'err');
       }).then(function(){
+        gloadHide('conn');
         $('pushconnect').disabled=false;PV.cache={};PV.pending={};PV.inflight={};PV.queue=[];PV.applied={};trReset();updateButtons();renderObjList();pickerSync();pvSync();resolveDefaults();
         $('objnote').textContent=objNoteText();
       });
@@ -3553,6 +3571,7 @@ try{
   function exLayer(){var c=$('dcanvas'),l=$('dexist');if(!l){l=document.createElement('div');l.id='dexist';l.className=exLayerClass();c.insertBefore(l,c.firstChild);}return l;}
   function exClear(){
     var l=$('dexist'),x=$('exlist');
+    exlStop();
     EX.items=[];EX.mapW=0;EX.mapH=0;EX.map=null;EX.target={};EX.lines='';
     if(l&&l.parentNode)l.parentNode.removeChild(l);
     x.hidden=true;x.textContent='';$('exonrow').hidden=true;$('exdimrow').hidden=true;$('exscrrow').hidden=true;$('exsize').hidden=true;$('exmsg').textContent='';
@@ -3883,10 +3902,32 @@ try{
       +'#mapview{position:relative;width:'+w+'px;height:'+h+'px}#mapview .map_object{position:absolute!important;left:0!important;top:0!important;margin:0!important;width:'+w+'px!important;height:'+h+'px!important}</style>'+EX.styles+libs
       +'</head><body id="mainbody" data-theme="0" class="language_en"><div id="mapshow"><div class="view" style="position:static;overflow:visible"><div id="mapview">'+it.outer+'</div></div></div></body></html>';
   }
+  /* the gauge loader over the canvas while a map is read: from pressing Load until every item's preview frame has drawn (or 25 seconds have passed) */
+  var EXL=null;
+  function exlStart(id){
+    exlStop();
+    EXL={id:id,total:0,done:0,settled:false,timer:setTimeout(exlStop,25000)};
+    gloadShow($('dscroll'),'map','Reading the map\u2026',true);
+  }
+  function exlStop(){
+    if(EXL){clearTimeout(EXL.timer);EXL=null;}
+    gloadHide('map');
+  }
+  function exlCheck(){
+    if(!EXL||!EXL.settled)return;
+    if(EXL.done>=EXL.total){exlStop();return;}
+    gloadShow($('dscroll'),'map','Drawing items\u2026 '+EXL.done+' of '+EXL.total,true);
+  }
+  function exlSettle(id,rendered,named){
+    var run=EXL;
+    function fin(){if(EXL&&EXL===run){run.settled=true;exlCheck();}}
+    Promise.all([rendered.catch(function(){}),named.catch(function(){})]).then(fin);
+  }
   function exFrame(it,w,h){
-    var f=document.createElement('iframe');
+    var f=document.createElement('iframe'), run=EXL;
     f.setAttribute('tabindex','-1');
-    setFramePreview(f,exDoc(it,w,h),{allowScripts:exWantsScripts(it)});
+    if(run)run.total++;
+    setFramePreview(f,exDoc(it,w,h),{allowScripts:exWantsScripts(it)},function(){if(run&&run===EXL){run.done++;exlCheck();}});
     return f;
   }
   var EXCOL={up:'#3a9d23',warning:'#f5a623',down:'#d0021b',unusual:'#e8590c',paused:'#8e9bae',other:'#8e9bae'};
@@ -3975,17 +4016,19 @@ try{
     if(!id)return;
     if(typeof xeReset0==='function')xeReset0();
     $('exload').disabled=true;$('exmsg').textContent='Reading the map\u2026';$('exmsg').className='note pst';
+    exlStart(id);
     sampleGet({kind:'items',label:'Items on the map',path:'/api/mapsvg.htm',params:{id:id}}).then(function(o){
       var m, n;
       $('exload').disabled=false;updateButtons();
-      if(String(mapId())!==String(id))return;                 /* another map was chosen meanwhile */
+      if(String(mapId())!==String(id)){exlStop();return;}                 /* another map was chosen meanwhile */
       if(o.status===401){authNeeded();}
-      if(o.error||o.status<200||o.status>=300){$('exmsg').textContent=o.error||('PRTG answered '+o.status+' for the map\u2019s items.');$('exmsg').className='note pst err';return;}
+      if(o.error||o.status<200||o.status>=300){exlStop();$('exmsg').textContent=o.error||('PRTG answered '+o.status+' for the map\u2019s items.');$('exmsg').className='note pst err';return;}
       EX.items=exParse(o.body||'');EX.map=id;EX.bg='';EX.bgColor='';EX.lines='';
       m=/<svg\b[^>]*\bwidth="(\d+)px"/i.exec(o.body||'');n=/<svg\b[^>]*\bheight="(\d+)px"/i.exec(o.body||'');
       EX.mapW=m?parseInt(m[1],10):0;EX.mapH=n?parseInt(n[1],10):0;
-      Promise.all([prtgCss(),EX.items.length&&$('exscr').checked?exLibs():null,exMapView(id).then(function(v){if(EX.map!==id)return;if(EX.bg&&EX.bg!==v.bg){try{URL.revokeObjectURL(EX.bg);}catch(e){}}EX.bg=v.bg;EX.bgColor=v.color;EX.lines=exLinks(v.conn);if(hex6(v.color))$('mapbgcolor').value=hex6(v.color);bgMsg('','');bgPreSync();},function(){EX.bg='';})]).then(function(){if(EX.map===id)exRender();});
-      exNames().then(function(m){if(m===EX.map)exRender(true);});
+      var rendered=Promise.all([prtgCss(),EX.items.length&&$('exscr').checked?exLibs():null,exMapView(id).then(function(v){if(EX.map!==id)return;if(EX.bg&&EX.bg!==v.bg){try{URL.revokeObjectURL(EX.bg);}catch(e){}}EX.bg=v.bg;EX.bgColor=v.color;EX.lines=exLinks(v.conn);if(hex6(v.color))$('mapbgcolor').value=hex6(v.color);bgMsg('','');bgPreSync();},function(){EX.bg='';})]).then(function(){if(EX.map===id)exRender();});
+      var named=exNames().then(function(m){if(m===EX.map)exRender(true);});
+      exlSettle(id,rendered,named);
       $('exsize').hidden=!(EX.mapW&&EX.mapH);
       $('exmsg').textContent=EX.items.length?(EX.items.length+(EX.items.length===1?' item':' items')+' on \u201C'+mapName()+'\u201D'+(EX.mapW?'. The map is '+EX.mapW+' \u00D7 '+EX.mapH+' px.':'.')+' Click one in the list to find it on the canvas.'):('There is nothing on \u201C'+mapName()+'\u201D yet.');
       $('exmsg').className='note pst ok';
