@@ -266,7 +266,7 @@ body.editing #legtype{display:none}
 .lyrbtns{display:flex;gap:4px;margin-top:4px}
 .lyrbtns .btn{padding:4px 8px;font-size:12px;flex:1;min-width:0}
 .dform h4{margin:12px 0 0;font-size:13px;font-weight:500;color:var(--blue)}
-.dform .actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+.dform .actions{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0 10px}.dform .actions .btn{padding:7px 2px;font-size:10.5px;letter-spacing:.2px}
 .drows{margin-top:6px}
 .drow{display:flex;align-items:center;gap:7px;padding:6px 8px;border:1px solid transparent;border-radius:4px;cursor:pointer;font-size:12px}
 .drow:hover{background:var(--g5)}
@@ -479,6 +479,7 @@ body.dash #dtabs{display:grid;grid-template-columns:repeat(3,1fr)}
 #objfs.folded{display:none}
 #showexisting.on{color:var(--cyan);border-color:var(--cyan);background:#eaf5fc}
 #dashpanel .addgrid{grid-template-columns:repeat(3,1fr);gap:6px}
+#inlhost{margin-top:8px}body.inlobj #objpanel>fieldset:first-child{display:none}#inlhost #objpanel{display:block}#inlhost #legbox>.advbar,#inlhost #legbox>fieldset{margin-top:0}
 #dashpanel label.bgpick{cursor:pointer}.bgpick input[type=color]{width:34px;height:18px;padding:0;border:1px solid var(--g20);border-radius:3px;background:none;cursor:pointer}.bgpick input[type=color]:disabled{opacity:.45;cursor:not-allowed}
 #dashpanel .bgpresets{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}.bgchip{width:24px;height:24px;border-radius:50%;border:1px solid rgba(5,15,52,.28);padding:0;cursor:pointer}.bgchip:hover{transform:scale(1.12)}.bgchip.on{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--cyan)}.bgchip:disabled{opacity:.4;cursor:not-allowed;transform:none}
 #dashpanel .addgrid .btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:9px 2px 7px;font-size:11px;font-weight:500;letter-spacing:.2px;text-transform:none;border-radius:6px;line-height:1.15;min-width:0}
@@ -672,6 +673,7 @@ body.dash #dtabs{display:grid;grid-template-columns:repeat(3,1fr)}
     <fieldset>
       <legend>Selected</legend>
       <div id="dform" class="dform"></div>
+      <div id="inlhost" hidden></div>
     </fieldset>
     <fieldset>
       <legend>Items on the canvas</legend>

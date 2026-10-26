@@ -46,7 +46,7 @@ var CFG={
   dashTabs:{start:'map',canvasClickMs:600,
     tabs:[
       {id:'map',icon:'1',label:'Map',sections:['Map']},
-      {id:'add',icon:'2',label:'Design',sections:['Build','Existing PRTG objects','Items on the canvas','Selected','Canvas','Save and load layout']},
+      {id:'add',icon:'2',label:'Design',sections:['Build','Selected','Existing PRTG objects','Items on the canvas','Canvas','Save and load layout']},
       {id:'pub',icon:'3',label:'Push',sections:['Push to PRTG']}
     ],
     fold:['Canvas','Save and load layout'],
@@ -519,6 +519,7 @@ function render(){
   applyLiveEdit();
   out.value=buildCode();
   if(typeof placeHandles==='function')placeHandles();
+  if(window.PBD_ONLEG&&!window.PBD_LEGBUSY)window.PBD_ONLEG();   /* the Dashboard follows each change while it edits a label or button in place */
 }
 
 function measureText(){
@@ -2013,17 +2014,146 @@ try{
     s.addEventListener('change',function(){it.parent=(s.value==='')?null:parseInt(s.value,10);renderAll();commit();});
     w.appendChild(s);return w;
   }
+  /* a folded section in the Selected panel, built like the ones in the Objects tab; it remembers whether you opened it */
+  var ACCOPEN={};
+  function acc(title,nodes,open){
+    var f=el_('fieldset','secfs'), bar=el_('button','advbar'), body=el_('div','secbody'), on=(title in ACCOPEN)?ACCOPEN[title]:!!open;
+    bar.type='button';bar.innerHTML='<span class="seccaret">'+(on?'▾':'▸')+'</span> <span class="sectitle"></span>';
+    bar.querySelector('.sectitle').textContent=title;
+    if(on)bar.className+=' open';
+    body.hidden=!on;
+    bar.addEventListener('click',function(){
+      var o=body.hidden;body.hidden=!o;ACCOPEN[title]=o;
+      bar.classList.toggle('open',o);bar.firstChild.textContent=o?'▾':'▸';
+    });
+    nodes.forEach(function(n){body.appendChild(n);});
+    f.appendChild(bar);f.appendChild(body);
+    return f;
+  }
+  /* ---------- the selected item's style, edited in place ----------
+     A frame, shape or background is edited with the Objects tab's editor, and a label or button with the original label and button tool.
+     Their panels are moved into #inlhost under the selected item, and every change is copied to the item as it happens. */
+  var INL={id:null,kind:'',json:'',pre:null,nodes:[],timer:null};
+  function inlKey(it){return it.type==='frame'?JSON.stringify([it.p,it.w,it.h]):JSON.stringify(it.state);}
+  function frameKind(it){return it.p.shape?'shape':(it.p.group===false?'bg':'frame');}
+  function inlHost(){return document.getElementById('inlhost');}
+  function inlCommitSoon(){clearTimeout(INL.timer);INL.timer=setTimeout(function(){commit();},500);}
+  function syncGeo(it){
+    var ins=formEl.querySelectorAll('.dgeo input');
+    if(ins.length===4){['x','y','w','h'].forEach(function(k,i){if(document.activeElement!==ins[i])ins[i].value=Math.round(it[k]);});}
+  }
+  function legMount(host){
+    var panel=document.getElementById('panel'), keep={modebar:1,objpanel:1,dashpanel:1,legtype:1}, box=document.getElementById('legbox'), imp;
+    if(!box){box=document.createElement('div');box.id='legbox';}
+    host.appendChild(box);
+    INL.nodes=[].filter.call(panel.children,function(n){return !keep[n.id];});
+    INL.nodes.forEach(function(n){box.appendChild(n);});
+    imp=document.getElementById('imp');imp=imp&&imp.closest('fieldset');
+    if(imp)imp.style.display='none';
+    var pw=document.getElementById('preswrap');INL.presOpen=!!(pw&&!pw.hidden);
+    INL.legOpen=[].map.call(box.querySelectorAll(':scope > fieldset.secfs'),function(f){return f.children[1]?!f.children[1].hidden:false;});
+    document.body.classList.add('inlleg');
+  }
+  function legUnmount(){
+    var panel=document.getElementById('panel'), imp=document.getElementById('imp');
+    imp=imp&&imp.closest('fieldset');if(imp)imp.style.display='';
+    var pw=document.getElementById('preswrap'), pt=document.getElementById('prestoggle'), pc=document.getElementById('prescaret');
+    if(pw){pw.hidden=!INL.presOpen;if(pt)pt.classList.toggle('open',!!INL.presOpen);if(pc)pc.innerHTML=INL.presOpen?'\u25BE':'\u25B8';}
+    [].forEach.call(document.querySelectorAll('#legbox > fieldset.secfs'),function(f,i){
+      var bar=f.children[0], body=f.children[1], o=!!(INL.legOpen&&INL.legOpen[i]);
+      if(!bar||!body)return;
+      body.hidden=!o;bar.classList.toggle('open',o);bar.setAttribute('aria-expanded',o?'true':'false');if(bar.firstChild)bar.firstChild.textContent=o?'\u25BE':'\u25B8';
+    });
+    INL.nodes.forEach(function(n){panel.appendChild(n);});
+    INL.nodes=[];
+    document.body.classList.remove('inlleg');
+  }
+  function legFold(){
+    [].forEach.call(document.querySelectorAll('#legbox > fieldset.secfs'),function(f){
+      var bar=f.children[0], body=f.children[1];
+      if(!bar||!body)return;
+      body.hidden=true;bar.classList.remove('open');bar.setAttribute('aria-expanded','false');if(bar.firstChild)bar.firstChild.textContent='▸';
+    });
+    var w=document.getElementById('preswrap'), t=document.getElementById('prestoggle');
+    if(w){w.hidden=false;if(t)t.classList.add('open');var c=document.getElementById('prescaret');if(c)c.innerHTML='▾';}
+  }
+  function legMode(m){var was=DASHAPI.active;DASHAPI.active=false;try{setMode(m);}finally{DASHAPI.active=was;}}   /* setMode would otherwise leave the Dashboard tab */
+  function legBegin(it,fresh){
+    if(!INL.pre)INL.pre={snap:snapshot(),mode:mode};
+    window.PBD_LEGBUSY=true;
+    try{legMode(it.type==='button'?'button':'label');applySnap(it.state);render();}finally{window.PBD_LEGBUSY=false;}
+    if(fresh)legFold();
+  }
+  function legEnd(){
+    var pre=INL.pre;
+    window.PBD_ONLEG=null;
+    legUnmount();
+    if(pre){window.PBD_LEGBUSY=true;try{legMode(pre.mode);applySnap(pre.snap);render();}finally{window.PBD_LEGBUSY=false;}}
+    INL.pre=null;
+  }
+  function inlEnd(){
+    if(INL.kind==='obj'){OBJAPI.inline.end();OBJAPI.inline.unmount();OBJAPI.onInline=null;}
+    else if(INL.kind==='leg')legEnd();
+    INL.kind='';INL.id=null;INL.json='';
+    var h=inlHost();if(h)h.hidden=true;
+  }
+  function inlFromFrame(){
+    var it=byId(INL.id), r=OBJAPI.inline.read(), sized;
+    if(!it||!r)return;
+    sized=(r.w!==it.w||r.h!==it.h);
+    it.p=r.p;it.w=r.w;it.h=r.h;
+    if(it.p.group===false&&!it.p.shape)it.parent=null;
+    INL.json=inlKey(it);
+    refreshItem(it);buildList();inlCommitSoon();
+    if(sized)syncGeo(it);
+  }
+  function inlFromLegacy(){
+    var it=byId(INL.id);
+    if(!it)return;
+    it.state=snapshot();it.type=(mode==='button')?'button':'label';
+    INL.json=inlKey(it);
+    refreshItem(it);buildList();inlCommitSoon();
+    syncGeo(it);
+  }
+  function inlSync(){
+    var it=byId(D.sel), host=inlHost(), fresh, changed;
+    if(!host||!DASHAPI.active||editing!==null)return;
+    if(it&&it.type==='frame'&&OBJAPI.inline){
+      if(INL.kind==='leg')inlEnd();
+      fresh=(INL.kind!=='obj');
+      if(fresh){OBJAPI.inline.mount(host);INL.kind='obj';OBJAPI.onInline=inlFromFrame;}
+      if(fresh||INL.id!==it.id||INL.json!==inlKey(it)){
+        INL.id=it.id;INL.json=inlKey(it);
+        OBJAPI.inline.begin(frameKind(it),it.p,it.w,it.h,fresh);
+      }
+    }else if(it&&(it.type==='label'||it.type==='button')){
+      if(INL.kind==='obj')inlEnd();
+      fresh=(INL.kind!=='leg');
+      if(fresh){legMount(host);INL.kind='leg';window.PBD_ONLEG=inlFromLegacy;}
+      if(fresh||INL.id!==it.id||INL.json!==inlKey(it)){
+        INL.id=it.id;INL.json=inlKey(it);
+        legBegin(it,fresh);
+      }
+    }else{
+      inlEnd();
+    }
+    host.hidden=!INL.kind;
+  }
   function buildForm(){
       try{document.dispatchEvent(new Event('dashselect'));}catch(e){}
     formEl.innerHTML='';
     codeEl=null;
     var it=byId(D.sel);
       if(window.SECAPI)SECAPI.note('Selected',it?itemName(it):'nothing selected');
-    if(!it){formEl.appendChild(el_('p','note pst','Nothing selected. Click an item on the canvas, or add one above.'));return;}
+    if(!it){formEl.appendChild(el_('p','note pst','Click an item on the canvas to change how it looks.'));inlSync();return;}
     formEl.appendChild(el_('h4',null,TYPENAME[it.type]));
-    formEl.appendChild(geoRow(it));
-    formEl.appendChild(layerRow(it));
-    formEl.appendChild(parentSel(it));
+    var act=el_('div','actions');
+    var d1=el_('button','btn ghost','Duplicate');d1.type='button';d1.addEventListener('click',function(){dup(it);});
+    var d2=el_('button','btn ghost','Delete');d2.type='button';d2.addEventListener('click',function(){del(it);});
+    var d3=el_('button','btn ghost','Copy');d3.type='button';d3.title='Copy (Ctrl+C)';d3.addEventListener('click',function(){copyItem(it,false);});
+    var d4=el_('button','btn ghost','Paste');d4.type='button';d4.title='Paste (Ctrl+V)';d4.addEventListener('click',function(){pasteItem();});
+    act.appendChild(d1);act.appendChild(d2);act.appendChild(d3);act.appendChild(d4);formEl.appendChild(act);
+    formEl.appendChild(acc('Size, position and layer',[geoRow(it),layerRow(it),parentSel(it)]));
     if(it.type==='prtgobj'){
         var on=el_('p','note pst');on.textContent='Object file: '+it.p.cat+': '+it.p.name;formEl.appendChild(on);
         var tw=el_('div','dfld');tw.appendChild(el_('label',null,'Target (PRTG object ID)'));
@@ -2040,11 +2170,6 @@ try{
         var tn=el_('p','note pst');tn.id='dtgtname';tn.textContent=((it.p.target&&it.p.target.name)?('Showing: '+it.p.target.name):((it.p.target&&it.p.target.id)?'Showing the PRTG object with this ID.':'No target chosen yet.'))+(it.p.targetDefault?' This is the preview default: choose the real one under Objects already in PRTG.':'');formEl.appendChild(tn);
         formEl.appendChild(el_('p','note','The object\u2019s look comes from its file in PRTG, so there is nothing to paste. Choose what it shows under Objects already in PRTG, or type its ID. 0 means none.'));
       }else if(it.type==='frame'){
-      var fb=el_('button','btn','Edit style');fb.type='button';fb.style.marginTop='12px';fb.style.width='100%';fb.id='dframeedit';
-      if(!OBJAPI.frameEdit)fb.disabled=true;
-      fb.addEventListener('click',function(){startFrameEdit(it);});
-      formEl.appendChild(fb);
-      formEl.appendChild(el_('p','note','Opens the editor from the Objects tab with this item\u2019s settings: title, style, colors, border, shadow, font, padding and size. Press Done to come back, or double-click the item.'));
       if(!it.p.shape)formEl.appendChild(mk(it,'Move contents with this frame','group','check'));
     }else if(it.type==='tile'){
       formEl.appendChild(mk(it,'Caption','caption','text'));
@@ -2061,21 +2186,10 @@ try{
       formEl.appendChild(pair(mk(it,'Color','variant','select',[['success','Green'],['warning','Amber'],['danger','Red'],['info','Blue'],['neutral','Grey']]),mk(it,'Size','size','number',{min:8,max:40})));
       formEl.appendChild(mk(it,'Font','fam','select',famOpts()));
     }else{
-      var b=el_('button','btn','Edit style');b.type='button';b.style.marginTop='12px';b.style.width='100%';
-      b.addEventListener('click',function(){startEdit(it);});
-      formEl.appendChild(b);
-      formEl.appendChild(el_('p','note','Opens the '+(it.type==='button'?'Button':'Text label')+' tab with this item\u2019s settings: fonts, presets, 3D, link and everything else. Press Done to come back.'));
     }
-    var act=el_('div','actions');
-    var d1=el_('button','btn ghost','Duplicate');d1.type='button';d1.addEventListener('click',function(){dup(it);});
-    var d2=el_('button','btn ghost','Delete');d2.type='button';d2.addEventListener('click',function(){del(it);});
-    var d3=el_('button','btn ghost','Copy');d3.type='button';d3.title='Copy (Ctrl+C)';d3.addEventListener('click',function(){copyItem(it,false);});
-    var d4=el_('button','btn ghost','Paste');d4.type='button';d4.title='Paste (Ctrl+V)';d4.addEventListener('click',function(){pasteItem();});
-    act.appendChild(d1);act.appendChild(d2);act.appendChild(d3);act.appendChild(d4);formEl.appendChild(act);
     if(it.type==='frame')formEl.appendChild(el_('p','note','Deleting a frame also deletes what is inside it. Undo brings it back.'));
-      if(it.type==='prtgobj'){syncCode();return;}   /* nothing to paste for an object PRTG draws */
+      if(it.type==='prtgobj'){syncCode();inlSync();return;}   /* nothing to paste for an object PRTG draws */
     var cw=el_('div','dfld');
-    cw.appendChild(el_('label',null,'Code for this item'));
     codeEl=el_('textarea');codeEl.rows=7;codeEl.readOnly=true;codeEl.spellcheck=false;codeEl.id='dcode';
     codeEl.style.fontFamily='Consolas,Monaco,monospace';codeEl.style.fontSize='11px';
     cw.appendChild(codeEl);
@@ -2083,8 +2197,9 @@ try{
     cb.addEventListener('click',function(){copyText(htmlCache[it.id]||'');});
     cw.appendChild(cb);
     cw.appendChild(el_('p','note','Paste this into HTML Before of a Custom HTML item, and give the item this size and position. PRTG rewrites div as span when you paste, so these pieces are written as spans that declare display:block and keep their size. Web fonts are not included here. Use Copy font links once per dashboard. For a frame that resizes with its item, use Objects, Frame.'));
-    formEl.appendChild(cw);
+    formEl.appendChild(acc('Code for this item',[cw]));
     syncCode();
+    inlSync();
   }
 
   /* ---------- add, duplicate, delete ---------- */
@@ -2279,9 +2394,8 @@ try{
   canvas.addEventListener('dblclick',function(e){
     var n=e.target.closest?e.target.closest('.ditem'):null;
     if(!n)return;
-    var it=byId(parseInt(n.getAttribute('data-id'),10));
-    if(it&&(it.type==='label'||it.type==='button'))startEdit(it);
-    else if(it&&it.type==='frame')startFrameEdit(it);
+    var it=byId(parseInt(n.getAttribute('data-id'),10)), h=inlHost();
+    if(it&&h&&!h.hidden){try{h.scrollIntoView({block:'nearest',behavior:'smooth'});}catch(err){}}   /* its settings are already open under it */
   });
   handle.addEventListener('mousedown',function(e){
     e.preventDefault();e.stopPropagation();
@@ -2315,6 +2429,7 @@ try{
     if(!DASHAPI.active)return;
     var t=e.target, tag=t&&t.tagName;
     if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT')return;
+    if(t&&t.closest&&t.closest('#inlhost'))return;
     var k=(e.key||'').toLowerCase();
     if((e.ctrlKey||e.metaKey)&&k==='z'){e.preventDefault();doUndo();return;}
     if((e.ctrlKey||e.metaKey)&&k==='y'){e.preventDefault();doRedo();return;}
@@ -2373,7 +2488,7 @@ try{
     document.body.classList.remove('dash');
     document.getElementById('mDash').classList.remove('on');
   };
-  DASHAPI.finish=function(){if(editing!==null)finishEdit(true);};
+  DASHAPI.finish=function(){if(editing!==null)finishEdit(true);inlEnd();};
   TABS.register({id:'dash',button:'mDash',api:DASHAPI,
     onClick:function(){if(editing!==null)finishEdit(true);else TABS.show('dash');},   /* clicking the tab while editing a label or button finishes the edit first */
     beforeLeave:function(){DASHAPI.finish();},
@@ -7432,6 +7547,7 @@ try{
     drawPreview();
     refreshStyleGallery();
     hRecord();
+    if(INLK&&!INLBUSY&&OBJAPI.onInline)OBJAPI.onInline();   /* the Dashboard follows each change while it edits a frame in place */
   }
 
   /* ---------- panel ---------- */
@@ -7959,6 +8075,56 @@ try{
       refreshUI();syncTypeSelects();hUpdate();
     }
   };
+  /* The same editor, shown inside the Dashboard's own panel under the selected item. The Dashboard moves the editor's panel into its own,
+     and each change is passed back through OBJAPI.onInline. The tab's own frame and history are set aside as in frameEdit. */
+  var INLK=null, INLBUSY=false, INLCUR='frame', INLOPEN=null;
+  function inlFold(){
+    [].forEach.call(hostEl.children,function(f){
+      var bar=f.children[0], body=f.children[1], open;
+      if(!bar||!body||bar.tagName!=='BUTTON')return;
+      open=/Look presets/.test(bar.textContent);
+      body.hidden=!open;bar.classList.toggle('open',open);
+      if(bar.firstChild)bar.firstChild.textContent=open?'\u25BE':'\u25B8';
+    });
+  }
+  OBJAPI.inline={
+    mount:function(host){
+      INLOPEN=[].map.call(hostEl.children,function(f){return f.children[1]?!f.children[1].hidden:false;});
+      host.appendChild(hostEl);document.body.classList.add('inlobj');
+    },
+    unmount:function(){
+      var pn=document.getElementById('panel');
+      document.body.classList.remove('inlobj');
+      [].forEach.call(hostEl.children,function(f,i){
+        var bar=f.children[0], body=f.children[1], o=!!(INLOPEN&&INLOPEN[i]);
+        if(!bar||!body||bar.tagName!=='BUTTON')return;
+        body.hidden=!o;bar.classList.toggle('open',o);if(bar.firstChild)bar.firstChild.textContent=o?'\u25BE':'\u25B8';
+      });
+      if(hostEl.parentNode!==pn)pn.insertBefore(hostEl,document.getElementById('dashpanel'));
+    },
+    begin:function(kind,p,w,h,fresh){
+      var fr=blankFR(kind);
+      fr.p=JSON.parse(JSON.stringify(p));fr.w=w;fr.h=h;
+      if(!INLK&&!EDK)INLK={type:TYPE,frame:FRM.frame,bg:FRM.bg,shape:FRM.shape,hf:HIST.frame,hb:HIST.bg,hs:HIST.shape};
+      FRM[kind]=fr;delete HIST[kind];INLCUR=kind;
+      INLBUSY=true;
+      try{if(TYPE!==kind)setType(kind);else{refreshUI();render();}}finally{INLBUSY=false;}
+      document.body.classList.remove('objs');OBJAPI.active=false;
+      if(fresh)inlFold();
+    },
+    read:function(){var fr=INLK&&FRM[INLCUR];return fr?{p:JSON.parse(JSON.stringify(fr.p)),w:fr.w,h:fr.h}:null;},
+    end:function(){
+      if(!INLK)return;
+      FRM.frame=INLK.frame;FRM.bg=INLK.bg;FRM.shape=INLK.shape;
+      if(INLK.hf)HIST.frame=INLK.hf;else delete HIST.frame;
+      if(INLK.hb)HIST.bg=INLK.hb;else delete HIST.bg;
+      if(INLK.hs)HIST.shape=INLK.hs;else delete HIST.shape;
+      TYPE=INLK.type;INLK=null;
+      document.body.classList.remove('objs');
+      if(!isLegacy(TYPE))buildPresetOptions();
+      refreshUI();syncTypeSelects();hUpdate();
+    }
+  };
   TABS.register({id:'obj',button:'mObj',api:OBJAPI,
     open:function(){
       OBJAPI.active=true;
@@ -8059,31 +8225,6 @@ try{
       fs.classList.toggle('folded',!open);btn.classList.toggle('on',open);btn.setAttribute('aria-expanded',open?'true':'false');
       if(open){try{document.dispatchEvent(new CustomEvent('secopen',{detail:{fs:fs}}));fs.scrollIntoView({block:'nearest'});}catch(e){}}
     });
-  })();
-  /* the five Build tiles also open an Edit style section below, the way the sixth opens Existing PRTG objects */
-  (function(){
-    var build=bars['Build'], exFs=document.getElementById('objfs'), exBtn=document.getElementById('showexisting');
-    if(!build)return;
-    var fs=document.createElement('fieldset');fs.id='stylefs';fs.className='secfs flat folded';
-    fs.innerHTML='<button type="button" class="advbar open hasnote" tabindex="-1"><span class="seccaret">\u25BE</span> <span class="sectitle">Edit style</span><span class="secnote"></span></button>'
-      +'<div class="secbody"><p class="note">Opens the editor with this item\u2019s settings: fonts, colors, border, shadow, size and everything else. Press Done to come back, or double-click the item.</p><button type="button" class="btn" id="addeditstyle">Edit style</button></div>';
-    build.parentNode.insertBefore(fs,build.nextSibling);
-    var note=fs.querySelector('.secnote'), go=document.getElementById('addeditstyle');
-    function formBtn(){var f=document.getElementById('dform');return f?[].filter.call(f.querySelectorAll('button'),function(b){return b.textContent==='Edit style';})[0]:null;}
-    function sync(){
-      var sel=null;try{sel=DASHAPI.selected();}catch(e){}
-      if(!sel){fs.classList.add('folded');return;}
-      var fb=formBtn();go.disabled=!fb||fb.disabled;
-      var h=document.querySelector('#dform h4');note.textContent=h?h.textContent:'';
-    }
-    function hideStyle(){fs.classList.add('folded');}
-    document.addEventListener('builditemadded',function(){
-      if(exFs&&!exFs.classList.contains('folded')){exFs.classList.add('folded');if(exBtn){exBtn.classList.remove('on');exBtn.setAttribute('aria-expanded','false');}}
-      fs.classList.remove('folded');sync();
-    });
-    if(exBtn)exBtn.addEventListener('click',function(){if(!exFs.classList.contains('folded'))hideStyle();});
-    go.addEventListener('click',function(){var fb=formBtn();if(fb&&!fb.disabled)fb.click();});
-    document.addEventListener('dashselect',function(){if(!fs.classList.contains('folded'))setTimeout(sync,0);});
   })();
   /* Build tiles: one click arms a tile and the next click on the canvas places it; a double-click adds it at the default spot; a tile can also be dragged onto the canvas */
   (function(){
