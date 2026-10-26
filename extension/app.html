@@ -218,7 +218,8 @@ body.dash #typegrid,body.editing #typegrid{display:none}
 #dexist.off{display:none}
 .dexlines .curvedline,.dexlines line.connectionline{fill:none;stroke-width:3px;stroke-linecap:round}.dexlines .curvedglow{fill:none;stroke-width:9px;opacity:.25}.dexlines .curved-hidden{display:none}
 .dexitem{position:absolute;pointer-events:none;box-sizing:border-box;overflow:hidden}
-.dexitem iframe{border:0;width:100%;height:100%;background:transparent}
+.dexitem iframe{border:0;width:calc(100% + 80px);height:calc(100% + 40px);background:transparent}
+.dexitem[data-frame]{overflow:visible}
 .dexitem.ph{border:2px dashed var(--cyan);background:rgba(0,125,184,.07);padding:8px 10px;font:600 18px/1.3 Roboto,Inter,Arial,sans-serif;color:var(--cyan)}
 .dexitem.ph small{display:block;font-weight:400;font-size:15px;color:#6b7080}
 .dexitem.geo{background:#eef3f7;border:1px solid #cfd9e2}

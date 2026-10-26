@@ -3360,13 +3360,14 @@ try{
   /* The map's own look is not in the item list. PRTG's View Map page asks /controls/mapview.htm for it: the picture and colour behind the items are the style of #mapview, and the links between items are a list of who connects to whom, drawn as curves. */
   function exMapView(id){
     var origin=(base()||pageOrigin()||'');
-    function grab(path){
+    function grab1(path,cred){
       var qs=qstring(withAuth({}),true);
-      return fetchWithTimeout(origin+path+(qs?'?'+qs:''),{method:'GET',credentials:base()?'omit':'same-origin'}).then(function(r){
+      return fetchWithTimeout(origin+path+(qs?'?'+qs:''),{method:'GET',credentials:cred}).then(function(r){
         if(!r.ok)throw new Error('no');
         return r.blob();
-      }).then(function(b){if(!b||!b.size)throw new Error('no');return URL.createObjectURL(b);});
+      }).then(function(b){if(!b||!b.size||!/^image\//.test(b.type||''))throw new Error('no');return URL.createObjectURL(b);});
     }
+    function grab(path){return grab1(path,base()?'omit':'same-origin').then(function(u){return u;},function(){return grab1(path,'include');});}
     return http('GET','/controls/mapview.htm',{id:id}).then(function(t){
       var d=new DOMParser().parseFromString(t,'text/html'), mv=d.querySelector('#mapview'), ms=d.querySelector('#mapshow'), st=(mv&&mv.getAttribute('style'))||'', m=/background-image\s*:\s*url\(\s*["']?([^"')]+)/i.exec(st), c=/background-color\s*:\s*([^;]+)/i.exec(st), conn=null, r={bg:'',color:c?c[1].trim():'',conn:null};
       try{conn=JSON.parse(ms.getAttribute('data-connections')||'null');}catch(e){}
@@ -3378,11 +3379,12 @@ try{
     },function(){return {bg:'',color:'',conn:null};});
   }
   var LINKCOL={up:'#b4cc38',down:'#d71920',warning:'#ffd400',unusual:'#f5821f',paused:'#3b8dd0',unknown:'#9aa4af'};
+  var LINKST={g:'up',r:'down',y:'warning',o:'unusual',b:'paused',bl:'paused',gr:'unknown'};
   function exLinks(conn){
     var by={}, defs='', body='', n=0;
     EX.items.forEach(function(it){by[it.subid]=it;});
     function ctr(it){return {x:(it.left||0)+(it.width||0)/2,y:(it.top||0)+(it.height||0)/2};}
-    function col(it){var m=/\bstatus-(up|down|warning|unusual|paused|unknown)\b/.exec(it.cls||'');return LINKCOL[m?m[1]:'unknown'];}
+    function col(it){var m=/\bmap_objectstate_sens([a-z]+)\b/.exec(it.cls||''), c=m?m[1]:'', k=LINKST[c];if(!k){var w=/\bstatus-(up|down|warning|unusual|paused|unknown)\b/.exec(it.cls||'');k=w?w[1]:'unknown';}return LINKCOL[k]||LINKCOL.unknown;}
     Object.keys(conn||{}).forEach(function(a){
       (Array.isArray(conn[a])?conn[a]:[]).forEach(function(bk){
         var A=by[a], B=by[bk], p, q, dx, dy, len, off, cx, cy, gid, d;
