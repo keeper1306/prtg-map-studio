@@ -560,6 +560,12 @@ fieldset{border-bottom-color:var(--line)}
 .oway{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--soft)}
 .owayt{font-weight:600;font-size:12.5px;color:var(--ink)}
 .oway .btn:disabled{opacity:.45;cursor:not-allowed}
+
+.ditem.teedit{cursor:text}.ditem.teedit,.ditem.teedit *{-webkit-user-select:text;user-select:text}
+.ditem.teedit [contenteditable]{outline:2px solid #00A3DA;outline-offset:3px;border-radius:2px;min-width:12px}
+#inlhost #preswrap > fieldset{border:0;padding:6px 2px 2px}
+#inlhost #advwrap > .geofs{margin-top:4px}
+#inlhost .wrapfs > .advbar,#inlhost .wrapfs > #prestoggle,#inlhost .wrapfs > #advtoggle{width:100%}
 </style>
 </head>
 <body>
@@ -1071,7 +1077,7 @@ fieldset{border-bottom-color:var(--line)}
     </div>
     <div id="exbar" hidden><span id="exbartext"></span><button class="btn ghost" id="exbarrev" type="button">Review changes</button><button class="btn" id="exbarapply" type="button" hidden>Apply</button><button class="btn ghost" id="exbardisc" type="button">Discard all</button></div>
     <div id="dscroll"><div id="dwrap"><div id="dcanvas"><div id="dselbox"><div id="dhandle"></div></div></div></div></div>
-    <p class="note"><strong>Keys:</strong> arrow keys nudge the selected item (Shift = 10 px), Delete removes it, Ctrl+Z and Ctrl+Y undo and redo, Ctrl+D duplicates, Ctrl+C, Ctrl+X and Ctrl+V copy, cut and paste. Double-click a label or button to edit its style. Moving a frame moves what is inside it.</p>
+    <p class="note"><strong>Keys:</strong> arrow keys nudge the selected item (Shift = 10 px), Delete removes it, Ctrl+Z and Ctrl+Y undo and redo, Ctrl+D duplicates, Ctrl+C, Ctrl+X and Ctrl+V copy, cut and paste. Double-click a label or button to type its text; its style is open under it. Moving a frame moves what is inside it.</p>
     <p class="note warn"><strong>Stacking order:</strong> frames sit at the back, number tiles above them, then labels, buttons and status chips. Inside a group, items go in the order you added them. That is the order they will be sent to PRTG.</p>
   </div>
   <div id="pinned">

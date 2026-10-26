@@ -2049,6 +2049,15 @@ try{
     host.appendChild(box);
     INL.nodes=[].filter.call(panel.children,function(n){return !keep[n.id];});
     INL.nodes.forEach(function(n){box.appendChild(n);});
+    /* Presets and Advanced settings are a bar and a body of their own; give each the same card as the other sections, and put Text first */
+    [['prestoggle','preswrap'],['advtoggle','advwrap']].forEach(function(p){
+      var b=document.getElementById(p[0]), w=document.getElementById(p[1]), f;
+      if(!b||!w||b.parentNode!==box)return;
+      f=document.createElement('fieldset');f.className='secfs wrapfs';
+      box.insertBefore(f,b);f.appendChild(b);f.appendChild(w);w.classList.add('secbody');
+    });
+    var tx=document.getElementById('txt'), tfs=tx&&tx.closest('fieldset.secfs'), pf=document.getElementById('prestoggle');pf=pf&&pf.parentNode;
+    if(tfs&&pf&&tfs.parentNode===box)box.insertBefore(tfs,pf);
     imp=document.getElementById('imp');imp=imp&&imp.closest('fieldset');
     if(imp)imp.style.display='none';
     var pw=document.getElementById('preswrap');INL.presOpen=!!(pw&&!pw.hidden);
@@ -2067,6 +2076,10 @@ try{
     });
     INL.nodes.forEach(function(n){panel.appendChild(n);});
     INL.nodes=[];
+    [].forEach.call(document.querySelectorAll('#legbox > .wrapfs'),function(f){if(f.parentNode)f.parentNode.removeChild(f);});
+    [].forEach.call(document.querySelectorAll('.geofs'),function(f){if(f.parentNode)f.parentNode.removeChild(f);});
+    var aw=document.getElementById('advwrap'), pw2=document.getElementById('preswrap');
+    if(aw)aw.classList.remove('secbody');if(pw2)pw2.classList.remove('secbody');
     document.body.classList.remove('inlleg');
   }
   function legFold(){
@@ -2079,6 +2092,14 @@ try{
     if(w){w.hidden=false;if(t)t.classList.add('open');var c=document.getElementById('prescaret');if(c)c.innerHTML='▾';}
   }
   function legMode(m){var was=DASHAPI.active;DASHAPI.active=false;try{setMode(m);}finally{DASHAPI.active=was;}}   /* setMode would otherwise leave the Dashboard tab */
+  /* Size, position and layer of a label or button sits first in its Advanced settings */
+  function legGeo(){
+    var adv=document.getElementById('advwrap'), old;
+    if(!adv||!INL.geo)return;
+    old=adv.querySelector(':scope > .geofs');
+    if(old&&old!==INL.geo)old.parentNode.removeChild(old);
+    if(INL.geo.parentNode!==adv){INL.geo.classList.add('geofs');adv.insertBefore(INL.geo,adv.firstChild);}
+  }
   function legBegin(it,fresh){
     if(!INL.pre)INL.pre={snap:snapshot(),mode:mode};
     window.PBD_LEGBUSY=true;
@@ -2135,6 +2156,7 @@ try{
         INL.id=it.id;INL.json=inlKey(it);
         legBegin(it,fresh);
       }
+      legGeo();
     }else{
       inlEnd();
     }
@@ -2142,7 +2164,7 @@ try{
   }
   function buildForm(){
       try{document.dispatchEvent(new Event('dashselect'));}catch(e){}
-    formEl.innerHTML='';
+    formEl.innerHTML='';INL.geo=null;
     codeEl=null;
     var it=byId(D.sel);
       if(window.SECAPI)SECAPI.note('Selected',it?itemName(it):'nothing selected');
@@ -2154,7 +2176,8 @@ try{
     var d3=el_('button','btn ghost','Copy');d3.type='button';d3.title='Copy (Ctrl+C)';d3.addEventListener('click',function(){copyItem(it,false);});
     var d4=el_('button','btn ghost','Paste');d4.type='button';d4.title='Paste (Ctrl+V)';d4.addEventListener('click',function(){pasteItem();});
     act.appendChild(d1);act.appendChild(d2);act.appendChild(d3);act.appendChild(d4);formEl.appendChild(act);
-    formEl.appendChild(acc('Size, position and layer',[geoRow(it),layerRow(it),parentSel(it)]));
+    var geoFs=acc('Size, position and layer',[geoRow(it),layerRow(it),parentSel(it)]);
+    if(it.type==='label'||it.type==='button')INL.geo=geoFs;else formEl.appendChild(geoFs);
     if(it.type==='prtgobj'){
         var on=el_('p','note pst');on.textContent='Object file: '+it.p.cat+': '+it.p.name;formEl.appendChild(on);
         var tw=el_('div','dfld');tw.appendChild(el_('label',null,'Target (PRTG object ID)'));
@@ -2380,6 +2403,7 @@ try{
     if(e.button!==0)return;
     var t=e.target;
     if(t===handle||(handle.contains&&handle.contains(t)))return;
+    if(TE&&t.closest&&t.closest('.teedit'))return;   /* the caret goes where it is clicked */
     var n=t.closest?t.closest('.ditem'):null;
     if(!n){if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();select(null);return;}
     e.preventDefault();
@@ -2392,10 +2416,46 @@ try{
       kids:kids.map(function(k){return {k:k,x:k.x,y:k.y};})};
   });
   canvas.addEventListener('click',function(e){e.preventDefault();});
+  /* ---------- typing the text of a label or button on the canvas ----------
+     Double-click it, type, and press Esc or click away. The text goes to the label tool's text box, so the item, its code and the undo list follow. */
+  var TE=null;
+  function teNode(n){
+    var k, c;
+    for(k=0;k<n.children.length;k++){c=n.children[k];if(c.tagName!=='STYLE'&&c.tagName!=='SCRIPT'&&c.tagName!=='LINK')return c;}
+    return null;
+  }
+  function teRead(ed){
+    var html=ed.innerHTML.replace(/<div[^>]*>/gi,'\n').replace(/<\/div>/gi,'').replace(/<br\s*\/?>/gi,'\n').replace(/&nbsp;/gi,' ').replace(/<[^>]+>/g,''), t=document.createElement('textarea');
+    t.innerHTML=html;
+    return t.value.replace(/^\n/,'').replace(/\n$/,'');
+  }
+  function teEnd(){
+    if(!TE)return;
+    var t=TE, v=teRead(t.ed), txt=document.getElementById('txt');
+    TE=null;
+    t.ed.removeEventListener('keydown',teKey);t.ed.removeEventListener('blur',teEnd);
+    t.ed.removeAttribute('contenteditable');t.n.classList.remove('teedit');
+    if(txt&&INL.kind==='leg'&&INL.id===t.it.id&&v!==txt.value){txt.value=v;txt.dispatchEvent(new Event('input',{bubbles:true}));}
+    else refreshItem(t.it);
+  }
+  function teKey(e){if(e.key==='Escape'){e.preventDefault();e.stopPropagation();if(TE&&TE.ed.blur)TE.ed.blur();}e.stopPropagation();}
+  function teStart(it,n){
+    var ed=teNode(n), r, sel;
+    if(!ed||INL.kind!=='leg'||INL.id!==it.id)return false;
+    if(TE)teEnd();
+    TE={it:it,n:n,ed:ed};
+    n.classList.add('teedit');
+    ed.setAttribute('contenteditable','true');ed.setAttribute('spellcheck','false');
+    ed.addEventListener('keydown',teKey);ed.addEventListener('blur',teEnd);
+    ed.focus();
+    try{r=document.createRange();r.selectNodeContents(ed);sel=window.getSelection();sel.removeAllRanges();sel.addRange(r);}catch(err){}
+    return true;
+  }
   canvas.addEventListener('dblclick',function(e){
     var n=e.target.closest?e.target.closest('.ditem'):null;
     if(!n)return;
     var it=byId(parseInt(n.getAttribute('data-id'),10)), h=inlHost();
+    if(it&&(it.type==='label'||it.type==='button')&&teStart(it,n)){e.preventDefault();return;}
     if(it&&h&&!h.hidden){try{h.scrollIntoView({block:'nearest',behavior:'smooth'});}catch(err){}}   /* its settings are already open under it */
   });
   handle.addEventListener('mousedown',function(e){
@@ -2429,7 +2489,7 @@ try{
   document.addEventListener('keydown',function(e){
     if(!DASHAPI.active)return;
     var t=e.target, tag=t&&t.tagName;
-    if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT')return;
+    if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT'||(t&&t.isContentEditable))return;
     if(t&&t.closest&&t.closest('#inlhost'))return;
     var k=(e.key||'').toLowerCase();
     if((e.ctrlKey||e.metaKey)&&k==='z'){e.preventDefault();doUndo();return;}
