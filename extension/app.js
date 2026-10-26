@@ -5925,6 +5925,15 @@ try{
       }
       if(!s.length)return null;
       s.forEach(function(q){var m=0;q.v.forEach(function(x){if(x!==null&&Math.abs(x)>m)m=Math.abs(x);});q.max=m;});
+      /* two scales at most, as PRTG does: the first channel and the ones of a similar size share the left axis, the rest the right axis. Without a list of names, a third scale is left out rather than drawn as a squashed line. */
+      var r0=s[0].max||1, r1=0, keep=[];
+      s.forEach(function(q){
+        var m=q.max||1, near0=(m/r0<=20&&r0/m<=20);
+        if(near0){q.g=0;keep.push(q);}
+        else if(!r1||(m/r1<=20&&r1/m<=20)){if(!r1)r1=m;q.g=1;keep.push(q);}
+        else if(want.length){q.g=1;keep.push(q);}
+      });
+      s=keep;
       return {rows:rows,s:s};
     }
     function ask(path,params){   /* in the designer's preview the item sits in a sandboxed frame with no PRTG session, so the tool fetches for it and sends the answer back */
@@ -5961,27 +5970,35 @@ try{
       }).catch(function(){fall();});
     }
     function draw(){
-      var W,H,pl,pr=10,pt=8,pb,iw,ih,min,max,norm=false,mx=[],i,j,t,ticks,gx,xs,s,path,area,defs,gid,hx,hit,dots,guide,w0,pts;
+      var W,H,pl,pr=10,pt=8,pb,iw,ih,min,max,i,j,t,ticks,gx,xs,s,path,area,defs,gid,hx,hit,dots,guide,w0,pts;
       if(!D)return;
       if(box.getAttribute('data-g')!=='ok'){clear(box);wrap=dv('gwrap',box);svg=el('svg',{'class':'gsvg',preserveAspectRatio:'none'});wrap.appendChild(svg);tip=dv('gtip',wrap);tip.style.display='none';leg=dv('glegend',box);box.setAttribute('data-g','ok');}
       W=Math.max(60,wrap.clientWidth);H=Math.max(50,wrap.clientHeight);
       svg.setAttribute('viewBox','0 0 '+W+' '+H);svg.setAttribute('width',W);svg.setAttribute('height',H);clear(svg);
       pl=C.axis?44:10;pb=C.axis?22:8;iw=W-pl-pr;ih=H-pt-pb;
-      D.s.forEach(function(q){if(q.max>0)mx.push(q.max);});
-      norm=mx.length>1&&Math.max.apply(null,mx)/Math.min.apply(null,mx)>20;
+      var has1=D.s.some(function(q){return q.g===1;}), max1=0, tk1=[], min1=0, ns, st1, rw1, mg1;
+      if(has1)pr=44;iw=W-pl-pr;
       min=0;max=0;
-      D.s.forEach(function(q){q.v.forEach(function(x){if(x===null)return;var y=norm?(q.max?x/q.max:0):x;if(y>max)max=y;if(y<min)min=y;});});
+      D.s.forEach(function(q){if(q.g===1){q.v.forEach(function(x){if(x!==null&&x>max1)max1=x;});}else{q.v.forEach(function(x){if(x===null)return;if(x>max)max=x;if(x<min)min=x;});}});
       if(max<=min)max=min+1;
       ticks=nice(min,max,Math.max(2,Math.min(5,Math.floor(ih/38))));min=ticks[0];max=ticks[ticks.length-1];
+      if(has1){
+        ns=ticks.length-1;if(max1<=0)max1=1;rw1=max1/ns;mg1=Math.pow(10,Math.floor(Math.log(rw1)/Math.LN10));rw1/=mg1;st1=(rw1<=1?1:(rw1<=2?2:(rw1<=2.5?2.5:(rw1<=5?5:10))))*mg1;
+        for(i=0;i<=ns;i++)tk1.push(+(i*st1).toFixed(10));max1=st1*ns;
+      }
       function X(i2){return pl+(D.rows.length>1?i2*iw/(D.rows.length-1):iw/2);}
-      function Y(y){return pt+ih-(y-min)/(max-min)*ih;}
+      function Y(y,g){return g===1?(pt+ih-(y-min1)/(max1-min1)*ih):(pt+ih-(y-min)/(max-min)*ih);}
+      function V(q,x){return Y(x,q.g);}
       defs=el('defs',{},svg);
       ticks.forEach(function(tv){
         var y=Y(tv);
         el('line',{x1:pl,x2:W-pr,y1:y,y2:y,stroke:C.grid,'stroke-width':1,'stroke-dasharray':tv===0?'':'3 4'},svg);
-        if(C.axis&&!norm){var tx=el('text',{x:pl-8,y:y+4,'text-anchor':'end',fill:C.muted,'font-size':11},svg);tx.textContent=fmt(tv);}
-        if(C.axis&&norm){var tn=el('text',{x:pl-8,y:y+4,'text-anchor':'end',fill:C.muted,'font-size':11},svg);tn.textContent=Math.round((tv-min)/(max-min)*100)+'%';}
+        if(C.axis){var tx=el('text',{x:pl-8,y:y+4,'text-anchor':'end',fill:C.muted,'font-size':11},svg);tx.textContent=fmt(tv);}
       });
+      if(C.axis&&has1){
+        var c1=D.s.filter(function(q){return q.g===1;})[0].col||C.colors[1];
+        tk1.forEach(function(tv,ti){var t1=el('text',{x:W-pr+8,y:Y(tv,1)+4,'text-anchor':'start',fill:C.muted,'font-size':11},svg);t1.textContent=fmt(tv);});
+      }
       if(C.axis){
         var cnt=Math.max(2,Math.min(5,Math.floor(iw/90)));
         for(i=0;i<cnt;i++){
@@ -5996,7 +6013,7 @@ try{
         q.col=col;
         q.v.forEach(function(x,k2){
           if(x===null){open=false;return;}
-          var y=Y(norm?(q.max?x/q.max:0):x), px=X(k2);
+          var y=Y(x,q.g), px=X(k2);
           seg+=(open?'L':'M')+px.toFixed(1)+' '+y.toFixed(1);open=true;
           if(first===null)first=px;lastx=px;
         });
@@ -6009,7 +6026,7 @@ try{
           q.v.forEach(function(x,k2){
             var px=X(k2),py;
             if(x===null){if(started){ar+='L'+ex.toFixed(1)+' '+Y(Math.max(min,0)).toFixed(1)+'Z';started=false;}return;}
-            py=Y(norm?(q.max?x/q.max:0):x);
+            py=Y(x,q.g);
             if(!started){ar+='M'+px.toFixed(1)+' '+Y(Math.max(min,0)).toFixed(1)+'L'+px.toFixed(1)+' '+py.toFixed(1);started=true;sx=px;}else ar+='L'+px.toFixed(1)+' '+py.toFixed(1);
             ex=px;
           });
@@ -6018,7 +6035,7 @@ try{
         }
         el('path',{d:seg,fill:'none',stroke:col,'stroke-width':C.lw,'stroke-linejoin':'round','stroke-linecap':'round'},svg);
         var li=q.v.length-1;while(li>=0&&q.v[li]===null)li--;
-        if(li>=0){var ly=Y(norm?(q.max?q.v[li]/q.max:0):q.v[li]);el('circle',{cx:X(li),cy:ly,r:6,fill:col,'fill-opacity':0.18},svg);el('circle',{cx:X(li),cy:ly,r:3,fill:col},svg);}
+        if(li>=0){var ly=Y(q.v[li],q.g);el('circle',{cx:X(li),cy:ly,r:6,fill:col,'fill-opacity':0.18},svg);el('circle',{cx:X(li),cy:ly,r:3,fill:col},svg);}
       });
       clear(leg);
       D.s.forEach(function(q){
@@ -6038,7 +6055,7 @@ try{
           D.s.forEach(function(q,qi){
             var x=q.v[k4];
             if(x===null){dots[qi].setAttribute('visibility','hidden');return;}
-            any=true;dots[qi].setAttribute('cx',X(k4));dots[qi].setAttribute('cy',Y(norm?(q.max?x/q.max:0):x));dots[qi].setAttribute('visibility','visible');
+            any=true;dots[qi].setAttribute('cx',X(k4));dots[qi].setAttribute('cy',Y(x,q.g));dots[qi].setAttribute('visibility','visible');
             html+='<div><i style="background:'+q.col+'"></i>'+q.name.replace(/</g,'&lt;')+' <b>'+fmt(x)+'</b></div>';
           });
           if(!any){tip.style.display='none';return;}
@@ -6062,7 +6079,16 @@ try{
         cardBg=(L.card===false)?'#FFFFFF':L.cardBg, acc=(L.accent&&L.accent!==LOOKBASE.accent)?L.accent:((L.link&&L.link!==LOOKBASE.link)?L.link:(L.accent||'#4F8FC9'));
     return {range:spec.range,avg:spec.avg,points:spec.points,refresh:spec.refresh,period:per,axis:!!G.axis,legend:!!G.legend,tips:true,area:true,lw:2,max:Math.max(1,parseInt(G.maxCh,10)||3),names:clean(G.chNames||''),legendValues:true,
       grid:blend(cardBg.charAt(0)==='#'?cardBg:'#FFFFFF',L.text,0.16),muted:(L.muted||L.headColor||blend(cardBg.charAt(0)==='#'?cardBg:'#FFFFFF',L.text,0.6)),card:cardBg.charAt(0)==='#'?cardBg:'#FFFFFF',
-      colors:[acc,P.up,P.warning,'#8B5CF6','#EC4899']};
+      colors:grColors(acc,[P.warning,'#8B5CF6','#EC4899',P.up,'#06B6D4'])};
+  }
+  function grColors(first,more){
+    var out=[first];
+    function rgb(h){h=String(h).replace('#','');return [parseInt(h.substr(0,2),16)||0,parseInt(h.substr(2,2),16)||0,parseInt(h.substr(4,2),16)||0];}
+    more.forEach(function(c){
+      var a=rgb(c), ok=out.every(function(o){var b=rgb(o);return Math.abs(a[0]-b[0])+Math.abs(a[1]-b[1])+Math.abs(a[2]-b[2])>150;});
+      if(ok)out.push(c);
+    });
+    return out;
   }
   function graphScript(G,L){
     return '(function(){\n  var root=document.getElementById("<@itemid>");\n  if(!root)return;\n  var CFG='+JSON.stringify(graphConfig(G,L))+';\n  ('+graphRuntime.toString()+')(root,CFG);\n})();';
@@ -8245,7 +8271,7 @@ try{
     gow.appendChild(pair(inNum('Channels shown',function(){return GR.maxCh;},function(v){GR.maxCh=v;},1,8),inChk('Show the legend',function(){return GR.legend;},function(v){GR.legend=v;})));
     gow.appendChild(inText('Only these channels (names, comma separated)',function(){return GR.chNames||'';},function(v){GR.chNames=v;}));
     gow.appendChild(inChk('Show the axes',function(){return GR.axis;},function(v){GR.axis=v;}));
-    gow.appendChild(h('p','note','The chart is drawn from the sensor\u2019s history, using the viewer\u2019s own PRTG login, so nothing secret is stored in the item. If PRTG refuses the history, the item falls back to PRTG\u2019s own picture. Channels with very different sizes are each scaled to their own range.'));
+    gow.appendChild(h('p','note','The chart is drawn from the sensor\u2019s history, using the viewer\u2019s own PRTG login, so nothing secret is stored in the item. If PRTG refuses the history, the item falls back to PRTG\u2019s own picture. The left axis is for the first channel and others of a similar size; channels of a very different size go on the right axis, as in PRTG.'));
     showIf(gow,function(){return gSensor()&&(GR.draw||'own')!=='pic';});gr1.appendChild(gow);
     var gso=h('div');
     gso.appendChild(inNum('Text size (0 = no text)',function(){return GR.fontSize;},function(v){GR.fontSize=v;},0,40));
