@@ -3264,7 +3264,7 @@ try{
   function redactSecrets(t){return t.replace(new RegExp('\\b('+CFG.samples.redactKeys.join('|')+')=[^&"\'<>\\s\\\\]+','gi'),'$1=REDACTED');}
   function STAMP_NAME(){return CFG.name+' v'+CFG.version+_zw();}
   /* ---- the items already on the map, read only. PRTG's own designer loads them from /api/mapsvg.htm; this does the same and draws them behind the canvas. */
-  var EX={items:[],mapW:0,mapH:0,map:null,target:{},styles:'',libs:'',libsFor:'',lines:'',bg:'',bgFor:''};
+  var EX={items:[],mapW:0,mapH:0,map:null,target:{},styles:'',libs:'',libsFor:'',lines:'',bg:'',bgColor:'',bgFor:''};
   function exLayerClass(){return ($('exon').checked?'':'off')+($('exdim').checked?' dim':'');}
   function exLayer(){var c=$('dcanvas'),l=$('dexist');if(!l){l=document.createElement('div');l.id='dexist';l.className=exLayerClass();c.insertBefore(l,c.firstChild);}return l;}
   function exClear(){
@@ -3355,37 +3355,49 @@ try{
       out.push(it);
     }
     EX.styles=[].filter.call(d.querySelectorAll('style'),function(x){return !(x.closest&&x.closest('.map_object'));}).map(function(x){return x.outerHTML;}).join('').slice(0,60000);
-    EX.lines='';
-    try{
-      var sv=d.querySelector('svg#mapsvg')||d.querySelector('svg'), cp;
-      if(sv){
-        cp=sv.cloneNode(true);
-        [].slice.call(cp.querySelectorAll('.map_object,foreignObject,script')).forEach(function(n){n.parentNode.removeChild(n);});
-        if(cp.querySelector('path,line,polyline')){cp.setAttribute('class','dexlines');cp.removeAttribute('id');cp.setAttribute('style','position:absolute;left:0;top:0;pointer-events:none;overflow:visible');EX.lines=cp.outerHTML;}
-      }
-    }catch(e){}
     return out;
   }
-  /* the picture behind the items is a setting of the map itself, not an item: PRTG draws it as the background of the View Map page */
-  function exBackground(id){
-    var origin=(base()||pageOrigin()||''), n=String(id), pad='00000000'.slice(n.length)+n;
+  /* The map's own look is not in the item list. PRTG's View Map page asks /controls/mapview.htm for it: the picture and colour behind the items are the style of #mapview, and the links between items are a list of who connects to whom, drawn as curves. */
+  function exMapView(id){
+    var origin=(base()||pageOrigin()||'');
     function grab(path){
       var qs=qstring(withAuth({}),true);
       return fetchWithTimeout(origin+path+(qs?'?'+qs:''),{method:'GET',credentials:base()?'omit':'same-origin'}).then(function(r){
         if(!r.ok)throw new Error('no');
         return r.blob();
-      }).then(function(b){if(!b||!b.size||(b.type&&b.type.indexOf('image')<0))throw new Error('no');return URL.createObjectURL(b);});
+      }).then(function(b){if(!b||!b.size)throw new Error('no');return URL.createObjectURL(b);});
     }
-    function tryList(list,i){
-      if(i>=list.length)return Promise.resolve('');
-      return grab(list[i]).then(function(u){return u;},function(){return tryList(list,i+1);});
-    }
-    return http('GET','/map.htm',{id:id}).then(function(t){
-      var m=/\/mapbackground\/[\w.\-]+/.exec(t), list=[];
-      if(m)list.push(m[0]);
-      ['jpg','png','gif','jpeg'].forEach(function(e){var q='/mapbackground/'+pad+'.'+e;if(list.indexOf(q)<0)list.push(q);});
-      return tryList(list,0);
-    },function(){return '';});
+    return http('GET','/controls/mapview.htm',{id:id}).then(function(t){
+      var d=new DOMParser().parseFromString(t,'text/html'), mv=d.querySelector('#mapview'), ms=d.querySelector('#mapshow'), st=(mv&&mv.getAttribute('style'))||'', m=/background-image\s*:\s*url\(\s*["']?([^"')]+)/i.exec(st), c=/background-color\s*:\s*([^;]+)/i.exec(st), conn=null, r={bg:'',color:c?c[1].trim():'',conn:null};
+      try{conn=JSON.parse(ms.getAttribute('data-connections')||'null');}catch(e){}
+      r.conn=(conn&&typeof conn==='object')?conn:null;
+      if(!m)return r;
+      var u=m[1].trim(), path;
+      try{path=new URL(u,origin+'/').pathname;}catch(e){return r;}
+      return grab(path).then(function(o){r.bg=o;return r;},function(){return r;});
+    },function(){return {bg:'',color:'',conn:null};});
+  }
+  var LINKCOL={up:'#b4cc38',down:'#d71920',warning:'#ffd400',unusual:'#f5821f',paused:'#3b8dd0',unknown:'#9aa4af'};
+  function exLinks(conn){
+    var by={}, defs='', body='', n=0;
+    EX.items.forEach(function(it){by[it.subid]=it;});
+    function ctr(it){return {x:(it.left||0)+(it.width||0)/2,y:(it.top||0)+(it.height||0)/2};}
+    function col(it){var m=/\bstatus-(up|down|warning|unusual|paused|unknown)\b/.exec(it.cls||'');return LINKCOL[m?m[1]:'unknown'];}
+    Object.keys(conn||{}).forEach(function(a){
+      (Array.isArray(conn[a])?conn[a]:[]).forEach(function(bk){
+        var A=by[a], B=by[bk], p, q, dx, dy, len, off, cx, cy, gid, d;
+        if(!A||!B)return;
+        p=ctr(A);q=ctr(B);dx=q.x-p.x;dy=q.y-p.y;len=Math.sqrt(dx*dx+dy*dy);
+        if(len<2)return;
+        off=len*0.22;if(q.x<p.x)off=-off;
+        cx=(p.x+q.x)/2+(dy/len)*off;cy=(p.y+q.y)/2-(dx/len)*off;
+        d='M '+p.x+' '+p.y+' Q '+cx+' '+cy+' '+q.x+' '+q.y;
+        gid='dexg'+(n++);
+        defs+='<linearGradient id="'+gid+'" gradientUnits="userSpaceOnUse" x1="'+p.x+'" y1="'+p.y+'" x2="'+q.x+'" y2="'+q.y+'"><stop offset="0" stop-color="'+col(A)+'"/><stop offset="0.4" stop-color="'+col(A)+'"/><stop offset="0.6" stop-color="'+col(B)+'"/><stop offset="1" stop-color="'+col(B)+'"/></linearGradient>';
+        body+='<path d="'+d+'" fill="none" stroke="url(#'+gid+')" stroke-width="11" stroke-linecap="round" opacity="0.22"/><path d="'+d+'" fill="none" stroke="url(#'+gid+')" stroke-width="5" stroke-linecap="round"/>';
+      });
+    });
+    return n?'<svg class="dexlines" width="'+(EX.mapW||1920)+'" height="'+(EX.mapH||1080)+'" style="position:absolute;left:0;top:0;pointer-events:none;overflow:visible"><defs>'+defs+'</defs>'+body+'</svg>':'';
   }
   /* the device tree the target picker uses (loaded once, shared), then a lookup for anything the tree does not hold, such as sensors */
   function exTree(){
@@ -3572,7 +3584,7 @@ try{
     var frames=CFG.preview.maxFrames;
     if(!keepLayer){
       layer.textContent='';
-      if(EX.bg&&EX.mapW){var bg=document.createElement('div');bg.className='dexbg';bg.style.cssText='position:absolute;left:0;top:0;pointer-events:none;width:'+EX.mapW+'px;height:'+EX.mapH+'px;background:url("'+EX.bg+'") 0 0 no-repeat';layer.appendChild(bg);}
+      if((EX.bg||EX.bgColor)&&EX.mapW){var bg=document.createElement('div');bg.className='dexbg';bg.style.cssText='position:absolute;left:0;top:0;pointer-events:none;width:'+EX.mapW+'px;height:'+EX.mapH+'px;'+(EX.bgColor?'background-color:'+EX.bgColor.replace(/[;"<>]/g,'')+';':'')+(EX.bg?'background-image:url("'+EX.bg+'");background-repeat:no-repeat;background-position:0 0':'');layer.appendChild(bg);}
       if(EX.lines)layer.insertAdjacentHTML('beforeend',EX.lines);
     }
     list.textContent='';
@@ -3611,10 +3623,10 @@ try{
       if(String(mapId())!==String(id))return;                 /* another map was chosen meanwhile */
       if(o.status===401){authNeeded();}
       if(o.error||o.status<200||o.status>=300){$('exmsg').textContent=o.error||('PRTG answered '+o.status+' for the map\u2019s items.');$('exmsg').className='note pst err';return;}
-      EX.items=exParse(o.body||'');EX.map=id;EX.bg='';
+      EX.items=exParse(o.body||'');EX.map=id;EX.bg='';EX.bgColor='';EX.lines='';
       m=/<svg\b[^>]*\bwidth="(\d+)px"/i.exec(o.body||'');n=/<svg\b[^>]*\bheight="(\d+)px"/i.exec(o.body||'');
       EX.mapW=m?parseInt(m[1],10):0;EX.mapH=n?parseInt(n[1],10):0;
-      Promise.all([prtgCss(),EX.items.length&&$('exscr').checked?exLibs():null,exBackground(id).then(function(u){if(EX.bg&&EX.bg!==u){try{URL.revokeObjectURL(EX.bg);}catch(e){}}EX.bg=u;},function(){EX.bg='';})]).then(function(){if(EX.map===id)exRender();});
+      Promise.all([prtgCss(),EX.items.length&&$('exscr').checked?exLibs():null,exMapView(id).then(function(v){if(EX.map!==id)return;if(EX.bg&&EX.bg!==v.bg){try{URL.revokeObjectURL(EX.bg);}catch(e){}}EX.bg=v.bg;EX.bgColor=v.color;EX.lines=exLinks(v.conn);},function(){EX.bg='';})]).then(function(){if(EX.map===id)exRender();});
       exNames().then(function(m){if(m===EX.map)exRender(true);});
       $('exsize').hidden=!(EX.mapW&&EX.mapH);
       $('exmsg').textContent=EX.items.length?(EX.items.length+(EX.items.length===1?' item':' items')+' on \u201C'+mapName()+'\u201D'+(EX.mapW?'. The map is '+EX.mapW+' \u00D7 '+EX.mapH+' px.':'.')+' Click one in the list to find it on the canvas.'):('There is nothing on \u201C'+mapName()+'\u201D yet.');
