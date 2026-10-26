@@ -8031,6 +8031,7 @@ try{
     };
     [].forEach.call(document.querySelectorAll('#dashpanel .addgrid .btn'),function(b){
       var k=b.getAttribute('data-add')||'existing';
+      if(b.classList.contains('bgpick')){b.insertAdjacentHTML('afterbegin',sv(IC.bg));return;}
       if(IC[k])b.innerHTML=sv(IC[k])+'<span>'+b.textContent+'</span>';
     });
   })();
