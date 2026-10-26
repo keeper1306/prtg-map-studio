@@ -2167,6 +2167,7 @@ try{
     act.appendChild(d1);act.appendChild(d2);act.appendChild(d3);act.appendChild(d4);formEl.appendChild(act);
     if(it.type==='frame')formEl.appendChild(el_('p','note','Deleting a frame also deletes what is inside it. Undo brings it back.'));
       if(it.type==='prtgobj'){syncCode();return;}   /* nothing to paste for an object PRTG draws */
+      if(it.type==='livetable'){syncCode();return;}   /* generated, not meant to be hand-copied anywhere -- no point showing the raw source */
     var cw=el_('div','dfld');
     cw.appendChild(el_('label',null,'Code for this item'));
     codeEl=el_('textarea');codeEl.rows=7;codeEl.readOnly=true;codeEl.spellcheck=false;codeEl.id='dcode';
