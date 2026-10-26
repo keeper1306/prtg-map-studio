@@ -480,7 +480,7 @@ body.dash #dtabs{display:grid;grid-template-columns:repeat(3,1fr)}
 #showexisting.on{color:var(--cyan);border-color:var(--cyan);background:#eaf5fc}
 #dashpanel .addgrid{grid-template-columns:repeat(3,1fr);gap:6px}
 #inlhost{margin-top:8px}body.inlobj #objpanel>fieldset:first-child{display:none}#inlhost #objpanel{display:block}#inlhost #legbox>.advbar,#inlhost #legbox>fieldset{margin-top:0}
-#dashpanel label.bgpick{cursor:pointer}.bgpick input[type=color]{width:34px;height:18px;padding:0;border:1px solid var(--g20);border-radius:3px;background:none;cursor:pointer}.bgpick input[type=color]:disabled{opacity:.45;cursor:not-allowed}
+.bgnow{display:block;width:34px;height:14px;border-radius:4px;border:1px solid rgba(5,15,52,.25);background:#dad7d7}#mapbgbtn.on{border-color:var(--cyan);background:#e6f3fa;color:var(--cyan)}#bgpanel{margin-top:10px;padding:12px;border:1px solid var(--g10);border-radius:10px;background:#fff}.bgtitle{font-size:12px;font-weight:500;color:var(--g90);margin-bottom:2px}.bgcustom{display:flex;align-items:center;gap:8px;margin:10px 0 0;font-size:12px;color:var(--g90);cursor:pointer}.bgcustom input[type=color]{width:34px;height:24px;padding:0;border:1px solid var(--g20);border-radius:6px;background:none;cursor:pointer}.bgcustom input[type=color]:disabled{opacity:.45;cursor:not-allowed}
 #dashpanel .bgpresets{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}.bgchip{width:24px;height:24px;border-radius:50%;border:1px solid rgba(5,15,52,.28);padding:0;cursor:pointer}.bgchip:hover{transform:scale(1.12)}.bgchip.on{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--cyan)}.bgchip:disabled{opacity:.4;cursor:not-allowed;transform:none}
 #dashpanel .addgrid .btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:9px 2px 7px;font-size:11px;font-weight:500;letter-spacing:.2px;text-transform:none;border-radius:6px;line-height:1.15;min-width:0}
 #dashpanel .addgrid .btn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
@@ -493,6 +493,51 @@ body.dash #dtabs{display:grid;grid-template-columns:repeat(3,1fr)}
 #addhint{margin:8px 0 0}
 #addhint.on{color:var(--cyan);font-weight:500}
 .stickyfoot{position:sticky;bottom:0;z-index:5;background:#fff;padding:8px 0;border-top:1px solid var(--g10)}
+
+/* ---- a softer, rounder look: sentence case, quiet borders, filled primary buttons ---- */
+:root{--ink:#1a2342;--line:#e6e9f0;--soft:#f6f8fb}
+.btn{font-size:13px;font-weight:500;letter-spacing:0;text-transform:none;padding:9px 16px;border:1px solid var(--cyan);background:var(--cyan);color:#fff;border-radius:8px;box-shadow:0 1px 2px rgba(0,125,184,.22);transition:background .15s,border-color .15s,box-shadow .15s,transform .1s}
+.btn:hover{background:#006a9b;border-color:#006a9b;color:#fff}
+.btn:active{transform:translateY(1px)}
+.btn:focus-visible{outline:2px solid var(--cyan2);outline-offset:2px}
+.btn.primary:hover{background:#006a9b;border-color:#006a9b}
+.btn.ghost{background:#fff;color:var(--ink);border-color:#d8dce6;box-shadow:none}
+.btn.ghost:hover{background:#f3f5f9;border-color:#c5cbd9;color:var(--ink)}
+.btn.sm{padding:4px 10px;font-size:12px;border-radius:7px}
+input[type=text],input[type=number],input[type=password],select,textarea{border-radius:8px;border-color:#d8dce6;padding:8px 10px}
+input[type=text]:focus,input[type=number]:focus,input[type=password]:focus,select:focus,textarea:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,125,184,.14)}
+input[type=color]{border-radius:8px;border-color:#d8dce6}
+.advbar{font-size:13px;font-weight:500;letter-spacing:0;text-transform:none;color:var(--ink);background:#fff;border-bottom:1px solid var(--line);padding:14px 20px;transition:background .15s,color .15s}
+.advbar:hover{background:var(--soft);color:var(--ink)}
+.advbar.open{color:var(--cyan);background:#fff}
+.seccaret{color:#9aa3b8;font-size:11px;margin-right:4px}
+.advbar.open .seccaret,.advbar:hover .seccaret{color:var(--cyan)}
+.advbar .secnote{color:#8a93a8}
+fieldset{border-bottom-color:var(--line)}
+/* the Dashboard's top-level sections read as headings, the ones inside the selected item as rounded cards */
+#dashpanel .dpane > .secfs > .advbar{font-size:12px;font-weight:600;letter-spacing:.7px;text-transform:uppercase;color:#5b6684;background:var(--soft);border-bottom:1px solid var(--line)}
+#dashpanel .dpane > .secfs > .advbar.open{color:var(--cyan)}
+#dashpanel .secbody .secfs,#inlhost .secfs{border:1px solid var(--line);border-radius:10px;margin:10px 0;overflow:hidden;background:#fff}
+#dashpanel .secbody .secfs > .advbar,#inlhost .secfs > .advbar{background:var(--soft);border-bottom:0;padding:11px 14px;font-size:12.5px}
+#dashpanel .secbody .secfs > .advbar.open,#inlhost .secfs > .advbar.open{border-bottom:1px solid var(--line);background:#fff}
+#dashpanel .secbody .secfs > .secbody,#inlhost .secfs > .secbody{padding:10px 14px 14px}
+#inlhost .secfs > .advbar{padding-right:40px}
+#inlhost #objpanel,#inlhost #legbox{margin:0}
+#inlhost #legbox > .advbar{border:1px solid var(--line);border-radius:10px;margin:10px 0 0;background:var(--soft)}
+#inlhost #legbox > .advbar.open{background:#fff;border-bottom-color:var(--line)}
+#inlhost #legbox > #preswrap > fieldset{border:0;padding:8px 2px}
+#dashpanel .addgrid .btn,#dashpanel .addgrid .btn.ghost{background:#fff;border:1px solid var(--line);border-radius:12px;color:var(--ink);box-shadow:0 1px 2px rgba(20,30,70,.05);padding:12px 4px 10px;transition:border-color .15s,box-shadow .15s,transform .1s,background .15s,color .15s}
+#dashpanel .addgrid .btn svg{opacity:.8}
+#dashpanel .addgrid .btn:hover,#dashpanel .addgrid .btn.ghost:hover{background:#fff;border-color:var(--cyan);color:var(--cyan);box-shadow:0 4px 12px rgba(0,125,184,.14);transform:translateY(-1px)}
+#dashpanel .addgrid .btn.armed,#dashpanel .addgrid .btn.on{background:#e8f4fb;border-color:var(--cyan);color:var(--cyan)}
+.dform .actions .btn{border-radius:8px}
+.drow{border-radius:8px}
+.fgtile,.lookchip,.stylechip{border-radius:10px;border-color:var(--line)}
+.fgtile:hover,.lookchip:hover,.stylechip:hover{border-color:var(--cyan);box-shadow:0 3px 10px rgba(0,125,184,.12)}
+.fgprev{border-radius:7px}
+#modebar .tabs button{letter-spacing:.4px}
+.mapmode,.mmbtn{border-radius:8px}
+#bgpanel{border-radius:12px}
 </style>
 </head>
 <body>
@@ -614,13 +659,17 @@ body.dash #dtabs{display:grid;grid-template-columns:repeat(3,1fr)}
         <button class="btn ghost" type="button" data-add="frame">Frame</button>
         <button class="btn ghost" type="button" data-add="label">Label</button>
         <button class="btn ghost" type="button" data-add="button">Button</button>
-        <label class="btn ghost bgpick" id="mapbgbtn" data-tip="Connect and choose a map first"><span>Background</span><input type="color" id="mapbgcolor" value="#dad7d7" disabled></label>
+        <button class="btn ghost bgpick" type="button" id="mapbgbtn" aria-expanded="false" aria-controls="bgpanel" data-tip="Change the map’s background color"><span>Background</span><i class="bgnow" id="mapbgnow"></i></button>
         <button class="btn ghost" type="button" data-add="shape">Shape</button>
         <button class="btn ghost" type="button" id="showexisting" aria-expanded="false" aria-controls="objfs">Existing PRTG objects</button>
       </div>
       <p class="note">With a frame selected, new items go inside it.</p>
-      <div class="bgpresets" id="bgpresets" aria-label="Map background presets"></div>
-      <p class="note pst" id="mapbgmsg" hidden></p>
+      <div id="bgpanel" hidden>
+        <div class="bgtitle">Map background</div>
+        <div class="bgpresets" id="bgpresets" aria-label="Map background presets"></div>
+        <label class="bgcustom" for="mapbgcolor"><input type="color" id="mapbgcolor" value="#dad7d7" disabled><span>Pick any color</span></label>
+        <p class="note pst" id="mapbgmsg" hidden></p>
+      </div>
     </fieldset>
     <fieldset id="objfs">
     <legend>Existing PRTG objects</legend>

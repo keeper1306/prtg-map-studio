@@ -3547,6 +3547,7 @@ try{
   var BGPRE=[['PRTG default','#DAD7D7'],['White','#FFFFFF'],['Agency light','#EDF0F4'],['Clean card','#F3F4F6'],['Corporate blue','#F2F4F7'],['Executive dark','#171926'],['Indigo board','#161240'],['Slate fintech','#2B2D3C'],['Neon plum','#2A1838'],['Teal glass','#2A3B4C'],['Wall display','#0B1220'],['Brand navy','#050F34']];
   function bgPreSync(){
     var cur=hex6(EX.bgColor)||hex6($('mapbgcolor').value), on=!$('mapbgcolor').disabled;
+    $('mapbgnow').style.background=cur||'';
     [].forEach.call($('bgpresets').children,function(b){b.classList.toggle('on',hex6(b.getAttribute('data-c'))===cur);b.disabled=!on;});
   }
   (function(){
@@ -4168,7 +4169,7 @@ try{
     if(connected&&CSSX&&CSSX.origin!==(base()||pageOrigin()||''))try{prtgCss();}catch(e){}
     window.PRTGSTATE={connected:connected,map:connected&&!!$('pushmap').value};
     $('next2').disabled=!window.PRTGSTATE.map;
-    $('mapbgcolor').disabled=!window.PRTGSTATE.map;try{bgPreSync();}catch(e){}$('mapbgbtn').dataset.tip=window.PRTGSTATE.map?'Change the map\u2019s background colour':'Connect and choose a map first';
+    $('mapbgcolor').disabled=!window.PRTGSTATE.map;try{bgPreSync();}catch(e){}$('mapbgbtn').disabled=!window.PRTGSTATE.map;$('mapbgbtn').dataset.tip=window.PRTGSTATE.map?'Change the map\u2019s background color':'Connect and choose a map first';
     try{document.dispatchEvent(new CustomEvent('prtgstate',{detail:window.PRTGSTATE}));}catch(e){}
     if(S.needLogin&&!connected&&!busy){$('prtgpop').hidden=false;}
     if(connected)S.needLogin=false;
@@ -8244,12 +8245,17 @@ try{
     function added(){try{document.dispatchEvent(new CustomEvent('builditemadded'));}catch(e){}}
     /* choosing any tile other than Existing PRTG objects closes that section */
     function hideExisting(){var fs=document.getElementById('objfs'), bt=document.getElementById('showexisting');if(fs&&!fs.classList.contains('folded')){fs.classList.add('folded');if(bt){bt.classList.remove('on');bt.setAttribute('aria-expanded','false');}}}
+    /* the Background tile shows the color choices for the map's own background, and any other tile closes them */
+    var bgBtn=document.getElementById('mapbgbtn'), bgPanel=document.getElementById('bgpanel');
+    function bgShow(on){if(!bgBtn||!bgPanel)return;bgPanel.hidden=!on;bgBtn.classList.toggle('on',on);bgBtn.setAttribute('aria-expanded',on?'true':'false');}
+    if(bgBtn)bgBtn.addEventListener('click',function(e){e.stopPropagation();arm(null);hideExisting();bgShow(bgPanel.hidden);});
+    var exBtn2=document.getElementById('showexisting');if(exBtn2)exBtn2.addEventListener('click',function(){bgShow(false);});
     /* capture on the grid so the tool's own one-click add does not also run */
     grid.addEventListener('click',function(e){
       var b=e.target.closest&&e.target.closest('[data-add]');if(!b||!grid.contains(b))return;
       e.stopPropagation();
       var type=b.getAttribute('data-add');
-      hideExisting();
+      hideExisting();bgShow(false);
       if(e.detail>=2){arm(null);fromCanvas=0;DASHAPI.add(type);added();return;}   /* the second click of a double-click */
       arm(armed===type?null:type);
     },true);
