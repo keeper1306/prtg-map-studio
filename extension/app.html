@@ -311,8 +311,11 @@ p.note:not(.pst){display:none!important}
 .ico.sm{width:25px;height:25px}
 .ico.sm svg{width:13px;height:13px}
 .ico.active,input[type=checkbox]:checked + label.ico{border-color:var(--cyan);color:var(--cyan);background:#eaf7fd}
-#prtgbar{display:flex;flex-direction:column;gap:10px;font-size:13px}
-#prtgbar .pbrow{flex-wrap:wrap}
+#prtgbar{display:none;align-items:center;gap:8px;padding:8px 16px;border-top:1px solid var(--g10);background:#fafbfc;font-size:12px}
+body.dash #prtgbar{display:flex}
+#prtgbar{flex-wrap:wrap;row-gap:6px}
+#prtgbar #prtgtxt{flex:1 1 calc(100% - 24px)}
+#prtgbar .btn{padding:4px 10px;font-size:10px;flex:0 0 auto}
 #mapfs #newmapForm,#mapfs #exfs{margin-top:12px}
 #mapfs #exfs{border-top:1px solid var(--g10);padding-top:4px}
 .mapmode{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--g20);border-radius:7px;overflow:hidden;margin-bottom:12px}
@@ -452,7 +455,7 @@ body.dash #prtgmsg:not([hidden]){display:flex}
 @media(max-width:860px){main{grid-template-columns:1fr}#panel{border-right:0;border-bottom:1px solid var(--g20)}}
 /* Dashboard tab layout: four task tabs instead of one long stack of sections */
 #dtabs{display:none;border-top:1px solid var(--g10);background:#fff}
-body.dash #dtabs{display:grid;grid-template-columns:repeat(4,1fr)}
+body.dash #dtabs{display:grid;grid-template-columns:repeat(3,1fr)}
 #dtabs button{position:relative;font-family:inherit;font-size:11px;font-weight:500;letter-spacing:.3px;padding:8px 2px 7px;border:0;border-bottom:2px solid transparent;background:#fff;color:#6b7380;cursor:pointer}
 #dtabs button .dti{display:block;width:18px;height:18px;line-height:18px;border-radius:50%;background:var(--g10);color:#8b93a3;font-size:10px;font-weight:600;margin:0 auto 3px}
 #dtabs button.on .dti{background:var(--cyan);color:#fff}
@@ -517,6 +520,12 @@ body.dash #dtabs{display:grid;grid-template-columns:repeat(4,1fr)}
       <button type="button" id="mObj" class="on">Objects</button>
       <button type="button" id="mDash">Dashboard</button>
     </div>
+    <div id="prtgbar">
+      <span id="prtgdot" class="pdot off"></span><span id="prtgtxt">Not connected</span>
+      <button type="button" class="btn ghost sm" id="prtgcog">Connect</button>
+      <button type="button" class="btn ghost sm" id="prtgswitch" hidden>Switch</button>
+      <button type="button" class="btn ghost sm" id="prtgdisconnect" hidden>Disconnect</button>
+    </div>
     <div id="prtgmsg" hidden><span id="prtgmsgtext"></span><button type="button" class="ico" id="prtgmsgx" aria-label="Dismiss" data-tip="Dismiss">&times;</button></div>
     <div id="editbar" hidden><span class="et" id="edittitle">Editing a dashboard item</span><button type="button" id="editcancel">Cancel</button><button type="button" id="editdone" class="solid">Done</button></div>
     <div id="typegrid" role="radiogroup" aria-label="Object type"></div>
@@ -525,19 +534,7 @@ body.dash #dtabs{display:grid;grid-template-columns:repeat(4,1fr)}
   <div id="objpanel"></div>
 
   <div id="dashpanel">
-<fieldset id="connfs">
-      <legend>Connect</legend>
-      <div id="prtgbar">
-        <div class="pbrow pbconn"><span id="prtgdot" class="pdot off"></span><span id="prtgtxt">Not connected</span></div>
-        <div class="pbrow">
-          <button type="button" class="btn" id="prtgcog">Connect</button>
-          <button type="button" class="btn ghost" id="prtgswitch" hidden>Switch server</button>
-          <button type="button" class="btn ghost" id="prtgdisconnect" hidden>Disconnect</button>
-        </div>
-      </div>
-      <div class="row stepnextrow"><button type="button" class="btn" data-goto="map" id="next1" disabled>Next</button></div>
-    </fieldset>
-    <fieldset id="mapfs">
+<fieldset id="mapfs">
       <legend>Map</legend>
       <div class="mapmode" role="tablist">
         <button type="button" class="mmbtn on" id="mapopenTab" role="tab" aria-selected="true">Open</button>

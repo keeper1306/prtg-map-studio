@@ -43,12 +43,11 @@ var CFG={
   dashboard:{rememberSections:false,pasteOffset:20},   /* pasteOffset: pixels each paste moves down and right, so copies do not sit on top of each other */
   /* the Dashboard's four tabs: each lists the section titles it shows, in order. 'fold' sections stay as folded bars; 'foldOpen' sections are bars that start open and can be minimized; the rest are open and cannot be closed.
      canvasClickMs: a canvas click this recent counts as "selected from the canvas" and opens the Selected tab. */
-  dashTabs:{start:'conn',canvasClickMs:600,
+  dashTabs:{start:'map',canvasClickMs:600,
     tabs:[
-      {id:'conn',icon:'1',label:'Connect',sections:['Connect']},
-      {id:'map',icon:'2',label:'Map',sections:['Map']},
-      {id:'add',icon:'3',label:'Design',sections:['Build','Existing PRTG objects','Items on the canvas','Selected','Canvas','Save and load layout']},
-      {id:'pub',icon:'4',label:'Push',sections:['Push to PRTG']}
+      {id:'map',icon:'1',label:'Map',sections:['Map']},
+      {id:'add',icon:'2',label:'Design',sections:['Build','Existing PRTG objects','Items on the canvas','Selected','Canvas','Save and load layout']},
+      {id:'pub',icon:'3',label:'Push',sections:['Push to PRTG']}
     ],
     fold:['Canvas','Save and load layout'],
     foldOpen:[]},
@@ -3891,14 +3890,15 @@ try{
   $('exbarapply').addEventListener('click',function(){$('xeapply').click();});
   $('exbardisc').addEventListener('click',function(){XE.stage={};if(XE.sel&&XE.cur[XE.sel])xePopulate();xeStaged();});
   /* ---- the PRTG switch at the top of the Dashboard tab ---- */
+  function hostOf(u){try{return new URL(u).host;}catch(e){return String(u);}}
   function swSync(){
     var connected=!!(S&&S.maps&&S.objFile), busy=!!$('pushconnect').disabled&&!connected, err=S&&S.lastErr;
     $('prtgdot').className='pdot '+(connected?'ok':(busy?'busy':(err?'err':'off')));
-    $('prtgtxt').textContent=connected?'Connected':(busy?'Connecting\u2026':(err?('Not connected \u00B7 '+String(err).slice(0,48)):'Not connected'));
+    $('prtgtxt').textContent=connected?('Connected to '+hostOf(base()||pageOrigin()||'PRTG')):(busy?'Connecting\u2026':(err?('Not connected \u00B7 '+String(err).slice(0,48)):'Not connected'));
     $('prtgtxt').dataset.tip=connected?('Connected to '+(base()||pageOrigin()||'PRTG')+' \u00B7 '+S.maps.length+(S.maps.length===1?' map':' maps')):String(err||'');
     $('prtgswitch').hidden=!connected;$('prtgdisconnect').hidden=!connected;$('prtgcog').hidden=connected;
     window.PRTGSTATE={connected:connected,map:connected&&!!$('pushmap').value};
-    $('next1').disabled=!connected;$('next2').disabled=!window.PRTGSTATE.map;
+    $('next2').disabled=!window.PRTGSTATE.map;
     try{document.dispatchEvent(new CustomEvent('prtgstate',{detail:window.PRTGSTATE}));}catch(e){}
     if(S.needLogin&&!connected&&!busy){$('prtgpop').hidden=false;}
     if(connected)S.needLogin=false;
@@ -7857,9 +7857,9 @@ try{
   });
   mb.insertBefore(row,eb||null);
   /* steps unlock in order: Map after connecting, Design and Push once a map is chosen */
-  var ORDER=DTABS.map(function(t){return t[0];}), wasConn=false;
+  var ORDER=DTABS.map(function(t){return t[0];});
   function pst(){return window.PRTGSTATE||{connected:false,map:false};}
-  function allowed(k){var s=pst();return k==='conn'||(s.connected&&(k==='map'||s.map));}
+  function allowed(k){return k==='map'||!!pst().map;}
   function refresh(){
     ORDER.forEach(function(k,i){
       var ok=allowed(k);
@@ -7874,13 +7874,7 @@ try{
     refresh();
     if(window.SECAPI)try{document.dispatchEvent(new CustomEvent('secopen',{detail:{fs:panes[k]}}));}catch(e){}
   }
-  document.addEventListener('prtgstate',function(){
-    var s=pst();
-    if(!allowed(cur))show('conn');
-    else if(s.connected&&!wasConn&&cur==='conn')show('map');   /* connected: on to choosing a map */
-    refresh();
-    wasConn=s.connected;
-  });
+  document.addEventListener('prtgstate',function(){if(!allowed(cur))show('map');refresh();});
   [].forEach.call(document.querySelectorAll('#dashpanel [data-goto]'),function(b){b.addEventListener('click',function(){show(b.getAttribute('data-goto'));});});
   document.addEventListener('gotodashtab',function(e){var k=e&&e.detail;if(k&&panes[k])show(k);});
   /* the same line icons the Objects tab uses, on the Build buttons */
@@ -7992,7 +7986,7 @@ try{
       DASHAPI.addAt(type,e.clientX,e.clientY);added();
     });
   })();
-  show(cur);wasConn=pst().connected;if(wasConn)show('map');else refresh();
+  show(cur);refresh();
   /* sections without a fold are opened once and cannot be closed */
   Object.keys(bars).forEach(function(title){
     if(FOLD[title])return;
