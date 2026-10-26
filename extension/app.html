@@ -311,12 +311,24 @@ p.note:not(.pst){display:none!important}
 .ico.sm{width:25px;height:25px}
 .ico.sm svg{width:13px;height:13px}
 .ico.active,input[type=checkbox]:checked + label.ico{border-color:var(--cyan);color:var(--cyan);background:#eaf7fd}
-#prtgbar{display:none;flex-direction:column;gap:7px;padding:9px 16px;border-top:1px solid var(--g10);background:#fafbfc;font-size:12px}
-#prtgbar #newmapForm,#prtgbar #exfs{border-top:1px dashed var(--g20);margin-top:2px;padding-top:9px;max-height:360px;overflow-y:auto}
+#prtgbar{display:flex;flex-direction:column;gap:10px;font-size:13px}
+#prtgbar .pbrow{flex-wrap:wrap}
+#mapfs #newmapForm,#mapfs #exfs{margin-top:12px}
+#mapfs #exfs{border-top:1px solid var(--g10);padding-top:4px}
+.mapmode{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--g20);border-radius:7px;overflow:hidden;margin-bottom:12px}
+.mmbtn{font-family:inherit;font-size:12px;font-weight:600;padding:8px;border:0;background:#fafbfc;color:#8b93a3;cursor:pointer}
+.mmbtn.on{background:var(--cyan);color:#fff}
+.mmbtn:disabled{opacity:.5;cursor:default}
+#mapopen select{width:100%}
+.dellink{display:block;margin-top:14px;color:#8b93a3;text-decoration:underline}
+.dellink:hover:not(:disabled){color:#b4232b}
+.dellink:disabled{opacity:.4;cursor:default}
+.stepnextrow{display:block;margin-top:16px}
+.stepnextrow .btn{width:100%}
+.stepnextrow .btn:disabled{opacity:.4;cursor:default}
 .extools{display:flex;align-items:center;gap:6px;margin:4px 0 2px;flex-wrap:wrap}
 .extools .exsep{width:1px;height:17px;background:var(--g20);flex:0 0 auto}
 .extools .exspacer{flex:1 1 auto}
-body.dash #prtgbar{display:flex}
 .pbrow{display:flex;align-items:center;gap:7px;min-width:0}
 .pbmap select{flex:1 1 auto;min-width:0;height:25px;font:inherit;font-size:11px;padding:0 6px;border-radius:6px;border:1px solid var(--g20);background:#fff;color:#2b3242}
 .pbmap select:disabled{opacity:.5}
@@ -442,7 +454,12 @@ body.dash #prtgmsg:not([hidden]){display:flex}
 #dtabs{display:none;border-top:1px solid var(--g10);background:#fff}
 body.dash #dtabs{display:grid;grid-template-columns:repeat(4,1fr)}
 #dtabs button{position:relative;font-family:inherit;font-size:11px;font-weight:500;letter-spacing:.3px;padding:8px 2px 7px;border:0;border-bottom:2px solid transparent;background:#fff;color:#6b7380;cursor:pointer}
-#dtabs button .dti{display:block;font-size:16px;line-height:18px}
+#dtabs button .dti{display:block;width:18px;height:18px;line-height:18px;border-radius:50%;background:var(--g10);color:#8b93a3;font-size:10px;font-weight:600;margin:0 auto 3px}
+#dtabs button.on .dti{background:var(--cyan);color:#fff}
+#dtabs button.done .dti{background:#3a9d23;color:#fff}
+#dtabs button.done{color:#3a9d23}
+#dtabs button:disabled{color:#b6bcc8;cursor:default}
+#dtabs button:disabled:hover{color:#b6bcc8}
 #dtabs button.on{color:var(--cyan);border-bottom-color:var(--cyan)}
 #dtabs button:hover{color:var(--cyan)}
 #dtabs .dtn{position:absolute;top:4px;right:calc(50% - 26px);background:var(--cyan);color:#fff;border-radius:8px;font-size:9px;line-height:14px;padding:0 5px;font-weight:500}
@@ -500,18 +517,36 @@ body.dash #dtabs{display:grid;grid-template-columns:repeat(4,1fr)}
       <button type="button" id="mObj" class="on">Objects</button>
       <button type="button" id="mDash">Dashboard</button>
     </div>
-    <div id="prtgbar">
-      <div class="pbrow pbconn">
-        <span id="prtgdot" class="pdot off"></span><span id="prtgtxt">Not connected</span>
-        <button type="button" class="ico sm" id="prtgswitch" data-tip="Connect to another server" aria-label="Connect to another server" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h11M15 3l4 4-4 4"/><path d="M17 17H6M9 21l-4-4 4-4"/></svg></button>
-        <button type="button" class="ico sm" id="prtgdisconnect" data-tip="Disconnect" aria-label="Disconnect" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v8"/><path d="M18.4 6.6a9 9 0 1 1-12.8 0"/></svg></button>
-        <button type="button" class="ico sm" id="prtgcog" data-tip="Server and login" aria-label="Server and login"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+    <div id="prtgmsg" hidden><span id="prtgmsgtext"></span><button type="button" class="ico" id="prtgmsgx" aria-label="Dismiss" data-tip="Dismiss">&times;</button></div>
+    <div id="editbar" hidden><span class="et" id="edittitle">Editing a dashboard item</span><button type="button" id="editcancel">Cancel</button><button type="button" id="editdone" class="solid">Done</button></div>
+    <div id="typegrid" role="radiogroup" aria-label="Object type"></div>
+  </div>
+
+  <div id="objpanel"></div>
+
+  <div id="dashpanel">
+<fieldset id="connfs">
+      <legend>Connect</legend>
+      <div id="prtgbar">
+        <div class="pbrow pbconn"><span id="prtgdot" class="pdot off"></span><span id="prtgtxt">Not connected</span></div>
+        <div class="pbrow">
+          <button type="button" class="btn" id="prtgcog">Connect</button>
+          <button type="button" class="btn ghost" id="prtgswitch" hidden>Switch server</button>
+          <button type="button" class="btn ghost" id="prtgdisconnect" hidden>Disconnect</button>
+        </div>
       </div>
-      <div class="pbrow pbmap">
+      <div class="row stepnextrow"><button type="button" class="btn" data-goto="map" id="next1" disabled>Next</button></div>
+    </fieldset>
+    <fieldset id="mapfs">
+      <legend>Map</legend>
+      <div class="mapmode" role="tablist">
+        <button type="button" class="mmbtn on" id="mapopenTab" role="tab" aria-selected="true">Open</button>
+        <button type="button" class="mmbtn" id="newmapToggle" role="tab" aria-selected="false" disabled>New</button>
+      </div>
+      <div id="mapopen">
         <select id="pushmap" disabled></select>
-        <button type="button" class="ico sm" id="newmapToggle" data-tip="Create new map" aria-label="Create new map" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
-        <button type="button" class="ico sm" id="deleteMapBtn" data-tip="Delete this map" aria-label="Delete this map" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/><path d="M10 11v6M14 11v6"/></svg></button>
-        <button type="button" class="ico sm" id="exload" data-tip="Load map" aria-label="Load map" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+        <div class="row" style="margin-top:8px"><button type="button" class="btn ghost" id="exload" disabled>Load</button></div>
+        <button type="button" class="linkbtn dellink" id="deleteMapBtn" disabled>Delete this map</button>
       </div>
       <p class="note pst" id="deleteMapMsg" hidden></p>
       <div id="newmapForm" hidden>
@@ -568,16 +603,9 @@ body.dash #dtabs{display:grid;grid-template-columns:repeat(4,1fr)}
         </div>
         <p class="note pst" id="xemsg"></p>
       </div>
-    </div>
-    <div id="prtgmsg" hidden><span id="prtgmsgtext"></span><button type="button" class="ico" id="prtgmsgx" aria-label="Dismiss" data-tip="Dismiss">&times;</button></div>
-    <div id="editbar" hidden><span class="et" id="edittitle">Editing a dashboard item</span><button type="button" id="editcancel">Cancel</button><button type="button" id="editdone" class="solid">Done</button></div>
-    <div id="typegrid" role="radiogroup" aria-label="Object type"></div>
-  </div>
-
-  <div id="objpanel"></div>
-
-  <div id="dashpanel">
-<div class="grp">Build</div>
+      <div class="row stepnextrow"><button type="button" class="btn" data-goto="add" id="next2" disabled>Next</button></div>
+    </fieldset>
+    <div class="grp">Build</div>
     <fieldset>
       <legend>Build</legend>
       <div class="addgrid">
@@ -592,7 +620,7 @@ body.dash #dtabs{display:grid;grid-template-columns:repeat(4,1fr)}
     </fieldset>
     <fieldset id="objfs">
     <legend>Existing PRTG objects</legend>
-    <p class="note" id="objnote">Switch PRTG on at the top of this tab to load the objects PRTG has. Files you design in the Objects tab appear here once they are in PRTG&rsquo;s <code>mapobjects</code> folder.</p>
+    <p class="note" id="objnote">Connect to PRTG (step 1) to load the objects PRTG has. Files you design in the Objects tab appear here once they are in PRTG&rsquo;s <code>mapobjects</code> folder.</p>
     <div class="row" style="margin:2px 0 8px"><button class="btn ghost" id="objrefresh" type="button" disabled>Refresh object list</button></div>
     <div id="defbox">
       <p class="note" style="margin-bottom:4px"><strong>Preview with</strong> &mdash; so nothing is empty. New objects start with these too.</p>
@@ -662,7 +690,7 @@ body.dash #dtabs{display:grid;grid-template-columns:repeat(4,1fr)}
     </fieldset>
   <fieldset id="pushfs">
     <legend>Push to PRTG</legend>
-    <p class="note" id="pushnote">Adds the items on this canvas to a map in PRTG, back to front: pasted pieces as Custom HTML elements, PRTG objects by their file. Pushing again <strong>updates the items it added before</strong>, as long as you keep the same layout: after a push, copy the layout (Save and load layout, above) and load it next time.</p>
+    <p class="note" id="pushnote">Adds the items on this canvas to a map in PRTG, back to front: pasted pieces as Custom HTML elements, PRTG objects by their file. Pushing again <strong>updates the items it added before</strong>, as long as you keep the same layout: after a push, copy the layout (Design, Save and load layout) and load it next time.</p>
     <p class="note" id="pushhow" hidden><strong>To use Push, open this page from PRTG itself.</strong> Your browser only lets a page read PRTG&rsquo;s answers when the page comes from the same address. Copy this file into a folder inside PRTG&rsquo;s <code>webroot</code> (for example <code>webroot\maptool\</code>), log in to PRTG, and open it at <code>https://your-server:8443/maptool/</code> followed by the file name. Then leave the address below blank.</p>
     <p class="note" id="pushtarget"></p>
     <div class="row3">

@@ -43,15 +43,15 @@ var CFG={
   dashboard:{rememberSections:false,pasteOffset:20},   /* pasteOffset: pixels each paste moves down and right, so copies do not sit on top of each other */
   /* the Dashboard's four tabs: each lists the section titles it shows, in order. 'fold' sections stay as folded bars; 'foldOpen' sections are bars that start open and can be minimized; the rest are open and cannot be closed.
      canvasClickMs: a canvas click this recent counts as "selected from the canvas" and opens the Selected tab. */
-  dashTabs:{start:'add',canvasClickMs:600,
+  dashTabs:{start:'conn',canvasClickMs:600,
     tabs:[
-      {id:'add',icon:'\uFF0B',label:'Add',sections:['Build','Existing PRTG objects','Existing PRTG maps']},
-      {id:'sel',icon:'\u25E7',label:'Selected',sections:['Selected','Canvas']},
-      {id:'layers',icon:'\u2630',label:'Layers',sections:['Items on the canvas']},
-      {id:'pub',icon:'\u21EA',label:'Publish',sections:['Push to PRTG','Save and load layout']}
+      {id:'conn',icon:'1',label:'Connect',sections:['Connect']},
+      {id:'map',icon:'2',label:'Map',sections:['Map']},
+      {id:'add',icon:'3',label:'Design',sections:['Build','Existing PRTG objects','Items on the canvas','Selected','Canvas','Save and load layout']},
+      {id:'pub',icon:'4',label:'Push',sections:['Push to PRTG']}
     ],
     fold:['Canvas','Save and load layout'],
-    foldOpen:['Existing PRTG maps']},
+    foldOpen:[]},
   /* the button in Existing PRTG objects that reads PRTG's list of object files again (after you install a file). It does not log in again. */
   objectList:{refreshLabel:'Refresh object list',refreshHint:'Reads the list of object files in PRTG again, so files you have just installed appear. It does not reconnect.'},
   /* the button that removes the items shown by Show items already on this map. confirmMs: with unapplied changes, how long the second press stays valid. */
@@ -2470,7 +2470,7 @@ try{
   function placePop(){
     var p=$('prtgpop'), bar=$('prtgbar'), msg=$('prtgmsg'), r, top;
     if(!p||p.hidden||p.classList.contains('gate'))return;
-    r=bar.getBoundingClientRect();top=r.bottom+(msg.hidden?0:msg.offsetHeight)+6;
+    r=bar.getBoundingClientRect();if(!r.height)r=$('modebar').getBoundingClientRect();top=r.bottom+(msg.hidden?0:msg.offsetHeight)+6;
     p.style.left=(r.left+8)+'px';p.style.width=Math.max(260,r.width-16)+'px';p.style.top=top+'px';p.style.maxHeight=Math.max(180,window.innerHeight-top-12)+'px';
   }
   function say(msg,kind){var n=$('pushstatus'), m=$('pushmsg');n.textContent=msg;n.className='note pst'+(kind?' '+kind:'');if(m){m.textContent=msg;m.className='note pst'+(kind?' '+kind:'');}banner(msg,kind);}
@@ -2928,19 +2928,24 @@ try{
       $('newmapname').value='';
       newMapMsg('Map successfully added.','ok');
       say('Created \u201C'+name+'\u201D and selected it.','ok');
-      setTimeout(function(){$('newmapForm').hidden=true;$('newmapToggle').classList.remove('active');newMapMsg('');},1800);
+      setTimeout(function(){mapMode('open');newMapMsg('');try{document.dispatchEvent(new CustomEvent('gotodashtab',{detail:'add'}));}catch(e){}},1200);
     }).catch(function(err){
       if(err&&err.status===401)authNeeded();
       newMapMsg((err&&err.message)||'Could not create the map.','err');
     }).then(function(){$('newmapgo').disabled=false;});
   }
-  $('newmapToggle').addEventListener('click',function(){
-    var willOpen=$('newmapForm').hidden;
-    $('exfs').hidden=true;$('exload').classList.remove('active');
-    $('newmapForm').hidden=!willOpen;$('newmapToggle').classList.toggle('active',willOpen);
-    if(willOpen)try{$('newmapname').focus();}catch(e){}
-  });
-  $('newmapcancel').addEventListener('click',function(){$('newmapForm').hidden=true;$('newmapToggle').classList.remove('active');newMapMsg('');});
+  /* the Map step has two modes: Open (pick a map, Load it) and New (create one) */
+  function mapMode(m){
+    var isNew=(m==='new');
+    $('mapopen').hidden=isNew;$('newmapForm').hidden=!isNew;
+    if(isNew)$('exfs').hidden=true;
+    $('newmapToggle').classList.toggle('on',isNew);$('mapopenTab').classList.toggle('on',!isNew);
+    $('newmapToggle').setAttribute('aria-selected',isNew?'true':'false');$('mapopenTab').setAttribute('aria-selected',isNew?'false':'true');
+    if(isNew)try{$('newmapname').focus();}catch(e){}
+  }
+  $('newmapToggle').addEventListener('click',function(){mapMode('new');});
+  $('mapopenTab').addEventListener('click',function(){mapMode('open');});
+  $('newmapcancel').addEventListener('click',function(){mapMode('open');newMapMsg('');});
   $('newmapgo').addEventListener('click',createMap);
   $('newmapname').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();createMap();}});
   /* deletes the currently-selected map via PRTG's own deleteobject.htm?id=&approve=1
@@ -2953,13 +2958,13 @@ try{
     var sel=$('pushmap'), id=sel.value, name=sel.options.length&&sel.selectedIndex>-1?sel.options[sel.selectedIndex].text:'';
     if(!id)return;
     if(!S.deleteArm){
-      S.deleteArm=setTimeout(function(){S.deleteArm=null;$('deleteMapBtn').classList.remove('armed');$('deleteMapBtn').dataset.tip='Delete this map';},4000);
-      $('deleteMapBtn').classList.add('armed');$('deleteMapBtn').dataset.tip='Click again to delete “'+name+'”';
+      S.deleteArm=setTimeout(function(){S.deleteArm=null;$('deleteMapBtn').classList.remove('armed');$('deleteMapBtn').textContent='Delete this map';},4000);
+      $('deleteMapBtn').classList.add('armed');$('deleteMapBtn').textContent='Click again to delete “'+name+'”';
       deleteMapMsg('Click the trash icon again to delete “'+name+'”.','warn');
       return;
     }
     clearTimeout(S.deleteArm);S.deleteArm=null;
-    $('deleteMapBtn').classList.remove('armed');$('deleteMapBtn').dataset.tip='Delete this map';
+    $('deleteMapBtn').classList.remove('armed');$('deleteMapBtn').textContent='Delete this map';
     $('deleteMapBtn').disabled=true;deleteMapMsg('Deleting…','');
     http('GET','/deleteobject.htm',{id:id,approve:'1'}).then(function(){
       return http('GET','/api/table.json',{content:'maps',columns:'name,objid'});
@@ -2983,11 +2988,11 @@ try{
   }
   $('deleteMapBtn').addEventListener('click',deleteMap);
   $('pushmap').addEventListener('change',function(){
-    if(S.deleteArm){clearTimeout(S.deleteArm);S.deleteArm=null;$('deleteMapBtn').classList.remove('armed');$('deleteMapBtn').dataset.tip='Delete this map';}
-    deleteMapMsg('');
+    if(S.deleteArm){clearTimeout(S.deleteArm);S.deleteArm=null;$('deleteMapBtn').classList.remove('armed');$('deleteMapBtn').textContent='Delete this map';}
+    deleteMapMsg('');swSync();
   });
   function objNoteText(){
-    return S.catalog?('PRTG lists '+S.catalog.length+(S.catalog.length===1?' object file.':' object files.')+' Pick one and add it to the canvas, then choose what it shows. Files you design in the Objects tab appear here once they are in PRTG\u2019s mapobjects folder.'):'Switch PRTG on at the top of this tab to load the objects PRTG has. Files you design in the Objects tab appear here once they are in PRTG\u2019s mapobjects folder.';
+    return S.catalog?('PRTG lists '+S.catalog.length+(S.catalog.length===1?' object file.':' object files.')+' Pick one and add it to the canvas, then choose what it shows. Files you design in the Objects tab appear here once they are in PRTG\u2019s mapobjects folder.'):'Connect to PRTG (step 1) to load the objects PRTG has. Files you design in the Objects tab appear here once they are in PRTG\u2019s mapobjects folder.';
   }
   /* read only the list of object files again; the login, the maps and what is selected stay as they are */
   function refreshObjects(){
@@ -3542,10 +3547,8 @@ try{
     });
   }
   $('exload').addEventListener('click',function(){
-    var willOpen=$('exfs').hidden;
-    $('newmapForm').hidden=true;$('newmapToggle').classList.remove('active');
-    $('exfs').hidden=!willOpen;$('exload').classList.toggle('active',willOpen);
-    if(willOpen)exLoad();
+    $('exfs').hidden=false;
+    exLoad();
   });
   function exLayerSync(){var l=$('dexist');if(l)l.className=exLayerClass();xeDecorate();}
   $('exon').addEventListener('change',exLayerSync);
@@ -3881,6 +3884,7 @@ try{
   $('exbarrev').addEventListener('click',function(){
     var bar=[].filter.call(document.querySelectorAll('#dashpanel .advbar'),function(b){return /Existing PRTG maps/.test(b.textContent);})[0];
     if(bar&&!bar.classList.contains('open'))bar.click();
+    $('exfs').hidden=false;
     xeReview();
     try{$('exrev').scrollIntoView({block:'nearest'});}catch(e){}
   });
@@ -3892,7 +3896,10 @@ try{
     $('prtgdot').className='pdot '+(connected?'ok':(busy?'busy':(err?'err':'off')));
     $('prtgtxt').textContent=connected?'Connected':(busy?'Connecting\u2026':(err?('Not connected \u00B7 '+String(err).slice(0,48)):'Not connected'));
     $('prtgtxt').dataset.tip=connected?('Connected to '+(base()||pageOrigin()||'PRTG')+' \u00B7 '+S.maps.length+(S.maps.length===1?' map':' maps')):String(err||'');
-    $('prtgswitch').hidden=!connected;$('prtgdisconnect').hidden=!connected;
+    $('prtgswitch').hidden=!connected;$('prtgdisconnect').hidden=!connected;$('prtgcog').hidden=connected;
+    window.PRTGSTATE={connected:connected,map:connected&&!!$('pushmap').value};
+    $('next1').disabled=!connected;$('next2').disabled=!window.PRTGSTATE.map;
+    try{document.dispatchEvent(new CustomEvent('prtgstate',{detail:window.PRTGSTATE}));}catch(e){}
     if(S.needLogin&&!connected&&!busy){$('prtgpop').hidden=false;}
     if(connected)S.needLogin=false;
     if(connected&&!busy&&S.reauth){S.reauth=false;$('prtgpop').hidden=true;}   /* a connect that followed a refused login has worked: the panel has done its job */
@@ -3900,10 +3907,10 @@ try{
   function disconnect(){
     S.maps=null;S.objFile=null;S.catalog=null;S.reviewed=null;S.cls=null;S.lastErr=null;S.tgt={};
     $('pushmap').innerHTML='';$('pushgo').hidden=true;$('pushlist').hidden=true;
-    $('newmapForm').hidden=true;$('newmapToggle').classList.remove('active');$('newmapname').value='';$('newmapmsg').textContent='';
-    $('exfs').hidden=true;$('exload').classList.remove('active');
+    mapMode('open');$('newmapname').value='';$('newmapmsg').textContent='';
+    $('exfs').hidden=true;
     if(S.deleteArm){clearTimeout(S.deleteArm);S.deleteArm=null;}
-    $('deleteMapBtn').classList.remove('armed');$('deleteMapBtn').dataset.tip='Delete this map';deleteMapMsg('');
+    $('deleteMapBtn').classList.remove('armed');$('deleteMapBtn').textContent='Delete this map';deleteMapMsg('');
     PV.cache={};PV.pending={};PV.inflight={};PV.queue=[];PV.applied={};trReset();
     exClear();say('Disconnected.','');updateButtons();renderObjList();pickerSync();pvSync();
   }
@@ -7844,16 +7851,37 @@ try{
   var row=document.createElement('div');row.id='dtabs';row.setAttribute('role','tablist');
   DTABS.forEach(function(t){
     var b=document.createElement('button');b.type='button';b.setAttribute('role','tab');
-    b.innerHTML='<span class="dti">'+t[1]+'</span>'+t[2]+(t[0]==='layers'?'<span class="dtn"></span>':'');
+    b.innerHTML='<span class="dti">'+t[1]+'</span>'+t[2]+(t[0]==='add'?'<span class="dtn"></span>':'');
     b.addEventListener('click',function(){show(t[0]);});
     row.appendChild(b);btns[t[0]]=b;
   });
   mb.insertBefore(row,eb||null);
+  /* steps unlock in order: Map after connecting, Design and Push once a map is chosen */
+  var ORDER=DTABS.map(function(t){return t[0];}), wasConn=false;
+  function pst(){return window.PRTGSTATE||{connected:false,map:false};}
+  function allowed(k){var s=pst();return k==='conn'||(s.connected&&(k==='map'||s.map));}
+  function refresh(){
+    ORDER.forEach(function(k,i){
+      var ok=allowed(k);
+      btns[k].disabled=!ok;
+      btns[k].classList.toggle('done',ok&&i<ORDER.indexOf(cur));
+    });
+  }
   function show(k){
+    if(!panes[k]||!allowed(k))return;
     cur=k;
     DTABS.forEach(function(t){var on=t[0]===k;panes[t[0]].classList.toggle('on',on);btns[t[0]].classList.toggle('on',on);btns[t[0]].setAttribute('aria-selected',on?'true':'false');});
+    refresh();
     if(window.SECAPI)try{document.dispatchEvent(new CustomEvent('secopen',{detail:{fs:panes[k]}}));}catch(e){}
   }
+  document.addEventListener('prtgstate',function(){
+    var s=pst();
+    if(!allowed(cur))show('conn');
+    else if(s.connected&&!wasConn&&cur==='conn')show('map');   /* connected: on to choosing a map */
+    refresh();
+    wasConn=s.connected;
+  });
+  [].forEach.call(document.querySelectorAll('#dashpanel [data-goto]'),function(b){b.addEventListener('click',function(){show(b.getAttribute('data-goto'));});});
   document.addEventListener('gotodashtab',function(e){var k=e&&e.detail;if(k&&panes[k])show(k);});
   /* the same line icons the Objects tab uses, on the Build buttons */
   (function(){
@@ -7964,7 +7992,7 @@ try{
       DASHAPI.addAt(type,e.clientX,e.clientY);added();
     });
   })();
-  show(cur);
+  show(cur);wasConn=pst().connected;if(wasConn)show('map');else refresh();
   /* sections without a fold are opened once and cannot be closed */
   Object.keys(bars).forEach(function(title){
     if(FOLD[title])return;
@@ -7973,7 +8001,7 @@ try{
   });
   /* count badge on Layers, taken from the "Items on the canvas" note */
   (function(){
-    var note=bars['Items on the canvas']&&bars['Items on the canvas'].querySelector('.secnote'), badge=btns.layers.querySelector('.dtn');
+    var note=bars['Items on the canvas']&&bars['Items on the canvas'].querySelector('.secnote'), badge=btns.add.querySelector('.dtn');
     if(!note||!badge)return;
     function sync(){var m=/^(\d+)/.exec(note.textContent);badge.textContent=m?m[1]:'';}
     new MutationObserver(sync).observe(note,{childList:true,characterData:true,subtree:true});sync();
@@ -7984,13 +8012,13 @@ try{
   document.addEventListener('dashselect',function(){
     var s=null;try{s=window.DASHAPI&&DASHAPI.selected&&DASHAPI.selected();}catch(e){}
     var id=s?s.id:null;
-    if(id!==null&&id!==lastSel&&Date.now()-fromCanvas<DT.canvasClickMs&&cur!=='sel')show('sel');
+    if(id!==null&&id!==lastSel&&Date.now()-fromCanvas<DT.canvasClickMs){show('add');setTimeout(function(){try{bars['Selected'].scrollIntoView({block:'nearest'});}catch(e){}},0);}
     lastSel=id;
   });
   var pg=document.getElementById('pushgo');if(pg&&pg.parentNode)pg.parentNode.classList.add('stickyfoot');   /* Push stays in view at the bottom of the panel */
   /* the Review changes strip opens the Add tab, where the changes to items already on the map are reviewed (the Existing PRTG maps section) */
   var rev=document.getElementById('exbarrev');
-  if(rev)rev.addEventListener('click',function(){show('add');},true);
+  if(rev)rev.addEventListener('click',function(){show('map');},true);
 }catch(err){if(window.console)console.error('dashboard tabs',err);}
 })();
 /* @endregion: dashtabs */
