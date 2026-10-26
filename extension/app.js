@@ -15,7 +15,7 @@
 var CFG={
   name:'PRTG Map Studio',
   version:'1.0.0',
-  changelog:'1.0.0: items can be reordered on the canvas. Bring to front, send backward, send to back and a Layer control next to Width and Height in Selected; Up/Down buttons in the Layers tab. Items already on the chosen PRTG map now also show up in the Layers tab (read-only, sorted by their real layer), with a link back to Existing PRTG maps to change them there. v64: one Existing PRTG maps section at the bottom of the Add tab holds the map choice and everything from Already on this map; it can be minimized. v63: the map choice has its own Map section on the Add tab, with Already on this map (show and clear items) under it; Publish keeps Push to PRTG and Save and load layout, and shows which map it will push to. v62: the Button tool has the same groups of presets as the Label tool (Basic, Dashboard buttons, Status buttons, and the eight table, gauge and frame looks). v61: the chart.svg picture is now requested with exactly the address PRTG put in the page (PRTG signs it with a URL hash, so any change gives 401). v60: Collect PRTG samples blanks out passhash, username, map id and URL hash in the saved file, and also saves the chart.svg picture of up to two graph items. v59: a Clear items from the canvas button removes the items shown by Show items already on this map (it asks twice if you have unapplied changes). v58: choosing a Build tile (Frame, Label, Button, Background, Shape) closes the Existing PRTG objects section, so the area below stays blank until the Existing PRTG objects tile is pressed. v57: copy, cut and paste are back on the Dashboard (Ctrl+C, Ctrl+X, Ctrl+V and the Copy and Paste buttons; a frame is copied with everything inside it). v56: a Refresh object list button in Existing PRTG objects reads PRTG\u2019s list of object files again without reconnecting. v55: the Dashboard tabs (Add, Selected, Layers, Publish) and the Build tiles (click then place, double-click, drag) are in the file; their tab names, grouping and timing are now in config. v54: the ready-made objects section is gone. v53: signing in with a username and passhash is required to connect, in a new login card. v52: previews of counting objects (status counts, donuts) read every sensor, not the first five. v50: Status counts object (tiles of sensors by status) and the Brand navy look. v49: authorship marks in the core. v48: after a push the map is read back; items PRTG did not keep are added again and any that still fail are named. v47: shape presets give each look its own color and thickness; push and edit results show over the Dashboard and a failed login opens the login panel. v46: status dots in the device tree; the object preview can be dragged onto the canvas. v45: graphs and icons are edited in the preview too. v44: gauges and donuts are edited in the preview like tables (drag the handles, double-click the title). v43: Look presets for frames, backgrounds and the new shapes (lines, arrows, flowing arrows). v42: notes became hover icons, undo/redo arrows over the canvas, a tidier Dashboard panel, a PRTG connection switch. v41: click, drag, resize, delete on the canvas. v40: edit, move, delete with Review and Undo. v39: existing items show the object they are bound to (name, type, place) and a summary of what they show. v38: shows the items already on a map. v37: Collect samples reads the map items. v36: frames edited in the Objects view. v35: no comments in generated files. v34: file list. v33: install script. v32: config, tabs.',
+  changelog:'1.0.0: items can be reordered on the canvas. Bring to front, send backward, send to back and a Layer control next to Width and Height in Selected; Up/Down buttons in the Layers tab. Items already on the chosen PRTG map now also show up in the Layers tab (read-only, sorted by their real layer), with a link back to Existing PRTG maps to change them there. v64: one Existing PRTG maps section at the bottom of the Add tab holds the map choice and everything from Already on this map; it can be minimized. v63: the map choice has its own Map section on the Add tab, with Already on this map (show and clear items) under it; Publish keeps Push to PRTG and Save and load layout, and shows which map it will push to. v62: the Button tool has the same groups of presets as the Label tool (Basic, Map buttons, Status buttons, and the eight table, gauge and frame looks). v61: the chart.svg picture is now requested with exactly the address PRTG put in the page (PRTG signs it with a URL hash, so any change gives 401). v60: Collect PRTG samples blanks out passhash, username, map id and URL hash in the saved file, and also saves the chart.svg picture of up to two graph items. v59: a Clear items from the canvas button removes the items shown by Show items already on this map (it asks twice if you have unapplied changes). v58: choosing a Build tile (Frame, Label, Button, Background, Shape) closes the Existing PRTG objects section, so the area below stays blank until the Existing PRTG objects tile is pressed. v57: copy, cut and paste are back on the Dashboard (Ctrl+C, Ctrl+X, Ctrl+V and the Copy and Paste buttons; a frame is copied with everything inside it). v56: a Refresh object list button in Existing PRTG objects reads PRTG\u2019s list of object files again without reconnecting. v55: the Dashboard tabs (Add, Selected, Layers, Publish) and the Build tiles (click then place, double-click, drag) are in the file; their tab names, grouping and timing are now in config. v54: the ready-made objects section is gone. v53: signing in with a username and passhash is required to connect, in a new login card. v52: previews of counting objects (status counts, donuts) read every sensor, not the first five. v50: Status counts object (tiles of sensors by status) and the Brand navy look. v49: authorship marks in the core. v48: after a push the map is read back; items PRTG did not keep are added again and any that still fail are named. v47: shape presets give each look its own color and thickness; push and edit results show over the Dashboard and a failed login opens the login panel. v46: status dots in the device tree; the object preview can be dragged onto the canvas. v45: graphs and icons are edited in the preview too. v44: gauges and donuts are edited in the preview like tables (drag the handles, double-click the title). v43: Look presets for frames, backgrounds and the new shapes (lines, arrows, flowing arrows). v42: notes became hover icons, undo/redo arrows over the canvas, a tidier Dashboard panel, a PRTG connection switch. v41: click, drag, resize, delete on the canvas. v40: edit, move, delete with Review and Undo. v39: existing items show the object they are bound to (name, type, place) and a summary of what they show. v38: shows the items already on a map. v37: Collect samples reads the map items. v36: frames edited in the Objects view. v35: no comments in generated files. v34: file list. v33: install script. v32: config, tabs.',
   /* the Dashboard canvas when the page opens, and the size a new Frame starts at */
   canvas:{w:1920,h:1080,grid:10,zoom:'fit'},
   frame:{w:360,h:220},
@@ -619,17 +619,17 @@ var LBL_PRESETS=[
  {g:'Basic',n:'Outline tag',sw:'color:#0F172A;border:1.5px solid #94A3B8;border-radius:5px;padding:5px 11px;font-size:11px;',
   v:{lw:0,lh:0,usebg:false,color:'#0F172A',bcolor:'#94A3B8',bwidth:2,radius:5,padx:16,pady:9,fam:'Inter',size:17,weight:'500',shadow:false,upper:false,spacing:0,italic:false}},
  /* ---- the Dashboard tab's own card styles ---- */
- {g:'Dashboard cards',n:'Light card',sw:'background:#FFFFFF;color:#0F172A;border:1px solid #E2E8F0;border-radius:8px;padding:6px 12px;font-size:11px;font-weight:600;box-shadow:'+SOFT_SH,
+ {g:'Map cards',n:'Light card',sw:'background:#FFFFFF;color:#0F172A;border:1px solid #E2E8F0;border-radius:8px;padding:6px 12px;font-size:11px;font-weight:600;box-shadow:'+SOFT_SH,
   v:CARD_V({bg:'#FFFFFF',color:'#0F172A',bcolor:'#E2E8F0',bwidth:1,radius:8,boxshadow:'soft'})},
- {g:'Dashboard cards',n:'Dark card',sw:'background:#1E293B;color:#F1F5F9;border-radius:10px;padding:6px 12px;font-size:11px;font-weight:600;box-shadow:'+SOFT_SH,
+ {g:'Map cards',n:'Dark card',sw:'background:#1E293B;color:#F1F5F9;border-radius:10px;padding:6px 12px;font-size:11px;font-weight:600;box-shadow:'+SOFT_SH,
   v:CARD_V({bg:'#1E293B',color:'#F1F5F9',bwidth:0,radius:10,boxshadow:'soft'})},
- {g:'Dashboard cards',n:'Glass',map:'dark',tip:'Made for dark maps. The fill is nearly clear, so on a white map the light text is hard to read.',
+ {g:'Map cards',n:'Glass',map:'dark',tip:'Made for dark maps. The fill is nearly clear, so on a white map the light text is hard to read.',
   sw:'background:#2A3850;color:#F8FAFC;border:1px solid #94A3B8;border-radius:10px;padding:6px 12px;font-size:11px;font-weight:600;',
   v:CARD_V({bg:'#94A3B8',bgalpha:16,color:'#F8FAFC',bcolor:'#94A3B8',bwidth:1,radius:10})},
- {g:'Dashboard cards',n:'Outline',tip:'Made for light maps. No fill, dark grey text.',
+ {g:'Map cards',n:'Outline',tip:'Made for light maps. No fill, dark grey text.',
   sw:'color:#334155;border:2px solid #94A3B8;border-radius:8px;padding:5px 11px;font-size:11px;font-weight:600;',
   v:CARD_V({usebg:false,color:'#334155',bcolor:'#94A3B8',bwidth:2,radius:8})},
- {g:'Dashboard cards',n:'Accent',sw:'background:#007DB8;color:#FFFFFF;border-radius:8px;padding:6px 12px;font-size:11px;font-weight:600;box-shadow:'+SOFT_SH,
+ {g:'Map cards',n:'Accent',sw:'background:#007DB8;color:#FFFFFF;border-radius:8px;padding:6px 12px;font-size:11px;font-weight:600;box-shadow:'+SOFT_SH,
   v:CARD_V({bg:'#007DB8',color:'#FFFFFF',bwidth:0,radius:8,boxshadow:'soft'})},
  /* ---- status chips: the Dashboard's five colours ---- */
  {g:'Status chips',n:'Status chip',sw:'background:#DCFCE7;color:#166534;border-radius:999px;padding:5px 12px;font-size:10px;font-weight:600;',v:CHIP_V('#DCFCE7','#166534')},
@@ -663,17 +663,17 @@ BTN_PRESETS.forEach(function(p){p.g='Basic';if(p.v.boxshadow===undefined)p.v.box
 var BTN_V=function(o){var v={bw:0,bh:0,bstyle:'flat',bshape:'rect',bwidth:0,bdrop:false,radius:8,padx:26,pady:13,weight:'600',fam:'Inter',size:17,boxshadow:'none',loadfont:true};for(var k in o)v[k]=o[k];return v;};
 var BTN_PILL=function(face,hover,label){return BTN_V({bface:face,bhover:hover,blabel:label,bshape:'pill',padx:24,pady:10,size:14});};
 BTN_PRESETS=BTN_PRESETS.concat([
- {g:'Dashboard buttons',n:'Light',sw:'background:#FFFFFF;color:#0F172A;border:1px solid #E2E8F0;border-radius:8px;padding:6px 12px;font-size:11px;font-weight:600;box-shadow:'+SOFT_SH,
+ {g:'Map buttons',n:'Light',sw:'background:#FFFFFF;color:#0F172A;border:1px solid #E2E8F0;border-radius:8px;padding:6px 12px;font-size:11px;font-weight:600;box-shadow:'+SOFT_SH,
   v:BTN_V({bface:'#FFFFFF',bhover:'#F1F5F9',blabel:'#0F172A',bcolor:'#E2E8F0',bwidth:1,radius:8,boxshadow:'soft'})},
- {g:'Dashboard buttons',n:'Dark',sw:'background:#1E293B;color:#F1F5F9;border-radius:10px;padding:6px 12px;font-size:11px;font-weight:600;box-shadow:'+SOFT_SH,
+ {g:'Map buttons',n:'Dark',sw:'background:#1E293B;color:#F1F5F9;border-radius:10px;padding:6px 12px;font-size:11px;font-weight:600;box-shadow:'+SOFT_SH,
   v:BTN_V({bface:'#1E293B',bhover:'#334155',blabel:'#F1F5F9',radius:10,boxshadow:'soft'})},
- {g:'Dashboard buttons',n:'Glass',map:'dark',tip:'Made for dark maps. The face is see-through, so on a white map the light text is hard to read.',
+ {g:'Map buttons',n:'Glass',map:'dark',tip:'Made for dark maps. The face is see-through, so on a white map the light text is hard to read.',
   sw:'background:#2A3850;color:#F8FAFC;border:1px solid #94A3B8;border-radius:10px;padding:6px 12px;font-size:11px;font-weight:600;',
   v:BTN_V({bstyle:'glass',bface:'#94A3B8',bhover:'#CBD5E1',blabel:'#F8FAFC',radius:10})},
- {g:'Dashboard buttons',n:'Outline',tip:'Made for light maps. No fill; the text takes the outline colour.',
+ {g:'Map buttons',n:'Outline',tip:'Made for light maps. No fill; the text takes the outline colour.',
   sw:'color:#475569;border:2px solid #475569;border-radius:8px;padding:5px 11px;font-size:11px;font-weight:600;',
   v:BTN_V({bstyle:'outline',bface:'#475569',bhover:'#475569',blabel:'#FFFFFF',bwidth:2,radius:8})},
- {g:'Dashboard buttons',n:'Accent',sw:'background:#007DB8;color:#FFFFFF;border-radius:8px;padding:6px 12px;font-size:11px;font-weight:600;box-shadow:'+SOFT_SH,
+ {g:'Map buttons',n:'Accent',sw:'background:#007DB8;color:#FFFFFF;border-radius:8px;padding:6px 12px;font-size:11px;font-weight:600;box-shadow:'+SOFT_SH,
   v:BTN_V({bface:'#007DB8',bhover:'#00AEEF',blabel:'#FFFFFF',radius:8,boxshadow:'soft'})},
  {g:'Status buttons',n:'Status button',sw:'background:#DCFCE7;color:#166534;border-radius:999px;padding:5px 12px;font-size:10px;font-weight:600;',v:BTN_PILL('#DCFCE7','#BBF7D0','#166534')},
  {g:'Status buttons',n:'Warning button',sw:'background:#FEF3C7;color:#92400E;border-radius:999px;padding:5px 12px;font-size:10px;font-weight:600;',v:BTN_PILL('#FEF3C7','#FDE68A','#92400E')},
@@ -2915,7 +2915,7 @@ try{
     if(!n){
       $('pushgo').hidden=true;S.reviewed=null;
       if(c.nMissing&&!c.removed.length&&!c.nSame)say('Nothing can be pushed yet.'+skip+' Copy the file into PRTG\u2019s mapobjects folder, then switch PRTG off and on again.','err');
-      else say(c.removed.length?('The map matches the Dashboard apart from the removed '+(c.removed.length===1?'item. It is':'items. They are')+' still on the map: tick the box below to delete '+(c.removed.length===1?'it':'them')+'.'):(c.nSame?'The map already matches the Dashboard.':'Nothing to push.'),'');
+      else say(c.removed.length?('The map matches the Map designer apart from the removed '+(c.removed.length===1?'item. It is':'items. They are')+' still on the map: tick the box below to delete '+(c.removed.length===1?'it':'them')+'.'):(c.nSame?'The map already matches the Dashboard.':'Nothing to push.'),'');
     }else{
       $('pushgo').textContent='Push '+n+((c.nChanged||rm||c.nSame)?(n===1?' change':' changes'):(n===1?' item':' items'))+' to PRTG';
       $('pushgo').hidden=false;S.reviewed=sig(c,!!rm);
@@ -2937,7 +2937,7 @@ try{
     if(!mixed&&!c.nMissing)sum.textContent=p.length+(p.length===1?' item will be added to ':' items will be added to ')+'\u201C'+mapName()+'\u201D'+(hasObj?', back to front: pasted pieces as Custom HTML elements, PRTG objects by their file.':' as Custom HTML elements, back to front.')+' Items already on the map are not touched.';
     else{
       var parts=[];
-      if(c.nNew)parts.push(c.nNew+' new');if(c.nChanged)parts.push(c.nChanged+' changed');if(c.nSame)parts.push(c.nSame+' unchanged');if(c.removed.length)parts.push(c.removed.length+' removed from the Dashboard');if(c.nMissing)parts.push(c.nMissing+' not in PRTG\u2019s list yet');
+      if(c.nNew)parts.push(c.nNew+' new');if(c.nChanged)parts.push(c.nChanged+' changed');if(c.nSame)parts.push(c.nSame+' unchanged');if(c.removed.length)parts.push(c.removed.length+' removed from the Map designer');if(c.nMissing)parts.push(c.nMissing+' not in PRTG\u2019s list yet');
       sum.textContent=(mixed?'Compared with what was pushed to \u201C'+mapName()+'\u201D last time: ':'This push to \u201C'+mapName()+'\u201D: ')+parts.join(', ')+'.'+(mixed?' Unchanged items are not touched. A changed item is rewritten completely (position, size, order and code), so anything you changed on it by hand in PRTG is replaced.':'')+(c.nReplace?' A replaced object is deleted and added again, because PRTG fixes an item\u2019s file and target when it is added.':'');
     }
     box.appendChild(sum);
@@ -2955,7 +2955,7 @@ try{
     c.items.forEach(function(it){
       row(it,it.status,it.status==='new'?'New':(it.status==='same'?'Unchanged':(it.status==='missing'?'Not in PRTG\u2019s list yet: copy the file into the mapobjects folder':(it.replace?'Replace: ':'Changed: ')+it.reasons.join(', '))),it.status);
     });
-    c.removed.forEach(function(r){row({name:r.name},'removed','Removed from the Dashboard','removed');});
+    c.removed.forEach(function(r){row({name:r.name},'removed','Removed from the Map designer','removed');});
     t.appendChild(h);t.appendChild(tb);box.appendChild(t);
     if(c.removed.length){
       var lab=el('label','prm'), cb=document.createElement('input');
@@ -3185,7 +3185,7 @@ try{
     deleteMapMsg('');swSync();
   });
   function objNoteText(){
-    return S.catalog?('PRTG lists '+S.catalog.length+(S.catalog.length===1?' object file.':' object files.')+' Pick one and add it to the canvas, then choose what it shows. Files you design in the Objects tab appear here once they are in PRTG\u2019s mapobjects folder.'):'Connect to PRTG (step 1) to load the objects PRTG has. Files you design in the Objects tab appear here once they are in PRTG\u2019s mapobjects folder.';
+    return S.catalog?('PRTG lists '+S.catalog.length+(S.catalog.length===1?' object file.':' object files.')+' Pick one and add it to the canvas, then choose what it shows. Files you make in the Object builder appear here once they are in PRTG\u2019s mapobjects folder.'):'Connect to PRTG (step 1) to load the objects PRTG has. Files you make in the Object builder appear here once they are in PRTG\u2019s mapobjects folder.';
   }
   /* read only the list of object files again; the login, the maps and what is selected stay as they are */
   function refreshObjects(){
@@ -4489,7 +4489,7 @@ try{
     var missing=Object.keys(lib).filter(function(f){return !S.catalog.some(function(c){return keyOf(c.cat,c.name)===keyOf(lib[f].cat,lib[f].name);});});
     if(missing.length){
       n.hidden=false;n.className='note pst err';
-      n.textContent='Not in PRTG yet: '+missing.map(function(f){return f+' ('+lib[f].cat+': '+lib[f].name+')';}).join(', ')+'. Copy '+(missing.length===1?'the file':'the files')+' into PRTG\u2019s mapobjects folder (Download ZIP in the Objects tab gives you a zip), then press Connect again.';
+      n.textContent='Not in PRTG yet: '+missing.map(function(f){return f+' ('+lib[f].cat+': '+lib[f].name+')';}).join(', ')+'. Copy '+(missing.length===1?'the file':'the files')+' into PRTG\u2019s mapobjects folder (Download ZIP in the Object builder tab gives you a zip), then press Connect again.';
     }else if(Object.keys(lib).length){n.hidden=false;n.className='note pst ok';n.textContent='Every object you designed here is in PRTG\u2019s list.';}
     else n.hidden=true;
     box.scrollTop=top;
