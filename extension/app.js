@@ -3931,7 +3931,7 @@ try{
     if(willShow){try{$('pushserver').focus();$('pushserver').select();}catch(err){}}
   });
   $('prtgdisconnect').addEventListener('click',function(e){e.stopPropagation();disconnect();});
-  document.addEventListener('click',function(e){var p=$('prtgpop');if(!p.hidden&&!p.classList.contains('gate')&&!(e.target.closest&&e.target.closest('#prtgbar')))p.hidden=true;});
+  document.addEventListener('click',function(e){var p=$('prtgpop');if(!p.hidden&&!p.classList.contains('gate')&&!(e.target.closest&&e.target.closest('#prtgbar, #prtgpop')))p.hidden=true;});
   swSync();
   window.EXAPI={state:EX,edit:XE,parse:exParse,headers:exHeaders,load:exLoad,clear:exClear,pick:exPick,label:exLabel};
   /* ---- live previews: PRTG's own drawing of each object, with the target's real data.
