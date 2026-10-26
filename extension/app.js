@@ -3264,12 +3264,12 @@ try{
   function redactSecrets(t){return t.replace(new RegExp('\\b('+CFG.samples.redactKeys.join('|')+')=[^&"\'<>\\s\\\\]+','gi'),'$1=REDACTED');}
   function STAMP_NAME(){return CFG.name+' v'+CFG.version+_zw();}
   /* ---- the items already on the map, read only. PRTG's own designer loads them from /api/mapsvg.htm; this does the same and draws them behind the canvas. */
-  var EX={items:[],mapW:0,mapH:0,map:null,target:{},styles:'',libs:'',libsFor:''};
+  var EX={items:[],mapW:0,mapH:0,map:null,target:{},styles:'',libs:'',libsFor:'',lines:'',bg:'',bgFor:''};
   function exLayerClass(){return ($('exon').checked?'':'off')+($('exdim').checked?' dim':'');}
   function exLayer(){var c=$('dcanvas'),l=$('dexist');if(!l){l=document.createElement('div');l.id='dexist';l.className=exLayerClass();c.insertBefore(l,c.firstChild);}return l;}
   function exClear(){
     var l=$('dexist'),x=$('exlist');
-    EX.items=[];EX.mapW=0;EX.mapH=0;EX.map=null;EX.target={};
+    EX.items=[];EX.mapW=0;EX.mapH=0;EX.map=null;EX.target={};EX.lines='';
     if(l&&l.parentNode)l.parentNode.removeChild(l);
     x.hidden=true;x.textContent='';$('exonrow').hidden=true;$('exdimrow').hidden=true;$('exscrrow').hidden=true;$('exsize').hidden=true;$('exmsg').textContent='';
     if(typeof xeReset0==='function')xeReset0();
@@ -3355,7 +3355,37 @@ try{
       out.push(it);
     }
     EX.styles=[].filter.call(d.querySelectorAll('style'),function(x){return !(x.closest&&x.closest('.map_object'));}).map(function(x){return x.outerHTML;}).join('').slice(0,60000);
+    EX.lines='';
+    try{
+      var sv=d.querySelector('svg#mapsvg')||d.querySelector('svg'), cp;
+      if(sv){
+        cp=sv.cloneNode(true);
+        [].slice.call(cp.querySelectorAll('.map_object,foreignObject,script')).forEach(function(n){n.parentNode.removeChild(n);});
+        if(cp.querySelector('path,line,polyline')){cp.setAttribute('class','dexlines');cp.removeAttribute('id');cp.setAttribute('style','position:absolute;left:0;top:0;pointer-events:none;overflow:visible');EX.lines=cp.outerHTML;}
+      }
+    }catch(e){}
     return out;
+  }
+  /* the picture behind the items is a setting of the map itself, not an item: PRTG draws it as the background of the View Map page */
+  function exBackground(id){
+    var origin=(base()||pageOrigin()||''), n=String(id), pad='00000000'.slice(n.length)+n;
+    function grab(path){
+      var qs=qstring(withAuth({}),true);
+      return fetchWithTimeout(origin+path+(qs?'?'+qs:''),{method:'GET',credentials:base()?'omit':'same-origin'}).then(function(r){
+        if(!r.ok)throw new Error('no');
+        return r.blob();
+      }).then(function(b){if(!b||!b.size||(b.type&&b.type.indexOf('image')<0))throw new Error('no');return URL.createObjectURL(b);});
+    }
+    function tryList(list,i){
+      if(i>=list.length)return Promise.resolve('');
+      return grab(list[i]).then(function(u){return u;},function(){return tryList(list,i+1);});
+    }
+    return http('GET','/map.htm',{id:id}).then(function(t){
+      var m=/\/mapbackground\/[\w.\-]+/.exec(t), list=[];
+      if(m)list.push(m[0]);
+      ['jpg','png','gif','jpeg'].forEach(function(e){var q='/mapbackground/'+pad+'.'+e;if(list.indexOf(q)<0)list.push(q);});
+      return tryList(list,0);
+    },function(){return '';});
   }
   /* the device tree the target picker uses (loaded once, shared), then a lookup for anything the tree does not hold, such as sensors */
   function exTree(){
@@ -3540,7 +3570,11 @@ try{
   function exRender(keepLayer){
     var layer=exLayer(), list=$('exlist'), mine={}, rec, items=EX.items.slice().sort(function(a,b){return (a.z||0)-(b.z||0);});
     var frames=CFG.preview.maxFrames;
-    if(!keepLayer)layer.textContent='';
+    if(!keepLayer){
+      layer.textContent='';
+      if(EX.bg&&EX.mapW){var bg=document.createElement('div');bg.className='dexbg';bg.style.cssText='position:absolute;left:0;top:0;pointer-events:none;width:'+EX.mapW+'px;height:'+EX.mapH+'px;background:url("'+EX.bg+'") 0 0 no-repeat';layer.appendChild(bg);}
+      if(EX.lines)layer.insertAdjacentHTML('beforeend',EX.lines);
+    }
     list.textContent='';
     try{rec=getRec();Object.keys(rec.items).forEach(function(k){mine[String(rec.items[k].subid)]=1;});}catch(e){}
     items.forEach(function(it){
@@ -3577,10 +3611,10 @@ try{
       if(String(mapId())!==String(id))return;                 /* another map was chosen meanwhile */
       if(o.status===401){authNeeded();}
       if(o.error||o.status<200||o.status>=300){$('exmsg').textContent=o.error||('PRTG answered '+o.status+' for the map\u2019s items.');$('exmsg').className='note pst err';return;}
-      EX.items=exParse(o.body||'');EX.map=id;
+      EX.items=exParse(o.body||'');EX.map=id;EX.bg='';
       m=/<svg\b[^>]*\bwidth="(\d+)px"/i.exec(o.body||'');n=/<svg\b[^>]*\bheight="(\d+)px"/i.exec(o.body||'');
       EX.mapW=m?parseInt(m[1],10):0;EX.mapH=n?parseInt(n[1],10):0;
-      Promise.all([prtgCss(),EX.items.length&&$('exscr').checked?exLibs():null]).then(function(){if(EX.map===id)exRender();});
+      Promise.all([prtgCss(),EX.items.length&&$('exscr').checked?exLibs():null,exBackground(id).then(function(u){if(EX.bg&&EX.bg!==u){try{URL.revokeObjectURL(EX.bg);}catch(e){}}EX.bg=u;},function(){EX.bg='';})]).then(function(){if(EX.map===id)exRender();});
       exNames().then(function(m){if(m===EX.map)exRender(true);});
       $('exsize').hidden=!(EX.mapW&&EX.mapH);
       $('exmsg').textContent=EX.items.length?(EX.items.length+(EX.items.length===1?' item':' items')+' on \u201C'+mapName()+'\u201D'+(EX.mapW?'. The map is '+EX.mapW+' \u00D7 '+EX.mapH+' px.':'.')+' Click one in the list to find it on the canvas.'):('There is nothing on \u201C'+mapName()+'\u201D yet.');
