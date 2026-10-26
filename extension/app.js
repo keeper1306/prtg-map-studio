@@ -3802,6 +3802,14 @@ try{
      live pv-preview panes, which need to read the rendered content's geometry
      back out (see pvMeasure/pvPaneFit) -- exported/Custom HTML previews never
      set it, matching their original, more isolated sandboxing exactly. */
+  /* true when a message came from inside one of this page's own preview frames: the frame that sent it must sit directly in a preview-sandbox frame of this page */
+  function fromOwnPreview(src){
+    var fs=document.querySelectorAll('iframe'), i;
+    try{
+      for(i=0;i<fs.length;i++){if(fs[i].contentWindow&&src.parent===fs[i].contentWindow&&src!==fs[i].contentWindow)return true;}
+    }catch(e){}
+    return false;
+  }
   var PVSBX_SEQ=0;
   var PVSBX_URL=(window.chrome&&chrome.runtime&&chrome.runtime.getURL)?chrome.runtime.getURL('preview-sandbox.html'):'preview-sandbox.html';
   function setFramePreview(f,html,opts,onReady){
@@ -4358,6 +4366,14 @@ try{
     $(id).addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();$('pushconnect').click();}});
     $(id).addEventListener('input',function(){loginMark(false,false);});
   });
+  /* a server address that starts with http:// sends the username and passhash across the network unencrypted, so the card says so as soon as one is typed */
+  function httpWarn(){
+    var on=/^\s*http:\/\//i.test(String($('pushserver').value||''));
+    $('httpwarn').textContent=on?'This address starts with http://, so your username and passhash would be sent without encryption. Use https:// if your server supports it.':'';
+  }
+  $('pushserver').addEventListener('input',httpWarn);
+  $('pushserver').addEventListener('change',httpWarn);
+  httpWarn();
   $('pushshow').addEventListener('click',function(){var f=$('pushsecret'), on=(f.type==='password');f.type=on?'text':'password';$('pushshow').setAttribute('aria-label',on?'Hide the passhash':'Show the passhash');});
   new MutationObserver(placePop).observe($('prtgpop'),{attributes:true,attributeFilter:['hidden']});
   new MutationObserver(placePop).observe($('prtgmsg'),{attributes:true,attributeFilter:['hidden']});
@@ -4418,6 +4434,7 @@ try{
   window.addEventListener('message',function(e){
     var d=e.data, path, p={}, k, src=e.source, ok={id:/^\d{1,9}$/,avg:/^\d{1,6}$/,usecaption:/^[01]$/,sdate:/^[\d-]{10,24}$/,edate:/^[\d-]{10,24}$/,content:/^channels$/,columns:/^[a-z,_]{1,40}$/};
     if(!d||d.type!=='pm-hist'||!src||typeof d.id!=='string'||!d.params)return;
+    if(!fromOwnPreview(src))return;   /* only the content of this page's own preview frames may ask */
     path=d.path;
     if(path!=='/api/historicdata.json'&&path!=='/api/table.json')return;
     for(k in d.params){if(!ok[k]||!ok[k].test(String(d.params[k])))return;p[k]=String(d.params[k]);}
@@ -5020,7 +5037,7 @@ try{
   window.PUSHAPI={state:S,connect:connect,review:review,push:push,undo:undo,normalize:normalize,csrf:csrf,renderObjList:renderObjList};
   updateButtons();
   storageGet(function(items){
-    if(items.pm_lastServer){$('pushserver').value=items.pm_lastServer;}
+    if(items.pm_lastServer){$('pushserver').value=items.pm_lastServer;$('pushserver').dispatchEvent(new Event('input'));}
     if(items.pm_remember){
       $('pushremember').checked=true;
       if(items.pm_user)$('pushuser').value=items.pm_user;
