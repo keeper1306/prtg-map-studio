@@ -117,3 +117,7 @@ It works with the classic PRTG interface and with the new PRTG interface
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## License
+
+MIT. See [LICENSE](LICENSE).
