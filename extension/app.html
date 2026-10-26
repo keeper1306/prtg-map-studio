@@ -348,7 +348,13 @@ body.dash #prtgbar{display:flex}
 .lgbtn:hover:not(:disabled){filter:brightness(1.08)}
 .lgbtn:active:not(:disabled){transform:translateY(1px)}
 .lgbtn:disabled{opacity:.6;cursor:default}
-#pushstatus.err{display:none}   /* an error already shows over the Dashboard and under the field */
+/* #pushstatus.err was previously display:none here -- that assumed an error
+   always also showed via the floating banner over the Dashboard (banner(),
+   #prtgmsg), which lives inside #appMain and stays hidden until a connection
+   succeeds. During the full-screen login gate -- exactly when a connection
+   error needs to be seen -- that banner is invisible, so pushstatus is now
+   the only channel that actually shows a connect failure and must not be
+   suppressed. See #prtgpop .lgcard>.pst.err/.ok above for its styling. */
 .lgmore{margin-top:10px;font-size:11px;color:#6b7080}
 .lgmore summary{cursor:pointer;display:inline-block;padding:2px 0}
 .lgmore input{width:100%;height:36px;box-sizing:border-box;margin-top:6px;border:1px solid #cdd3dd;border-radius:10px;padding:0 12px;font-size:12px}
