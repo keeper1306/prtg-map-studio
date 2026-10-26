@@ -3264,7 +3264,7 @@ try{
   function redactSecrets(t){return t.replace(new RegExp('\\b('+CFG.samples.redactKeys.join('|')+')=[^&"\'<>\\s\\\\]+','gi'),'$1=REDACTED');}
   function STAMP_NAME(){return CFG.name+' v'+CFG.version+_zw();}
   /* ---- the items already on the map, read only. PRTG's own designer loads them from /api/mapsvg.htm; this does the same and draws them behind the canvas. */
-  var EX={items:[],mapW:0,mapH:0,map:null,target:{},styles:''};
+  var EX={items:[],mapW:0,mapH:0,map:null,target:{},styles:'',libs:'',libsFor:''};
   function exLayerClass(){return ($('exon').checked?'':'off')+($('exdim').checked?' dim':'');}
   function exLayer(){var c=$('dcanvas'),l=$('dexist');if(!l){l=document.createElement('div');l.id='dexist';l.className=exLayerClass();c.insertBefore(l,c.firstChild);}return l;}
   function exClear(){
@@ -3434,17 +3434,31 @@ try{
       f.setAttribute('src',PVSBX_URL);
     }
   }
-  function exDoc(it,w,h){
+  /* PRTG's own page scripts (the plugins that draw gauges, donuts and status dots) come from PRTG's View Map page. They are read once per server and added to the head of each preview that may run scripts. */
+  function exLibs(){
     var origin=(base()||pageOrigin()||'');
+    if(EX.libsFor===origin)return Promise.resolve();
+    return http('GET','/map.htm',{id:mapId()}).then(function(t){
+      var d=new DOMParser().parseFromString(t,'text/html'), out=[];
+      [].forEach.call(d.querySelectorAll('script[src]'),function(s){
+        var u;try{u=new URL(s.getAttribute('src'),origin+'/').href;}catch(e){return;}
+        out.push('<script src="'+u.replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'"><\/script>');
+      });
+      EX.libs=out.join('');EX.libsFor=origin;
+    },function(){EX.libs='';EX.libsFor=origin;});
+  }
+  function exWantsScripts(it){return $('exscr').checked&&(!it||it.cat!=='Custom HTML');}
+  function exDoc(it,w,h){
+    var origin=(base()||pageOrigin()||''), libs=exWantsScripts(it)?EX.libs:'';
     return '<!DOCTYPE html><html><head><meta charset="utf-8"><base href="'+origin+'/"><link rel="stylesheet" href="/css/prtg0.css">'
       +'<style>html,body,#mapshow,#mapshow .view,#mapview{margin:0;padding:0;background:transparent!important;box-shadow:none!important;border:0!important}html,body{overflow:hidden}'
-      +'#mapview{position:relative;width:'+w+'px;height:'+h+'px}#mapview .map_object{position:absolute!important;left:0!important;top:0!important;margin:0!important;width:'+w+'px!important;height:'+h+'px!important}</style>'+EX.styles
+      +'#mapview{position:relative;width:'+w+'px;height:'+h+'px}#mapview .map_object{position:absolute!important;left:0!important;top:0!important;margin:0!important;width:'+w+'px!important;height:'+h+'px!important}</style>'+EX.styles+libs
       +'</head><body id="mainbody" data-theme="0" class="language_en"><div id="mapshow"><div class="view" style="position:static;overflow:visible"><div id="mapview">'+it.outer+'</div></div></div></body></html>';
   }
   function exFrame(it,w,h){
     var f=document.createElement('iframe');
     f.setAttribute('tabindex','-1');
-    setFramePreview(f,exDoc(it,w,h),{allowScripts:($('exscr').checked&&it.cat!=='Custom HTML')});
+    setFramePreview(f,exDoc(it,w,h),{allowScripts:exWantsScripts(it)});
     return f;
   }
   var EXCOL={up:'#3a9d23',warning:'#f5a623',down:'#d0021b',unusual:'#e8590c',paused:'#8e9bae',other:'#8e9bae'};
@@ -3538,7 +3552,7 @@ try{
       EX.items=exParse(o.body||'');EX.map=id;
       m=/<svg\b[^>]*\bwidth="(\d+)px"/i.exec(o.body||'');n=/<svg\b[^>]*\bheight="(\d+)px"/i.exec(o.body||'');
       EX.mapW=m?parseInt(m[1],10):0;EX.mapH=n?parseInt(n[1],10):0;
-      exRender();
+      (EX.items.length&&$('exscr').checked?exLibs():Promise.resolve()).then(function(){if(EX.map===id)exRender();});
       exNames().then(function(m){if(m===EX.map)exRender(true);});
       $('exsize').hidden=!(EX.mapW&&EX.mapH);
       $('exmsg').textContent=EX.items.length?(EX.items.length+(EX.items.length===1?' item':' items')+' on \u201C'+mapName()+'\u201D'+(EX.mapW?'. The map is '+EX.mapW+' \u00D7 '+EX.mapH+' px.':'.')+' Click one in the list to find it on the canvas.'):('There is nothing on \u201C'+mapName()+'\u201D yet.');
@@ -3552,7 +3566,7 @@ try{
   function exLayerSync(){var l=$('dexist');if(l)l.className=exLayerClass();xeDecorate();}
   $('exon').addEventListener('change',exLayerSync);
   $('exdim').addEventListener('change',exLayerSync);
-  $('exscr').addEventListener('change',function(){if(EX.items.length)exRender();});
+  $('exscr').addEventListener('change',function(){if(!EX.items.length)return;(this.checked?exLibs():Promise.resolve()).then(function(){exRender();});});
   $('exsize').addEventListener('click',function(){
     var w=$('dw'),h=$('dh');
     if(!EX.mapW||!EX.mapH)return;

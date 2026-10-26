@@ -22,11 +22,19 @@
     "service_worker": "background.js"
   },
   "sandbox": {
-    "pages": ["preview-sandbox.html"]
+    "pages": [
+      "preview-sandbox.html"
+    ]
   },
-  "permissions": ["storage"],
-  "optional_host_permissions": ["http://*/*", "https://*/*"],
+  "permissions": [
+    "storage"
+  ],
+  "optional_host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'"
+    "extension_pages": "script-src 'self'; object-src 'self'",
+    "sandbox": "sandbox allow-scripts allow-forms allow-popups allow-modals; script-src 'self' 'unsafe-inline' 'unsafe-eval' https: http:; child-src 'self'"
   }
 }
