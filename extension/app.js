@@ -1526,7 +1526,7 @@ try{
       var pv=(DASHAPI.pv||{})[it.id];
       return (pv&&pv.autoContent)?'content':'box';
     }
-    function isBox(it){return it.type==='frame'||it.type==='tile'||(it.type==='prtgobj'&&objMode(it)==='box');}   /* items with a size of their own, which you can resize */
+    function isBox(it){return it.type==='frame'||it.type==='tile'||it.type==='livetable'||(it.type==='prtgobj'&&objMode(it)==='box');}   /* items with a size of their own, which you can resize */
   function order(){
     var arr=[];
     for(var i=0;i<D.items.length;i++)arr.push({it:D.items[i],i:i});
@@ -1676,7 +1676,64 @@ try{
     return '<span style="display:inline-block;padding:'+Math.round(p.size*0.4)+'px '+Math.round(p.size*0.95)+'px;border-radius:999px;background:'+c[0]+';color:'+c[1]+';font-family:'+familyStack(p.fam)+';font-size:'+p.size+'px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;white-space:nowrap;line-height:1.2;">'+esc(p.text||'')+'</span>';
   }
 
-  function fontsOf(it){if(it.type==='prtgobj')return [];
+  /* ---------- live table: a Custom HTML item that fetches its own sensor data in the viewer's browser, no PRTG file needed ----------
+     Unlike buildTable() in the objects region (which emits PRTG's own <#table> template tag, and so only works compiled into a
+     real .htm file under mapobjects), this emits plain HTML plus a small inline script that calls PRTG's own JSON API
+     (/api/table.json) with the viewer's existing PRTG session, and redraws itself on an interval. That script is the content
+     PRTG stores verbatim in HTML Before -- PRTG does not run a second template pass over it, so no <# > tag would work here,
+     only real HTML/CSS/JS, same as a Label or Button already pushes. */
+  function blankLiveTable(){
+    return {title:'Live sensor table',cols:['status','device','sensor','lastvalue'],count:20,sortBy:'status',sortDir:'asc',statuses:[],nameContains:'',tags:'',refresh:15};
+  }
+  function liveTableHTML(it){
+    var p=it.p||{};
+    var LABEL={status:'Status',device:'Device',group:'Group',probe:'Probe',sensor:'Sensor',message:'Message',lastvalue:'Last value'};
+    var cols=(p.cols&&p.cols.length)?p.cols.slice():['status','device','sensor','lastvalue'];
+    if(cols.indexOf('status')<0)cols.unshift('status');
+    var apiCols=['objid'];cols.forEach(function(c){if(apiCols.indexOf(c)<0)apiCols.push(c);});
+    var count=Math.max(1,Math.min(200,parseInt(p.count,10)||20));
+    var sortBy=p.sortBy||'status';
+    var qs='content=sensors&columns='+encodeURIComponent(apiCols.join(','))+'&count='+count+'&sortby='+encodeURIComponent((p.sortDir==='desc'?'-':'')+sortBy);
+    var nm=String(p.nameContains||'').replace(/[<>"()]/g,'').trim();
+    if(nm)qs+='&filter_name='+encodeURIComponent('@sub('+nm+')');
+    cleanTags(p.tags).forEach(function(t){qs+='&filter_tags='+encodeURIComponent(t);});
+    qs+='&output=json';
+    var title=String(p.title||'').trim();
+    var head='';cols.forEach(function(c){head+='<th style="text-align:left;padding:5px 8px;font-weight:600;color:#475569;border-bottom:1px solid #e2e8f0;white-space:nowrap">'+oe(LABEL[c]||c)+'</th>';});
+    var refreshMs=Math.max(5,parseInt(p.refresh,10)||15)*1000;
+    var colsJson=JSON.stringify(cols), statusesJson=JSON.stringify((p.statuses||[]).slice());
+    var o=[];
+    o.push('<span style="display:block;width:'+Math.round(it.w)+'px;height:'+Math.round(it.h)+'px;box-sizing:border-box;overflow:auto;background:#fff;border:1px solid #e2e8f0;border-radius:8px;font-family:Segoe UI,Arial,sans-serif;font-size:12px;color:#1e293b">');
+    if(title)o.push('<span style="display:block;padding:8px 10px;font-weight:600;font-size:13px;border-bottom:1px solid #eef2f7">'+oe(title)+'</span>');
+    o.push('<table style="width:100%;border-collapse:collapse"><thead><tr>'+head+'</tr></thead><tbody><tr><td colspan="'+cols.length+'" style="padding:8px 10px;color:#94a3b8">Loading…</td></tr></tbody></table>');
+    o.push('</span>');
+    o.push('<scr'+'ipt>(function(){');
+    o.push('var root=document.currentScript.previousElementSibling;');
+    o.push('var body=root.querySelector("tbody");');
+    o.push('var cols='+colsJson+',statuses='+statusesJson+',cc='+cols.length+';');
+    o.push('function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}');
+    o.push('function color(s){s=String(s||"").toLowerCase();if(s.indexOf("down")>-1)return "#DC2626";if(s.indexOf("warn")>-1||s.indexOf("unusual")>-1)return "#D97706";if(s.indexOf("paus")>-1)return "#64748B";if(s.indexOf("unknown")>-1)return "#94A3B8";return "#16A34A";}');
+    o.push('function val(r,c){var v=r[c];if(v==null)return "";if(typeof v==="object")return v.text!=null?v.text:(v.raw!=null?v.raw:"");return v;}');
+    o.push('function matches(s){s=String(s||"").toLowerCase();return statuses.some(function(g){if(g==="down")return s.indexOf("down")>-1;if(g==="warning")return s.indexOf("warning")>-1;if(g==="unusual")return s.indexOf("unusual")>-1;if(g==="paused")return s.indexOf("paus")>-1;if(g==="up")return s.indexOf("up")>-1;return false;});}');
+    o.push('function load(){');
+    o.push('fetch("/api/table.json?'+qs+'",{credentials:"same-origin"}).then(function(r){return r.json();}).then(function(j){');
+    o.push('var rows=(j&&j.sensors)||[];');
+    o.push('if(statuses.length)rows=rows.filter(function(r){return matches(val(r,"status"));});');
+    o.push('if(!rows.length){body.innerHTML="<tr><td colspan=\\""+cc+"\\" style=\\"padding:8px 10px;color:#94a3b8\\">No matching sensors.</td></tr>";return;}');
+    o.push('var h="";rows.forEach(function(r){');
+    o.push('h+="<tr>";');
+    o.push('cols.forEach(function(c){var v=esc(val(r,c));if(c==="status")h+="<td style=\\"padding:5px 8px;border-bottom:1px solid #f1f5f9;white-space:nowrap\\"><span style=\\"display:inline-block;width:8px;height:8px;border-radius:50%;background:"+color(val(r,"status"))+";margin-right:6px\\"></span>"+v+"</td>";else h+="<td style=\\"padding:5px 8px;border-bottom:1px solid #f1f5f9\\">"+v+"</td>";});');
+    o.push('h+="</tr>";');
+    o.push('});');
+    o.push('body.innerHTML=h;');
+    o.push('}).catch(function(){body.innerHTML="<tr><td colspan=\\""+cc+"\\" style=\\"padding:8px 10px;color:#DC2626\\">Could not load sensor data.</td></tr>";});');
+    o.push('}');
+    o.push('load();setInterval(load,'+refreshMs+');');
+    o.push('})();</'+'script>');
+    return o.join('');
+  }
+
+  function fontsOf(it){if(it.type==='prtgobj'||it.type==='livetable')return [];
     if(it.type==='frame')return [[it.p.fam,it.p.tweight||'400']];
     if(it.type==='tile')return [[it.p.fam,'500'],[it.p.fam,'700'],[it.p.fam,'600']];
     if(it.type==='chip')return [[it.p.fam,'600']];
@@ -1766,14 +1823,15 @@ try{
   }
 
   /* ---------- names ---------- */
-  var TYPENAME={frame:'Frame',tile:'Number tile',label:'Label',button:'Button',chip:'Status chip',prtgobj:'PRTG object'};
-  var ICON={frame:'F',tile:'N',label:'T',button:'B',chip:'C',prtgobj:'O'};
+  var TYPENAME={frame:'Frame',tile:'Number tile',label:'Label',button:'Button',chip:'Status chip',prtgobj:'PRTG object',livetable:'Live table'};
+  var ICON={frame:'F',tile:'N',label:'T',button:'B',chip:'C',prtgobj:'O',livetable:'L'};
   function itemName(it){
     var n='';
     if(it.type==='frame')n=it.p.title||'';
     else if(it.type==='tile')n=it.p.caption||'';
     else if(it.type==='chip')n=it.p.text||'';
     else if(it.type==='prtgobj')n=it.p.name||'';
+      else if(it.type==='livetable')n=it.p.title||'';
       else n=it.state.v.txt||'';
     n=String(n).split(/\r?\n/)[0];
     if(!n)n=(it.type==='frame'&&it.p.shape)?(SHAPENAME[it.p.shape]||'Shape'):((it.type==='frame'&&it.p.group===false)?'Background':TYPENAME[it.type]);
@@ -1796,6 +1854,7 @@ try{
     else if(it.type==='tile')h=tileHTML(it);
     else if(it.type==='chip')h=chipHTML(it);
       else if(it.type==='prtgobj')h=objHTML(it);
+      else if(it.type==='livetable')h=liveTableHTML(it);
     else h=stateHTML(it);
     htmlCache[it.id]=h;
     return h;
@@ -1953,6 +2012,25 @@ try{
     inp.addEventListener('change',function(){commit();buildList();});
     return w;
   }
+  function mkChecks(it,label,key,opts){
+    var w=el_('div','dfld');w.appendChild(el_('label',null,label));
+    var row=el_('div','inline');
+    opts.forEach(function(o){
+      var val=o[0],lab=o[1];
+      var wrap=el_('label',null);wrap.style.display='inline-flex';wrap.style.alignItems='center';wrap.style.gap='4px';wrap.style.marginRight='10px';wrap.style.fontWeight='400';
+      var cb=el_('input');cb.type='checkbox';
+      cb.checked=(it.p[key]||[]).indexOf(val)>-1;
+      cb.addEventListener('change',function(){
+        var arr=(it.p[key]||[]).slice(), i=arr.indexOf(val);
+        if(cb.checked){if(i<0)arr.push(val);}else if(i>-1)arr.splice(i,1);
+        it.p[key]=arr;
+        refreshItem(it);commit();buildList();
+      });
+      wrap.appendChild(cb);wrap.appendChild(document.createTextNode(lab));
+      row.appendChild(wrap);
+    });
+    w.appendChild(row);return w;
+  }
   function pair(a,b){var d=el_('div','dpair');d.appendChild(a);d.appendChild(b);return d;}
   function styleSel(it,table){
     var w=el_('div','dfld'), s=el_('select');
@@ -2061,6 +2139,15 @@ try{
       formEl.appendChild(mk(it,'Text','text','text'));
       formEl.appendChild(pair(mk(it,'Color','variant','select',[['success','Green'],['warning','Amber'],['danger','Red'],['info','Blue'],['neutral','Grey']]),mk(it,'Size','size','number',{min:8,max:40})));
       formEl.appendChild(mk(it,'Font','fam','select',famOpts()));
+    }else if(it.type==='livetable'){
+      formEl.appendChild(mk(it,'Title (optional)','title','text'));
+      formEl.appendChild(pair(mk(it,'Rows','count','number',{min:1,max:200}),mk(it,'Refresh (seconds)','refresh','number',{min:5,max:600})));
+      formEl.appendChild(pair(mk(it,'Sort by','sortBy','select',[['status','Status'],['device','Device'],['group','Group'],['probe','Probe'],['sensor','Sensor'],['lastvalue','Last value']]),mk(it,'Sort direction','sortDir','select',[['asc','Ascending'],['desc','Descending']])));
+      formEl.appendChild(mkChecks(it,'Columns','cols',[['status','Status'],['device','Device'],['group','Group'],['probe','Probe'],['sensor','Sensor'],['message','Message'],['lastvalue','Last value']]));
+      formEl.appendChild(mkChecks(it,'Only show','statuses',[['up','Up'],['warning','Warning'],['down','Down'],['unusual','Unusual'],['paused','Paused']]));
+      formEl.appendChild(mk(it,'Name contains','nameContains','text'));
+      formEl.appendChild(mk(it,'Tags (space separated)','tags','text'));
+      formEl.appendChild(el_('p','note','Fetches live sensor data in the viewer’s own browser each time the map is open, straight from PRTG’s API — no PRTG file install needed. Leave “Only show” unchecked to show every status.'));
     }else{
       var b=el_('button','btn','Edit style');b.type='button';b.style.marginTop='12px';b.style.width='100%';
       b.addEventListener('click',function(){startEdit(it);});
@@ -2103,6 +2190,7 @@ try{
       else if(type==='frame'){it.w=CFG.frame.w;it.h=CFG.frame.h;it.p=newFrameP('Light card');}
       else if(type==='tile'){it.w=230;it.h=112;it.p=newTileP('Light tile');}
       else if(type==='chip'){it.p=newChipP();}
+        else if(type==='livetable'){it.w=420;it.h=260;it.p=blankLiveTable();}
         else if(type==='prtgobj'){it.w=(extra&&extra.w)||320;it.h=(extra&&extra.h)||200;it.p={cat:extra.cat,name:extra.name,value:extra.value,target:extra.target?{id:parseInt(extra.target.id,10)||0,name:extra.target.name||''}:{id:0,name:''}};if(extra.target)it.p.targetDefault=true;}   /* a default target, until you choose the real one */
       else{it.state=defaultState(type);}
       var siblings=0;
@@ -7862,6 +7950,7 @@ try{
       button:'<rect x="3" y="8" width="18" height="9" rx="4.5"/><path d="M8 12.5h8"/>',
       bg:'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 17l9-9M8 12l4-4M13 17l4-4"/>',
       shape:'<path d="M4 12h13"/><path d="m13 7 5 5-5 5"/>',
+      livetable:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M9 10v9"/>',
       existing:'<rect x="4" y="4" width="16" height="6" rx="1.5"/><rect x="4" y="14" width="16" height="6" rx="1.5"/><path d="M8 7h.01M8 17h.01"/>'
     };
     [].forEach.call(document.querySelectorAll('#dashpanel .addgrid .btn'),function(b){
@@ -7909,7 +7998,7 @@ try{
   (function(){
     var grid=document.querySelector('#dashpanel .addgrid'), wrapEl=document.getElementById('dwrap');
     if(!grid||!wrapEl||!window.DASHAPI||!DASHAPI.addAt)return;
-    var NAMES={frame:'frame',label:'label',button:'button',bg:'background',shape:'shape'}, armed=null, tiles=[].slice.call(grid.querySelectorAll('[data-add]'));
+    var NAMES={frame:'frame',label:'label',button:'button',bg:'background',shape:'shape',livetable:'live table'}, armed=null, tiles=[].slice.call(grid.querySelectorAll('[data-add]'));
     var hint=document.createElement('p');hint.id='addhint';hint.className='note pst';
     var base='Click a tile, then click the canvas to place it. Double-click a tile to add it at the default spot, or drag it onto the canvas.';
     hint.textContent=base;grid.parentNode.insertBefore(hint,grid.nextSibling);
