@@ -2030,6 +2030,29 @@ try{
     o.link={g:function(k){return k==='newtab'?!!p.newtab:(k==='linktype'?(p.linktype||'map'):(p.link||''));},s:function(k,x){if(k==='newtab')p.newtab=!!x;else p[k]=x;}};
     return o;
   }
+  /* fill, border, corner radius and shadow: what the bar's box menu edits, as {l: label, k: kind, a: [get,set]} */
+  function fbBox(it){
+    var t=it.type, p=it.p||{}, st=it.state||{v:{},c:{}}, v=st.v, c=st.c, SH=[['none','None'],['soft','Soft'],['strong','Strong']];
+    function P(k,d){return [function(){return p[k]==null?d:p[k];},function(x){p[k]=x;}];}
+    function V(k,d){return [function(){return v[k]==null?d:v[k];},function(x){v[k]=String(x);}];}
+    if(t==='banner'||t==='tile'||(t==='frame'&&!(p.shape&&['rect','round','pill','circle'].indexOf(p.shape)<0))){
+      return [{l:'Fill',k:'color',a:P('fill','#FFFFFF')},{l:'Fill opacity %',k:'num',min:0,max:100,a:P('fillA',100)},
+        {l:'Border',k:'color',a:P('bcolor','#E2E8F0')},{l:'Border width',k:'num',min:0,max:20,a:P('bw',0)},
+        {l:'Corner radius',k:'num',min:0,max:80,a:P('radius',0)},{l:'Shadow',k:'sel',opts:SH,a:P('shadow','none')}];
+    }
+    if(t==='label'||t==='button'){
+      var shw=[['none','None'],['soft','Soft'],['strong','Strong'],['glow','Glow']], out=[];
+      if(t==='label'){
+        out.push({l:'Show fill',k:'chk',a:[function(){return !!c.usebg;},function(x){c.usebg=!!x;}]});
+        out.push({l:'Fill',k:'color',a:[function(){return v.bg||'#FFFFFF';},function(x){v.bg=x;c.usebg=true;}]});
+        out.push({l:'Fill opacity %',k:'num',min:0,max:100,a:V('bgalpha',100)});
+      }else out.push({l:'Fill',k:'color',a:V('bface','#007DB8')});
+      out.push({l:'Border',k:'color',a:V('bcolor','#007DB8')},{l:'Border width',k:'num',min:0,max:8,a:V('bwidth',0)},
+        {l:'Corner radius',k:'num',min:0,max:40,a:V('radius',0)},{l:'Shadow',k:'sel',opts:shw,a:V('boxshadow','none')});
+      return out;
+    }
+    return null;
+  }
   function swStyle(t){return 'background:'+(t.fill||'#fff')+';color:'+(t.tcolor||t.vcolor||'#0F172A')+';border:1px solid '+(t.bcolor||'#ddd')+';border-radius:'+Math.min(t.radius||4,8)+'px;padding:4px 10px;font-size:12px;font-weight:600;display:inline-block;line-height:1.3;';}
   /* the presets that suit an item, as {n: name, sw: swatch style, g: group, go: function that applies it} */
   function fbPresets(it){
@@ -2064,7 +2087,7 @@ try{
   document.addEventListener('keydown',function(e){if(e.key==='Escape'&&fbar&&!fbar.hidden)fbCloseAll();});
   function fbApply(it,fn){
     fn();refreshItem(it);
-    clearTimeout(fbarTimer);fbarTimer=setTimeout(function(){commit();buildList();},350);
+    clearTimeout(fbarTimer);fbarTimer=setTimeout(function(){commit();buildList();if(D.sel===it.id)buildForm();},350);
   }
   var FB_SVG={
     b:'<path d="M7 5h6a3.5 3.5 0 0 1 0 7H7zM7 12h7a3.5 3.5 0 0 1 0 7H7z"/>',
@@ -2075,6 +2098,7 @@ try{
     left:'<path d="M4 6h16M4 12h10M4 18h14"/>',center:'<path d="M4 6h16M7 12h10M5 18h14"/>',right:'<path d="M4 6h16M10 12h10M6 18h14"/>',
     dup:'<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',
     del:'<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',
+    box:'<rect x="4" y="4" width="16" height="16" rx="5"/><path d="M4 12h8V4" opacity=".55"/>',
     layer:'<path d="m12 4 8 4-8 4-8-4z"/><path d="m4 12 8 4 8-4"/><path d="m4 16 8 4 8-4"/>'
   };
   function fbarBtn(cls,tip,svg,fn){
@@ -2128,6 +2152,25 @@ try{
       var pp2=el_('div','fb-pop fb-presets');pp2.hidden=true;fbStop(pp2);
       pp2.appendChild(fbPresetGrid(it,PL,function(){fbCloseAll();}));
       fbar.appendChild(pb);fbar.appendChild(pp2);R.pre=pb;
+    }
+    var BX=fbBox(it);
+    if(BX){
+      var xb=fbarBtn('fb-t','Fill, border, corner radius and shadow',FB_SVG.box,function(){fbToggle(xp,xb);});
+      var xp=el_('div','fb-pop fb-box');xp.hidden=true;fbStop(xp);R.bx=[];
+      BX.forEach(function(d){
+        var row=el_('label','fb-row'), ctl, ev='input';
+        row.appendChild(el_('span',null,d.l));
+        if(d.k==='sel'){ctl=el_('select');d.opts.forEach(function(o){var op=el_('option');op.value=o[0];op.textContent=o[1];ctl.appendChild(op);});ev='change';}
+        else if(d.k==='chk'){ctl=el_('input');ctl.type='checkbox';ev='change';}
+        else{ctl=el_('input');ctl.type=(d.k==='color')?'color':'number';if(d.k==='num'){ctl.min=d.min;ctl.max=d.max;}}
+        ctl.addEventListener(ev,function(){
+          var x;
+          if(d.k==='chk')x=ctl.checked;else if(d.k==='num'){x=parseFloat(ctl.value);if(isNaN(x))return;x=Math.max(d.min,Math.min(d.max,x));}else x=ctl.value;
+          fbApply(it,function(){d.a[1](x);});
+        });
+        fbStop(ctl);row.appendChild(ctl);xp.appendChild(row);R.bx.push({d:d,c:ctl});
+      });
+      fbar.appendChild(xb);fbar.appendChild(xp);R.box=xb;
     }
     if(A.link){
       sep();
@@ -2190,6 +2233,10 @@ try{
     }
     if(R.size&&document.activeElement!==R.size){var z=tsGet(it);if(z!==null)R.size.value=String(Math.round(z));}
     ['bold','ital','und','upper'].forEach(function(k){if(R[k]&&A[k])R[k].classList.toggle('on',!!A[k][0]());});
+    if(R.bx)R.bx.forEach(function(r){
+      var x=r.d.a[0]();if(document.activeElement===r.c)return;
+      if(r.d.k==='chk')r.c.checked=!!x;else if(r.d.k==='color'){if(/^#[0-9a-f]{6}$/i.test(String(x)))r.c.value=x;}else r.c.value=String(x);
+    });
     if(R.ly){var ed=layerEdge(it);R.ly.front.disabled=ed.atTop;R.ly.fwd.disabled=ed.atTop;R.ly.back.disabled=ed.atBottom;R.ly.bottom.disabled=ed.atBottom;}
     if(R.color&&A.color){var cv=String(A.color[0]()||'#000000');if(/^#[0-9a-f]{6}$/i.test(cv)&&document.activeElement!==R.color)R.color.value=cv;R.colorBox.style.setProperty('--sw',cv);}
     if(R.align&&A.align){var al=A.align[0](), ic={left:FB_SVG.left,center:FB_SVG.center,right:FB_SVG.right}[al]||FB_SVG.left;R.align.firstChild.innerHTML=ic;R.align.setAttribute('data-tip','Align text: '+al);}
@@ -2621,7 +2668,7 @@ try{
     var geoFs=acc('Size, position and layer',[geoRow(it),layerRow(it),parentSel(it)]), inlineOk=!!(OBJAPI.inline&&DASHAPI.active);
     STD.geo=geoFs;
     if(it.type==='label'||it.type==='button')INL.geo=geoFs;
-    else if(it.type==='banner'){}   /* goes under Advanced, below */
+    else if(it.type==='banner'||it.type==='tile'||it.type==='chip'||it.type==='prtgobj'){}   /* goes under Advanced, below */
     else if(!(it.type==='frame'&&inlineOk))formEl.appendChild(geoFs);
     if(it.type==='prtgobj'){
         var on=el_('p','note pst');on.textContent='Object file: '+it.p.cat+': '+it.p.name;formEl.appendChild(on);
@@ -2673,7 +2720,7 @@ try{
     }else{
     }
     if(it.type==='frame')formEl.appendChild(el_('p','note','Deleting a frame also deletes what is inside it. Undo brings it back.'));
-      if(it.type==='prtgobj'){syncCode();inlSync();return;}   /* nothing to paste for an object PRTG draws */
+      if(it.type==='prtgobj'){formEl.appendChild(acc('Advanced',[geoFs],false));syncCode();inlSync();return;}   /* nothing to paste for an object PRTG draws */
     var cw=el_('div','dfld');
     codeEl=el_('textarea');codeEl.rows=7;codeEl.readOnly=true;codeEl.spellcheck=false;codeEl.id='dcode';
     codeEl.style.fontFamily='Consolas,Monaco,monospace';codeEl.style.fontSize='11px';
@@ -2684,6 +2731,7 @@ try{
     cw.appendChild(el_('p','note','Paste this into HTML Before of a Custom HTML item, and give the item this size and position. PRTG rewrites div as span when you paste, so these pieces are written as spans that declare display:block and keep their size. Web fonts are not included here. Use Copy font links once per dashboard. For a frame that resizes with its item, use Objects, Frame.'));
     var codeFs=acc('Code',[cw]);
     if(it.type==='banner')formEl.appendChild(acc('Advanced',[STD.app,geoFs,codeFs],false));
+    else if(it.type==='tile'||it.type==='chip')formEl.appendChild(acc('Advanced',[geoFs,codeFs],false));
     else if((it.type==='frame'&&inlineOk)||it.type==='label'||it.type==='button')STD.code=codeFs;
     else formEl.appendChild(codeFs);
     syncCode();
