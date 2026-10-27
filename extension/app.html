@@ -355,6 +355,8 @@ p.note:not(.pst){display:none!important}
 .subsec>summary .subnote{margin-left:auto;font-weight:400;color:#8b90a0;font-size:11px}
 .subsec>*:not(summary){margin-left:12px;margin-right:12px}
 .subsec>*:last-child{margin-bottom:12px}
+.addgrid .btn[data-tip]::after{white-space:normal;width:190px;text-align:left;z-index:30}
+.addgrid .btn:nth-child(3n)[data-tip]::after{left:auto;right:0}
 .ico.md{width:36px;height:36px}
 .ico[hidden]{display:none}
 .ico.md svg{width:18px;height:18px}
@@ -749,12 +751,12 @@ fieldset{border-bottom-color:var(--line)}
     <fieldset>
       <legend>Build</legend>
       <div class="addgrid">
-        <button class="btn ghost" type="button" data-add="frame">Frame</button>
-        <button class="btn ghost" type="button" data-add="label">Label</button>
-        <button class="btn ghost" type="button" data-add="button">Button</button>
-        <button class="btn ghost" type="button" data-add="banner">Banner</button>
+        <button class="btn ghost" type="button" data-add="frame" data-tip="A card that can hold other items. Double-click to add it, or drag it onto the canvas.">Frame</button>
+        <button class="btn ghost" type="button" data-add="label" data-tip="Plain text on the map. Double-click to add it, or drag it onto the canvas.">Label</button>
+        <button class="btn ghost" type="button" data-add="button" data-tip="A button that opens a map or a web address. Double-click to add it, or drag it onto the canvas.">Button</button>
+        <button class="btn ghost" type="button" data-add="banner" data-tip="A wide strip of text. Double-click to add it, or drag it onto the canvas.">Banner</button>
         <button class="btn ghost bgpick" type="button" id="mapbgbtn" aria-expanded="false" aria-controls="bgpanel" data-tip="Change the map’s background color"><span>Background</span><i class="bgnow" id="mapbgnow"></i></button>
-        <button class="btn ghost" type="button" data-add="shape">Shape</button>
+        <button class="btn ghost" type="button" data-add="shape" data-tip="An arrow, line or box. Double-click to add it, or drag it onto the canvas.">Shape</button>
         <button class="btn ghost" type="button" id="showexisting" aria-expanded="false" aria-controls="objfs">Existing PRTG objects</button>
       </div>
       <p class="note">With a frame selected, new items go inside it.</p>

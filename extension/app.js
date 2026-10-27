@@ -2517,12 +2517,7 @@ try{
       if(window.SECAPI)SECAPI.note('Selected',it?itemName(it):'nothing selected');
     if(!it){formEl.appendChild(el_('p','note pst','Click an item on the canvas to change how it looks.'));inlSync();return;}
     formEl.appendChild(el_('h4',null,TYPENAME[it.type]));
-    var act=el_('div','actions');
-    var d1=el_('button','btn ghost','Duplicate');d1.type='button';d1.addEventListener('click',function(){dup(it);});
-    var d2=el_('button','btn ghost','Delete');d2.type='button';d2.addEventListener('click',function(){del(it);});
-    var d3=el_('button','btn ghost','Copy');d3.type='button';d3.title='Copy (Ctrl+C)';d3.addEventListener('click',function(){copyItem(it,false);});
-    var d4=el_('button','btn ghost','Paste');d4.type='button';d4.title='Paste (Ctrl+V)';d4.addEventListener('click',function(){pasteItem();});
-    act.appendChild(d1);act.appendChild(d2);act.appendChild(d3);act.appendChild(d4);formEl.appendChild(act);
+    /* Duplicate and Delete are in the bar over the item; Ctrl+C, Ctrl+V, Ctrl+D and Delete work from the keyboard */
     var geoFs=acc('Size, position and layer',[geoRow(it),layerRow(it),parentSel(it)]);
     if(it.type==='label'||it.type==='button')INL.geo=geoFs;else formEl.appendChild(geoFs);
     if(it.type==='prtgobj'){
@@ -9399,7 +9394,7 @@ try{
   function inlFold(){
     [].forEach.call(hostEl.children,function(f){
       var bar=f.children[0], body=f.children[1], open;
-      if(!bar||!body||bar.tagName!=='BUTTON')return;
+      if(!bar||!body||bar.tagName!=='BUTTON'||!bar.classList.contains('advbar'))return;
       open=/Look presets/.test(bar.textContent);
       body.hidden=!open;bar.classList.toggle('open',open);
       if(bar.firstChild)bar.firstChild.textContent=open?'\u25BE':'\u25B8';
@@ -9415,7 +9410,7 @@ try{
       document.body.classList.remove('inlobj');
       [].forEach.call(hostEl.children,function(f,i){
         var bar=f.children[0], body=f.children[1], o=!!(INLOPEN&&INLOPEN[i]);
-        if(!bar||!body||bar.tagName!=='BUTTON')return;
+        if(!bar||!body||bar.tagName!=='BUTTON'||!bar.classList.contains('advbar'))return;
         body.hidden=!o;bar.classList.toggle('open',o);if(bar.firstChild)bar.firstChild.textContent=o?'\u25BE':'\u25B8';
       });
       if(hostEl.parentNode!==pn)pn.insertBefore(hostEl,document.getElementById('dashpanel'));
