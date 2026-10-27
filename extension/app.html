@@ -343,6 +343,18 @@ p.note:not(.pst){display:none!important}
 #dfbar .fb-pop select[hidden],#dfbar .fb-pop input[hidden]{display:none}
 #dfbar .fb-pop select,#dfbar .fb-pop input[type=text]{width:100%;font-size:12px;padding:5px 6px;box-sizing:border-box}
 #dfbar .fb-chk{display:flex;align-items:center;gap:6px;font-size:12px}
+#dfbar .fb-aa{font-size:11px;font-weight:700;letter-spacing:.3px}
+#dfbar .fb.open{background:#eaf7fd;color:var(--cyan)}
+#dfbar .fb-presets{width:300px;max-height:340px;overflow:auto;display:block}
+#dfbar .fb-presets .presetgrid{margin-top:0}
+.subsec{border:1px solid var(--g20);border-radius:8px;margin:8px 0;background:#fff}
+.subsec>summary{cursor:pointer;padding:9px 12px;font-size:12.5px;font-weight:600;color:var(--ink);list-style:none;display:flex;gap:6px;align-items:center}
+.subsec>summary::-webkit-details-marker{display:none}
+.subsec>summary::before{content:'\25B8';color:#8b90a0;font-size:11px}
+.subsec[open]>summary::before{content:'\25BE'}
+.subsec>summary .subnote{margin-left:auto;font-weight:400;color:#8b90a0;font-size:11px}
+.subsec>*:not(summary){margin-left:12px;margin-right:12px}
+.subsec>*:last-child{margin-bottom:12px}
 .ico.md{width:36px;height:36px}
 .ico[hidden]{display:none}
 .ico.md svg{width:18px;height:18px}
@@ -807,13 +819,15 @@ fieldset{border-bottom-color:var(--line)}
       <div id="inlhost" hidden></div>
     </fieldset>
     <fieldset>
-      <legend>Items on the canvas</legend>
+      <legend>Canvas</legend>
+      <details class="subsec">
+        <summary>Items on the canvas</summary>
       <div id="ditems" class="drows"></div>
       <p class="note" id="dstats"></p>
       <div class="row" style="margin-top:8px"><button class="btn ghost" id="dfontcopy" type="button">Copy font links</button><span></span></div>
-    </fieldset>
-    <fieldset>
-      <legend>Canvas</legend>
+      </details>
+      <details class="subsec">
+        <summary>Canvas size and grid</summary>
       <div class="row">
         <div><label for="dw">Width</label><input type="number" id="dw" min="320" max="8000" step="10"></div>
         <div><label for="dh">Height</label><input type="number" id="dh" min="240" max="8000" step="10"></div>
@@ -823,6 +837,13 @@ fieldset{border-bottom-color:var(--line)}
         <div><label for="dzoom">Zoom</label><select id="dzoom"><option value="fit">Fit</option><option value="1">100%</option><option value="0.5">50%</option></select></div>
       </div>
       <div class="inline"><input type="checkbox" id="ddark"><label for="ddark">Dark preview background</label></div>
+      </details>
+      <details class="subsec">
+        <summary>Save and load layout</summary>
+      <textarea id="dlayout" rows="3" spellcheck="false" placeholder="Layout data appears here after Copy layout. Paste saved layout data here and press Load."></textarea>
+      <div class="row" style="margin-top:8px"><button class="btn ghost" id="dsave" type="button">Copy layout</button><button class="btn ghost" id="dload" type="button">Load</button></div>
+      <p class="note">The layout is not stored anywhere automatically. Copy it before closing the page.</p>
+      </details>
     </fieldset>
   <fieldset id="pushfs">
     <legend>Push to PRTG</legend>
@@ -843,12 +864,6 @@ fieldset{border-bottom-color:var(--line)}
     <p class="note" id="pushforgetnote" hidden>Use this if you deleted the pushed items in PRTG by hand. The next push then adds everything as new.</p>
   </fieldset>
     <div class="grp">Layout</div>
-    <fieldset>
-      <legend>Save and load layout</legend>
-      <textarea id="dlayout" rows="3" spellcheck="false" placeholder="Layout data appears here after Copy layout. Paste saved layout data here and press Load."></textarea>
-      <div class="row" style="margin-top:8px"><button class="btn ghost" id="dsave" type="button">Copy layout</button><button class="btn ghost" id="dload" type="button">Load</button></div>
-      <p class="note">The layout is not stored anywhere automatically. Copy it before closing the page.</p>
-    </fieldset>
 
   </div>
 
