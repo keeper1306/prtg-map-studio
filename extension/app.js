@@ -21,7 +21,7 @@ var CFG={
   frame:{w:360,h:220},
   shape:{w:260,h:60},
   /* which object types can be resized and retitled by hand on the Objects tab preview (tables always can) */
-  edit:{types:['gauge','donut','graph','icon','status']},
+  edit:{types:['gauge','donut','graph','icon','status','tile']},
   /* the status dots in the device tree: how often (milliseconds) they are read again while the tree is showing */
   tree:{statusEvery:60000},
   /* connecting needs a username and a passhash; set false to go back to using the PRTG login this page already has */
@@ -6794,6 +6794,345 @@ try{
     return o.join('\n')+'\n';
   }
 
+  /* ====================== tiles ====================== */
+  /* One object type with six kinds: a stat tile, a string tile, a bar gauge, an interface (traffic) tile, channel chips and channel chips that fit their box.
+     All of them read one sensor: its channels (PRTG renders them into an HTML comment) and its state (a class PRTG puts on the item), and draw in the chosen Look. */
+  function tileRuntime(root,C){
+    var body=root.querySelector('.tbody');
+    if(!body)return;
+    var K=C.kind;
+    function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+    function num(v){if(v===''||v===undefined||v===null)return null;var x=+v;return isFinite(x)?x:null;}
+    function say(t){body.innerHTML='<div class="tnone">'+esc(t)+'</div>';root.setAttribute('data-status','message');}
+    function findJson(){
+      var found=null;
+      (function walk(node){
+        for(var c=node.firstChild;c&&!found;c=c.nextSibling){
+          if(c.nodeType===8){var t=(c.nodeValue||'').replace(/^\s+|\s+$/g,'');if(t.charAt(0)==='{'){found=t;return;}}
+          else if(c.nodeType===1){walk(c);}
+        }
+      })(root);
+      return found;
+    }
+    function shown(x){var m=String(x==null?'':x).replace(/,/g,'').match(/^\s*(-?\d+(\.\d+)?)/);return m?+m[1]:null;}
+    var chans=[];
+    try{
+      var raw=findJson();
+      if(raw){var data=JSON.parse(raw), box=(data&&data.objects)?data.objects:data;chans=(box&&box.channels)||[];}
+    }catch(e0){chans=[];}
+    /* PRTG keeps raw values and limits in the device's scale (2894 for 28.94 when the channel divides by 100): work out the factor from the displayed values and convert to display units */
+    chans=chans.map(function(c){
+      var d=(c.info&&c.info.data&&c.info.data[0])||{};
+      d.name=c.name||d.name;
+      if(d.lastvalue===undefined||d.lastvalue==='')d.lastvalue=c.lastvalue;
+      var k=null, gm=shown(d.graphmax), lv=shown(d.lastvalue);
+      if(gm&&+d.graphmaxraw)k=gm/+d.graphmaxraw;
+      else if(lv&&+d.lastvalueraw&&!/^\s*</.test(String(d.lastvalue)))k=lv/+d.lastvalueraw;
+      if(k&&isFinite(k)&&Math.abs(k-1)>1e-9){
+        ['lastvalueraw','graphmaxraw','graphminraw','limitminwarning','limitmaxwarning','limitminerror','limitmaxerror'].forEach(function(f){
+          if(d[f]!==''&&d[f]!==undefined&&d[f]!==null&&isFinite(+d[f]))d[f]=+d[f]*k;
+        });
+      }
+      return d;
+    });
+    /* the sensor's own state, from the class PRTG puts on the item (tlst-sensg, tlst-sensy, ...) */
+    var m=(root.className.match(/tlst-sens(\w*)/)||[])[1]||'';
+    var sensorState={g:'up',y:'warning',r:'down',q:'down',o:'ack',b:'paused',p:'unusual'}[m.charAt(0)]||(m?'unknown':'up');
+    if(/^(dr|ra|rp|gr)/.test(m))sensorState='down';
+    function chanState(ch){
+      if(sensorState==='paused'||sensorState==='unknown')return sensorState;
+      var s=+ch.status;
+      if(s===3)return 'up';
+      if(s===4)return 'warning';
+      if(s===13)return 'ack';
+      if(s===5||s===14)return 'down';
+      if(s===10)return 'unusual';
+      if(s===7||s===8||s===9||s===11||s===12)return 'paused';
+      return sensorState;
+    }
+    function split(v){
+      var s=String(v==null?'':v).trim(), mm=s.match(/^([<>]?\s*-?[\d.,]+)\s*(.*)$/);
+      return mm?{n:mm[1],u:mm[2]}:{n:s||'–',u:''};
+    }
+    function valHtml(sv){return esc(sv.n)+(sv.u?'<small>'+esc(sv.u)+'</small>':'');}
+    function pick(sel){
+      var list=chans.filter(function(c){return +c.id!==-4;});
+      if(sel){
+        var s=String(sel).toLowerCase();
+        var hit=list.filter(function(c){return String(c.id)===s||String(c.name).toLowerCase()===s;})[0]||list.filter(function(c){return String(c.name).toLowerCase().indexOf(s)>=0;})[0];
+        if(hit)return hit;
+      }
+      return list.filter(function(c){return c.primary;})[0]||list[0]||null;
+    }
+    function nice(x){if(!(x>0))return 1;var p=Math.pow(10,Math.floor(Math.log(x)/Math.LN10)),f=x/p;return (f<=1?1:f<=2?2:f<=2.5?2.5:f<=5?5:10)*p;}
+    function range(ch){
+      var unit=split(ch.lastvalue).u, min=num(C.min), max=num(C.max);
+      if(min===null)min=0;
+      if(max===null&&(ch.ispercent||unit==='%'))max=100;
+      if(max===null&&num(ch.limitmaxerror)!==null)max=nice(num(ch.limitmaxerror)*1.25);
+      if(max===null&&num(ch.limitmaxwarning)!==null)max=nice(num(ch.limitmaxwarning)*1.5);
+      if(max===null)max=nice(Math.max(num(ch.graphmaxraw)||0,num(ch.lastvalueraw)||0));
+      if(max<=min)max=min+1;
+      return {min:min,max:max};
+    }
+    function limits(ch){
+      var L={};
+      if(+ch.limitmode===1)['limitminerror','limitminwarning','limitmaxwarning','limitmaxerror'].forEach(function(k){L[k]=num(ch[k]);});
+      if(num(C.warn)!==null)L.limitmaxwarning=num(C.warn);
+      if(num(C.error)!==null)L.limitmaxerror=num(C.error);
+      return L;
+    }
+    function fmt(x){return Math.abs(x)>=1000?Math.round(x).toLocaleString():String(+x.toFixed(2));}
+    function observe(fn){
+      var t, last='';
+      if(window.ResizeObserver){
+        new ResizeObserver(function(){
+          var k=root.clientWidth+'x'+root.clientHeight;
+          if(k===last)return;
+          last=k;clearTimeout(t);t=setTimeout(fn,30);
+        }).observe(root);
+      }
+    }
+    var ch, st, sv;
+    /* ----- stat tile ----- */
+    if(K==='stat'){
+      ch=pick(C.channel);if(!ch){say('No channel data');return;}
+      st=chanState(ch);sv=split(ch.lastvalue);
+      body.innerHTML='<div class="tl-stat" style="color:'+C.c[st]+'">'+valHtml(sv)+'</div><div class="tl-cap"><i class="tl-dot" style="background:'+C.c[st]+'"></i>'+esc(ch.name)+'</div>';
+    }
+    /* ----- bar gauge ----- */
+    else if(K==='bar'){
+      ch=pick(C.channel);if(!ch){say('No channel data');return;}
+      var r2=range(ch), v2=num(ch.lastvalueraw), L2=limits(ch), ticks='';
+      st=chanState(ch);
+      var pct=function(x){return (100*Math.max(0,Math.min(1,(x-r2.min)/(r2.max-r2.min)))).toFixed(2)+'%';};
+      ['limitminerror','limitminwarning','limitmaxwarning','limitmaxerror'].forEach(function(k){
+        if(L2[k]!==null&&L2[k]!==undefined)ticks+='<i class="tl-tick" style="left:'+pct(L2[k])+';background:'+(/error/.test(k)?C.c.down:C.c.warning)+'"></i>';
+      });
+      body.innerHTML='<div class="tl-row"><div class="tl-cap tl-grow"><i class="tl-dot" style="background:'+C.c[st]+'"></i>'+esc(ch.name)+'</div><div class="tl-big" style="color:'+C.c[st]+'">'+valHtml(split(ch.lastvalue))+'</div></div>'
+        +'<div class="tl-track"><div style="width:'+(v2!==null?pct(v2):'0%')+';background:'+C.c[st]+'"></div>'+ticks+'</div>'
+        +'<div class="tl-scale"><span>'+fmt(r2.min)+'</span><span>'+fmt(r2.max)+'</span></div>';
+    }
+    /* ----- string tile: the sensor's message ----- */
+    else if(K==='string'){
+      var me=root.querySelector('.tmsg'), msg=me?(me.textContent||'').replace(/\s+/g,' ').trim():'';
+      if(C.strip){try{msg=msg.replace(new RegExp(C.strip,'i'),'').trim();}catch(e1){}}
+      var lc=msg.toLowerCase(), stS=sensorState;
+      var hit=function(list){return String(list||'').toLowerCase().split(',').map(function(x){return x.replace(/^\s+|\s+$/g,'');}).filter(Boolean).some(function(w){return lc.indexOf(w)>=0;});};
+      if(hit(C.okW))stS='up';
+      if(hit(C.infoW))stS='paused';
+      if(hit(C.warnW))stS='warning';
+      if(hit(C.errW))stS='down';
+      body.innerHTML='<div class="tl-strbox"><div class="tl-str" style="color:'+C.c[stS]+'">'+esc(msg||'–')+'</div></div>';
+      var sbox=body.querySelector('.tl-strbox'), stxt=body.querySelector('.tl-str');
+      var fitStr=function(){
+        if(!sbox.clientWidth||!sbox.clientHeight)return;
+        var lo=10, hi=160, best=10, mid;
+        while(lo<=hi){
+          mid=(lo+hi)>>1;stxt.style.fontSize=mid+'px';
+          if(stxt.scrollHeight<=sbox.clientHeight+1&&stxt.scrollWidth<=sbox.clientWidth+1){best=mid;lo=mid+1;}else{hi=mid-1;}
+        }
+        stxt.style.fontSize=best+'px';
+      };
+      fitStr();observe(fitStr);
+    }
+    /* ----- interface tile: traffic in and out ----- */
+    else if(K==='interface'){
+      var byId=function(id,re){return chans.filter(function(c){return +c.id===id;})[0]||chans.filter(function(c){return re.test(c.name);})[0];};
+      var cin=byId(0,/traffic in|bytes in/i), cout=byId(1,/traffic out|bytes out/i), ctot=byId(-1,/total/i);
+      if(!cin&&!cout){say('No traffic channels');return;}
+      var toMbit=function(s){
+        var mm=String(s||'').replace(/,/g,'').match(/([\d.]+)\s*([kMGT]?)bit\/s/i);
+        return mm?+mm[1]*({'':1e-6,k:1e-3,m:1,g:1e3,t:1e6}[mm[2].toLowerCase()]):null;
+      };
+      var cap=num(C.cap);
+      var util=function(c){
+        if(!c)return 0;
+        if(cap){var mb=toMbit(c.lastvalue);if(mb!==null)return Math.min(1,mb/cap);}
+        var a=num(c.lastvalueraw), b=num(c.graphmaxraw);
+        return a!==null&&b?Math.min(1,a/b):0;
+      };
+      var line=function(arrow,col,c){
+        var vc=c&&chanState(c)!=='up'?C.c[chanState(c)]:C.text;
+        return '<span class="tl-arr" style="color:'+col+'">'+arrow+'</span><div class="tl-mini"><div style="width:'+Math.max(1,100*util(c)).toFixed(1)+'%;background:'+col+'"></div></div><span class="tl-num" style="color:'+vc+'">'+valHtml(split(c?c.lastvalue:''))+'</span>';
+      };
+      var foot=cap?'Link '+(cap>=1000?fmt(cap/1000)+' Gbit/s':fmt(cap)+' Mbit/s'):'vs. peak';
+      body.innerHTML='<div class="tl-lines">'+line('↓',C.c.up,cin)+line('↑',C.accent,cout)+'</div><div class="tl-foot"><span>'+(ctot?'Total '+esc(ctot.lastvalue):'')+'</span><span>'+esc(foot)+'</span></div>';
+    }
+    /* ----- channel chips ----- */
+    else if(K==='chips'||K==='chipsfit'){
+      var hide=String(C.hide==null?'Downtime':C.hide).toLowerCase().split(',').map(function(s){return s.replace(/^\s+|\s+$/g,'');}).filter(Boolean);
+      var only=C.only?String(C.only).toLowerCase().split(',').map(function(s){return s.replace(/^\s+|\s+$/g,'');}):null;
+      var list=chans.filter(function(c){
+        var nm=String(c.name).toLowerCase();
+        if(only)return only.indexOf(nm)>=0;
+        return hide.indexOf(nm)<0&&+c.id!==-4;
+      });
+      if(only)list.sort(function(a,b){return only.indexOf(String(a.name).toLowerCase())-only.indexOf(String(b.name).toLowerCase());});
+      if(!list.length){say('No channels');return;}
+      var chipHtml=list.map(function(c){
+        var s=chanState(c);
+        return '<div class="tl-chip" style="--cc:'+C.c[s]+'"><div class="tl-cn">'+esc(c.name)+'</div><div class="tl-cv">'+valHtml(split(c.lastvalue))+'</div></div>';
+      }).join('');
+      if(K==='chips'){
+        body.innerHTML='<div class="tl-chips" style="grid-template-columns:repeat(auto-fill,minmax('+(num(C.chipw)||120)+'px,1fr))">'+chipHtml+'</div>';
+      }else{
+        body.innerHTML='<div class="tl-chips tl-fit">'+chipHtml+'</div>';
+        var grid=body.querySelector('.tl-fit'), GAP=6, ratio=num(C.ratio)||2.4, fixedCols=num(C.cols);
+        var longest=list.reduce(function(mx,c){var s2=split(c.lastvalue);return {n:Math.max(mx.n,String(c.name).length),v:Math.max(mx.v,(s2.n+' '+s2.u).length)};},{n:4,v:4});
+        var layout=function(){
+          var W=grid.clientWidth, H=grid.clientHeight, N=list.length, best=null, cols, rows, cw, chh, hh, score;
+          if(!W||!H)return;
+          for(cols=1;cols<=N;cols++){
+            if(fixedCols&&cols!==fixedCols)continue;
+            rows=Math.ceil(N/cols);cw=(W-GAP*(cols-1))/cols;chh=(H-GAP*(rows-1))/rows;
+            if(cw<=0||chh<=0)continue;
+            hh=Math.min(chh,cw/ratio);score=hh-(rows*cols-N)*0.01;
+            if(!best||score>best.score)best={cols:cols,rows:rows,cw:cw,ch:chh,score:score};
+          }
+          if(!best)return;
+          grid.style.gridTemplateColumns='repeat('+best.cols+', minmax(0, 1fr))';
+          grid.style.gridAutoRows=Math.floor(best.ch)+'px';
+          var inner=best.cw-14, vf=Math.max(11,Math.min(best.ch*0.40,inner/(longest.v*0.58),96)), nf=Math.max(9,Math.min(best.ch*0.22,inner/(longest.n*0.55),vf*0.6,40));
+          grid.style.setProperty('--tl-vf',vf.toFixed(1)+'px');
+          grid.style.setProperty('--tl-nf',nf.toFixed(1)+'px');
+          grid.style.setProperty('--tl-pad',Math.max(4,Math.min(best.ch*0.1,14)).toFixed(1)+'px');
+        };
+        layout();observe(layout);
+      }
+    }
+    root.setAttribute('data-status','ok');
+  }
+  var TKINDS=[['stat','Stat tile'],['string','String tile'],['bar','Bar gauge'],['interface','Interface traffic tile'],['chips','Channel chips'],['chipsfit','Channel chips (fit the box)']];
+  var TLPRESETS=[
+    {id:'stat',cat:'Built in',name:'Stat tile',kind:'stat',w:260,h:170,sub:''},
+    {id:'string',cat:'Built in',name:'String tile',kind:'string',w:300,h:120,sub:''},
+    {id:'bar',cat:'Built in',name:'Bar gauge',kind:'bar',w:340,h:140,sub:''},
+    {id:'interface',cat:'Built in',name:'Interface traffic tile',kind:'interface',w:360,h:170,sub:'',cap:''},
+    {id:'chips',cat:'Built in',name:'Channel chips',kind:'chips',w:420,h:210,sub:''},
+    {id:'chipsfit',cat:'Built in',name:'Channel chips (fit)',kind:'chipsfit',w:420,h:210,sub:''}
+  ];
+  function blankTL(){
+    return {type:'tile',kind:'stat',cat:'Tiles',name:'Stat tile',fname:'',titleMode:'object',title:'',sub:'',
+      channel:'',min:'',max:'',warn:'',error:'',cap:'',hide:'Downtime',only:'',cols:'',ratio:'',chipw:120,strip:'',okW:'',infoW:'',warnW:'',errW:'',
+      initW:260,initH:170,look:lookOf('PRTG new UI')};
+  }
+  function tileFromPreset(id){
+    var T_=blankTL(), p=null;
+    TLPRESETS.forEach(function(x){if(x.id===id)p=x;});
+    if(p){T_.kind=p.kind;T_.name=p.name;T_.initW=p.w;T_.initH=p.h;T_.sub=p.sub||'';}
+    return T_;
+  }
+  function tEffLook(S){var L=S.look;if(L.mode==='prtg'){return lookOf('Light card');}return L;}
+  function tClassOf(S){return 'ptl_'+slugOf(S.name);}
+  function tileConfig(S,L){
+    var P=donutPalette(L), cardFill=(L.card)?(((L.cardA==null?100:L.cardA)<100)?tint(L.cardBg,(L.cardA==null?100:L.cardA)/100):L.cardBg):'#FFFFFF';
+    return {kind:S.kind,channel:clean(S.channel),min:clean(S.min),max:clean(S.max),warn:clean(S.warn),error:clean(S.error),cap:clean(S.cap),
+      hide:clean(S.hide),only:clean(S.only),cols:clean(S.cols),ratio:clean(S.ratio),chipw:Number(S.chipw)||120,strip:String(S.strip||'').replace(/[<>"]/g,'').slice(0,80),
+      okW:clean(S.okW),infoW:clean(S.infoW),warnW:clean(S.warnW),errW:clean(S.errW),
+      c:{up:P.up,warning:P.warning,down:P.down,ack:P.ack,unusual:P.unusual,paused:P.paused,unknown:P.unknown},
+      text:L.text||'#0F172A',accent:(L.accent||L.link||'#007DB8')};
+  }
+  function tileCss(S,cls,L){
+    var r='.'+cls, c=gFrameCss({engine:'ring'},cls,L), muted=(L.muted||L.headColor||'#6B7280'), fillA=(L.cardA==null?100:L.cardA),
+        cardFill=(L.card)?((fillA<100)?tint(L.cardBg,fillA/100):L.cardBg):'#FFFFFF', base=(cardFill.charAt(0)==='#'?cardFill:'#FFFFFF'),
+        track=blend(base,L.text,0.12), chipBg=blend(base,L.text,0.05), line=blend(base,L.text,0.14), rad=Math.max(2,Math.min(Number(L.radius)||4,12)), fam=familyStack(L.font);
+    c.push(r+'{container-type:size;}');
+    c.push(r+' .gsub{flex:0 0 auto;color:'+muted+';font-size:12px;line-height:1.3;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}');
+    c.push(r+' .tbody{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:center;margin-top:6px;position:relative;font-family:'+fam+';color:'+L.text+';}');
+    c.push(r+' .tbody small{font-size:.5em;font-weight:500;margin-left:3px;opacity:.85;}');
+    c.push(r+' .tnone{display:flex;align-items:center;justify-content:center;flex:1;color:'+muted+';font-size:13px;}');
+    c.push(r+' .tl-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle;}');
+    c.push(r+' .tl-cap{color:'+muted+';font-size:13px;font-size:clamp(11px,7cqh,15px);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}');
+    c.push(r+' .tl-grow{flex:1 1 auto;}');
+    c.push(r+' .tl-stat{font-weight:600;font-size:34px;font-size:clamp(22px,38cqh,96px);line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap;margin-bottom:6px;}');
+    c.push(r+' .tl-row{display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:0;margin-bottom:8px;}');
+    c.push(r+' .tl-big{font-weight:600;font-size:26px;font-size:clamp(18px,22cqh,48px);line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap;}');
+    c.push(r+' .tl-track{position:relative;height:12px;height:clamp(8px,9cqh,16px);background:'+track+';border-radius:'+rad+'px;flex:none;}');
+    c.push(r+' .tl-track>div{height:100%;border-radius:'+rad+'px;}');
+    c.push(r+' .tl-tick{position:absolute;top:-3px;bottom:-3px;width:2px;margin-left:-1px;}');
+    c.push(r+' .tl-scale{display:flex;justify-content:space-between;color:'+muted+';font-size:11px;margin-top:4px;}');
+    c.push(r+' .tl-strbox{flex:1;min-height:0;display:flex;align-items:center;overflow:hidden;}');
+    c.push(r+' .tl-str{width:100%;font-weight:600;line-height:1.15;overflow-wrap:break-word;}');
+    c.push(r+' .tl-lines{flex:1;display:grid;grid-template-columns:auto 1fr auto;align-content:center;gap:8px 10px;align-items:center;}');
+    c.push(r+' .tl-arr{font-size:20px;font-size:clamp(13px,12cqh,24px);line-height:1;}');
+    c.push(r+' .tl-mini{height:6px;background:'+track+';border-radius:'+rad+'px;overflow:hidden;}');
+    c.push(r+' .tl-mini>div{height:100%;}');
+    c.push(r+' .tl-num{font-weight:600;font-size:20px;font-size:clamp(15px,13cqh,30px);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}');
+    c.push(r+' .tl-foot{display:flex;justify-content:space-between;gap:8px;font-size:11px;color:'+muted+';white-space:nowrap;flex:none;margin-top:6px;}');
+    c.push(r+' .tl-chips{display:grid;gap:6px;overflow:auto;align-content:start;flex:1;min-height:0;}');
+    c.push(r+' .tl-chip{background:'+chipBg+';border:1px solid '+line+';border-left:3px solid var(--cc);border-radius:'+rad+'px;padding:5px 8px;min-width:0;}');
+    c.push(r+' .tl-cn{font-size:11px;color:'+muted+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}');
+    c.push(r+' .tl-cv{font-size:15px;font-weight:600;color:var(--cc);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}');
+    c.push(r+' .tl-fit{overflow:hidden;}');
+    c.push(r+' .tl-fit .tl-chip{display:flex;flex-direction:column;justify-content:center;padding:0 var(--tl-pad,8px);overflow:hidden;}');
+    c.push(r+' .tl-fit .tl-cn{font-size:var(--tl-nf,11px);line-height:1.2;}');
+    c.push(r+' .tl-fit .tl-cv{font-size:var(--tl-vf,15px);line-height:1.15;}');
+    return c.join('\n');
+  }
+  function tileScript(S,L){
+    return '(function(){\n  var root=document.getElementById("<@itemid>");\n  if(!root)return;\n  var CFG='+JSON.stringify(tileConfig(S,L))+';\n  ('+tileRuntime.toString()+')(root,CFG);\n})();';
+  }
+  function buildTile(S){
+    var cls=tClassOf(S), L=tEffLook(S), css=tileCss(S,cls,L), o=[], tm=S.titleMode||'object';
+    var titleInner=(tm==='custom')?clean(S.title):'<#objectproperty name="Name" id="<@objectid>">', w=parseInt(S.initW,10), h_=parseInt(S.initH,10), sub=clean(S.sub);
+    o.push('<!'+'--'+clean(S.cat||'Tiles')+': '+clean(S.name||'Tile')+'-->');
+    o.push('');
+    o.push('<div class="map_object map_graph '+cls+' <#sensor type="colorclassofstate" prefix="tlst-" id="<@objectid>">" id="<@itemid>" objectid="<@objectid>" subid="<@subid>"'+((w>0&&h_>0)?' initialwidth="'+Math.min(w,4000)+'" initialheight="'+Math.min(h_,4000)+'"':'')+' data-status="loading" style="overflow:hidden;<#mapobject type="coordinates" subid="<@subid>" mode="<@editmode>">">');
+    o.push('<#mapobject type="objectgrip" mode="<@editmode>">');
+    o.push('<#mapobject type="htmlbefore" subid="<@subid>">');
+    o.push('<#checkobjecttype objecttype="sensor" nicemessage="true" id="<@objectid>">');
+    if(needsFontLink(L))o.push(fontLinkOf(L));
+    o.push('<style>');o.push(css);o.push('</style>');
+    o.push('  <div class="gbox">');
+    if(tm!=='none')o.push('    <div class="gtitle"><b>'+titleInner+'</b></div>');
+    if(sub)o.push('    <div class="gsub">'+sub+'</div>');
+    o.push('    <div class="tbody"></div>');
+    if(S.kind==='string')o.push('    <div class="tmsg" style="display:none"><#objectstatus name="message" id="<@objectid>"></div>');
+    o.push('    <!'+'--');
+    o.push('    {');
+    o.push('      "objects":<#table');
+    o.push('      id="<@objectid>"');
+    o.push("      output='json'");
+    o.push("      noraw='1'");
+    o.push("      content='channels'");
+    o.push("      sortby='name'");
+    o.push("      count='*'");
+    o.push("      columns='name=textraw,info=treejson,lastvalue'>");
+    o.push('    }');
+    o.push('    -->');
+    o.push('  </div>');
+    o.push('<#mapobject type="htmlafter" subid="<@subid>">');
+    o.push('</div>');
+    o.push('');
+    o.push('<scr'+'ipt>');o.push(tileScript(S,L));o.push('<\/script>');
+    return o.join('\n')+'\n';
+  }
+  /* sample channels for the preview, one set per kind */
+  function tileSample(S){
+    function ch(id,name,val,raw,st,extra){var d={id:id,name:name,lastvalue:val,lastvalueraw:raw,status:st,primary:id===0};if(extra)for(var k in extra)d[k]=extra[k];return {name:name,lastvalue:val,info:{data:[d]}};}
+    var k=S.kind;
+    if(k==='bar')return {cls:'sensy',chans:[ch(0,'CPU Load','72 %',72,4,{ispercent:true,limitmode:1,limitmaxwarning:70,limitmaxerror:90})],msg:''};
+    if(k==='string')return {cls:'sensg',chans:[],msg:'Running'};
+    if(k==='interface')return {cls:'sensg',chans:[ch(0,'Traffic In','412 Mbit/s',51500000,3,{graphmaxraw:125000000}),ch(1,'Traffic Out','96 Mbit/s',12000000,3,{graphmaxraw:125000000}),ch(-1,'Traffic Total','508 Mbit/s',63500000,3)],msg:''};
+    if(k==='chips'||k==='chipsfit')return {cls:'sensg',chans:[ch(0,'Ping','12 ms',12,3),ch(1,'Minimum','9 ms',9,3),ch(2,'Maximum','41 ms',41,4),ch(3,'Packet Loss','0 %',0,3),ch(4,'Jitter','18 ms',18,5),ch(5,'Downtime','0 %',0,3)],msg:''};
+    return {cls:'sensg',chans:[ch(0,'CPU Load','23 %',23,3)],msg:''};
+  }
+  function drawTilePreview(){
+    var L=tEffLook(TL), cls=tClassOf(TL), css=tileCss(TL,cls,L), tm=TL.titleMode||'object', title=(tm==='none')?'':(tm==='custom'?clean(TL.title):'Core switch'), sub=clean(TL.sub), root, gb, smp=tileSample(TL);
+    setStyle(css);applyFont(L);
+    var w=parseInt(document.getElementById('owidth').value,10)||300, hh=parseInt(document.getElementById('oheight').value,10)||150;
+    var zs=eoSz(TL,w,hh);w=zs[0];hh=zs[1];
+    prevEl.className='';
+    prevEl.innerHTML='<div id="mapshow" class="map-body"><div class="map_object map_graph '+cls+' tlst-'+smp.cls+'" id="ptprev_t" style="position:relative;overflow:hidden;width:'+w+'px;height:'+hh+'px;"><div class="gbox">'
+      +(title?'<div class="gtitle"><b>'+esc(title)+'</b></div>':'')+(sub?'<div class="gsub">'+esc(sub)+'</div>':'')+'<div class="tbody"></div>'+(TL.kind==='string'?'<div class="tmsg" style="display:none">'+esc(smp.msg)+'</div>':'')+'</div></div></div>';
+    root=prevEl.querySelector('.map_object');gb=prevEl.querySelector('.gbox');
+    gb.appendChild(document.createComment('\n{"objects":{"prtg-version":"26.3","channels":'+JSON.stringify(smp.chans)+'}}\n'));
+    try{tileRuntime(root,JSON.parse(JSON.stringify(tileConfig(TL,L))));}
+    catch(err){if(window.console)console.error('tile preview',err);}
+    applyBg(L);
+  }
+
   /* ====================== status icons ====================== */
   /* PRTG's own colours for the state classes (main.css, .map_iconcolor_*) */
   var IPRTG={up:'#B4BC14',warning:'#F2BE25',down:'#E3063D',ack:'#F37176',unusual:'#F07000',paused:'#448CFC',unknown:'#A4A6AF'};
@@ -7053,8 +7392,8 @@ try{
   }
 
   var FRAMEAPI=DASHAPI.frame||null, FRM={frame:null,bg:null,shape:null};
-  var T=blankT(), G=blankG(), GR=blankGR(), DN=blankD(), IC=blankI(), SC=blankSC(), TYPE='label', syncs=[], vis=[], hostEl=document.getElementById('objpanel');
-  function M(){return TYPE==='gauge'?G:((TYPE==='frame'||TYPE==='bg'||TYPE==='shape')?FRc():(TYPE==='graph'?GR:(TYPE==='donut'?DN:(TYPE==='icon'?IC:(TYPE==='status'?SC:T)))));}
+  var T=blankT(), G=blankG(), GR=blankGR(), DN=blankD(), IC=blankI(), SC=blankSC(), TL=blankTL(), TYPE='label', syncs=[], vis=[], hostEl=document.getElementById('objpanel');
+  function M(){return TYPE==='gauge'?G:((TYPE==='frame'||TYPE==='bg'||TYPE==='shape')?FRc():(TYPE==='graph'?GR:(TYPE==='donut'?DN:(TYPE==='icon'?IC:(TYPE==='status'?SC:(TYPE==='tile'?TL:T))))));}
   /* Frame and Background are the Dashboard's own frame, pasted into a Custom HTML item. The Dashboard hands over its generator, so the code is the same. */
   function blankFR(kind){
     var p=(kind==='shape')?FRAMEAPI.newShapeP('arrow'):FRAMEAPI.newFrameP(kind==='bg'?'Background dark':'Light card');
@@ -7146,8 +7485,8 @@ try{
     var gb=document.getElementById('ogauge');if(gb)gb.hidden=(TYPE==='table'||isPaste()||(TYPE==='icon'&&IC.engine==='stock'));
     var sb=document.getElementById('osamplebox');if(sb)sb.hidden=(TYPE!=='gauge');
     var wl=document.getElementById('owlabel');if(wl)wl.textContent=(TYPE==='table')?'Width, blank = fit':'Width';
-    var wi=document.getElementById('owidth');if(wi)wi.placeholder=(TYPE==='status')?'420':(TYPE==='gauge')?'320':(TYPE==='graph'?(GR.kind==='sensors'?'760':(GR.kind==='toplist'?'240':'520')):(TYPE==='donut'?(DN.engine==='ring'?'340':'auto'):(TYPE==='icon'?String(iStyle(IC.style).w):'fit')));
-    var hi=document.getElementById('oheight');if(hi)hi.placeholder=(TYPE==='status')?'200':(TYPE==='graph'?(GR.kind==='sensors'?'420':(GR.kind==='toplist'?'240':'300')):(TYPE==='donut'?(DN.engine==='ring'?'220':'auto'):(TYPE==='icon'?String(iStyle(IC.style).h):'280')));
+    var wi=document.getElementById('owidth');if(wi)wi.placeholder=(TYPE==='status')?'420':(TYPE==='tile')?'300':(TYPE==='gauge')?'320':(TYPE==='graph'?(GR.kind==='sensors'?'760':(GR.kind==='toplist'?'240':'520')):(TYPE==='donut'?(DN.engine==='ring'?'340':'auto'):(TYPE==='icon'?String(iStyle(IC.style).w):'fit')));
+    var hi=document.getElementById('oheight');if(hi)hi.placeholder=(TYPE==='status')?'200':(TYPE==='tile')?'150':(TYPE==='graph'?(GR.kind==='sensors'?'420':(GR.kind==='toplist'?'240':'300')):(TYPE==='donut'?(DN.engine==='ring'?'220':'auto'):(TYPE==='icon'?String(iStyle(IC.style).h):'280')));
     var pasteMode=isPaste();
     [['odl'],['ofname']].forEach(function(x){var e=document.getElementById(x[0]);if(e)e.style.display=pasteMode?'none':'';});   /* style, not the hidden attribute: a label has its own display rule */
     [['owlabel'],['owidth']].forEach(function(x){var e=document.getElementById(x[0]);if(e)e.style.display=(pasteMode||(TYPE==='table'&&ED.on))?'none':'';});
@@ -7251,7 +7590,7 @@ try{
     if(!galleryEl)return;
     galleryEl.innerHTML='';
     LOOKORDER.forEach(function(name){
-      if(name==='PRTG default'&&(TYPE==='icon'||TYPE==='status'||(TYPE==='gauge'&&G.engine==='ring')||(TYPE==='donut'&&DN.engine==='ring')))return;
+      if(name==='PRTG default'&&(TYPE==='icon'||TYPE==='status'||TYPE==='tile'||(TYPE==='gauge'&&G.engine==='ring')||(TYPE==='donut'&&DN.engine==='ring')))return;
       var L=lookOf(name);
       var b=h('button','lookchip'+((M().look&&M().look.name===name)?' on':''));b.type='button';
       b.innerHTML=thumbHTML(L,TYPE)+'<span class="pname">'+name+'</span>';
@@ -7474,8 +7813,8 @@ try{
 
   /* ---------- hands-on editing for the other object types: a frame with handles on the preview sets the size the file starts at, and a double-click on the title types a new one ---------- */
   var EO={ov:null,inp:null};
-  function eoModel(){return TYPE==='gauge'?G:(TYPE==='donut'?DN:(TYPE==='graph'?GR:(TYPE==='icon'?IC:(TYPE==='status'?SC:null))));}
-  function eoText(){return TYPE==='gauge'?buildGauge(G):(TYPE==='donut'?buildDonut(DN):(TYPE==='status'?buildStatus(SC):(TYPE==='graph'?buildGraph(GR):buildIcon(IC))));}
+  function eoModel(){return TYPE==='gauge'?G:(TYPE==='donut'?DN:(TYPE==='graph'?GR:(TYPE==='icon'?IC:(TYPE==='status'?SC:(TYPE==='tile'?TL:null)))));}
+  function eoText(){return TYPE==='gauge'?buildGauge(G):(TYPE==='donut'?buildDonut(DN):(TYPE==='tile'?buildTile(TL):(TYPE==='status'?buildStatus(SC):(TYPE==='graph'?buildGraph(GR):buildIcon(IC)))));}
   function eoOk(){return CFG.edit.types.indexOf(TYPE)>-1&&!!eoModel()&&!(TYPE==='icon'&&IC.engine==='stock');}
   function eoSz(m,w,h_){var a=parseInt(m.initW,10), b=parseInt(m.initH,10);return [a>0?a:w,b>0?b:h_];}
   function eoBox(){
@@ -7548,8 +7887,8 @@ try{
 
   /* ---------- undo, redo and reset: every object type keeps its own history ---------- */
   var HIST={}, HLOCK=false, undoBtn=null, redoBtn=null;
-  function hModelGet(k){return k==='table'?T:(k==='gauge'?G:(k==='graph'?GR:(k==='donut'?DN:(k==='icon'?IC:(k==='status'?SC:(FRM[k]||(FRM[k]=blankFR(k))))))));}
-  function hModelSet(k,m){if(k==='table')T=m;else if(k==='gauge')G=m;else if(k==='graph')GR=m;else if(k==='donut')DN=m;else if(k==='icon')IC=m;else if(k==='status')SC=m;else FRM[k]=m;}
+  function hModelGet(k){return k==='table'?T:(k==='gauge'?G:(k==='graph'?GR:(k==='donut'?DN:(k==='icon'?IC:(k==='status'?SC:(k==='tile'?TL:(FRM[k]||(FRM[k]=blankFR(k)))))))));}
+  function hModelSet(k,m){if(k==='table')T=m;else if(k==='gauge')G=m;else if(k==='graph')GR=m;else if(k==='donut')DN=m;else if(k==='icon')IC=m;else if(k==='status')SC=m;else if(k==='tile')TL=m;else FRM[k]=m;}
   function hUpdate(){
     var h_=HIST[TYPE];
     if(undoBtn)undoBtn.disabled=!(h_&&h_.i>0);
@@ -7581,7 +7920,7 @@ try{
   function resetCurrent(){
     var k=TYPE;
     if(isLegacy(k))return;
-    if(k==='table')T=blankT();else if(k==='gauge')G=blankG();else if(k==='graph')GR=blankGR();else if(k==='donut')DN=blankD();else if(k==='icon')IC=blankI();else if(k==='status')SC=blankSC();else FRM[k]=blankFR(k);
+    if(k==='table')T=blankT();else if(k==='gauge')G=blankG();else if(k==='graph')GR=blankGR();else if(k==='donut')DN=blankD();else if(k==='icon')IC=blankI();else if(k==='status')SC=blankSC();else if(k==='tile')TL=blankTL();else FRM[k]=blankFR(k);
     ED.sel=null;buildPresetOptions();refreshUI();render();
     toast('Reset. Ctrl+Z brings it back.');
   }
@@ -8053,13 +8392,13 @@ try{
     applyBg(lookOf('Minimal'));
   }
   function drawPreview(){
-    if(TYPE!=='table')prevEl.style.minHeight='';if(TYPE==='gauge')drawGaugePreview();else if(isPaste())drawPastePreview();else if(TYPE==='graph')drawGraphPreview();else if(TYPE==='donut')drawDonutPreview();else if(TYPE==='status')drawStatusPreview();else if(TYPE==='icon')drawIconPreview();else drawTablePreview();
+    if(TYPE!=='table')prevEl.style.minHeight='';if(TYPE==='gauge')drawGaugePreview();else if(isPaste())drawPastePreview();else if(TYPE==='graph')drawGraphPreview();else if(TYPE==='donut')drawDonutPreview();else if(TYPE==='tile')drawTilePreview();else if(TYPE==='status')drawStatusPreview();else if(TYPE==='icon')drawIconPreview();else drawTablePreview();
     eoAttach();}
 
   /* ---------- render ---------- */
   function render(){
     if(isLegacy(TYPE))return;
-    var text=(TYPE==='gauge')?buildGauge(G):(isPaste()?buildPaste(FRc()):(TYPE==='graph'?buildGraph(GR):(TYPE==='donut'?buildDonut(DN):(TYPE==='status'?buildStatus(SC):(TYPE==='icon'?buildIcon(IC):buildTable(T))))));
+    var text=(TYPE==='gauge')?buildGauge(G):(isPaste()?buildPaste(FRc()):(TYPE==='graph'?buildGraph(GR):(TYPE==='donut'?buildDonut(DN):(TYPE==='tile'?buildTile(TL):(TYPE==='status'?buildStatus(SC):(TYPE==='icon'?buildIcon(IC):buildTable(T)))))));
     codeEl.value=text;
     document.getElementById('ofname').textContent=fileNameOf(M());
     document.getElementById('ofnote').textContent=text.length+' characters';
@@ -8078,7 +8417,7 @@ try{
   var typeSel=null, engineSel=null, legSel=null;
   /* Text label and Button are the page's basic tools. Choosing one shows that tool, unchanged, under the Objects tab. */
   var TYPES=[
-    ['Files for \\webroot\\mapobjects',[['table','Data table (list of sensors)'],['gauge','Gauge'],['graph','Graph'],['donut','Donut'],['status','Status counts'],['icon','Status icon']]],
+    ['Files for \\webroot\\mapobjects',[['table','Data table (list of sensors)'],['gauge','Gauge'],['graph','Graph'],['donut','Donut'],['status','Status counts'],['icon','Status icon'],['tile','Tile']]],
     ['Pasted into a Custom HTML item',[['label','Text label'],['button','Button']].concat(FRAMEAPI?[['frame','Frame'],['bg','Background'],['shape','Shape']]:[])]
   ];
   function isLegacy(t){return t==='label'||t==='button';}
@@ -8103,10 +8442,11 @@ try{
     frame:sv('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/>'),
     bg:sv('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 17l9-9M8 12l4-4M13 17l4-4"/>'),
     shape:sv('<path d="M4 12h13"/><path d="m13 7 5 5-5 5"/>'),
+    tile:sv('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 14h10"/><path d="M7 10h4"/>'),
     status:sv('<rect x="3" y="6" width="8" height="12" rx="1.5"/><rect x="13" y="6" width="8" height="12" rx="1.5"/><path d="M5.5 11h3M15.5 11h3"/>')
   };
-  var TYPESHORT={table:'Table',gauge:'Gauge',graph:'Graph',donut:'Donut',icon:'Icon',label:'Label',button:'Button',frame:'Frame',bg:'Background',shape:'Shape',status:'Status'};
-  var TYPETIP={table:'Data table (list of sensors)',gauge:'Gauge',graph:'Graph',donut:'Donut',icon:'Status icon',label:'Text label',button:'Button',frame:'Frame',bg:'Background',status:'Status counts (tiles of sensors by status)'};
+  var TYPESHORT={table:'Table',gauge:'Gauge',graph:'Graph',donut:'Donut',icon:'Icon',tile:'Tile',label:'Label',button:'Button',frame:'Frame',bg:'Background',shape:'Shape',status:'Status'};
+  var TYPETIP={table:'Data table (list of sensors)',gauge:'Gauge',graph:'Graph',donut:'Donut',icon:'Status icon',tile:'Tile (stat, string, bar, interface, channel chips)',label:'Text label',button:'Button',frame:'Frame',bg:'Background',status:'Status counts (tiles of sensors by status)'};
   var GRIDHEAD=[['Save as file','A file you save in \\webroot\\mapobjects',sv('<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/>')],['Paste into Custom HTML','Code you paste into the HTML Before of a Custom HTML item',sv('<rect x="6" y="5" width="12" height="16" rx="2"/><path d="M9 5V3h6v2"/>')]];
   var gridTiles=[];
   function buildTypeGrid(){
@@ -8148,7 +8488,7 @@ try{
       setMode(v);
     }else{
       if(lk&&!isPaste())M().look=lk;
-      if(!isPaste()&&(TYPE==='icon'||TYPE==='status'||(TYPE==='gauge'&&G.engine==='ring')||(TYPE==='donut'&&DN.engine==='ring'))&&M().look.mode==='prtg')M().look=lookOf(TYPE==='icon'?'Minimal':'Light card');
+      if(!isPaste()&&(TYPE==='icon'||TYPE==='status'||TYPE==='tile'||(TYPE==='gauge'&&G.engine==='ring')||(TYPE==='donut'&&DN.engine==='ring'))&&M().look.mode==='prtg')M().look=lookOf(TYPE==='icon'?'Minimal':'Light card');
       document.body.classList.add('objs');
       buildPresetOptions();refreshUI();render();
     }
@@ -8157,9 +8497,9 @@ try{
   function buildPresetOptions(){
     if(!presetSel)return;
     presetSel.innerHTML='';
-    var blank=h('option');blank.value='__blank';blank.textContent=(TYPE==='gauge')?'Blank gauge':(TYPE==='frame'?'Blank frame':(TYPE==='graph'?'Blank graph':(TYPE==='status'?'Blank status card':(TYPE==='donut'?'Blank donut':(TYPE==='icon'?'Blank status icon':'Blank table')))));presetSel.appendChild(blank);
-    var src=(TYPE==='status')?SPRESETS.map(function(x){return {id:x.id,name:x.name,cat:'Built in'};}):((TYPE==='gauge')?GPRESETS:(TYPE==='graph'?GRPRESETS:(TYPE==='donut'?DPRESETS:(TYPE==='icon'?ICPRESETS:PRESETS)))), cats={},order=[];
-    src.forEach(function(p){if(!cats[p.cat]){cats[p.cat]=h('optgroup');cats[p.cat].label=p.cat+(TYPE==='status'?'':' (PRTG stock)');order.push(p.cat);}
+    var blank=h('option');blank.value='__blank';blank.textContent=(TYPE==='gauge')?'Blank gauge':(TYPE==='frame'?'Blank frame':(TYPE==='graph'?'Blank graph':(TYPE==='tile'?'Blank tile':(TYPE==='status'?'Blank status card':(TYPE==='donut'?'Blank donut':(TYPE==='icon'?'Blank status icon':'Blank table'))))));presetSel.appendChild(blank);
+    var src=(TYPE==='tile')?TLPRESETS:(TYPE==='status')?SPRESETS.map(function(x){return {id:x.id,name:x.name,cat:'Built in'};}):((TYPE==='gauge')?GPRESETS:(TYPE==='graph'?GRPRESETS:(TYPE==='donut'?DPRESETS:(TYPE==='icon'?ICPRESETS:PRESETS)))), cats={},order=[];
+    src.forEach(function(p){if(!cats[p.cat]){cats[p.cat]=h('optgroup');cats[p.cat].label=p.cat+((TYPE==='status'||TYPE==='tile')?'':' (PRTG stock)');order.push(p.cat);}
       var op=h('option');op.value=p.id;op.textContent=p.name;cats[p.cat].appendChild(op);});
     order.forEach(function(c){presetSel.appendChild(cats[c]);});
   }
@@ -8173,6 +8513,8 @@ try{
   var gTitled=function(){return TYPE==='graph'&&GR.kind!=='toplist'&&GR.look.mode!=='prtg';};
   var isDonut=function(){return TYPE==='donut';};
   var isStatus=function(){return TYPE==='status';};
+  var isTile=function(){return TYPE==='tile';};
+  var tlKind=function(){var a=arguments,i;if(TYPE!=='tile')return false;for(i=0;i<a.length;i++)if(TL.kind===a[i])return true;return false;};
   var dRing=function(){return TYPE==='donut'&&DN.engine==='ring';};
   var dPrtg=function(){return TYPE==='donut'&&DN.engine==='prtg';};
   var isIcon=function(){return TYPE==='icon';};
@@ -8180,7 +8522,7 @@ try{
   var icStock=function(){return TYPE==='icon'&&IC.engine==='stock';};
   var icPulse=function(){return TYPE==='icon'&&IC.engine==='custom'&&IC.style==='pulse';};
   var notIcStock=function(){return !(TYPE==='icon'&&IC.engine==='stock');};
-  var notFrame=function(){return TYPE==='table'||TYPE==='gauge'||TYPE==='status'||(TYPE==='donut'&&DN.engine==='ring')||(TYPE==='icon'&&IC.engine==='custom');};
+  var notFrame=function(){return TYPE==='table'||TYPE==='gauge'||TYPE==='status'||TYPE==='tile'||(TYPE==='donut'&&DN.engine==='ring')||(TYPE==='icon'&&IC.engine==='custom');};
   var isGauge=function(){return TYPE==='gauge';};
   var isRing=function(){return TYPE==='gauge'&&G.engine==='ring';};
   var isStock=function(){return TYPE==='gauge'&&G.engine==='prtg';};
@@ -8230,6 +8572,8 @@ try{
       }else if(TYPE==='gauge'){
         if(v==='__blank'){var lk=G.look,eng=G.engine;G=blankG();G.look=lk;G.engine=eng;}
         else{var gp=null;GPRESETS.forEach(function(x){if(x.id===v)gp=x;});G=gaugeFromPreset(gp);}
+      }else if(TYPE==='tile'){
+        var tlk=TL.look;TL=tileFromPreset(v==='__blank'?'':v);TL.look=tlk;
       }else if(TYPE==='status'){
         var slk=SC.look;SC=statusFromPreset(v==='__blank'?'':v);SC.look=slk;
       }else{
@@ -8285,6 +8629,49 @@ try{
     st2.appendChild(inText('Only sensors whose name contains',function(){return SC.nameHas;},function(v){SC.nameHas=v;},'for example: Ethernet'));
     st2.appendChild(inChk('Also follow the map\u2019s tag filter',function(){return !!SC.mapTags;},function(v){SC.mapTags=v;}));
     st2.appendChild(h('p','note','The card counts every sensor under the object it is bound to, by PRTG\u2019s own status. Tags and names narrow it, for example to interface sensors. A paused sensor is counted as paused, not as up.'));
+
+    /* ---- tiles: which kind, which channel, and the numbers that go with it ---- */
+    var tlT=h('div');
+    tlT.appendChild(inSel('Title',function(){return TL.titleMode;},function(v){TL.titleMode=v;},[['object','The object\u2019s name'],['custom','Custom text'],['none','No title']]));
+    tlT.appendChild(inText('Custom title text',function(){return TL.title;},function(v){TL.title=v;}));
+    tlT.appendChild(inText('Subtitle',function(){return TL.sub;},function(v){TL.sub=v;},'for example: Uplink to the data center'));
+    showIf(tlT,isTile);s2.appendChild(tlT);
+    var tl1=section('Tile');secIf(tl1,isTile);
+    tl1.appendChild(inSel('Kind',function(){return TL.kind;},function(v){
+      var old=null,nu=null;
+      TLPRESETS.forEach(function(x){if(x.kind===TL.kind)old=x;if(x.kind===v)nu=x;});
+      if(old&&nu){if(TL.name===old.name)TL.name=nu.name;if(+TL.initW===old.w&&+TL.initH===old.h){TL.initW=nu.w;TL.initH=nu.h;}}
+      TL.kind=v;refreshUI();
+    },TKINDS));
+    tl1.appendChild(h('p','note','A tile is bound to one sensor and shows what that sensor reports, in the colour of its state. It follows the Look you choose, like the other objects.'));
+    var tlc=h('div');
+    tlc.appendChild(inText('Channel',function(){return TL.channel;},function(v){TL.channel=v;},'blank = the sensor\u2019s main channel'));
+    tlc.appendChild(h('p','note','A channel\u2019s name or number, for example Traffic Total or 0. Part of a name is enough.'));
+    showIf(tlc,function(){return tlKind('stat','bar');});tl1.appendChild(tlc);
+    var tlb=h('div');
+    tlb.appendChild(pair(inText('Scale from',function(){return TL.min;},function(v){TL.min=v;},'0'),inText('to',function(){return TL.max;},function(v){TL.max=v;},'automatic')));
+    tlb.appendChild(pair(inText('Warning from',function(){return TL.warn;},function(v){TL.warn=v;},'the channel\u2019s limit'),inText('Error from',function(){return TL.error;},function(v){TL.error=v;},'the channel\u2019s limit')));
+    tlb.appendChild(h('p','note','Leave a number blank to use the channel\u2019s own limits and range. Warning and error show as marks on the bar.'));
+    showIf(tlb,function(){return tlKind('bar');});tl1.appendChild(tlb);
+    var tli=h('div');
+    tli.appendChild(inText('Link speed in Mbit/s',function(){return TL.cap;},function(v){TL.cap=v;},'blank = compare with the peak'));
+    tli.appendChild(h('p','note','Reads the sensor\u2019s Traffic In, Traffic Out and Traffic Total channels. With a link speed, the bars show how full the link is.'));
+    showIf(tli,function(){return tlKind('interface');});tl1.appendChild(tli);
+    var tls=h('div');
+    tls.appendChild(h('p','note','Shows the sensor\u2019s message, for example \u201COK\u201D or \u201CRunning\u201D. The text shrinks or grows to fill the tile.'));
+    tls.appendChild(inText('Remove this text first',function(){return TL.strip;},function(v){TL.strip=v;},'for example: ^Status:\\s*'));
+    tls.appendChild(inText('Green when the message contains',function(){return TL.okW;},function(v){TL.okW=v;},'for example: OK, Running'));
+    tls.appendChild(inText('Blue when it contains',function(){return TL.infoW;},function(v){TL.infoW=v;},'for example: Idle'));
+    tls.appendChild(inText('Amber when it contains',function(){return TL.warnW;},function(v){TL.warnW=v;},'for example: Slow'));
+    tls.appendChild(inText('Red when it contains',function(){return TL.errW;},function(v){TL.errW=v;},'for example: Failed, Timeout'));
+    tls.appendChild(h('p','note','Separate words with commas. Without any, the tile takes the colour of the sensor\u2019s state.'));
+    showIf(tls,function(){return tlKind('string');});tl1.appendChild(tls);
+    var tlh=h('div');
+    tlh.appendChild(inText('Hide channels',function(){return TL.hide;},function(v){TL.hide=v;},'Downtime'));
+    tlh.appendChild(inText('Show only these channels',function(){return TL.only;},function(v){TL.only=v;},'blank = all, in this order if filled'));
+    var tlw=h('div');tlw.appendChild(inNum('Chip width in px',function(){return TL.chipw;},function(v){TL.chipw=v;},60,400));showIf(tlw,function(){return tlKind('chips');});tlh.appendChild(tlw);
+    var tlf=h('div');tlf.appendChild(pair(inText('Columns',function(){return TL.cols;},function(v){TL.cols=v;},'automatic'),inText('Chip shape (wide : high)',function(){return TL.ratio;},function(v){TL.ratio=v;},'2.4')));showIf(tlf,function(){return tlKind('chipsfit');});tlh.appendChild(tlf);
+    showIf(tlh,function(){return tlKind('chips','chipsfit');});tl1.appendChild(tlh);
 
     /* ---- shape: what it draws ---- */
     var sh1=section('Shape');secIf(sh1,function(){return TYPE==='shape';});
