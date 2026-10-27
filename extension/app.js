@@ -1972,13 +1972,31 @@ try{
     selBox.style.display='block';
     selBox.style.left=it.x+'px';selBox.style.top=it.y+'px';
     selBox.style.width=it.w+'px';selBox.style.height=it.h+'px';
-    selBox.style.borderWidth=Math.max(1,2/scale)+'px';
-    var hs=20/scale;
-    handle.style.width=hs+'px';handle.style.height=hs+'px';
-    handle.style.right=(-hs/2)+'px';handle.style.bottom=(-hs/2)+'px';
-    handle.style.display=canSize(it)?'block':'none';
+    selBox.style.borderWidth=Math.max(1,1.5/scale)+'px';
+    var sz=canSize(it), sw=it.w*scale, sh=it.h*scale;
+    var hpx=Math.max(8,Math.min(13,Math.min(sw,sh)/2.2));   /* smaller handles on a small item, so they do not cover it */
+    selBox.style.setProperty('--hs',(hpx/scale)+'px');selBox.style.setProperty('--hb',((hpx>10?2:1.5)/scale)+'px');
+    handle.style.display=sz?'block':'none';
+    /* the corners always show; the middle of an edge only when the item is big enough for them not to crowd the corners */
+    if(HND)Object.keys(HND).forEach(function(k){
+      var mid=(k==='n'||k==='s'||k==='e'||k==='w'), ok=sz&&(!mid||((k==='n'||k==='s')?sw>=64:sh>=64));
+      HND[k].style.display=ok?'block':'none';
+    });
     fbarPlace(it);
   }
+  var HND={se:handle}, CUR={nw:'nwse',n:'ns',ne:'nesw',e:'ew',se:'nwse',s:'ns',sw:'nesw',w:'ew'};
+  handle.className='dh';handle.setAttribute('data-ax','se');
+  ['nw','n','ne','e','s','sw','w'].forEach(function(k){
+    var d=el_('div','dh');d.setAttribute('data-ax',k);HND[k]=d;selBox.appendChild(d);
+  });
+  Object.keys(HND).forEach(function(k){
+    HND[k].style.cursor=CUR[k]+'-resize';
+    HND[k].addEventListener('mousedown',function(e){
+      e.preventDefault();e.stopPropagation();
+      var it=byId(D.sel);if(!it)return;
+      drag={mode:'size',ax:k,sx:e.clientX,sy:e.clientY,it:it,ox:it.x,oy:it.y,ow:it.w,oh:it.h};
+    });
+  });
   /* ---------- a bar over the selected item: font, size, bold, italic, underline, color, alignment, a link for the whole object, duplicate and delete ---------- */
   var fbar=null, fbarKey='', fbarTimer=null, fbarRefs=null;
   function tsGet(it){
@@ -2258,10 +2276,15 @@ try{
     var key=it.id+'|'+it.type+'|'+(it.p&&it.p.shape?it.p.shape:'')+'|'+(it.type==='banner'?(it.p.fit?'f':'m'):'');
     if(key!==fbarKey){fbarBuild(it);fbarKey=key;}else fbarSync(it);
     fbar.hidden=false;
-    h=fbar.offsetHeight||36;w=fbar.offsetWidth||200;ww=wrap.clientWidth;
+    /* the bar follows the zoom a little, so a small item on a zoomed-out canvas is not dwarfed by it */
+    var k=Math.max(0.74,Math.min(1,0.62+scale*0.4)), below, cx;
+    fbar.style.transformOrigin='0 0';fbar.style.transform=(k<1)?'scale('+k+')':'';
+    h=(fbar.offsetHeight||36)*k;w=(fbar.offsetWidth||200)*k;ww=wrap.clientWidth;
     x=Math.max(2,Math.min(it.x*scale,ww-w-2));
-    y=it.y*scale-h-8;
-    if(y<2)y=(it.y+it.h)*scale+8;
+    y=it.y*scale-h-10;below=(y<2);
+    if(below)y=(it.y+it.h)*scale+10;
+    cx=Math.max(14,Math.min(w-14,(it.x+it.w/2)*scale-x));
+    fbar.style.setProperty('--cx',(cx/k)+'px');fbar.setAttribute('data-pos',below?'below':'above');
     fbar.style.left=Math.round(x)+'px';fbar.style.top=Math.round(y)+'px';
   }
   function applyScale(){
@@ -2915,7 +2938,7 @@ try{
   canvas.addEventListener('mousedown',function(e){
     if(e.button!==0)return;
     var t=e.target;
-    if(t===handle||(handle.contains&&handle.contains(t)))return;
+    if(t.closest&&t.closest('.dh'))return;
     if(TE&&t.closest&&t.closest('.teedit'))return;   /* the caret goes where it is clicked */
     var n=t.closest?t.closest('.ditem'):null;
     if(!n){if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();if(!e.shiftKey){msClear();select(null);}return;}
@@ -2986,11 +3009,6 @@ try{
     if(it&&(it.type==='label'||it.type==='button')&&teStart(it,n)){e.preventDefault();return;}
     if(it&&h&&!h.hidden){try{h.scrollIntoView({block:'nearest',behavior:'smooth'});}catch(err){}}   /* its settings are already open under it */
   });
-  handle.addEventListener('mousedown',function(e){
-    e.preventDefault();e.stopPropagation();
-    var it=byId(D.sel);if(!it)return;
-    drag={mode:'size',sx:e.clientX,sy:e.clientY,it:it,ow:it.w,oh:it.h};
-  });
   document.addEventListener('mousemove',function(e){
     if(!drag)return;
     var dx=(e.clientX-drag.sx)/scale, dy=(e.clientY-drag.sy)/scale;
@@ -3004,12 +3022,18 @@ try{
       drag.kids.forEach(function(o){o.k.x=o.x+ddx;o.k.y=o.y+ddy;place(o.k);});
       updateSel();
     }else if(drag.mode==='size'){
-      var nw=snapV(drag.ow+dx), nh=snapV(drag.oh+dy);
-      if(e.altKey)guidesOff();else{var gz=guideSnap(drag.it,drag.it.x,drag.it.y,nw,nh,{},'size');nw=gz.w;nh=gz.h;}
-      if(isBox(drag.it)){
-        drag.it.w=Math.max(40,nw);
-        drag.it.h=Math.max(40,nh);
-      }else setBoxSize(drag.it,Math.max(20,nw),Math.max(20,nh));
+      var ax=drag.ax||'se', mn=isBox(drag.it)?40:20, nx=drag.ox, ny=drag.oy, nw=drag.ow, nh=drag.oh, gz;
+      if(ax.indexOf('e')>=0)nw=snapV(drag.ow+dx);
+      if(ax.indexOf('s')>=0)nh=snapV(drag.oh+dy);
+      if(ax.indexOf('w')>=0){nx=snapV(drag.ox+dx);nw=drag.ox+drag.ow-nx;}
+      if(ax.indexOf('n')>=0){ny=snapV(drag.oy+dy);nh=drag.oy+drag.oh-ny;}
+      if(!e.altKey&&ax.indexOf('w')<0&&ax.indexOf('n')<0){gz=guideSnap(drag.it,nx,ny,nw,nh,{},'size');nw=gz.w;nh=gz.h;}else guidesOff();
+      nw=Math.max(mn,nw);nh=Math.max(mn,nh);
+      if(ax.indexOf('w')>=0)nx=drag.ox+drag.ow-nw;   /* stops at the smallest size instead of sliding */
+      if(ax.indexOf('n')>=0)ny=drag.oy+drag.oh-nh;
+      drag.it.x=nx;drag.it.y=ny;place(drag.it);
+      if(isBox(drag.it)){drag.it.w=nw;drag.it.h=nh;}
+      else setBoxSize(drag.it,nw,nh);
       refreshItem(drag.it);
     }
   });
