@@ -2074,7 +2074,8 @@ try{
     link:'<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
     left:'<path d="M4 6h16M4 12h10M4 18h14"/>',center:'<path d="M4 6h16M7 12h10M5 18h14"/>',right:'<path d="M4 6h16M10 12h10M6 18h14"/>',
     dup:'<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',
-    del:'<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>'
+    del:'<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',
+    layer:'<path d="m12 4 8 4-8 4-8-4z"/><path d="m4 12 8 4 8-4"/><path d="m4 16 8 4 8-4"/>'
   };
   function fbarBtn(cls,tip,svg,fn){
     var b=el_('button','fb '+cls);b.type='button';b.setAttribute('aria-label',tip);b.setAttribute('data-tip',tip);
@@ -2161,7 +2162,18 @@ try{
       pop.appendChild(ts);pop.appendChild(ms);pop.appendChild(li);pop.appendChild(nt);pop.appendChild(rm);fbar.appendChild(pop);
       R.pop=pop;R.lt=ts;R.li=li;R.ms=ms;R.ln=nc;R.ph=lph;lph();
     }
-    if(any||A.link||PL.length)sep();
+    /* layer: the same four steps as the Layer row in Selected, as a pop-up so the bar stays short */
+    sep();
+    var yb=fbarBtn('fb-t','Layer: forward or backward',FB_SVG.layer,function(){fbToggle(yp,yb);fbarSync(it);});
+    var yp=el_('div','fb-pop fb-layer');yp.hidden=true;fbStop(yp);
+    R.ly={};
+    [['front','Bring to front',function(){bringToFront(it);}],['fwd','Bring forward',function(){stepLayer(it,1);}],['back','Send backward',function(){stepLayer(it,-1);}],['bottom','Send to back',function(){sendToBack(it);}]].forEach(function(d){
+      var b=el_('button','btn ghost',d[1]);b.type='button';
+      b.addEventListener('click',function(e){e.stopPropagation();d[2]();fbarSync(it);});
+      yp.appendChild(b);R.ly[d[0]]=b;
+    });
+    fbar.appendChild(yb);fbar.appendChild(yp);R.lyBtn=yb;
+    sep();
     fbar.appendChild(fbarBtn('','Duplicate',FB_SVG.dup,function(){dup(it);}));
     fbar.appendChild(fbarBtn('','Delete',FB_SVG.del,function(){del(it);}));
     fbarSync(it);
@@ -2178,6 +2190,7 @@ try{
     }
     if(R.size&&document.activeElement!==R.size){var z=tsGet(it);if(z!==null)R.size.value=String(Math.round(z));}
     ['bold','ital','und','upper'].forEach(function(k){if(R[k]&&A[k])R[k].classList.toggle('on',!!A[k][0]());});
+    if(R.ly){var ed=layerEdge(it);R.ly.front.disabled=ed.atTop;R.ly.fwd.disabled=ed.atTop;R.ly.back.disabled=ed.atBottom;R.ly.bottom.disabled=ed.atBottom;}
     if(R.color&&A.color){var cv=String(A.color[0]()||'#000000');if(/^#[0-9a-f]{6}$/i.test(cv)&&document.activeElement!==R.color)R.color.value=cv;R.colorBox.style.setProperty('--sw',cv);}
     if(R.align&&A.align){var al=A.align[0](), ic={left:FB_SVG.left,center:FB_SVG.center,right:FB_SVG.right}[al]||FB_SVG.left;R.align.firstChild.innerHTML=ic;R.align.setAttribute('data-tip','Align text: '+al);}
     if(R.link&&A.link){
@@ -2387,7 +2400,7 @@ try{
   function inlHost(){return document.getElementById('inlhost');}
   function inlCommitSoon(){clearTimeout(INL.timer);INL.timer=setTimeout(function(){commit();},500);}
   function syncGeo(it){
-    var ins=formEl.querySelectorAll('.dgeo input');
+    var ins=(STD.geo||formEl).querySelectorAll('.dgeo input');
     if(ins.length===4){['x','y','w','h'].forEach(function(k,i){if(document.activeElement!==ins[i])ins[i].value=Math.round(it[k]);});}
   }
   function legMount(host){
@@ -2460,7 +2473,91 @@ try{
     if(pre){window.PBD_LEGBUSY=true;try{legMode(pre.mode);applySnap(pre.snap);render();}finally{window.PBD_LEGBUSY=false;}}
     INL.pre=null;
   }
+  /* ---------- one layout for the Selected panel: Text, Presets, Link, then Advanced (Appearance, Size position and layer, Code) ----------
+     The panels of a frame, shape, label and button come from other tools, so their sections are moved into place and put back when the item is deselected. */
+  var STD={moved:[],names:[],made:[],geo:null,code:null};
+  function stdMove(n){STD.moved.push({n:n,p:n.parentNode,x:n.nextSibling});}
+  function stdName(bar,from,to){
+    [].forEach.call(bar.childNodes,function(c){if(c.nodeType===3&&c.nodeValue.indexOf(from)>=0){STD.names.push({n:c,v:c.nodeValue});c.nodeValue=c.nodeValue.replace(from,to);}});
+  }
+  function stdRestore(){
+    var i, m;
+    for(i=STD.moved.length-1;i>=0;i--){m=STD.moved[i];if(m.p)m.p.insertBefore(m.n,(m.x&&m.x.parentNode===m.p)?m.x:null);}
+    STD.moved=[];
+    STD.names.forEach(function(r){r.n.nodeValue=r.v;});STD.names=[];
+    STD.made.forEach(function(n){if(n.parentNode)n.parentNode.removeChild(n);});STD.made=[];
+  }
+  function stdTitle(f){var b=f.children&&f.children[0];return (b&&b.tagName==='BUTTON')?b.textContent.replace(/^[^A-Za-z]+/,''):'';}
+  /* the Link section for items whose link used to be only in the bar over the item */
+  function linkSec(it){
+    var A=fbAcc(it).link, maps=window.PRTGMAPS||[], ts=el_('select'), ms=el_('select'), li=el_('input'), nc=el_('input'), wm, wu, wt, rm;
+    if(!A)return null;
+    function row(label,ctl){var w=el_('div','dfld');w.appendChild(el_('label',null,label));w.appendChild(ctl);return w;}
+    [['map','PRTG map (by id)'],['url','Any URL']].forEach(function(o){var op=el_('option');op.value=o[0];op.textContent=o[1];ts.appendChild(op);});
+    ts.value=A.g('linktype')||'map';
+    li.type='text';li.value=A.g('link')||'';
+    nc.type='checkbox';nc.checked=!!A.g('newtab');
+    var cur=String(A.g('link')||'').replace(/[^0-9]/g,''), o0=el_('option');
+    o0.value='';o0.textContent='Choose a map\u2026';ms.appendChild(o0);
+    maps.forEach(function(m){var o=el_('option');o.value=m.id;o.textContent=m.name+' (id '+m.id+')';ms.appendChild(o);});
+    if(cur&&!maps.some(function(m){return m.id===cur;})){var o1=el_('option');o1.value=cur;o1.textContent='Map id '+cur+' (not on this server)';ms.appendChild(o1);}
+    ms.value=cur;
+    wt=row('Opens',ts);wm=row('Map',ms);wu=row('Address or map id',li);
+    function ph(){var list=(ts.value==='map'&&maps.length>0);wm.hidden=!list;wu.hidden=list;li.placeholder=(ts.value==='map')?'Map id, for example 3428':'https://example.com';}
+    function done(){refreshItem(it);commit();buildList();buildForm();}
+    ts.addEventListener('change',function(){A.s('linktype',ts.value);ph();done();});
+    ms.addEventListener('change',function(){A.s('link',ms.value);A.s('linktype','map');done();});
+    li.addEventListener('input',function(){A.s('link',li.value);A.s('linktype',ts.value);refreshItem(it);});
+    li.addEventListener('change',done);
+    nc.addEventListener('change',function(){A.s('newtab',nc.checked);done();});
+    rm=el_('button','btn ghost sm','Remove link');rm.type='button';
+    rm.addEventListener('click',function(){A.s('link','');done();});
+    ph();
+    var cw=el_('div','dfld inline');cw.appendChild(nc);cw.appendChild(el_('label',null,'Open in a new tab'));
+    return acc('Link',[wt,wm,wu,cw,rm,el_('p','note','Makes the whole item a link. Leave it empty for no link.')],!!A.g('link'));
+  }
+  function stdBuild(it){
+    stdRestore();
+    var geo=STD.geo, code=STD.code, adv, ap, pr, rs, op, box, aw, i, t, txt, flds, body, tf, lk, app, kids;
+    if(INL.kind==='obj'&&it.type==='frame'){
+      op=document.getElementById('objpanel');if(!op)return;
+      rs=op.querySelector(':scope > .objreset');
+      kids=[].slice.call(op.children);
+      kids.forEach(function(f){
+        t=stdTitle(f);if(f.hidden||!t)return;
+        if(/^Appearance/.test(t)&&!ap)ap=f;else if(/^Look presets/.test(t)&&!pr)pr=f;
+      });
+      if(pr)stdName(pr.children[0],'Look presets','Presets');
+      /* Text: the title fields that sit in Appearance */
+      if(ap&&pr&&(!it.p.shape||['rect','round','pill','circle'].indexOf(it.p.shape)>=0)&&!(it.p.group===false&&!it.p.shape)){
+        flds={};body=ap.children[1];
+        [].forEach.call(body.querySelectorAll('.dfld'),function(d){var l=d.querySelector(':scope > label');if(l)flds[l.textContent.trim()]=d;});
+        if(flds['Title']&&flds['Title size']&&flds['Title weight']&&flds['Title color']&&flds['Font']){
+          ['Title','Title size','Title weight','Title color','Font'].forEach(function(k){stdMove(flds[k]);});
+          tf=acc('Text',[flds['Title'],pair(flds['Title size'],flds['Title weight']),pair(flds['Title color'],flds['Font'])],true);
+          op.insertBefore(tf,pr);STD.made.push(tf);
+        }
+      }
+      lk=(it.p.shape&&['rect','round','pill','circle'].indexOf(it.p.shape)<0)?null:linkSec(it);
+      if(lk){op.insertBefore(lk,rs);STD.made.push(lk);}
+      if(ap)stdMove(ap);
+      adv=acc('Advanced',[ap,geo,code].filter(Boolean),false);
+      op.insertBefore(adv,rs);STD.made.push(adv);
+    }else if(INL.kind==='leg'&&(it.type==='label'||it.type==='button')){
+      box=document.getElementById('legbox');aw=document.getElementById('advwrap');
+      if(!box||!aw)return;
+      var parts=[];
+      [].forEach.call(box.children,function(f){t=stdTitle(f);if(/^(Font|Color|Button style)/.test(t))parts.push(f);});
+      parts.forEach(stdMove);
+      app=acc('Appearance',parts,false);
+      var g=aw.querySelector(':scope > .geofs'), at=g?g.nextSibling:aw.firstChild;
+      aw.insertBefore(app,at);STD.made.push(app);
+      if(code){aw.insertBefore(code,app.nextSibling);STD.made.push(code);}
+      var ab=document.getElementById('advtoggle');if(ab)stdName(ab,'Advanced settings','Advanced');
+    }
+  }
   function inlEnd(){
+    stdRestore();
     if(INL.kind==='obj'){OBJAPI.inline.end();OBJAPI.inline.unmount();OBJAPI.onInline=null;}
     else if(INL.kind==='leg')legEnd();
     INL.kind='';INL.id=null;INL.json='';
@@ -2495,6 +2592,7 @@ try{
         INL.id=it.id;INL.json=inlKey(it);
         OBJAPI.inline.begin(frameKind(it),it.p,it.w,it.h,fresh);
       }
+      stdBuild(it);
     }else if(it&&(it.type==='label'||it.type==='button')){
       if(INL.kind==='obj')inlEnd();
       fresh=(INL.kind!=='leg');
@@ -2504,6 +2602,7 @@ try{
         legBegin(it,fresh);
       }
       legGeo();
+      stdBuild(it);
     }else{
       inlEnd();
     }
@@ -2511,15 +2610,19 @@ try{
   }
   function buildForm(){
       try{document.dispatchEvent(new Event('dashselect'));}catch(e){}
-    formEl.innerHTML='';INL.geo=null;
+    stdRestore();
+    formEl.innerHTML='';INL.geo=null;STD.geo=null;STD.code=null;
     codeEl=null;
     var it=byId(D.sel);
       if(window.SECAPI)SECAPI.note('Selected',it?itemName(it):'nothing selected');
     if(!it){formEl.appendChild(el_('p','note pst','Click an item on the canvas to change how it looks.'));inlSync();return;}
     formEl.appendChild(el_('h4',null,TYPENAME[it.type]));
     /* Duplicate and Delete are in the bar over the item; Ctrl+C, Ctrl+V, Ctrl+D and Delete work from the keyboard */
-    var geoFs=acc('Size, position and layer',[geoRow(it),layerRow(it),parentSel(it)]);
-    if(it.type==='label'||it.type==='button')INL.geo=geoFs;else formEl.appendChild(geoFs);
+    var geoFs=acc('Size, position and layer',[geoRow(it),layerRow(it),parentSel(it)]), inlineOk=!!(OBJAPI.inline&&DASHAPI.active);
+    STD.geo=geoFs;
+    if(it.type==='label'||it.type==='button')INL.geo=geoFs;
+    else if(it.type==='banner'){}   /* goes under Advanced, below */
+    else if(!(it.type==='frame'&&inlineOk))formEl.appendChild(geoFs);
     if(it.type==='prtgobj'){
         var on=el_('p','note pst');on.textContent='Object file: '+it.p.cat+': '+it.p.name;formEl.appendChild(on);
         var tw=el_('div','dfld');tw.appendChild(el_('label',null,'Target (PRTG object ID)'));
@@ -2558,10 +2661,11 @@ try{
         pair(mk(it,'Headline color','tcolor','color'),mk(it,'Subtitle color','scolor','color')),
         mk(it,'Uppercase','tupper','check')],true));
       formEl.appendChild(acc('Presets',[fbPresetGrid(it,fbPresets(it),function(){buildForm();})],true));
-      formEl.appendChild(acc('Appearance',[
+      var bl=linkSec(it);if(bl)formEl.appendChild(bl);
+      STD.app=acc('Appearance',[
         pair(mk(it,'Fill color','fill','color'),mk(it,'Fill opacity %','fillA','number',{min:0,max:100})),
         pair(mk(it,'Border color','bcolor','color'),mk(it,'Border width','bw','number',{min:0,max:20})),
-        pair(mk(it,'Corner radius','radius','number',{min:0,max:80}),mk(it,'Shadow','shadow','select',[['none','None'],['soft','Soft'],['strong','Strong']]))],false));
+        pair(mk(it,'Corner radius','radius','number',{min:0,max:80}),mk(it,'Shadow','shadow','select',[['none','None'],['soft','Soft'],['strong','Strong']]))],false);
     }else if(it.type==='chip'){
       formEl.appendChild(mk(it,'Text','text','text'));
       formEl.appendChild(pair(mk(it,'Color','variant','select',[['success','Green'],['warning','Amber'],['danger','Red'],['info','Blue'],['neutral','Grey']]),mk(it,'Size','size','number',{min:8,max:40})));
@@ -2578,7 +2682,10 @@ try{
     cb.addEventListener('click',function(){copyText(htmlCache[it.id]||'');});
     cw.appendChild(cb);
     cw.appendChild(el_('p','note','Paste this into HTML Before of a Custom HTML item, and give the item this size and position. PRTG rewrites div as span when you paste, so these pieces are written as spans that declare display:block and keep their size. Web fonts are not included here. Use Copy font links once per dashboard. For a frame that resizes with its item, use Objects, Frame.'));
-    formEl.appendChild(acc('Code for this item',[cw]));
+    var codeFs=acc('Code',[cw]);
+    if(it.type==='banner')formEl.appendChild(acc('Advanced',[STD.app,geoFs,codeFs],false));
+    else if((it.type==='frame'&&inlineOk)||it.type==='label'||it.type==='button')STD.code=codeFs;
+    else formEl.appendChild(codeFs);
     syncCode();
     inlSync();
   }
