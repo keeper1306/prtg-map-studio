@@ -61,7 +61,7 @@ It works with the classic PRTG interface and with the new PRTG interface
 ### 5. Add objects from the catalog
 
 1. Go to the **Design** step.
-2. Under **Server objects**, search by category or name, select an
+2. Under **PRTG Server Objects**, search by category or name, select an
    object and click **Add to canvas**. Use **Refresh object list** after you
    install new object files.
 3. Use **Build** to add labels, buttons, frames and shapes.
