@@ -5151,7 +5151,7 @@ try{
   function syncInstall(){
     var n=Object.keys(load()).length;
     $('opath').textContent=mapDir();
-    $('oscript').disabled=!n;$('odlall').disabled=!n;
+    $('oscript').disabled=!n;$('odlall').disabled=!n;$('oremotecopy').disabled=!n;
     $('oscript').title=n?'':'Add an object to your list first';$('odlall').title=n?'':'Add an object to your list first';
   }
   $('ofolder').value=baseGet();
@@ -5251,6 +5251,81 @@ try{
     text=installScript(files,mapDir());
     if(text.length>CFG.install.maxChars){OBJAPI.toast('Too long to paste ('+files.length+' file'+(files.length===1?'':'s')+'). Use Download ZIP.');return;}
     OBJAPI.copyText(text,'Install script copied ('+files.length+' file'+(files.length===1?'':'s')+')');
+  });
+  /* a script for another computer: it runs here, asks for an administrator account on the server and copies the files over the network */
+  function remoteScript(files,server,mode,dir){
+    var o=[], i, j, b, m=/^([A-Za-z]):\\(.*)$/.exec(dir), drive=m?m[1]:'C', rest=m?m[2]:dir;
+    o.push('function Send-PrtgMapObjects {');
+    o.push('  $server = '+psq(server));
+    o.push('  $data = @{}');
+    for(i=0;i<files.length;i++){
+      b=b64(files[i].text);
+      o.push('  $data['+psq(files[i].name)+'] = (@(');
+      for(j=0;j<b.length;j+=2000)o.push("    '"+b.substr(j,2000)+"'"+((j+2000<b.length)?',':''));
+      o.push("  ) -join '')");
+    }
+    o.push("  $cred = Get-Credential -Message ('A Windows administrator account on ' + $server + ' (for a local account: ' + $server + '\\Administrator)')");
+    o.push("  if (-not $cred) { return }");
+    o.push("  $backup = Join-Path $env:TEMP ('PrtgMapToolBackup-' + (Get-Date -Format 'yyyyMMdd-HHmmss'))");
+    if(mode==='winrm'){
+      o.push('  $dir = '+psq(dir));
+      o.push('  $s = $null');
+      o.push("  try { $s = New-PSSession -ComputerName $server -Credential $cred -ErrorAction Stop } catch { Write-Host ('Could not connect: ' + $_.Exception.Message); Write-Host ('If it mentions TrustedHosts, run as administrator: Set-Item WSMan:\\localhost\\Client\\TrustedHosts -Value ' + $server + ' -Concatenate -Force'); return }");
+      o.push("  try {");
+      o.push("    $r = Invoke-Command -Session $s -ArgumentList $dir, $data -ScriptBlock {");
+      o.push("      param($dir, $data)");
+      o.push("      if (-not (Test-Path -LiteralPath $dir)) { return @('Folder not found: ' + $dir) }");
+      o.push("      $out = @(); $bak = Join-Path $env:TEMP ('PrtgMapToolBackup-' + (Get-Date -Format 'yyyyMMdd-HHmmss'))");
+      o.push("      foreach ($key in $data.Keys) {");
+      o.push("        $name = [IO.Path]::GetFileName($key); $path = Join-Path $dir $name; $word = 'Created '");
+      o.push("        try {");
+      o.push("          if (Test-Path -LiteralPath $path) {");
+      o.push("            if ([Convert]::ToBase64String([IO.File]::ReadAllBytes($path)) -eq $data[$key]) { $out += ('Unchanged ' + $name); continue }");
+      o.push("            New-Item -ItemType Directory -Force -Path $bak | Out-Null; Copy-Item -LiteralPath $path -Destination (Join-Path $bak $name) -Force; $word = 'Replaced  '");
+      o.push("          }");
+      o.push("          [IO.File]::WriteAllBytes($path, [Convert]::FromBase64String($data[$key])); $out += ($word + $name)");
+      o.push("        } catch { $out += ('FAILED    ' + $name + ': ' + $_.Exception.Message) }");
+      o.push("      }");
+      o.push("      if (Test-Path -LiteralPath $bak) { $out += ('Replaced files were backed up on the server in ' + $bak) }");
+      o.push("      $out");
+      o.push("    }");
+      o.push("    $r | ForEach-Object { Write-Host $_ }");
+      o.push("    Write-Host ('Done. Files sent to ' + $server + ' (' + $dir + ')')");
+      o.push("  } catch { Write-Host ('FAILED: ' + $_.Exception.Message) } finally { if ($s) { Remove-PSSession $s } }");
+    }else{
+      o.push("  $drive = 'PRTGREMOTE'");
+      o.push("  try {");
+      o.push("    New-PSDrive -Name $drive -PSProvider FileSystem -Root ('\\\\' + $server + '\\"+drive.toLowerCase()+"$') -Credential $cred -ErrorAction Stop | Out-Null");
+      o.push("    $dir = $drive + ':\\' + "+psq(rest));
+      o.push("    if (-not (Test-Path -LiteralPath $dir)) { Write-Host ('Folder not found on ' + $server + ': "+drive.toUpperCase()+":\\' + "+psq(rest)+"); return }");
+      o.push("    $made = 0");
+      o.push("    foreach ($key in $data.Keys) {");
+      o.push("      $name = [IO.Path]::GetFileName($key); $path = Join-Path $dir $name; $word = 'Created '");
+      o.push("      try {");
+      o.push("        if (Test-Path -LiteralPath $path) {");
+      o.push("          if ([Convert]::ToBase64String([IO.File]::ReadAllBytes($path)) -eq $data[$key]) { Write-Host ('Unchanged ' + $name); continue }");
+      o.push("          New-Item -ItemType Directory -Force -Path $backup | Out-Null; Copy-Item -LiteralPath $path -Destination (Join-Path $backup $name) -Force; $word = 'Replaced  '");
+      o.push("        }");
+      o.push("        [IO.File]::WriteAllBytes($path, [Convert]::FromBase64String($data[$key])); Write-Host ($word + $name); $made++");
+      o.push("      } catch { Write-Host ('FAILED    ' + $name + ': ' + $_.Exception.Message) }");
+      o.push("    }");
+      o.push("    Write-Host ('Done. ' + $made + ' file(s) sent to ' + $server)");
+      o.push("    if (Test-Path -LiteralPath $backup) { Write-Host ('Replaced files were backed up to ' + $backup) }");
+      o.push("  } catch { Write-Host ('FAILED: ' + $_.Exception.Message) } finally { Remove-PSDrive -Name $drive -ErrorAction SilentlyContinue }");
+    }
+    o.push("  Write-Host 'Now click Refresh object list in the Map designer while connected to that server.'");
+    o.push('}');
+    o.push('Send-PrtgMapObjects');
+    return o.join('\n')+'\n';
+  }
+  $('oremotecopy').addEventListener('click',function(){
+    var lib=load(), names=Object.keys(lib).sort(), server=String($('oremote').value||'').trim(), files, text;
+    if(!names.length){OBJAPI.toast('Nothing to install yet. Add an object to your list first.');return;}
+    if(!/^[A-Za-z0-9._\-]+$/.test(server)){OBJAPI.toast('Type the server name or IP address first (letters, numbers, dots and dashes).');$('oremote').focus();return;}
+    files=names.map(function(f){return {name:f,text:lib[f].code};});
+    text=remoteScript(files,server,$('oremotemode').value,mapDir());
+    if(text.length>CFG.install.maxChars){OBJAPI.toast('Too long to paste. Use Download ZIP.');return;}
+    OBJAPI.copyText(text,'Remote script copied ('+files.length+' file'+(files.length===1?'':'s')+')');
   });
   $('odlall').addEventListener('click',function(){
     var lib=load(), files=Object.keys(lib).sort().map(function(f){return {name:f,text:lib[f].code};});

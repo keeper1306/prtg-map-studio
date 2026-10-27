@@ -584,6 +584,9 @@ fieldset{border-bottom-color:var(--line)}
 .oway{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--soft)}
 .owayt{font-weight:600;font-size:12.5px;color:var(--ink)}
 .oway .btn:disabled{opacity:.45;cursor:not-allowed}
+.oway.wide{grid-column:1/-1}
+.oway .orow{display:flex;gap:8px;flex-wrap:wrap;width:100%}
+.oway .orow input{flex:1 1 220px;min-width:0}
 
 .ditem.teedit{cursor:text}.ditem.teedit,.ditem.teedit *{-webkit-user-select:text;user-select:text}
 .ditem.teedit [contenteditable]{outline:2px solid #00A3DA;outline-offset:3px;border-radius:2px;min-width:12px}
@@ -1087,6 +1090,9 @@ fieldset{border-bottom-color:var(--line)}
       <div class="ostep"><span class="onum">2</span><div class="obody"><b>Put the files there</b>
         <div class="oways">
           <div class="oway"><span class="owayt">On the PRTG server itself</span><button class="btn" id="oscript" type="button">Copy install script</button><span class="ohint">Open PowerShell as administrator, paste, press Enter. Replaced files are backed up first.</span></div>
+          <div class="oway wide"><span class="owayt">To another PRTG server over the network</span>
+            <span class="orow"><input type="text" id="oremote" spellcheck="false" placeholder="Server name or IP, for example 192.168.0.245" aria-label="Remote PRTG server"><select id="oremotemode" aria-label="How to connect"><option value="smb">Shared folder (SMB)</option><option value="winrm">PowerShell remoting (WinRM)</option></select><button class="btn" id="oremotecopy" type="button">Copy remote script</button></span>
+            <span class="ohint">Run it in PowerShell on this computer. It asks for a Windows administrator account on that server and never saves it. Uses the folder from step 1. Replaced files are backed up on this computer. Shared folder needs port 445 open; remoting needs WinRM (port 5985), and for a server outside your domain its address in TrustedHosts.</span></div>
           <div class="oway"><span class="owayt">By hand, or from another computer</span><button class="btn ghost" id="odlall" type="button">Download ZIP</button><span class="ohint">Unzip it into the folder above on the server.</span></div>
         </div></div></div>
       <div class="ostep"><span class="onum">3</span><div class="obody"><b>Reload the Map Designer</b>
