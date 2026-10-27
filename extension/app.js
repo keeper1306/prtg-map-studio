@@ -46,12 +46,12 @@ var CFG={
   dashTabs:{start:'map',canvasClickMs:600,
     tabs:[
       {id:'map',icon:'1',label:'Map',sections:['Map']},
-      {id:'add',icon:'2',label:'Design',sections:['Build','Selected','Existing PRTG objects','Canvas']},
+      {id:'add',icon:'2',label:'Design',sections:['Build','Selected','Server objects','Canvas']},
       {id:'pub',icon:'3',label:'Push',sections:['Push to PRTG']}
     ],
     fold:['Canvas'],
     foldOpen:[]},
-  /* the button in Existing PRTG objects that reads PRTG's list of object files again (after you install a file). It does not log in again. */
+  /* the button in Server objects that reads PRTG's list of object files again (after you install a file). It does not log in again. */
   objectList:{refreshLabel:'Refresh object list',refreshHint:'Reads the list of object files in PRTG again, so files you have just installed appear. It does not reconnect.'},
   /* the button that removes the items shown by Show items already on this map. confirmMs: with unapplied changes, how long the second press stays valid. */
   existing:{clearLabel:'Clear items from the canvas',confirmMs:4000},
@@ -9529,7 +9529,7 @@ try{
       if(IC[k])b.innerHTML=sv(IC[k])+'<span>'+b.textContent+'</span>';
     });
   })();
-  /* the Existing PRTG objects section is shown by the sixth button under Build */
+  /* the Server objects section is shown by the sixth button under Build */
   (function(){
     var fs=document.getElementById('objfs'), btn=document.getElementById('showexisting');
     if(!fs||!btn)return;
@@ -9556,7 +9556,7 @@ try{
       hint.textContent=type?('Click on the canvas to place the '+NAMES[type]+'. Esc cancels.'):base;
     }
     function added(){try{document.dispatchEvent(new CustomEvent('builditemadded'));}catch(e){}}
-    /* choosing any tile other than Existing PRTG objects closes that section */
+    /* choosing any tile other than Server objects closes that section */
     function hideExisting(){var fs=document.getElementById('objfs'), bt=document.getElementById('showexisting');if(fs&&!fs.classList.contains('folded')){fs.classList.add('folded');if(bt){bt.classList.remove('on');bt.setAttribute('aria-expanded','false');}}}
     /* the Background tile shows the color choices for the map's own background, and any other tile closes them */
     var bgBtn=document.getElementById('mapbgbtn'), bgPanel=document.getElementById('bgpanel');
