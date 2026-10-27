@@ -2272,7 +2272,7 @@ try{
       ['mousedown','dblclick','click'].forEach(function(ev){fbar.addEventListener(ev,function(e){e.stopPropagation();});});
       wrap.appendChild(fbar);
     }
-    if(!it||drag||editing){fbar.hidden=true;fbarKey='';return;}
+    if(!it||(drag&&drag.mode!=='size')||editing){fbar.hidden=true;fbarKey='';return;}   /* it stays while you resize, and goes only while you move */
     var key=it.id+'|'+it.type+'|'+(it.p&&it.p.shape?it.p.shape:'')+'|'+(it.type==='banner'?(it.p.fit?'f':'m'):'');
     if(key!==fbarKey){fbarBuild(it);fbarKey=key;}else fbarSync(it);
     fbar.hidden=false;
@@ -2288,13 +2288,43 @@ try{
     fbar.style.left=Math.round(x)+'px';fbar.style.top=Math.round(y)+'px';
   }
   function applyScale(){
-    var avail=stageEl.clientWidth-4;
+    var avail=stageEl.clientWidth-4, availH=Math.max(240,window.innerHeight-200);
     if(avail<200)avail=900;
-    scale=(D.zoom==='fit')?Math.min(1,Math.max(0.1,avail/D.w)):parseFloat(D.zoom);
+    /* Fit shrinks the canvas, at the chosen resolution, so all of it shows in the window */
+    scale=(D.zoom==='fit')?Math.min(1,Math.max(0.1,Math.min(avail/D.w,availH/D.h))):(parseFloat(D.zoom)||1);
+    scale=Math.max(0.1,Math.min(4,scale));
     canvas.style.width=D.w+'px';canvas.style.height=D.h+'px';
     canvas.style.transform='scale('+scale+')';
     wrap.style.width=Math.round(D.w*scale)+'px';wrap.style.height=Math.round(D.h*scale)+'px';
+    zoomSync();
     updateSel();
+  }
+  /* the zoom bar under the canvas, the Zoom list in Canvas size and grid, and the fit button all show the same zoom */
+  function zoomSync(){
+    var zs=document.getElementById('dzslider'), zl=document.getElementById('dzval'), zsel=document.getElementById('dzoom'), pc=Math.round(scale*100), o, i;
+    if(zs){zs.value=String(pc);zs.style.setProperty('--p',((pc-10)/390*100)+'%');}
+    if(zl)zl.textContent=pc+'%';
+    if(zsel){
+      o=null;for(i=0;i<zsel.options.length;i++)if(zsel.options[i].value===String(D.zoom))o=zsel.options[i];
+      if(!o){o=zsel.querySelector('option[data-custom]');if(!o){o=document.createElement('option');o.setAttribute('data-custom','1');zsel.appendChild(o);}o.value=String(D.zoom);}
+      if(o.hasAttribute('data-custom'))o.textContent=pc+'%';
+      zsel.value=String(D.zoom);
+    }
+  }
+  function setZoom(z,ax,ay){   /* z is a number, or 'fit'; ax, ay is a screen point to keep still (the pointer) */
+    var r=wrap.getBoundingClientRect(), cx=(ax-r.left)/scale, cy=(ay-r.top)/scale, sc=document.getElementById('dscroll');
+    D.zoom=(z==='fit')?'fit':String(Math.round(Math.max(0.1,Math.min(4,z))*1000)/1000);
+    applyScale();
+    if(ax!=null&&z!=='fit'){
+      var r2=wrap.getBoundingClientRect();
+      sc.scrollLeft+=(r2.left+cx*scale)-ax;
+      var dy=(r2.top+cy*scale)-ay, par=sc.parentNode, done=false;   /* the box scrolls sideways; whatever holds the page scrolls up and down */
+      while(par&&par!==document.body&&!done){
+        if(par.scrollHeight>par.clientHeight+1&&/(auto|scroll)/.test(getComputedStyle(par).overflowY)){par.scrollTop+=dy;done=true;}
+        par=par.parentNode;
+      }
+      if(!done)window.scrollBy(0,dy);
+    }
   }
 
   function syncCode(){
@@ -3042,6 +3072,7 @@ try{
     var d=drag;drag=null;guidesOff();
     if(d.mode==='move'&&d.moved){d.it.parent=reparentTarget(d.it);renderAll();buildForm();commit();}
     else if(d.mode==='size'){buildForm();buildList();commit();}
+    updateSel();   /* the bar comes back (or stays) once the drag is over */
   });
   document.addEventListener('keydown',function(e){
     if(!DASHAPI.active)return;
@@ -3075,6 +3106,18 @@ try{
   document.getElementById('dredo').addEventListener('click',doRedo);
   document.getElementById('dgrid').addEventListener('change',function(){D.grid=parseInt(this.value,10)||0;});
   document.getElementById('dzoom').addEventListener('change',function(){D.zoom=this.value;applyScale();});
+  document.getElementById('dfit').addEventListener('click',function(){setZoom('fit');});
+  document.getElementById('dzslider').addEventListener('input',function(){
+    var r=document.getElementById('dscroll').getBoundingClientRect();
+    setZoom(parseInt(this.value,10)/100,r.left+r.width/2,Math.max(r.top,0)+Math.min(r.height,window.innerHeight)/2);
+  });
+  /* the wheel zooms the canvas around the pointer; Ctrl and the trackpad pinch do the same */
+  document.getElementById('dscroll').addEventListener('wheel',function(e){
+    if(!DASHAPI.active||editing!==null)return;
+    e.preventDefault();
+    var f=Math.exp(-Math.max(-60,Math.min(60,e.deltaY))*(e.ctrlKey?0.012:0.0022));
+    setZoom(scale*f,e.clientX,e.clientY);
+  },{passive:false});
   document.getElementById('ddark').addEventListener('change',function(){canvas.classList.toggle('dark',this.checked);});
   function sizeChange(){
     var w=parseInt(document.getElementById('dw').value,10), h=parseInt(document.getElementById('dh').value,10);

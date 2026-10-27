@@ -324,6 +324,13 @@ p.note:not(.pst){display:none!important}
 #infotip .tipnote{margin:0}
 .grp{padding:16px 20px 6px;font-size:11px;font-weight:600;letter-spacing:.7px;text-transform:uppercase;color:#8b90a0;background:#fff}
 .undoredo{display:flex;gap:6px}
+#dzoombar{position:sticky;bottom:14px;z-index:20;display:flex;align-items:center;gap:10px;width:max-content;max-width:100%;margin:12px auto 0;padding:8px 16px;background:rgba(255,255,255,.94);border:1px solid var(--g20);border-radius:999px;box-shadow:0 2px 10px rgba(15,23,42,.14)}
+#dzoombar .dzdot{width:5px;height:5px;border-radius:50%;background:#8b90a0;flex:none}
+#dzval{min-width:44px;text-align:right;font-weight:600;font-size:15px;color:#4b5263;font-variant-numeric:tabular-nums}
+#dzslider{-webkit-appearance:none;appearance:none;width:240px;height:22px;margin:0;background:transparent;--p:20%}
+#dzslider::-webkit-slider-runnable-track{height:8px;border-radius:999px;background:linear-gradient(to right,#9aa3b5 0,#9aa3b5 var(--p),#dfe3ea var(--p),#dfe3ea 100%)}
+#dzslider::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;margin-top:-9px;border-radius:50%;background:#fff;border:0;box-shadow:0 1px 5px rgba(15,23,42,.35);cursor:pointer}
+#dzslider:focus-visible{outline:2px solid var(--cyan2);outline-offset:4px;border-radius:999px}
 .ico{width:30px;height:30px;padding:0;border:1px solid var(--g20);border-radius:50%;background:#fff;color:var(--blue);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
 .ico svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .ico:hover:not(:disabled){border-color:var(--cyan);color:var(--cyan)}
@@ -1158,7 +1165,7 @@ fieldset{border-bottom-color:var(--line)}
   <div id="dashstage">
     <div class="stage-head">
       <h2>Canvas <span style="font-weight:300;color:#8b90a0;font-size:12px;">&mdash; drag items, drag the square corner to resize, Shift+click to select several</span></h2>
-      <div class="undoredo"><button class="ico" id="dundo" type="button" data-tip="Undo (Ctrl+Z)" aria-label="Undo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button><button class="ico" id="dredo" type="button" data-tip="Redo (Ctrl+Y)" aria-label="Redo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button></div>
+      <div class="undoredo"><button class="ico" id="dundo" type="button" data-tip="Undo (Ctrl+Z)" aria-label="Undo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button><button class="ico" id="dredo" type="button" data-tip="Redo (Ctrl+Y)" aria-label="Redo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button><button class="ico" id="dfit" type="button" data-tip="Fit to window" aria-label="Fit the canvas to the window"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/><rect x="8" y="8" width="8" height="8" rx="1"/></svg></button></div>
     </div>
     <div id="exbar" hidden><span id="exbartext"></span><button class="btn ghost" id="exbarrev" type="button">Review changes</button><button class="btn" id="exbarapply" type="button" hidden>Apply</button><button class="btn ghost" id="exbardisc" type="button">Discard all</button></div>
     <div id="dalign" hidden><span class="alcount"></span>
@@ -1175,6 +1182,7 @@ fieldset{border-bottom-color:var(--line)}
       <button type="button" id="dalignclear" title="Clear the selection" aria-label="Clear selection">Clear</button>
     </div>
     <div id="dscroll"><div id="dwrap"><div id="dcanvas"><div id="dselbox"><div id="dhandle"></div></div></div></div></div>
+    <div id="dzoombar"><span class="dzdot"></span><input type="range" id="dzslider" min="10" max="400" step="1" value="100" aria-label="Zoom"><span class="dzdot"></span><span id="dzval">100%</span></div>
     <p class="note"><strong>Guides:</strong> while you drag or resize, an item snaps to the edges and centres of the others, and a dashed line shows what it lines up with. Hold Alt to move freely. Shift+click adds items to a selection: they move together, and the bar above the canvas aligns or spaces them out.</p>
     <p class="note"><strong>Keys:</strong> arrow keys nudge the selected item (Shift = 10 px), Delete removes it, Ctrl+Z and Ctrl+Y undo and redo, Ctrl+D duplicates, Ctrl+C, Ctrl+X and Ctrl+V copy, cut and paste. Double-click a label or button to type its text; its style is open under it. Moving a frame moves what is inside it.</p>
     <p class="note warn"><strong>Stacking order:</strong> frames sit at the back, number tiles above them, then labels, buttons and status chips. Inside a group, items go in the order you added them. That is the order they will be sent to PRTG.</p>
