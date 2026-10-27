@@ -2087,22 +2087,36 @@ try{
     }
     if(A.link){
       sep();
-      var lb=fbarBtn('fb-t','Link for the whole object',FB_SVG.link,function(){pop.hidden=!pop.hidden;});
+      var lb=fbarBtn('fb-t','Link for the whole object',FB_SVG.link,function(){pop.hidden=!pop.hidden;if(!pop.hidden&&R.ph)R.ph();});
       fbar.appendChild(lb);R.link=lb;
       var pop=el_('div','fb-pop');pop.hidden=true;
       var ts=el_('select');[['map','PRTG map (by id)'],['url','Any URL']].forEach(function(o){var op=el_('option');op.value=o[0];op.textContent=o[1];ts.appendChild(op);});
       var li=el_('input');li.type='text';li.setAttribute('aria-label','Link destination');
+      var ms=el_('select');ms.setAttribute('aria-label','Map to open');
       var nt=el_('label','fb-chk');var nc=el_('input');nc.type='checkbox';nt.appendChild(nc);nt.appendChild(document.createTextNode(' Open in a new tab'));
       var rm=el_('button','btn ghost sm','Remove link');rm.type='button';
-      function lph(){li.placeholder=(ts.value==='map')?'Map id, for example 3428':'https://example.com';}
+      function lph(){
+        var maps=window.PRTGMAPS||[], useList=(ts.value==='map'&&maps.length>0);
+        li.placeholder=(ts.value==='map')?'Map id, for example 3428':'https://example.com';
+        ms.hidden=!useList;li.hidden=useList;
+        if(useList){
+          var cur=String(A.link.g('link')||'').replace(/[^0-9]/g,'');
+          ms.innerHTML='';
+          var o0=el_('option');o0.value='';o0.textContent='Choose a map\u2026';ms.appendChild(o0);
+          maps.forEach(function(m){var o=el_('option');o.value=m.id;o.textContent=m.name+' (id '+m.id+')';ms.appendChild(o);});
+          if(cur&&!maps.some(function(m){return m.id===cur;})){var o1=el_('option');o1.value=cur;o1.textContent='Map id '+cur+' (not on this server)';ms.appendChild(o1);}
+          ms.value=cur;
+        }
+      }
+      ms.addEventListener('change',function(){fbApply(it,function(){A.link.s('link',ms.value);A.link.s('linktype','map');});fbarSync(it);commit();buildList();});
       ts.addEventListener('change',function(){lph();fbApply(it,function(){A.link.s('linktype',ts.value);});commit();});
-      li.addEventListener('input',function(){fbApply(it,function(){A.link.s('link',li.value);A.link.s('linktype',ts.value);});fbarSync(it);});
+      li.addEventListener('input',function(){fbApply(it,function(){A.link.s('link',li.value);A.link.s('linktype',ts.value);});});
       li.addEventListener('change',function(){commit();buildList();});
       nc.addEventListener('change',function(){fbApply(it,function(){A.link.s('newtab',nc.checked);});commit();});
-      rm.addEventListener('click',function(e){e.stopPropagation();li.value='';fbApply(it,function(){A.link.s('link','');});fbarSync(it);commit();});
-      [pop,ts,li,nc,rm].forEach(fbStop);
-      pop.appendChild(ts);pop.appendChild(li);pop.appendChild(nt);pop.appendChild(rm);fbar.appendChild(pop);
-      R.pop=pop;R.lt=ts;R.li=li;R.ln=nc;lph();
+      rm.addEventListener('click',function(e){e.stopPropagation();li.value='';ms.value='';fbApply(it,function(){A.link.s('link','');});fbarSync(it);commit();});
+      [pop,ts,li,ms,nc,rm].forEach(fbStop);
+      pop.appendChild(ts);pop.appendChild(ms);pop.appendChild(li);pop.appendChild(nt);pop.appendChild(rm);fbar.appendChild(pop);
+      R.pop=pop;R.lt=ts;R.li=li;R.ms=ms;R.ln=nc;R.ph=lph;lph();
     }
     if(any||A.link)sep();
     fbar.appendChild(fbarBtn('','Duplicate',FB_SVG.dup,function(){dup(it);}));
@@ -2127,6 +2141,7 @@ try{
       R.link.classList.toggle('on',!!A.link.g('link'));
       if(document.activeElement!==R.li)R.li.value=A.link.g('link');
       R.lt.value=A.link.g('linktype')||'map';R.ln.checked=!!A.link.g('newtab');
+      if(R.ph&&document.activeElement!==R.ms)R.ph();
     }
   }
   function fbarPlace(it){
@@ -4624,6 +4639,7 @@ try{
     $('prtgswitch').hidden=!connected;$('prtgrefresh').hidden=!connected;$('prtgdisconnect').hidden=!connected;$('prtgcog').hidden=connected;
     if(connected&&CSSX&&CSSX.origin!==(base()||pageOrigin()||''))try{prtgCss();}catch(e){}
     window.PRTGSTATE={connected:connected,map:connected&&!!$('pushmap').value};
+    window.PRTGMAPS=connected?(S.maps||[]).map(function(m){return {id:String(m.objid),name:String(m.name||'')};}):[];
     $('next2').disabled=!window.PRTGSTATE.map;
     $('mapbgcolor').disabled=!window.PRTGSTATE.map;try{bgPreSync();}catch(e){}$('mapbgbtn').disabled=!window.PRTGSTATE.map;$('mapbgbtn').dataset.tip=window.PRTGSTATE.map?'Change the map\u2019s background color':'Connect and choose a map first';
     try{document.dispatchEvent(new CustomEvent('prtgstate',{detail:window.PRTGSTATE}));}catch(e){}
