@@ -9715,7 +9715,7 @@ try{
       if(gi===1)return;   /* labels, buttons, frames, backgrounds and shapes are built on the Dashboard tab */
       var paste=(gi===1), hd=GRIDHEAD[gi], head=h('div','tgh'+(paste?' p':''));
       head.title=hd[1];head.innerHTML='<i class="sq"></i>'+hd[0]+hd[2];
-      var row=h('div','tgr');row.style.gridTemplateColumns='repeat('+g[1].length+',1fr)';
+      var row=h('div','tgr');row.style.gridTemplateColumns='repeat('+Math.min(g[1].length,4)+',1fr)';   /* four to a row, so eight types make two tidy rows */
       g[1].forEach(function(o){
         var t=h('button','tgt'+(paste?' p':''));
         t.type='button';t.setAttribute('data-t',o[0]);t.setAttribute('role','radio');t.setAttribute('aria-label',TYPETIP[o[0]]);t.title=TYPETIP[o[0]];
