@@ -5463,7 +5463,7 @@ try{
   });
   document.addEventListener('click',function(e){var p=$('prtgpop');if(!p.hidden&&!p.classList.contains('gate')&&!(e.target.closest&&e.target.closest('#prtgbar, #prtgpop')))p.hidden=true;});
   swSync();
-  window.EXAPI={state:EX,edit:XE,parse:exParse,headers:exHeaders,load:exLoad,clear:exClear,pick:exPick,label:exLabel};
+  window.EXAPI={pvx:pvExtract,state:EX,edit:XE,parse:exParse,headers:exHeaders,load:exLoad,clear:exClear,pick:exPick,label:exLabel};
   /* ---- live previews: PRTG's own drawing of each object, with the target's real data.
      The designer asks /controls/mapobjectpreview.htm and shows the answer inside PRTG's own page. Here the answer goes into a small frame that loads PRTG's own stylesheet
      inside the same wrappers PRTG uses for a map (#mapshow > #mapview), because tables take their look from those. The object's own scripts run, as they do in PRTG;
@@ -5473,12 +5473,54 @@ try{
   function pvOn(){return !!($('objlive').checked)&&!!(S.maps&&S.catalog&&mapId());}
   function pvLayer(){var c=$('dcanvas'),l=$('dprev');if(!l){l=document.createElement('div');l.id='dprev';c.insertBefore(l,c.firstChild);}return l;}
   function pvWrap(id){return pvLayer().querySelector('.dprevitem[data-id="'+id+'"]');}
+  /* PRTG's Geo Map is drawn by PRTG's own scripts, which do not run in a preview. Its answer still carries every location and its state, so the box shows them on a plain
+     stand-in map (no map tiles), with the markers in whatever style the object's own style block gives them. */
+  var PVGEOCSS='#pvhost #map-geomap-box{position:absolute!important;left:0;top:0;right:0;bottom:0;height:auto!important;width:auto!important}'
+    +'.gmstand{position:absolute;left:0;top:0;right:0;bottom:0;overflow:hidden;background-color:#e8eff6;background-image:linear-gradient(#d7e2ed 1px,transparent 1px),linear-gradient(90deg,#d7e2ed 1px,transparent 1px);background-size:40px 40px}'
+    +'.gmstand .gmcap{position:absolute;left:8px;bottom:6px;font:11px/1.2 "Segoe UI",Arial,sans-serif;color:#6b7a8a}'
+    +'.gmstand .map-marker{position:absolute;box-sizing:border-box;width:21px;height:25px;background:#fff;border-left:5px solid #fff;box-shadow:0 2px 2px 0 rgba(0,0,0,.14),0 1px 5px 0 rgba(0,0,0,.12)}'
+    +'.gmstand .map-marker a{position:absolute;left:0;top:0;width:100%;height:100%;background-position:center;background-repeat:no-repeat;background-size:14px 14px}'
+    +'.gmstand .map-marker.up{border-color:#B8C419}.gmstand .map-marker.warn{border-color:#F5C500}.gmstand .map-marker.down{border-color:#E30613}.gmstand .map-marker.downack{border-color:#E67278}.gmstand .map-marker.unusual{border-color:#F59C00}.gmstand .map-marker.paused{border-color:#477EC0}.gmstand .map-marker.unknown{border-color:#878787}';
+  function pvGeoState(n){
+    n=parseInt(n,10);
+    if(n===3)return 'up';if(n===4)return 'warn';if(n===14)return 'downack';if(n===5||n===6||n===13)return 'down';
+    if(n===10)return 'unusual';if(n===7||n===8||n===9||n===12)return 'paused';return 'unknown';
+  }
+  function pvGeoStand(d,box){
+    var g=d.getElementById('map-geomap-box'), host, w, j, L, pts=[], x0=1e9, x1=-1e9, y0=1e9, y1=-1e9, i, kx, sx, sy, sc, html='', st, c;
+    if(!g)return;
+    host=g.querySelector('[data-plugin="geomap"]')||g;
+    w=d.createTreeWalker(host,128);
+    while(w.nextNode()){
+      c=w.currentNode.textContent;
+      try{j=JSON.parse(c);if(j&&j.markers){L=j.markers.locationlist;break;}}catch(e){}
+    }
+    if(!Array.isArray(L))return;
+    L.forEach(function(x){
+      var cc=x&&x.coordinates, a=null, sty='', k;
+      if(!Array.isArray(cc)||cc.length<2||isNaN(Number(cc[0]))||isNaN(Number(cc[1])))return;
+      try{k=new DOMParser().parseFromString(String(x.link||''),'text/html');a=k.body.querySelector('a');}catch(e){}
+      if(a){sty=(a.getAttribute('style')||'').replace(/"/g,"'");}
+      pts.push({x:Number(cc[0]),y:Number(cc[1]),s:pvGeoState(x.state),sty:sty});
+    });
+    pts.forEach(function(q){x0=Math.min(x0,q.x);x1=Math.max(x1,q.x);y0=Math.min(y0,q.y);y1=Math.max(y1,q.y);});
+    kx=Math.cos(((y0+y1)/2)*Math.PI/180)||1;
+    sx=Math.max((x1-x0)*kx,1e-6);sy=Math.max(y1-y0,1e-6);
+    for(i=0;i<pts.length;i++){
+      var q=pts[i], fx=(pts.length===1||x1===x0)?0.5:0.12+0.76*((q.x-x0)*kx/sx), fy=(pts.length===1||y1===y0)?0.5:0.12+0.76*((y1-q.y)/sy);
+      html+='<div class="map-marker '+q.s+'" style="left:calc('+(fx*100).toFixed(2)+'% - 10px);top:calc('+(fy*100).toFixed(2)+'% - 25px)"><a class="mapmarker" style="'+q.sty+'"></a></div>';
+    }
+    st=d.createElement('style');st.textContent=PVGEOCSS;
+    host.innerHTML='<div class="gmstand">'+html+'<div class="gmcap">'+(pts.length?pts.length+(pts.length===1?' location':' locations'):'No locations')+'. PRTG draws the map tiles on the map itself.</div></div>';
+    (box.querySelector('.map_object')||box).insertBefore(st,(box.querySelector('.map_object')||box).firstChild);
+  }
   function pvExtract(html){
     var d, box, el, cls, iw, ih;
     try{d=new DOMParser().parseFromString(html,'text/html');}catch(e){return null;}
     box=d.querySelector('.map_objectbox')||d.body;el=box&&box.querySelector('.map_object');
     if(!el)return null;
     cls=(el.getAttribute('class')||'').split(/\s+/);iw=parseInt(el.getAttribute('initialwidth'),10)||0;ih=parseInt(el.getAttribute('initialheight'),10)||0;
+    pvGeoStand(d,box);
     return {inner:box.innerHTML,content:cls.indexOf('map_icon')>=0,iw:iw,ih:ih};   /* the status icons (class map_icon) take no size from the map: they are as big as they are drawn */
   }
   function pvDoc(ent,o){
