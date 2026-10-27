@@ -9653,13 +9653,14 @@ try{
     if(!grid||!wrapEl||!window.DASHAPI||!DASHAPI.addAt)return;
     var NAMES={frame:'frame',label:'label',button:'button',banner:'banner',bg:'background',shape:'shape'}, armed=null, tiles=[].slice.call(grid.querySelectorAll('[data-add]'));
     var hint=document.createElement('p');hint.id='addhint';hint.className='note pst';
-    var base='Click a tile, then click the canvas to place it. Double-click a tile to add it at the default spot, or drag it onto the canvas.';
-    hint.textContent=base;grid.parentNode.insertBefore(hint,grid.nextSibling);
+    var base='';   /* the tiles' own tooltips explain how to add; the line shows only while a tile is armed */
+    hint.textContent=base;hint.hidden=true;grid.parentNode.insertBefore(hint,grid.nextSibling);
     function arm(type){
       armed=type;
       tiles.forEach(function(t){t.classList.toggle('armed',t.getAttribute('data-add')===type);});
       wrapEl.classList.toggle('placing',!!type);
       hint.classList.toggle('on',!!type);
+      hint.hidden=!type;
       hint.textContent=type?('Click on the canvas to place the '+NAMES[type]+'. Esc cancels.'):base;
     }
     function added(){try{document.dispatchEvent(new CustomEvent('builditemadded'));}catch(e){}}
