@@ -328,6 +328,27 @@ p.note:not(.pst){display:none!important}
 #dgridov[hidden]{display:none}
 #dgridov i{position:absolute;top:0;bottom:0;background:rgba(0,125,184,.08);border-left:1px solid rgba(0,125,184,.28);border-right:1px solid rgba(0,125,184,.28);box-sizing:border-box}
 #dgridbtn.on{background:#E6F3FA;border-color:var(--cyan2)}
+#dlayov{position:absolute;left:0;top:0;right:0;bottom:0;pointer-events:none;z-index:49;overflow:hidden}
+#dlayov[hidden]{display:none}
+#dlayov i{position:absolute;box-sizing:border-box;border:1.5px dashed rgba(0,125,184,.75);border-radius:4px}
+#dlayov i.empty{background:rgba(0,125,184,.10)}
+#dlayov i.empty::after{content:'+';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font:600 22px/1 sans-serif;color:rgba(0,125,184,.7)}
+#dlaybtn.on{background:#E6F3FA;border-color:var(--cyan2)}
+#dlaypop{position:absolute;right:0;top:calc(100% + 8px);z-index:300;width:330px;max-height:78vh;overflow:auto;padding:12px;background:#fff;border:1px solid var(--g20);border-radius:12px;box-shadow:0 6px 24px rgba(15,23,42,.2);font-size:12px;display:flex;flex-direction:column;gap:8px}
+#dlaypop[hidden]{display:none}
+#dlaypop .gp-l{font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:#8b90a0}
+#dlaypop .gp-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#dlaypop .gp-row label{display:flex;flex-direction:column;gap:3px;color:#6c7183}
+#dlaypop input[type=number]{width:100%;font-size:12px;padding:5px 6px;box-sizing:border-box}
+#dlaypop .gp-chk{display:flex;align-items:center;gap:6px;color:var(--ink)}
+#dlaypop .gp-note{margin:0;color:#8b90a0;font-size:11px;line-height:1.4}
+#dlaypop .gp-btns{display:flex;gap:6px}
+#dlaypop .gp-btns .btn{flex:1;padding:7px 6px;font-size:12px}
+#dlaypop .ly-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+#dlaypop .ly-t{border:2px solid var(--g20);border-radius:8px;padding:2px;background:#f4f6f9;cursor:pointer;line-height:0}
+#dlaypop .ly-t:hover{border-color:#9bd0e8}
+#dlaypop .ly-t.on{border-color:var(--cyan);background:#E6F3FA}
+#dlaypop .ly-t svg{width:100%;height:auto}
 #dgridpop{position:absolute;right:0;top:calc(100% + 8px);z-index:300;width:300px;padding:12px;background:#fff;border:1px solid var(--g20);border-radius:12px;box-shadow:0 6px 24px rgba(15,23,42,.2);font-size:12px;display:flex;flex-direction:column;gap:8px}
 #dgridpop[hidden]{display:none}
 #dgridpop .gp-l{font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:#8b90a0;margin-top:2px}
@@ -1193,7 +1214,7 @@ fieldset{border-bottom-color:var(--line)}
   <div id="dashstage">
     <div class="stage-head">
       <h2>Canvas <span style="font-weight:300;color:#8b90a0;font-size:12px;">&mdash; drag items, drag the square corner to resize, Shift+click to select several</span></h2>
-      <div class="undoredo"><button class="ico" id="dundo" type="button" data-tip="Undo (Ctrl+Z)" aria-label="Undo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button><button class="ico" id="dredo" type="button" data-tip="Redo (Ctrl+Y)" aria-label="Redo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button><button class="ico" id="dfit" type="button" data-tip="Fit to window" aria-label="Fit the canvas to the window"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/><rect x="8" y="8" width="8" height="8" rx="1"/></svg></button><button class="ico" id="dgridbtn" type="button" data-tip="Grid and snapping" aria-label="Grid and snapping"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="1.5"/><path d="M4 9.3h16M4 14.7h16M9.3 4v16M14.7 4v16"/></svg></button></div>
+      <div class="undoredo"><button class="ico" id="dundo" type="button" data-tip="Undo (Ctrl+Z)" aria-label="Undo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button><button class="ico" id="dredo" type="button" data-tip="Redo (Ctrl+Y)" aria-label="Redo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button><button class="ico" id="dfit" type="button" data-tip="Fit to window" aria-label="Fit the canvas to the window"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/><rect x="8" y="8" width="8" height="8" rx="1"/></svg></button><button class="ico" id="dgridbtn" type="button" data-tip="Grid and snapping" aria-label="Grid and snapping"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="1.5"/><path d="M4 9.3h16M4 14.7h16M9.3 4v16M14.7 4v16"/></svg></button><button class="ico" id="dlaybtn" type="button" data-tip="Layouts" aria-label="Layouts"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="1.5"/><path d="M12 4v16M12 12h8"/></svg></button></div>
     </div>
     <div id="exbar" hidden><span id="exbartext"></span><button class="btn ghost" id="exbarrev" type="button">Review changes</button><button class="btn" id="exbarapply" type="button" hidden>Apply</button><button class="btn ghost" id="exbardisc" type="button">Discard all</button></div>
     <div id="dalign" hidden><span class="alcount"></span>

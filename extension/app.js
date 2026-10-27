@@ -2491,6 +2491,7 @@ try{
   var gridOv=document.createElement('div');gridOv.id='dgridov';wrap.appendChild(gridOv);
   function gridPaint(){
     var g=D.grid>0?D.grid:10, sp=g*scale, cl, c='rgba(0,125,184,.16)', c2='rgba(0,125,184,.30)', html='', i;
+    if(typeof layPaint==='function')layPaint();
     if(!gridOv)return;
     gridOv.innerHTML='';gridOv.style.backgroundImage='';
     gridOv.hidden=!D.showGrid;
@@ -2595,6 +2596,161 @@ try{
     if(!gridPop||gridPop.hidden){gridPopBuild();gridPop.hidden=false;gridBtn.classList.add('on');}else{gridPop.hidden=true;gridBtn.classList.remove('on');}
   });
   document.addEventListener('mousedown',function(e){if(gridPop&&!gridPop.hidden&&!gridPop.contains(e.target)&&!(gridBtn&&gridBtn.contains(e.target))){gridPop.hidden=true;if(gridBtn)gridBtn.classList.remove('on');}});
+  /* ---- layouts: ready-made ways to divide the canvas into cells. Items fill the cells in reading order and take their shape; dropping an item on a cell puts it there ---- */
+  var LAYOUTS=[
+    ['One big cell',1,1,[[0,0,1,1]]],
+    ['Two columns',2,1,[[0,0,1,1],[1,0,1,1]]],
+    ['Two rows',1,2,[[0,0,1,1],[0,1,1,1]]],
+    ['Three columns',3,1,[[0,0,1,1],[1,0,1,1],[2,0,1,1]]],
+    ['Three rows',1,3,[[0,0,1,1],[0,1,1,1],[0,2,1,1]]],
+    ['Four squares',2,2,[[0,0,1,1],[1,0,1,1],[0,1,1,1],[1,1,1,1]]],
+    ['Big left, two right',2,2,[[0,0,1,2],[1,0,1,1],[1,1,1,1]]],
+    ['Two left, big right',2,2,[[0,0,1,1],[0,1,1,1],[1,0,1,2]]],
+    ['Big top, two below',2,2,[[0,0,2,1],[0,1,1,1],[1,1,1,1]]],
+    ['Two above, big below',2,2,[[0,0,1,1],[1,0,1,1],[0,1,2,1]]],
+    ['Two thirds and one third',3,1,[[0,0,2,1],[2,0,1,1]]],
+    ['One third and two thirds',3,1,[[0,0,1,1],[1,0,2,1]]],
+    ['Sidebar and content',4,1,[[0,0,1,1],[1,0,3,1]]],
+    ['Content and sidebar',4,1,[[0,0,3,1],[3,0,1,1]]],
+    ['Header and three columns',3,4,[[0,0,3,1],[0,1,1,3],[1,1,1,3],[2,1,1,3]]],
+    ['Header and two columns',2,3,[[0,0,2,1],[0,1,1,2],[1,1,1,2]]],
+    ['Banner, two, banner',2,3,[[0,0,2,1],[0,1,1,1],[1,1,1,1],[0,2,2,1]]],
+    ['Hero and three below',3,3,[[0,0,3,2],[0,2,1,1],[1,2,1,1],[2,2,1,1]]],
+    ['Three stacked and big',3,3,[[0,0,1,1],[0,1,1,1],[0,2,1,1],[1,0,2,3]]],
+    ['Big and four small',4,2,[[0,0,2,2],[2,0,1,1],[3,0,1,1],[2,1,1,1],[3,1,1,1]]],
+    ['Staggered',3,2,[[0,0,1,2],[1,0,1,1],[2,0,1,2],[1,1,1,1]]],
+    ['Pinwheel',3,3,[[0,0,2,1],[2,0,1,2],[1,2,2,1],[0,1,1,2],[1,1,1,1]]],
+    ['Six tiles',3,2,[[0,0,1,1],[1,0,1,1],[2,0,1,1],[0,1,1,1],[1,1,1,1],[2,1,1,1]]],
+    ['Nine tiles',3,3,[[0,0,1,1],[1,0,1,1],[2,0,1,1],[0,1,1,1],[1,1,1,1],[2,1,1,1],[0,2,1,1],[1,2,1,1],[2,2,1,1]]],
+    ['Five columns',5,1,[[0,0,1,1],[1,0,1,1],[2,0,1,1],[3,0,1,1],[4,0,1,1]]],
+    ['Four rows',1,4,[[0,0,1,1],[0,1,1,1],[0,2,1,1],[0,3,1,1]]]
+  ];
+  D.layout=null;D.layShow=true;
+  var layOv=document.createElement('div');layOv.id='dlayov';wrap.appendChild(layOv);
+  function layCells(){
+    var L=D.layout, T, m, g, W, H, out=[];
+    if(!L||!(T=LAYOUTS[L.id]))return out;
+    m=L.margin;g=L.gap;W=D.w-2*m;H=D.h-2*m;
+    T[3].forEach(function(c){
+      var x0=c[0]/T[1], x1=(c[0]+c[2])/T[1], y0=c[1]/T[2], y1=(c[1]+c[3])/T[2];
+      var l=Math.round(m+x0*W+(x0>0?g/2:0)), r=Math.round(m+x1*W-(x1<1?g/2:0)), t=Math.round(m+y0*H+(y0>0?g/2:0)), b=Math.round(m+y1*H-(y1<1?g/2:0));
+      out.push({x:l,y:t,w:r-l,h:b-t});
+    });
+    return out;
+  }
+  function layItems(){return D.items.filter(function(x){return x.parent==null&&!(x.type==='frame'&&x.p.group===false&&!x.p.shape);});}
+  function laySize(it){
+    var n;
+    if(isBox(it))return {w:it.w,h:it.h};
+    n=canvas.querySelector('.ditem[data-id="'+it.id+'"]');
+    return n?{w:n.offsetWidth,h:n.offsetHeight}:{w:it.w,h:it.h};
+  }
+  function layFits(it,c){var s=laySize(it);return isBox(it)?(c.w>=40&&c.h>=40):(s.w<=c.w&&s.h<=c.h);}   /* boxes stretch to any cell that is not tiny; labels, buttons and chips keep their size and must fit */
+  function layPut(it,c){
+    var s;
+    if(isBox(it)){msMove(it,c.x-it.x,c.y-it.y,{});it.w=c.w;it.h=c.h;}
+    else{s=laySize(it);msMove(it,c.x+Math.round((c.w-s.w)/2)-it.x,c.y+Math.round((c.h-s.h)/2)-it.y,{});}
+  }
+  function layCellAt(cells,x,y){var i;for(i=0;i<cells.length;i++)if(x>=cells[i].x&&x<=cells[i].x+cells[i].w&&y>=cells[i].y&&y<=cells[i].y+cells[i].h)return i;return -1;}
+  function layCellOf(cells,it){var s=laySize(it);return layCellAt(cells,it.x+s.w/2,it.y+s.h/2);}
+  function layPaint(){
+    var cells, occ={}, html='', i;
+    if(!layOv)return;
+    layOv.hidden=!(D.layout&&D.layShow);
+    layOv.innerHTML='';
+    if(layOv.hidden)return;
+    cells=layCells();
+    layItems().forEach(function(x){var k=layCellOf(cells,x);if(k>=0)occ[k]=1;});
+    for(i=0;i<cells.length;i++)html+='<i class="'+(occ[i]?'':'empty')+'" style="left:'+(cells[i].x*scale)+'px;top:'+(cells[i].y*scale)+'px;width:'+(cells[i].w*scale)+'px;height:'+(cells[i].h*scale)+'px"></i>';
+    layOv.innerHTML=html;
+  }
+  function layFill(){
+    var ids=msIds(), L=(ids.length>=2)?ids.map(byId).filter(Boolean):layItems(), cells=layCells(), used={}, rows=[], flat=[], put=0, skip=0;
+    FREE=false;
+    L.sort(function(a,b){return (a.y-b.y)||(a.x-b.x);});
+    L.forEach(function(x){var r=rows[rows.length-1];if(r&&Math.abs(x.y-r.y)<=Math.max(r.h*0.6,20)){r.items.push(x);r.h=Math.max(r.h,x.h);}else rows.push({y:x.y,h:x.h,items:[x]});});
+    rows.forEach(function(r){r.items.sort(function(a,b){return a.x-b.x;});flat=flat.concat(r.items);});
+    flat.forEach(function(it){
+      var k;for(k=0;k<cells.length;k++)if(!used[k]&&layFits(it,cells[k]))break;
+      if(k<cells.length){used[k]=1;layPut(it,cells[k]);put++;}else skip++;
+    });
+    renderAll();buildForm();commit();
+    toastDash(put?('Put '+put+(put===1?' item':' items')+' in the cells'+(skip?(', '+skip+' did not fit'):'')):(skip?'Nothing fits the cells. Try a bigger layout or smaller items':'Add some items first, then drop them on the cells'));
+  }
+  function layApply(id){
+    var old=D.layout;
+    D.layout={id:id,gap:old?old.gap:20,margin:old?old.margin:20};
+    layFill();
+  }
+  function laySpacing(gap,margin){
+    var before=layCells(), map=[], after;
+    layItems().forEach(function(x){var k=layCellOf(before,x);if(k>=0)map.push([x,k]);});
+    D.layout.gap=gap;D.layout.margin=margin;
+    after=layCells();
+    map.forEach(function(p){if(after[p[1]]&&layFits(p[0],after[p[1]]))layPut(p[0],after[p[1]]);});
+    renderAll();buildForm();commit();
+  }
+  function layRemove(){D.layout=null;layPaint();}
+  /* dropping an item on a cell puts it there; Alt places it freely */
+  function layDrop(d,wasFree){
+    var it=d.it, cells, s, k, k0, occ=null;
+    if(!D.layout||wasFree||it.parent!=null)return;
+    cells=layCells();k=layCellOf(cells,it);
+    if(k<0)return;
+    if(!layFits(it,cells[k])){msMove(it,d.ox-it.x,d.oy-it.y,{});toastDash('That cell is too small for this item');return;}
+    layItems().forEach(function(x){if(x!==it&&layCellOf(cells,x)===k)occ=x;});
+    if(occ){
+      s=laySize(it);k0=layCellAt(cells,d.ox+s.w/2,d.oy+s.h/2);
+      if(k0>=0&&k0!==k&&layFits(occ,cells[k0]))layPut(occ,cells[k0]);
+      else{msMove(it,d.ox-it.x,d.oy-it.y,{});toastDash('That cell already has an item');return;}
+    }
+    layPut(it,cells[k]);
+  }
+  var _raLay=renderAll;renderAll=function(){_raLay.apply(this,arguments);layPaint();};
+  var layPop=null, layBtn=document.getElementById('dlaybtn');
+  function layThumb(T,on,i){
+    var b=document.createElement('button'), vh=Math.round(100*D.h/D.w*10)/10, tones=['#8fbfdc','#bcd9ec','#a9b8e6','#d9e6f2','#c9b8e0','#e9d3a6'], s='';
+    b.type='button';b.className='ly-t'+(on?' on':'');b.setAttribute('data-tip',T[0]);b.setAttribute('aria-label',T[0]);
+    T[3].forEach(function(c,j){
+      var x=4+(c[0]/T[1])*92, w=(c[2]/T[1])*92, y=4+(c[1]/T[2])*(vh-8), h=(c[3]/T[2])*(vh-8);
+      s+='<rect x="'+(x+1)+'" y="'+(y+1)+'" width="'+Math.max(1,w-2)+'" height="'+Math.max(1,h-2)+'" rx="2" fill="'+tones[j%tones.length]+'"/>';
+    });
+    b.innerHTML='<svg viewBox="0 0 100 '+vh+'" aria-hidden="true">'+s+'</svg>';
+    b.addEventListener('click',function(){layApply(i);layPopBuild();});
+    return b;
+  }
+  function layPopBuild(){
+    var pop=layPop, g, row, a, b2, nt, bw, ba, bb, sh, ck, l, ia, ib;
+    if(!pop){pop=layPop=document.createElement('div');pop.id='dlaypop';pop.hidden=true;layBtn.parentNode.appendChild(pop);
+      ['mousedown','click','dblclick','keydown'].forEach(function(ev){pop.addEventListener(ev,function(e){e.stopPropagation();});});}
+    pop.innerHTML='';
+    l=document.createElement('div');l.className='gp-l';l.textContent='Layouts';pop.appendChild(l);
+    g=document.createElement('div');g.className='ly-grid';
+    LAYOUTS.forEach(function(T,i){g.appendChild(layThumb(T,!!D.layout&&D.layout.id===i,i));});
+    pop.appendChild(g);
+    nt=document.createElement('p');nt.className='gp-note';nt.textContent='Pick a layout and your items fill its cells in reading order. Drag an item onto a cell to put it there (Alt places it freely).';pop.appendChild(nt);
+    if(D.layout){
+      row=document.createElement('div');row.className='gp-row';
+      a=document.createElement('label');a.textContent='Gap';ia=document.createElement('input');ia.type='number';ia.min=0;ia.max=200;ia.value=D.layout.gap;a.appendChild(ia);
+      b2=document.createElement('label');b2.textContent='Margin';ib=document.createElement('input');ib.type='number';ib.min=0;ib.max=400;ib.value=D.layout.margin;b2.appendChild(ib);
+      var go=function(){var gv=parseInt(ia.value,10), mv=parseInt(ib.value,10);if(isNaN(gv)||isNaN(mv))return;laySpacing(Math.max(0,Math.min(200,gv)),Math.max(0,Math.min(400,mv)));};
+      ia.addEventListener('change',go);ib.addEventListener('change',go);
+      row.appendChild(a);row.appendChild(b2);pop.appendChild(row);
+      sh=document.createElement('label');sh.className='gp-chk';ck=document.createElement('input');ck.type='checkbox';ck.checked=!!D.layShow;
+      ck.addEventListener('change',function(){D.layShow=ck.checked;layPaint();});sh.appendChild(ck);sh.appendChild(document.createTextNode(' Show the cells on the canvas'));pop.appendChild(sh);
+      bw=document.createElement('div');bw.className='gp-btns';
+      ba=document.createElement('button');ba.type='button';ba.className='btn ghost';ba.textContent='Fill cells with my items';ba.addEventListener('click',function(){layFill();});
+      bb=document.createElement('button');bb.type='button';bb.className='btn ghost';bb.textContent='Remove layout';bb.addEventListener('click',function(){layRemove();layPopBuild();});
+      bw.appendChild(ba);bw.appendChild(bb);pop.appendChild(bw);
+    }
+    nt=document.createElement('p');nt.className='gp-note';nt.textContent='Frames, shapes, banners, tiles and objects stretch to fill a cell. Labels, buttons and chips keep their size and sit in the middle, and are left out if the cell is smaller than they are. Ctrl+Z undoes a fill.';pop.appendChild(nt);
+  }
+  if(layBtn)layBtn.addEventListener('click',function(e){
+    e.stopPropagation();
+    if(!layPop||layPop.hidden){D.sel=null;msClear();updateSel();buildForm();layPopBuild();layPop.hidden=false;layBtn.classList.add('on');if(gridPop){gridPop.hidden=true;if(gridBtn)gridBtn.classList.remove('on');}}else{layPop.hidden=true;layBtn.classList.remove('on');}
+  });
+  if(gridBtn)gridBtn.addEventListener('click',function(){if(layPop&&!layPop.hidden){layPop.hidden=true;layBtn.classList.remove('on');}});
+  document.addEventListener('mousedown',function(e){if(layPop&&!layPop.hidden&&!layPop.contains(e.target)&&!(layBtn&&layBtn.contains(e.target))){layPop.hidden=true;if(layBtn)layBtn.classList.remove('on');}});
   /* the zoom bar under the canvas, the Zoom list in Canvas size and grid, and the fit button all show the same zoom */
   function zoomSync(){
     var zs=document.getElementById('dzslider'), zl=document.getElementById('dzval'), zsel=document.getElementById('dzoom'), pc=Math.round(scale*100), o, i;
@@ -3399,8 +3555,8 @@ try{
   });
   document.addEventListener('mouseup',function(){
     if(!drag)return;
-    var d=drag;drag=null;FREE=false;guidesOff();
-    if(d.mode==='move'&&d.moved){d.it.parent=reparentTarget(d.it);renderAll();buildForm();commit();}
+    var d=drag, wasFree=FREE;drag=null;FREE=false;guidesOff();
+    if(d.mode==='move'&&d.moved){d.it.parent=reparentTarget(d.it);layDrop(d,wasFree);renderAll();buildForm();commit();}
     else if(d.mode==='size'){buildForm();buildList();commit();}
     updateSel();   /* the bar comes back (or stays) once the drag is over */
   });
