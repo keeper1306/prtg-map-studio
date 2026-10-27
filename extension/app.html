@@ -324,6 +324,20 @@ p.note:not(.pst){display:none!important}
 .ico:hover:not(:disabled){border-color:var(--cyan);color:var(--cyan)}
 .ico:disabled{opacity:.35;cursor:default}
 .ico.sm{width:25px;height:25px}
+#dfbar{position:absolute;z-index:100000;display:flex;align-items:center;gap:2px;padding:4px 6px;background:#fff;border:1px solid var(--g20);border-radius:10px;box-shadow:0 4px 16px rgba(15,23,42,.18);font-size:12px}
+#dfbar[hidden]{display:none}
+#dfbar .fb{width:30px;height:30px;padding:0;border:0;border-radius:7px;background:transparent;color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+#dfbar .fb svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#dfbar .fb:hover{background:var(--soft);color:var(--cyan)}
+#dfbar .fb-n{width:52px;height:28px;padding:0 4px;text-align:center;border:1px solid var(--g20);border-radius:7px;font-size:12px}
+#dfbar .fb-sep{width:1px;height:20px;background:var(--g20);margin:0 4px}
+#dfbar .fb-note{color:#6c7183;padding:0 6px;white-space:nowrap}
+.ico.md{width:36px;height:36px}
+.ico[hidden]{display:none}
+.ico.md svg{width:18px;height:18px}
+.ico.busy svg{animation:icospin .9s linear infinite}
+@keyframes icospin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.ico.busy svg{animation:none;opacity:.5}}
 .ico.sm svg{width:13px;height:13px}
 .ico.active,input[type=checkbox]:checked + label.ico{border-color:var(--cyan);color:var(--cyan);background:#eaf7fd}
 #prtgbar{display:none;align-items:center;gap:8px;padding:8px 16px;border-top:1px solid var(--g10);background:#fafbfc;font-size:12px}
@@ -628,8 +642,9 @@ fieldset{border-bottom-color:var(--line)}
     <div id="prtgbar">
       <span id="prtgdot" class="pdot off"></span><span id="prtgtxt">Not connected</span>
       <button type="button" class="btn ghost sm" id="prtgcog">Connect</button>
-      <button type="button" class="btn ghost sm" id="prtgswitch" hidden>Switch</button>
-      <button type="button" class="btn ghost sm" id="prtgdisconnect" hidden>Disconnect</button>
+      <button type="button" class="ico md" id="prtgrefresh" hidden data-tip="Refresh maps and objects" aria-label="Refresh maps and objects"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.5-4.6L4 8"/><path d="M4 4v4h4"/><path d="M4 13a8 8 0 0 0 14.5 4.6L20 16"/><path d="M20 20v-4h-4"/></svg></button>
+      <button type="button" class="ico md" id="prtgswitch" hidden data-tip="Switch server" aria-label="Switch server"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h14"/><path d="m14 4 4 4-4 4"/><path d="M20 16H6"/><path d="m10 12-4 4 4 4"/></svg></button>
+      <button type="button" class="ico md" id="prtgdisconnect" hidden data-tip="Disconnect" aria-label="Disconnect"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v8"/><path d="M6.3 6.8a8 8 0 1 0 11.4 0"/></svg></button>
     </div>
     <div id="prtgmsg" hidden><span id="prtgmsgtext"></span><button type="button" class="ico" id="prtgmsgx" aria-label="Dismiss" data-tip="Dismiss">&times;</button></div>
     <div id="editbar" hidden><span class="et" id="edittitle">Editing a dashboard item</span><button type="button" id="editcancel">Cancel</button><button type="button" id="editdone" class="solid">Done</button></div>
@@ -714,6 +729,7 @@ fieldset{border-bottom-color:var(--line)}
         <button class="btn ghost" type="button" data-add="frame">Frame</button>
         <button class="btn ghost" type="button" data-add="label">Label</button>
         <button class="btn ghost" type="button" data-add="button">Button</button>
+        <button class="btn ghost" type="button" data-add="banner">Banner</button>
         <button class="btn ghost bgpick" type="button" id="mapbgbtn" aria-expanded="false" aria-controls="bgpanel" data-tip="Change the map’s background color"><span>Background</span><i class="bgnow" id="mapbgnow"></i></button>
         <button class="btn ghost" type="button" data-add="shape">Shape</button>
         <button class="btn ghost" type="button" id="showexisting" aria-expanded="false" aria-controls="objfs">Existing PRTG objects</button>
