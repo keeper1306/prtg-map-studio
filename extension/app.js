@@ -1549,6 +1549,8 @@ try{
   }
   function maxOrd(){var m=null;D.items.forEach(function(x){var o=ordOf(x);if(m===null||o>m)m=o;});return m===null?0:m;}
   function minOrd(){var m=null;D.items.forEach(function(x){var o=ordOf(x);if(m===null||o<m)m=o;});return m===null?0:m;}
+  /* where an item sits in the stack: 1 is the very back */
+  function layerPos(it){var ord=order(), i;for(i=0;i<ord.length;i++)if(ord[i].id===it.id)return {n:i+1,total:ord.length};return {n:0,total:ord.length};}
   function layerEdge(it){
     var ord=order(), blk=groupBlock(it), ids={}; blk.forEach(function(x){ids[x.id]=1;});
     var first=-1,last=-1,i;
@@ -1584,7 +1586,26 @@ try{
     }
     renderAll();buildForm();commit();
   }
-  function snapV(v){return D.grid>0?Math.round(v/D.grid)*D.grid:Math.round(v);}
+  /* ---------- the grid: lines to see, snapping that pulls an item to them, and a way to put everything on them ----------
+     Snapping can be Magnetic (an item is pulled to a line only when it is close, so it can still go anywhere), Strict, or Off. Holding Alt while dragging moves freely. */
+  D.snap='magnet';D.gtype='square';D.cols=12;D.margin=40;D.gutter=20;D.showGrid=false;
+  var FREE=false;
+  function colLines(){
+    var N=Math.max(1,parseInt(D.cols,10)||1), m=+D.margin||0, gt=+D.gutter||0, cw=(D.w-2*m-(N-1)*gt)/N, out=[], i, a;
+    if(!(cw>=4))return null;
+    for(i=0;i<N;i++){a=m+i*(cw+gt);out.push(a,a+cw);}
+    return {lines:out,cw:cw,N:N,m:m,gt:gt};
+  }
+  function snapAxis(v,axis,force){
+    var g=D.grid>0?D.grid:10, mode=force||D.snap||'magnet', near, cl, i;
+    if(mode==='off'||(FREE&&!force))return Math.round(v);
+    if(axis==='x'&&D.gtype==='cols'&&(cl=colLines())){near=cl.lines[0];for(i=1;i<cl.lines.length;i++)if(Math.abs(cl.lines[i]-v)<Math.abs(near-v))near=cl.lines[i];}
+    else near=Math.round(v/g)*g;
+    if(mode==='strict'||force)return Math.round(near);
+    return Math.abs(near-v)<=Math.min(g/2,8/scale)?Math.round(near):Math.round(v);
+  }
+  function snapV(v){return snapAxis(v,'y');}
+  function snapX(v){return snapAxis(v,'x');}
   /* ---- several items at once: Shift+click adds or removes an item; the bar above the canvas then aligns or spaces them out ---- */
   var MS={};
   function msIds(){return Object.keys(MS).map(Number).filter(function(id){return !!byId(id);});}
@@ -2390,12 +2411,14 @@ try{
     sep();
     var yb=fbarBtn('fb-t','Layer: forward or backward',FB_SVG.layer,function(){fbToggle(yp,yb);fbarSync(it);});
     var yp=el_('div','fb-pop fb-layer');yp.hidden=true;fbStop(yp);
-    R.ly={};
+    R.ly={};R.lyTitle=el_('div','fb-lyt','');yp.appendChild(R.lyTitle);
+    R.lyBadge=el_('span','fb-badge','');
     [['front','Bring to front',function(){bringToFront(it);}],['fwd','Bring forward',function(){stepLayer(it,1);}],['back','Send backward',function(){stepLayer(it,-1);}],['bottom','Send to back',function(){sendToBack(it);}]].forEach(function(d){
       var b=el_('button','btn ghost',d[1]);b.type='button';
       b.addEventListener('click',function(e){e.stopPropagation();d[2]();fbarSync(it);});
       yp.appendChild(b);R.ly[d[0]]=b;
     });
+    yb.appendChild(R.lyBadge);
     fbar.appendChild(yb);fbar.appendChild(yp);R.lyBtn=yb;
     sep();
     fbar.appendChild(fbarBtn('','Duplicate',FB_SVG.dup,function(){dup(it);}));
@@ -2418,6 +2441,7 @@ try{
       var x=r.d.a[0]();if(document.activeElement===r.c)return;
       if(r.d.k==='chk')r.c.checked=!!x;else if(r.d.k==='color'){if(/^#[0-9a-f]{6}$/i.test(String(x)))r.c.value=x;}else r.c.value=String(x);
     });
+    if(R.ly){var lq=layerPos(it);R.lyTitle.textContent='Layer '+lq.n+' of '+lq.total+(lq.n===lq.total?' (front)':(lq.n===1?' (back)':''));R.lyBadge.textContent=String(lq.n);R.lyBtn.setAttribute('data-tip','Layer '+lq.n+' of '+lq.total);}
     if(R.ly){var ed=layerEdge(it);R.ly.front.disabled=ed.atTop;R.ly.fwd.disabled=ed.atTop;R.ly.back.disabled=ed.atBottom;R.ly.bottom.disabled=ed.atBottom;}
     if(R.color&&A.color){var cv=String(A.color[0]()||'#000000');if(/^#[0-9a-f]{6}$/i.test(cv)&&document.activeElement!==R.color)R.color.value=cv;R.colorBox.style.setProperty('--sw',cv);}
     if(R.fill&&R.fillD){var fv=String(R.fillD.a[0]()||'#FFFFFF');if(/^#[0-9a-f]{6}$/i.test(fv)){if(document.activeElement!==R.fill)R.fill.value=fv;R.fillBox.style.setProperty('--sw',fv);}}
@@ -2461,9 +2485,116 @@ try{
     canvas.style.width=D.w+'px';canvas.style.height=D.h+'px';
     canvas.style.transform='scale('+scale+')';
     wrap.style.width=Math.round(D.w*scale)+'px';wrap.style.height=Math.round(D.h*scale)+'px';
-    zoomSync();
+    zoomSync();gridPaint();
     updateSel();
   }
+  var gridOv=document.createElement('div');gridOv.id='dgridov';wrap.appendChild(gridOv);
+  function gridPaint(){
+    var g=D.grid>0?D.grid:10, sp=g*scale, cl, c='rgba(0,125,184,.16)', c2='rgba(0,125,184,.30)', html='', i;
+    if(!gridOv)return;
+    gridOv.innerHTML='';gridOv.style.backgroundImage='';
+    gridOv.hidden=!D.showGrid;
+    if(!D.showGrid)return;
+    if(D.gtype==='cols'&&(cl=colLines())){
+      for(i=0;i<cl.N;i++)html+='<i style="left:'+((cl.m+i*(cl.cw+cl.gt))*scale)+'px;width:'+(cl.cw*scale)+'px"></i>';
+      gridOv.innerHTML=html;
+      if(sp>=4){gridOv.style.backgroundImage='linear-gradient(to bottom,'+c+' 1px,transparent 1px)';gridOv.style.backgroundSize=sp+'px '+sp+'px';}
+    }else if(sp>=4){
+      gridOv.style.backgroundImage='linear-gradient(to right,'+c2+' 1px,transparent 1px),linear-gradient(to bottom,'+c2+' 1px,transparent 1px),linear-gradient(to right,'+c+' 1px,transparent 1px),linear-gradient(to bottom,'+c+' 1px,transparent 1px)';
+      gridOv.style.backgroundSize=(sp*5)+'px '+(sp*5)+'px,'+(sp*5)+'px '+(sp*5)+'px,'+sp+'px '+sp+'px,'+sp+'px '+sp+'px';
+    }
+  }
+  function gridSync(){
+    var sel=document.getElementById('dgrid'), i, has=false;
+    if(!sel)return;
+    for(i=0;i<sel.options.length;i++)if(sel.options[i].value===String(D.grid))has=true;
+    if(!has){var o=document.createElement('option');o.value=String(D.grid);o.textContent=D.grid+' px';sel.appendChild(o);}
+    sel.value=(D.snap==='off')?'0':String(D.grid);
+  }
+  /* put every item (or the ones selected with Shift+click) exactly on the grid: position, and the size of a box */
+  function gridSnapAll(){
+    var ids=msIds(), scopeL=(ids.length>=2)?ids.map(byId):D.items.filter(function(x){return !(x.type==='frame'&&x.p.group===false&&!x.p.shape);}), n=0;
+    FREE=false;
+    scopeL.forEach(function(it){
+      if(!it)return;
+      var ox=it.x, oy=it.y, ow=it.w, oh=it.h, r, b;
+      it.x=snapAxis(ox,'x','strict');it.y=snapAxis(oy,'y','strict');
+      if(isBox(it)){r=snapAxis(ox+ow,'x','strict');b=snapAxis(oy+oh,'y','strict');it.w=Math.max(40,r-it.x);it.h=Math.max(40,b-it.y);}
+      if(it.x!==ox||it.y!==oy||it.w!==ow||it.h!==oh)n++;
+    });
+    renderAll();buildForm();commit();toastDash(n?('Snapped '+n+(n===1?' item':' items')+' to the grid'):'Everything is on the grid already');
+  }
+  /* lay the items out in rows on the grid, in reading order; on a column grid each item takes a whole number of columns */
+  function gridArrange(){
+    var ids=msIds(), g=D.grid>0?D.grid:10, cl=(D.gtype==='cols')?colLines():null, scopeL, inS={}, rows=[], flat=[], minX, minY, gap, cx, cy, rowH=0, col=0, startX, limitX;
+    FREE=false;
+    scopeL=(ids.length>=2)?ids.map(byId).filter(Boolean):D.items.filter(function(x){return x.parent==null&&!(x.type==='frame'&&x.p.group===false&&!x.p.shape);});
+    scopeL.forEach(function(x){inS[x.id]=1;});
+    scopeL=scopeL.filter(function(x){var a=x.parent, pa;while(a!=null){if(inS[a])return false;pa=byId(a);a=pa?pa.parent:null;}return true;});   /* what is inside a frame moves with it */
+    if(scopeL.length<1)return;
+    scopeL.sort(function(a,b){return (a.y-b.y)||(a.x-b.x);});
+    scopeL.forEach(function(x){var r=rows[rows.length-1];if(r&&Math.abs(x.y-r.y)<=Math.max(r.h*0.6,g*2)){r.items.push(x);r.h=Math.max(r.h,x.h);}else rows.push({y:x.y,h:x.h,items:[x]});});
+    rows.forEach(function(r){r.items.sort(function(a,b){return a.x-b.x;});flat=flat.concat(r.items);});
+    minX=Math.min.apply(null,flat.map(function(x){return x.x;}));minY=Math.min.apply(null,flat.map(function(x){return x.y;}));
+    gap=cl?cl.gt:Math.max(g*2,20);
+    startX=cl?cl.m:snapAxis(minX,'x','strict');limitX=D.w-(cl?cl.m:startX);
+    cx=startX;cy=snapAxis(minY,'y','strict');
+    flat.forEach(function(it){
+      var nx, span;
+      if(cl){
+        span=Math.max(1,Math.min(cl.N,Math.round((it.w+cl.gt)/(cl.cw+cl.gt))));
+        if(col>0&&col+span>cl.N){col=0;cy=snapAxis(cy+rowH+gap,'y','strict');rowH=0;}
+        nx=Math.round(cl.m+col*(cl.cw+cl.gt));
+        if(isBox(it))it.w=Math.round(span*cl.cw+(span-1)*cl.gt);
+        col+=span;
+      }else{
+        if(cx>startX&&cx+it.w>limitX){cx=startX;cy=snapAxis(cy+rowH+gap,'y','strict');rowH=0;}
+        nx=cx;cx=snapAxis(cx+it.w+gap,'x','strict');
+      }
+      msMove(it,nx-it.x,cy-it.y,{});
+      rowH=Math.max(rowH,it.h);
+    });
+    renderAll();buildForm();commit();toastDash('Arranged '+flat.length+(flat.length===1?' item':' items')+' on the grid');
+  }
+  /* the Grid button next to undo and redo opens this */
+  var gridPop=null, gridBtn=document.getElementById('dgridbtn');
+  function gridPopBuild(){
+    var pop=gridPop, seg, sec, row;
+    if(!pop){pop=gridPop=document.createElement('div');pop.id='dgridpop';pop.hidden=true;gridBtn.parentNode.appendChild(pop);
+      ['mousedown','click','dblclick','keydown'].forEach(function(ev){pop.addEventListener(ev,function(e){e.stopPropagation();});});}
+    pop.innerHTML='';
+    function lab(t){var l=document.createElement('div');l.className='gp-l';l.textContent=t;return l;}
+    function segment(opts,cur,fn){var d=document.createElement('div');d.className='gp-seg';opts.forEach(function(o){var b=document.createElement('button');b.type='button';b.textContent=o[1];if(o[0]===cur)b.className='on';b.addEventListener('click',function(){fn(o[0]);});d.appendChild(b);});return d;}
+    function sel(opts,cur,fn){var s2=document.createElement('select');opts.forEach(function(o){var op=document.createElement('option');op.value=String(o[0]);op.textContent=o[1];s2.appendChild(op);});s2.value=String(cur);s2.addEventListener('change',function(){fn(s2.value);});return s2;}
+    function num(cur,mn,mx,fn){var i=document.createElement('input');i.type='number';i.min=mn;i.max=mx;i.value=cur;i.addEventListener('input',function(){var v=parseInt(i.value,10);if(!isNaN(v)){fn(Math.max(mn,Math.min(mx,v)));gridPaint();}});return i;}
+    pop.appendChild(lab('Grid'));
+    pop.appendChild(segment([['square','Squares'],['cols','Columns']],D.gtype,function(v){D.gtype=v;gridPopBuild();gridPaint();}));
+    row=document.createElement('div');row.className='gp-row';
+    if(D.gtype==='cols'){
+      var a=document.createElement('label');a.textContent='Columns';a.appendChild(sel([[2,'2'],[3,'3'],[4,'4'],[6,'6'],[8,'8'],[12,'12']],D.cols,function(v){D.cols=parseInt(v,10);gridPaint();}));
+      var b2=document.createElement('label');b2.textContent='Margin';b2.appendChild(num(D.margin,0,400,function(v){D.margin=v;}));
+      var c=document.createElement('label');c.textContent='Gutter';c.appendChild(num(D.gutter,0,200,function(v){D.gutter=v;}));
+      row.appendChild(a);row.appendChild(b2);row.appendChild(c);
+    }
+    var sz=document.createElement('label');sz.textContent=(D.gtype==='cols')?'Row lines':'Square size';
+    sz.appendChild(sel([[5,'5 px'],[10,'10 px'],[20,'20 px'],[40,'40 px'],[80,'80 px']],D.grid>0?D.grid:10,function(v){D.grid=parseInt(v,10);if(D.snap==='off')D.snap='magnet';gridSync();gridPaint();}));
+    row.appendChild(sz);pop.appendChild(row);
+    var sh=document.createElement('label');sh.className='gp-chk';var ck=document.createElement('input');ck.type='checkbox';ck.checked=!!D.showGrid;
+    ck.addEventListener('change',function(){D.showGrid=ck.checked;gridPaint();});sh.appendChild(ck);sh.appendChild(document.createTextNode(' Show the grid on the canvas'));pop.appendChild(sh);
+    pop.appendChild(lab('Snapping'));
+    pop.appendChild(segment([['off','Off'],['magnet','Magnetic'],['strict','Strict']],D.snap,function(v){D.snap=v;gridSync();gridPopBuild();}));
+    var hint=document.createElement('p');hint.className='gp-note';hint.textContent='Magnetic pulls an item onto a line only when it is close, so you can still place it anywhere. Hold Alt while dragging to move freely.';pop.appendChild(hint);
+    pop.appendChild(lab('Put items on the grid'));
+    var ba=document.createElement('button');ba.type='button';ba.className='btn ghost';ba.textContent='Snap items to the grid';ba.addEventListener('click',function(){gridSnapAll();});
+    var bb=document.createElement('button');bb.type='button';bb.className='btn ghost';bb.textContent='Arrange items in rows';bb.addEventListener('click',function(){gridArrange();});
+    var bw=document.createElement('div');bw.className='gp-btns';bw.appendChild(ba);bw.appendChild(bb);pop.appendChild(bw);
+    var nt=document.createElement('p');nt.className='gp-note';nt.textContent='Both work on the items you Shift+click, or on everything when none are selected. Ctrl+Z undoes them.';pop.appendChild(nt);
+  }
+  if(gridBtn)gridBtn.addEventListener('click',function(e){
+    e.stopPropagation();
+    if(!gridPop||gridPop.hidden){gridPopBuild();gridPop.hidden=false;gridBtn.classList.add('on');}else{gridPop.hidden=true;gridBtn.classList.remove('on');}
+  });
+  document.addEventListener('mousedown',function(e){if(gridPop&&!gridPop.hidden&&!gridPop.contains(e.target)&&!(gridBtn&&gridBtn.contains(e.target))){gridPop.hidden=true;if(gridBtn)gridBtn.classList.remove('on');}});
   /* the zoom bar under the canvas, the Zoom list in Canvas size and grid, and the fit button all show the same zoom */
   function zoomSync(){
     var zs=document.getElementById('dzslider'), zl=document.getElementById('dzval'), zsel=document.getElementById('dzoom'), pc=Math.round(scale*100), o, i;
@@ -2510,6 +2641,7 @@ try{
       if(len>longest)longest=len;
       var row=el_('div','drow'+(it.id===D.sel?' on':''));
       row.style.paddingLeft=(8+depthOf(it)*14)+'px';
+      var lno=el_('span','lno',String(ord.indexOf(it)+1));lno.title='Layer '+(ord.indexOf(it)+1)+' of '+ord.length+' (1 is the back)';row.appendChild(lno);
       row.appendChild(el_('span','ico',ICON[it.type]));
       var nm=el_('span','nm');nm.textContent=itemName(it);row.appendChild(nm);
       var meta=el_('span','meta');meta.textContent=Math.round(it.x)+','+Math.round(it.y)+'  '+Math.round(it.w)+'\u00D7'+Math.round(it.h)+'  '+(it.type==='prtgobj'?'file':len+' ch');
@@ -2615,7 +2747,8 @@ try{
   }
   function layerRow(it){
     var w=el_('div','dfld'), row=el_('div','lyrbtns'), e=layerEdge(it);
-    w.appendChild(el_('label',null,'Layer'));
+    var lp=layerPos(it);
+    w.appendChild(el_('label',null,'Layer '+lp.n+' of '+lp.total+(lp.n===lp.total?' (front)':(lp.n===1?' (back)':''))));
     var bBot=el_('button','btn ghost','\u2913');bBot.type='button';bBot.title='Send to back';bBot.disabled=e.atBottom;
     var bDn=el_('button','btn ghost','\u25bc');bDn.type='button';bDn.title='Send backward';bDn.disabled=e.atBottom;
     var bUp=el_('button','btn ghost','\u25b2');bUp.type='button';bUp.title='Bring forward';bUp.disabled=e.atTop;
@@ -2977,10 +3110,10 @@ try{
       var siblings=0;
       D.items.forEach(function(x){if(x.parent===it.parent&&!(x.type==='frame'&&x.p.group===false))siblings++;});
       var off=(siblings%8)*20;
-      if(host){it.x=snapV(host.x+20+off);it.y=snapV(host.y+((host.p.title)?58:20)+off);}
-      else{it.x=snapV(40+off);it.y=snapV(40+off);}
+      if(host){it.x=snapX(host.x+20+off);it.y=snapV(host.y+((host.p.title)?58:20)+off);}
+      else{it.x=snapX(40+off);it.y=snapV(40+off);}
       if(extra&&extra.at){   /* placed or dropped: where you let go, and inside the smallest frame you let go on */
-        it.x=snapV(extra.at.x);it.y=snapV(extra.at.y);
+        it.x=snapX(extra.at.x);it.y=snapV(extra.at.y);
         var bf=null, ba=1e18;
         D.items.forEach(function(f){if(isGroupFrame(f)&&extra.at.x>=f.x&&extra.at.x<=f.x+f.w&&extra.at.y>=f.y&&extra.at.y<=f.y+f.h&&f.w*f.h<ba){ba=f.w*f.h;bf=f.id;}});
         it.parent=bf;
@@ -3237,11 +3370,12 @@ try{
   });
   document.addEventListener('mousemove',function(e){
     if(!drag)return;
+    FREE=!!e.altKey;
     var dx=(e.clientX-drag.sx)/scale, dy=(e.clientY-drag.sy)/scale;
     if(drag.mode==='move'){
       if(!drag.moved&&(Math.abs(dx)+Math.abs(dy))<3)return;
       drag.moved=true;
-      var nx=snapV(drag.ox+dx), ny=snapV(drag.oy+dy);
+      var nx=snapX(drag.ox+dx), ny=snapV(drag.oy+dy);
       if(e.altKey)guidesOff();else{var gs=guideSnap(drag.it,nx,ny,drag.it.w,drag.it.h,drag.skip||{},'move');nx=gs.x;ny=gs.y;}
       var ddx=nx-drag.ox, ddy=ny-drag.oy;
       drag.it.x=nx;drag.it.y=ny;place(drag.it);
@@ -3249,9 +3383,9 @@ try{
       updateSel();
     }else if(drag.mode==='size'){
       var ax=drag.ax||'se', mn=isBox(drag.it)?40:20, nx=drag.ox, ny=drag.oy, nw=drag.ow, nh=drag.oh, gz;
-      if(ax.indexOf('e')>=0)nw=snapV(drag.ow+dx);
-      if(ax.indexOf('s')>=0)nh=snapV(drag.oh+dy);
-      if(ax.indexOf('w')>=0){nx=snapV(drag.ox+dx);nw=drag.ox+drag.ow-nx;}
+      if(ax.indexOf('e')>=0)nw=snapX(drag.ox+drag.ow+dx)-drag.ox;
+      if(ax.indexOf('s')>=0)nh=snapV(drag.oy+drag.oh+dy)-drag.oy;
+      if(ax.indexOf('w')>=0){nx=snapX(drag.ox+dx);nw=drag.ox+drag.ow-nx;}
       if(ax.indexOf('n')>=0){ny=snapV(drag.oy+dy);nh=drag.oy+drag.oh-ny;}
       if(!e.altKey&&ax.indexOf('w')<0&&ax.indexOf('n')<0){gz=guideSnap(drag.it,nx,ny,nw,nh,{},'size');nw=gz.w;nh=gz.h;}else guidesOff();
       nw=Math.max(mn,nw);nh=Math.max(mn,nh);
@@ -3265,7 +3399,7 @@ try{
   });
   document.addEventListener('mouseup',function(){
     if(!drag)return;
-    var d=drag;drag=null;guidesOff();
+    var d=drag;drag=null;FREE=false;guidesOff();
     if(d.mode==='move'&&d.moved){d.it.parent=reparentTarget(d.it);renderAll();buildForm();commit();}
     else if(d.mode==='size'){buildForm();buildList();commit();}
     updateSel();   /* the bar comes back (or stays) once the drag is over */
@@ -3304,7 +3438,11 @@ try{
   });
   document.getElementById('dundo').addEventListener('click',doUndo);
   document.getElementById('dredo').addEventListener('click',doRedo);
-  document.getElementById('dgrid').addEventListener('change',function(){D.grid=parseInt(this.value,10)||0;});
+  document.getElementById('dgrid').addEventListener('change',function(){
+    var v=parseInt(this.value,10)||0;
+    if(v===0)D.snap='off';else{D.grid=v;if(D.snap==='off')D.snap='magnet';}
+    gridSync();gridPaint();
+  });
   document.getElementById('dzoom').addEventListener('change',function(){D.zoom=this.value;applyScale();});
   document.getElementById('dfit').addEventListener('click',function(){setZoom('fit');});
   document.getElementById('dzslider').addEventListener('input',function(){
