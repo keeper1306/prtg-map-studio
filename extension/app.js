@@ -3296,6 +3296,16 @@ try{
     return S.catalog?('PRTG lists '+S.catalog.length+(S.catalog.length===1?' object file.':' object files.')+' Pick one and add it to the canvas, then choose what it shows. Files you make in the Object builder appear here once they are in PRTG\u2019s mapobjects folder.'):'Connect to PRTG (step 1) to load the objects PRTG has. Files you make in the Object builder appear here once they are in PRTG\u2019s mapobjects folder.';
   }
   /* read only the list of object files again; the login, the maps and what is selected stay as they are */
+  /* objects saved in Your objects that this PRTG server does not list: usually installed on a different PRTG core server */
+  function missingMineText(){
+    var lib=libLoad(), miss=[], f, k;
+    for(f in lib){
+      k=keyOf(lib[f].cat,lib[f].name);
+      if(!S.catalog.some(function(e){return keyOf(e.cat,e.name)===k;}))miss.push(String(lib[f].name||f));
+    }
+    if(!miss.length)return '';
+    return ' Not found on this PRTG server: '+miss.slice(0,5).join(', ')+(miss.length>5?' and '+(miss.length-5)+' more':'')+'. Were they installed on a different PRTG core server? The install script and ZIP put files on the computer where you run them.';
+  }
   function refreshObjects(){
     var b=$('objrefresh'), had=S.catalog?S.catalog.length:0;
     if(!(S.maps&&S.objFile)||b.disabled)return;
@@ -3306,7 +3316,7 @@ try{
       PV.cache={};PV.pending={};PV.inflight={};PV.queue=[];PV.applied={};
       renderObjList();pickerSync();pvSync();
       now=S.catalog.length;
-      $('objnote').textContent=objNoteText()+(now>had?' '+(now-had)+' new since the last read.':(now<had?' '+(had-now)+' fewer than the last read.':' No change since the last read.'));
+      $('objnote').textContent=objNoteText()+(now>had?' '+(now-had)+' new since the last read.':(now<had?' '+(had-now)+' fewer than the last read.':' No change since the last read.'))+missingMineText();
     }).catch(function(err){
       if(err&&err.status===401)authNeeded();
       $('objnote').textContent='Could not refresh the list: '+((err&&err.message)||'no answer from PRTG')+' The list below is unchanged.';
@@ -5225,7 +5235,8 @@ try{
     o.push('      Write-Host ($word + $name); $made++');
     o.push('    } catch { Write-Host (\'FAILED    \' + $name + \': \' + $_.Exception.Message) }');
     o.push('  }');
-    o.push("  Write-Host ('Done. ' + $made + ' file(s) written to ' + $dir)");
+    o.push("  Write-Host ('Done. ' + $made + ' file(s) written to ' + $dir + ' on the computer ' + $env:COMPUTERNAME)");
+    o.push("  Write-Host 'They will only appear in a PRTG core server that runs on this computer. If the Map designer is connected to another PRTG server, install them there.'");
     o.push("  if (Test-Path -LiteralPath $backup) { Write-Host ('Replaced files were backed up to ' + $backup) }");
     o.push("  Write-Host 'Reload the Map Designer to see them.'");
     o.push('}');
