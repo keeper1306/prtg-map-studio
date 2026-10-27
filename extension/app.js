@@ -8468,6 +8468,101 @@ try{
     return o.join('\n')+'\n';
   }
 
+  /* ====================== geo map ====================== */
+  /* PRTG draws the Geo Map itself: the template only holds one tag (locationlist) that PRTG expands into the map and its markers.
+     What this object can change is the look of those markers, through the object's own style block. */
+  var GMSTATES=[
+    {id:'up',      label:'Up',                  col:'#B8C419', g:'up'},
+    {id:'warn',    label:'Warning',             col:'#F5C500', g:'warning'},
+    {id:'down',    label:'Down',                col:'#E30613', g:'down'},
+    {id:'downack', label:'Down (Acknowledged)', col:'#E67278', g:'ack'},
+    {id:'unusual', label:'Unusual',             col:'#F59C00', g:'unusual'},
+    {id:'paused',  label:'Paused',              col:'#477EC0', g:'paused'},
+    {id:'unknown', label:'Unknown',             col:'#878787', g:'unknown'}
+  ];
+  /* line symbols on a 24 grid, drawn with a 2 px round stroke */
+  var GMSYMS=[
+    ['pin','Pin','<path d="M12 21s-6-5.5-6-10a6 6 0 0 1 12 0c0 4.5-6 10-6 10z"/><circle cx="12" cy="11" r="2"/>'],
+    ['server','Server','<rect x="4" y="4" width="16" height="6" rx="1.5"/><rect x="4" y="14" width="16" height="6" rx="1.5"/><path d="M8 7h.01M8 17h.01"/>'],
+    ['router','Router','<rect x="3" y="14" width="18" height="6" rx="1.5"/><path d="M7 17h.01M11 17h.01M8 14l-2-4M16 14l2-4"/>'],
+    ['network','Network','<circle cx="12" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><path d="M12 7v5M12 12l-6 5M12 12l6 5"/>'],
+    ['database','Database','<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3"/>'],
+    ['cloud','Cloud','<path d="M7 18a4 4 0 0 1-.6-7.96A5.5 5.5 0 0 1 17 9.5a4.2 4.2 0 0 1 0 8.5z"/>'],
+    ['wifi','Wi-Fi','<path d="M3 9a14 14 0 0 1 18 0M6 12.5a9.5 9.5 0 0 1 12 0M9 16a5 5 0 0 1 6 0"/><path d="M12 19.5h.01"/>'],
+    ['antenna','Antenna','<path d="M12 12v9M8 21h8"/><circle cx="12" cy="10" r="2"/><path d="M7.5 5.5a6.4 6.4 0 0 0 0 9M16.5 5.5a6.4 6.4 0 0 1 0 9"/>'],
+    ['building','Building','<rect x="5" y="3" width="14" height="18" rx="1.5"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2"/>'],
+    ['home','Home','<path d="M4 11l8-7 8 7M6 10v10h12V10"/>'],
+    ['globe','Globe','<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>'],
+    ['laptop','Laptop','<rect x="5" y="5" width="14" height="10" rx="1.5"/><path d="M3 19h18"/>'],
+    ['phone','Phone','<rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 18h2"/>'],
+    ['printer','Printer','<path d="M7 9V4h10v5M7 17H4v-7h16v7h-3"/><rect x="7" y="14" width="10" height="6"/>'],
+    ['camera','Camera','<path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>'],
+    ['thermo','Thermometer','<path d="M10 14V5a2 2 0 0 1 4 0v9a4 4 0 1 1-4 0z"/>'],
+    ['shield','Shield','<path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/>'],
+    ['lock','Lock','<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>'],
+    ['flag','Flag','<path d="M6 21V4M6 4h11l-2 4 2 4H6"/>'],
+    ['star','Star','<path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 16.9 6.8 19.7l1-5.9L3.5 9.7l5.9-.8z"/>'],
+    ['bolt','Bolt','<path d="M13 4.5L6.5 13.5h5L10.8 19.5 17.5 10.5h-5z"/>'],
+    ['heart','Heart','<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>']
+  ];
+  function gmSym(id){var r=GMSYMS[0];GMSYMS.forEach(function(s){if(s[0]===id)r=s;});return r;}
+  function blankGM(){
+    var cols={};GMSTATES.forEach(function(s){cols[s.id]=s.col;});
+    return {type:'geomap',cat:'Geo Maps',name:'Geo map with my markers',fname:'',initW:0,initH:0,look:lookOf('Minimal'),
+      shape:'card',icon:'device',sym:'pin',palette:'prtg',cols:cols,shadow:true,legend:50};
+  }
+  function gmClass(G){return 'pgm_'+slugOf(G.name);}
+  function gmColor(G,id){
+    var r='#888888';
+    GMSTATES.forEach(function(s){if(s.id===id)r=(G.palette==='custom'&&G.cols&&G.cols[id])?G.cols[id]:s.col;});
+    return r;
+  }
+  function gmSvgUrl(path,col){
+    var svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="'+col+'" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">'+path+'</svg>';
+    return 'url("data:image/svg+xml,'+encodeURIComponent(svg)+'")';
+  }
+  function gmCss(G,cls){
+    var c=[], solid=(G.shape==='badge'||G.shape==='circle'), sz=(G.shape==='card')?14:16, mk='.'+cls+' .map-marker';
+    if(G.shape!=='card'){
+      c.push(mk+'{width:24px !important;height:24px !important;box-sizing:border-box !important;'+(G.shape==='badge'?'border-radius:7px':'border-radius:50%')+' !important;'+(solid?'border:0 !important;':'border-style:solid !important;border-width:3px !important;')+'}');
+    }
+    if(!G.shadow)c.push(mk+'{box-shadow:none !important;}');
+    GMSTATES.forEach(function(s){
+      var col=gmColor(G,s.id), ink=solid?fgOn(col):col, r=[];
+      if(G.shape==='card')r.push('border-color:'+col+' !important');
+      else if(solid)r.push('background:'+col+' !important');
+      else r.push('border-color:'+col+' !important');
+      c.push(mk+'.'+s.id+'{'+r.join(';')+';}');
+      if(G.icon!=='device'){
+        var path=(G.icon==='status')?GLYPH[s.g]:gmSym(G.sym)[2];
+        c.push(mk+'.'+s.id+' a{background-image:'+gmSvgUrl(path,ink)+' !important;background-size:'+sz+'px '+sz+'px !important;background-repeat:no-repeat !important;background-position:center !important;}');
+      }
+    });
+    return c.join('\n');
+  }
+  function buildGeoMap(G){
+    var o=[], cls=gmClass(G), w=parseInt(G.initW,10), h=parseInt(G.initH,10), n=parseInt(G.legend,10);
+    var init=(w>0&&h>0)?' initialwidth="'+Math.min(w,4000)+'" initialheight="'+Math.min(h,4000)+'"':'';
+    if(isNaN(n)||n<0)n=50;
+    o.push('<!'+'--'+clean(G.cat||'Geo Maps')+': '+clean(G.name||'Geo map')+'-->');
+    o.push('<style>');
+    o.push('.onepreview .geomap-preview{');o.push('\theight: 176px;');o.push('}');
+    o.push(gmCss(G,cls));
+    o.push('</style>');
+    o.push('<div class="map_object map_graph geomap-preview '+cls+'" id="<@itemid>" objectid="<@objectid>" subid="<@subid>"'+init+' style="<#mapobject type="coordinates" subid="<@subid>" mode="<@editmode>">">');
+    o.push('<#mapobject type="objectgrip" mode="<@editmode>">');
+    o.push('<#mapobject type="htmlbefore" subid="<@subid>">');
+    o.push('<#checkobjecttype objecttype="probenode,group,device" nicemessage="true" id="<@objectid>">');
+    o.push('');
+    o.push('\t  <div id="map-geomap-box" class="geomap  <#selectionlist content="geomapprovider">">');
+    o.push('\t\t\t<#selectionlist content="locationlist" id="<@objectid>" domobjectid="map-geomap-box" width="<@width>" height="<@height>" maxlegenditems="'+n+'">');
+    o.push('\t\t</div>');
+    o.push('');
+    o.push('  <#mapobject type="htmlafter" subid="<@subid>">');
+    o.push('</div>');
+    return o.join('\n')+'\n';
+  }
+
   /*PURE2-END*/
 
   /* ---------- helpers ---------- */
@@ -8499,8 +8594,8 @@ try{
   }
 
   var FRAMEAPI=DASHAPI.frame||null, FRM={frame:null,bg:null,shape:null};
-  var T=blankT(), G=blankG(), GR=blankGR(), DN=blankD(), IC=blankI(), SC=blankSC(), TL=blankTL(), TYPE='label', syncs=[], vis=[], hostEl=document.getElementById('objpanel');
-  function M(){return TYPE==='gauge'?G:((TYPE==='frame'||TYPE==='bg'||TYPE==='shape')?FRc():(TYPE==='graph'?GR:(TYPE==='donut'?DN:(TYPE==='icon'?IC:(TYPE==='status'?SC:(TYPE==='tile'?TL:T))))));}
+  var T=blankT(), G=blankG(), GR=blankGR(), DN=blankD(), IC=blankI(), SC=blankSC(), TL=blankTL(), GM=blankGM(), TYPE='label', syncs=[], vis=[], hostEl=document.getElementById('objpanel');
+  function M(){return TYPE==='gauge'?G:((TYPE==='frame'||TYPE==='bg'||TYPE==='shape')?FRc():(TYPE==='graph'?GR:(TYPE==='donut'?DN:(TYPE==='icon'?IC:(TYPE==='status'?SC:(TYPE==='tile'?TL:(TYPE==='geomap'?GM:T)))))));}
   /* Frame and Background are the Dashboard's own frame, pasted into a Custom HTML item. The Dashboard hands over its generator, so the code is the same. */
   function blankFR(kind){
     var p=(kind==='shape')?FRAMEAPI.newShapeP('arrow'):FRAMEAPI.newFrameP(kind==='bg'?'Background dark':'Light card');
@@ -8994,8 +9089,8 @@ try{
 
   /* ---------- undo, redo and reset: every object type keeps its own history ---------- */
   var HIST={}, HLOCK=false, undoBtn=null, redoBtn=null;
-  function hModelGet(k){return k==='table'?T:(k==='gauge'?G:(k==='graph'?GR:(k==='donut'?DN:(k==='icon'?IC:(k==='status'?SC:(k==='tile'?TL:(FRM[k]||(FRM[k]=blankFR(k)))))))));}
-  function hModelSet(k,m){if(k==='table')T=m;else if(k==='gauge')G=m;else if(k==='graph')GR=m;else if(k==='donut')DN=m;else if(k==='icon')IC=m;else if(k==='status')SC=m;else if(k==='tile')TL=m;else FRM[k]=m;}
+  function hModelGet(k){return k==='table'?T:(k==='gauge'?G:(k==='graph'?GR:(k==='donut'?DN:(k==='icon'?IC:(k==='status'?SC:(k==='tile'?TL:(k==='geomap'?GM:(FRM[k]||(FRM[k]=blankFR(k))))))))));}
+  function hModelSet(k,m){if(k==='table')T=m;else if(k==='gauge')G=m;else if(k==='graph')GR=m;else if(k==='donut')DN=m;else if(k==='icon')IC=m;else if(k==='status')SC=m;else if(k==='tile')TL=m;else if(k==='geomap')GM=m;else FRM[k]=m;}
   function hUpdate(){
     var h_=HIST[TYPE];
     if(undoBtn)undoBtn.disabled=!(h_&&h_.i>0);
@@ -9027,7 +9122,7 @@ try{
   function resetCurrent(){
     var k=TYPE;
     if(isLegacy(k))return;
-    if(k==='table')T=blankT();else if(k==='gauge')G=blankG();else if(k==='graph')GR=blankGR();else if(k==='donut')DN=blankD();else if(k==='icon')IC=blankI();else if(k==='status')SC=blankSC();else if(k==='tile')TL=blankTL();else FRM[k]=blankFR(k);
+    if(k==='table')T=blankT();else if(k==='gauge')G=blankG();else if(k==='graph')GR=blankGR();else if(k==='donut')DN=blankD();else if(k==='icon')IC=blankI();else if(k==='status')SC=blankSC();else if(k==='tile')TL=blankTL();else if(k==='geomap')GM=blankGM();else FRM[k]=blankFR(k);
     ED.sel=null;buildPresetOptions();refreshUI();render();
     toast('Reset. Ctrl+Z brings it back.');
   }
@@ -9457,6 +9552,21 @@ try{
     prevEl.innerHTML=html+'</div></div>';
     applyBg(L);
   }
+
+  /* the Geo Map preview: the seven marker states, drawn with PRTG's own marker rules underneath the object's style block */
+  var GMBASE='.map-marker{position:relative;width:21px;height:25px;box-sizing:border-box;background:#fff;border-left:5px solid #fff;box-shadow:0 2px 2px 0 rgba(0,0,0,.14),0 3px 1px -4px rgba(0,0,0,.2),0 1px 5px 0 rgba(0,0,0,.12)}'
+    +'.map-marker a{left:0;top:0;padding:0;margin:0;position:absolute !important;width:100% !important;height:100% !important;background-position:center center;background-size:14px 14px;background-repeat:no-repeat}'
+    +GMSTATES.map(function(x){return '.map-marker.'+x.id+'{border-color:'+x.col+'}';}).join('');
+  function drawGeoPreview(){
+    var cls=gmClass(GM), css=gmCss(GM,cls), L=lookOf('Minimal'), html='<div id="mapshow" class="map-body"><div class="icstrip">', dev=gmSvgUrl(gmSym('server')[2],'#6b7280');
+    prevEl.className='';
+    setStyle(GMBASE+css);applyFont(L);
+    GMSTATES.forEach(function(x){
+      html+='<div class="icell"><div class="'+cls+'" style="position:relative;width:26px;height:30px;"><div class="map-marker '+x.id+'" style="position:absolute;left:0;top:0;"><a class="mapmarker" style="background-image:'+dev+'"></a></div></div><div class="pcap">'+esc(x.label)+'</div></div>';
+    });
+    prevEl.innerHTML=html+'</div><p class="pcap" style="padding:0 14px 12px;max-width:none">'+(GM.icon==='device'?'The icon in each marker is the device’s own PRTG icon (a server is shown here as an example).':'PRTG draws the map and the markers; this is how the markers look on it.')+'</p></div>';
+    applyBg(L);
+  }
   var icGalEl=null, icGalStyle=null;
   function refreshStyleGallery(){
     if(!icGalEl||TYPE!=='icon'||IC.engine!=='custom')return;
@@ -9499,13 +9609,13 @@ try{
     applyBg(lookOf('Minimal'));
   }
   function drawPreview(){
-    if(TYPE!=='table')prevEl.style.minHeight='';if(TYPE==='gauge')drawGaugePreview();else if(isPaste())drawPastePreview();else if(TYPE==='graph')drawGraphPreview();else if(TYPE==='donut')drawDonutPreview();else if(TYPE==='tile')drawTilePreview();else if(TYPE==='status')drawStatusPreview();else if(TYPE==='icon')drawIconPreview();else drawTablePreview();
+    if(TYPE!=='table')prevEl.style.minHeight='';if(TYPE==='gauge')drawGaugePreview();else if(isPaste())drawPastePreview();else if(TYPE==='graph')drawGraphPreview();else if(TYPE==='donut')drawDonutPreview();else if(TYPE==='tile')drawTilePreview();else if(TYPE==='status')drawStatusPreview();else if(TYPE==='icon')drawIconPreview();else if(TYPE==='geomap')drawGeoPreview();else drawTablePreview();
     eoAttach();}
 
   /* ---------- render ---------- */
   function render(){
     if(isLegacy(TYPE))return;
-    var text=(TYPE==='gauge')?buildGauge(G):(isPaste()?buildPaste(FRc()):(TYPE==='graph'?buildGraph(GR):(TYPE==='donut'?buildDonut(DN):(TYPE==='tile'?buildTile(TL):(TYPE==='status'?buildStatus(SC):(TYPE==='icon'?buildIcon(IC):buildTable(T)))))));
+    var text=(TYPE==='gauge')?buildGauge(G):(isPaste()?buildPaste(FRc()):(TYPE==='graph'?buildGraph(GR):(TYPE==='donut'?buildDonut(DN):(TYPE==='tile'?buildTile(TL):(TYPE==='status'?buildStatus(SC):(TYPE==='icon'?buildIcon(IC):(TYPE==='geomap'?buildGeoMap(GM):buildTable(T))))))));
     codeEl.value=text;
     document.getElementById('ofname').textContent=fileNameOf(M());
     document.getElementById('ofnote').textContent=text.length+' characters';
@@ -9524,7 +9634,7 @@ try{
   var typeSel=null, engineSel=null, legSel=null;
   /* Text label and Button are the page's basic tools. Choosing one shows that tool, unchanged, under the Objects tab. */
   var TYPES=[
-    ['Files for \\webroot\\mapobjects',[['table','Data table (list of sensors)'],['gauge','Gauge'],['graph','Graph'],['donut','Donut'],['status','Status counts'],['icon','Status icon'],['tile','Tile']]],
+    ['Files for \\webroot\\mapobjects',[['table','Data table (list of sensors)'],['gauge','Gauge'],['graph','Graph'],['donut','Donut'],['status','Status counts'],['icon','Status icon'],['tile','Tile'],['geomap','Geo map']]],
     ['Pasted into a Custom HTML item',[['label','Text label'],['button','Button']].concat(FRAMEAPI?[['frame','Frame'],['bg','Background'],['shape','Shape']]:[])]
   ];
   function isLegacy(t){return t==='label'||t==='button';}
@@ -9550,10 +9660,11 @@ try{
     bg:sv('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 17l9-9M8 12l4-4M13 17l4-4"/>'),
     shape:sv('<path d="M4 12h13"/><path d="m13 7 5 5-5 5"/>'),
     tile:sv('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 14h10"/><path d="M7 10h4"/>'),
+    geomap:sv('<path d="M12 21s-6-5.5-6-10a6 6 0 0 1 12 0c0 4.5-6 10-6 10z"/><circle cx="12" cy="11" r="2"/>'),
     status:sv('<rect x="3" y="6" width="8" height="12" rx="1.5"/><rect x="13" y="6" width="8" height="12" rx="1.5"/><path d="M5.5 11h3M15.5 11h3"/>')
   };
-  var TYPESHORT={table:'Table',gauge:'Gauge',graph:'Graph',donut:'Donut',icon:'Icon',tile:'Tile',label:'Label',button:'Button',frame:'Frame',bg:'Background',shape:'Shape',status:'Status'};
-  var TYPETIP={table:'Data table (list of sensors)',gauge:'Gauge',graph:'Graph',donut:'Donut',icon:'Status icon',tile:'Tile (stat, string, bar, interface, channel chips)',label:'Text label',button:'Button',frame:'Frame',bg:'Background',status:'Status counts (tiles of sensors by status)'};
+  var TYPESHORT={table:'Table',gauge:'Gauge',graph:'Graph',donut:'Donut',icon:'Icon',tile:'Tile',label:'Label',button:'Button',frame:'Frame',bg:'Background',shape:'Shape',status:'Status',geomap:'Geo map'};
+  var TYPETIP={table:'Data table (list of sensors)',gauge:'Gauge',graph:'Graph',donut:'Donut',icon:'Status icon',tile:'Tile (stat, string, bar, interface, channel chips)',label:'Text label',button:'Button',frame:'Frame',bg:'Background',status:'Status counts (tiles of sensors by status)',geomap:'Geo map (restyle the markers on PRTG\u2019s map)'};
   var GRIDHEAD=[['Save as file','A file you save in \\webroot\\mapobjects',sv('<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/>')],['Paste into Custom HTML','Code you paste into the HTML Before of a Custom HTML item',sv('<rect x="6" y="5" width="12" height="16" rx="2"/><path d="M9 5V3h6v2"/>')]];
   var gridTiles=[];
   function buildTypeGrid(){
@@ -9689,7 +9800,7 @@ try{
       }
       refreshUI();render();
     });
-    w2.appendChild(presetSel);s1.appendChild(w2);showIf(w2,notPaste);
+    w2.appendChild(presetSel);s1.appendChild(w2);showIf(w2,function(){return notPaste()&&TYPE!=='geomap';});
     showIf(s1.appendChild(h('p','note','A table, gauge, graph, donut or icon from PRTG\u2019s own set keeps PRTG\u2019s look until you choose another under Look. Tables, gauges, graphs, donuts and status icons share the same looks, so a dashboard of them stays consistent.')),notPaste);
 
     var s2=section('Name and title');secIf(s2,notPaste);
@@ -9882,6 +9993,26 @@ try{
       ic2.appendChild(inText(s.label,function(){return (IC.labels&&IC.labels[s.id])||'';},function(v){IC.labels=IC.labels||{};IC.labels[s.id]=v;}));
     });
     ic2.appendChild(h('p','note','Empty means PRTG\u2019s English word. These show in the status pill and in the \u201cstatus word\u201d text.'));
+
+    /* ---- geo map ---- */
+    var gm1=section('Geo map markers');secIf(gm1,function(){return TYPE==='geomap';});
+    gm1.appendChild(h('p','note','PRTG draws the map and decides where each marker goes and what state it has. This object restyles the markers. Put it on a map and the locations come from the devices PRTG knows.'));
+    gm1.appendChild(inSel('Marker shape',function(){return GM.shape;},function(v){GM.shape=v;},[['card','Card with a colored edge (PRTG’s look)'],['badge','Rounded badge, filled'],['circle','Circle, filled'],['ring','Ring']]));
+    gm1.appendChild(inSel('Icon in the marker',function(){return GM.icon;},function(v){GM.icon=v;refreshUI();},[['device','The device’s own PRTG icon (unchanged)'],['status','A status icon that changes with the state'],['symbol','One symbol for every state']]));
+    var gmS=h('div'),gmG=h('div','gmsym');
+    GMSYMS.forEach(function(sy){
+      var b=h('button','gmsym-b','<svg viewBox="0 0 24 24" aria-hidden="true">'+sy[2]+'</svg>');b.type='button';b.title=sy[1];b.setAttribute('aria-label',sy[1]);
+      b.addEventListener('click',function(){GM.sym=sy[0];refreshUI();render();});
+      syncs.push(function(){b.classList.toggle('on',GM.sym===sy[0]);});
+      gmG.appendChild(b);
+    });
+    gmS.appendChild(h('label',null,'Symbol'));gmS.appendChild(gmG);showIf(gmS,function(){return TYPE==='geomap'&&GM.icon==='symbol';});gm1.appendChild(gmS);
+    gm1.appendChild(inSel('Colors',function(){return GM.palette;},function(v){GM.palette=v;refreshUI();},[['prtg','PRTG’s own state colors'],['custom','My own colors']]));
+    var gmC=h('div');
+    GMSTATES.forEach(function(st){gmC.appendChild(inColor(st.label,function(){return gmColor(GM,st.id);},function(v){GM.cols=GM.cols||{};GM.cols[st.id]=v;}));});
+    showIf(gmC,function(){return TYPE==='geomap'&&GM.palette==='custom';});gm1.appendChild(gmC);
+    var gmW=h('div');gmW.appendChild(inChk('Shadow under each marker',function(){return GM.shadow;},function(v){GM.shadow=v;}));gm1.appendChild(gmW);
+    gm1.appendChild(inNum('Most locations in the legend',function(){return GM.legend;},function(v){GM.legend=v;},0,500));
     /* ---- donut ---- */
     var dn1=section('Donut');secIf(dn1,isDonut);
     dn1.appendChild(inSel('Engine',function(){return DN.engine;},function(v){DN.engine=v;if(v==='ring'){if(!(parseInt(DN.initW,10)>0)){DN.initW=340;DN.initH=220;}if(DN.look.mode==='prtg')DN.look=lookOf('Light card');}refreshUI();},DENGINES));
@@ -10019,11 +10150,11 @@ try{
     g3.appendChild(inSel('Status strip on each gauge',function(){return G.strip;},function(v){G.strip=v;},[['thin','Thin'],['keep','PRTG\u2019s wide strip'],['hide','Hidden']]));
     g3.appendChild(inChk('Hide PRTG\u2019s settings icons',function(){return G.hideSettings!==false;},function(v){G.hideSettings=v;}));
 
-    var s7=section('Look presets');secIf(s7,function(){return notIcStock()&&notPaste();});
+    var s7=section('Look presets');secIf(s7,function(){return notIcStock()&&notPaste()&&TYPE!=='geomap';});
     galleryEl=h('div','lookgrid');s7.appendChild(galleryEl);
     s7.appendChild(h('p','note','Click one to apply it, then fine-tune under Look details. The preview shows them on PRTG\u2019s own white map. Switch Background to \u201cThe look\u2019s own\u201d to see the stage each one was drawn for.'));
 
-    var s8=section('Look details');secIf(s8,function(){return notIcStock()&&notPaste();});
+    var s8=section('Look details');secIf(s8,function(){return notIcStock()&&notPaste()&&TYPE!=='geomap';});
     lookDetail=h('div');s8.appendChild(lookDetail);
     var famOptions=Array.prototype.map.call(el.fam.options,function(o){return [o.value,o.textContent];});
     var D=lookDetail;
