@@ -323,7 +323,25 @@ p.note:not(.pst){display:none!important}
 #infotip .tipitem+.tipitem{margin-top:8px;padding-top:8px;border-top:1px solid var(--g10)}
 #infotip .tipnote{margin:0}
 .grp{padding:16px 20px 6px;font-size:11px;font-weight:600;letter-spacing:.7px;text-transform:uppercase;color:#8b90a0;background:#fff}
-.undoredo{display:flex;gap:6px}
+.undoredo{display:flex;gap:6px;position:relative}
+#dgridov{position:absolute;left:0;top:0;right:0;bottom:0;pointer-events:none;z-index:50;overflow:hidden}
+#dgridov[hidden]{display:none}
+#dgridov i{position:absolute;top:0;bottom:0;background:rgba(0,125,184,.08);border-left:1px solid rgba(0,125,184,.28);border-right:1px solid rgba(0,125,184,.28);box-sizing:border-box}
+#dgridbtn.on{background:#E6F3FA;border-color:var(--cyan2)}
+#dgridpop{position:absolute;right:0;top:calc(100% + 8px);z-index:300;width:300px;padding:12px;background:#fff;border:1px solid var(--g20);border-radius:12px;box-shadow:0 6px 24px rgba(15,23,42,.2);font-size:12px;display:flex;flex-direction:column;gap:8px}
+#dgridpop[hidden]{display:none}
+#dgridpop .gp-l{font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:#8b90a0;margin-top:2px}
+#dgridpop .gp-seg{display:flex;border:1px solid var(--g20);border-radius:8px;overflow:hidden}
+#dgridpop .gp-seg button{flex:1;border:0;background:#fff;padding:7px 6px;font-size:12px;cursor:pointer;color:var(--ink)}
+#dgridpop .gp-seg button+button{border-left:1px solid var(--g20)}
+#dgridpop .gp-seg button.on{background:#E6F3FA;color:var(--cyan);font-weight:600}
+#dgridpop .gp-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(84px,1fr));gap:8px}
+#dgridpop .gp-row label{display:flex;flex-direction:column;gap:3px;color:#6c7183}
+#dgridpop select,#dgridpop input[type=number]{width:100%;font-size:12px;padding:5px 6px;box-sizing:border-box}
+#dgridpop .gp-chk{display:flex;align-items:center;gap:6px;color:var(--ink)}
+#dgridpop .gp-note{margin:0;color:#8b90a0;font-size:11px;line-height:1.4}
+#dgridpop .gp-btns{display:flex;gap:6px}
+#dgridpop .gp-btns .btn{flex:1;padding:7px 6px;font-size:12px}
 #dzoombar{position:sticky;bottom:14px;z-index:20;display:flex;align-items:center;gap:10px;width:max-content;max-width:100%;margin:12px auto 0;padding:8px 16px;background:rgba(255,255,255,.94);border:1px solid var(--g20);border-radius:999px;box-shadow:0 2px 10px rgba(15,23,42,.14)}
 #dzoombar .dzdot{width:5px;height:5px;border-radius:50%;background:#8b90a0;flex:none}
 #dzval{min-width:44px;text-align:right;font-weight:600;font-size:15px;color:#4b5263;font-variant-numeric:tabular-nums}
@@ -369,6 +387,8 @@ p.note:not(.pst){display:none!important}
 #dfbar .shpb svg{width:100%;height:30px}
 #dfbar .shpb:hover{border-color:var(--cyan2);background:#F3FAFE}
 #dfbar .shpb.on{border-color:var(--cyan2);box-shadow:inset 0 0 0 1px var(--cyan2);background:#EAF6FD}
+#dfbar .fb-lyt{font-size:12px;font-weight:600;color:var(--ink);padding:0 2px 4px}#dfbar .fb{position:relative}#dfbar .fb-badge{position:absolute;right:-1px;bottom:-1px;min-width:13px;height:13px;padding:0 2px;border-radius:7px;background:var(--cyan2);color:#fff;font-size:9px;font-weight:700;line-height:13px;text-align:center;box-sizing:border-box}
+.drow .lno{min-width:18px;margin-right:4px;font-size:10px;font-weight:600;color:#8b90a0;text-align:right}
 #dfbar .fb-layer{width:190px}#dfbar .fb-layer .btn{text-align:left;width:100%}#dfbar .fb-layer .btn:disabled{opacity:.45}
 #dfbar .fb-presets{width:300px;max-height:340px;overflow:auto;display:block}
 #dfbar .fb-presets .presetgrid{margin-top:0}
@@ -1173,7 +1193,7 @@ fieldset{border-bottom-color:var(--line)}
   <div id="dashstage">
     <div class="stage-head">
       <h2>Canvas <span style="font-weight:300;color:#8b90a0;font-size:12px;">&mdash; drag items, drag the square corner to resize, Shift+click to select several</span></h2>
-      <div class="undoredo"><button class="ico" id="dundo" type="button" data-tip="Undo (Ctrl+Z)" aria-label="Undo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button><button class="ico" id="dredo" type="button" data-tip="Redo (Ctrl+Y)" aria-label="Redo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button><button class="ico" id="dfit" type="button" data-tip="Fit to window" aria-label="Fit the canvas to the window"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/><rect x="8" y="8" width="8" height="8" rx="1"/></svg></button></div>
+      <div class="undoredo"><button class="ico" id="dundo" type="button" data-tip="Undo (Ctrl+Z)" aria-label="Undo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button><button class="ico" id="dredo" type="button" data-tip="Redo (Ctrl+Y)" aria-label="Redo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button><button class="ico" id="dfit" type="button" data-tip="Fit to window" aria-label="Fit the canvas to the window"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/><rect x="8" y="8" width="8" height="8" rx="1"/></svg></button><button class="ico" id="dgridbtn" type="button" data-tip="Grid and snapping" aria-label="Grid and snapping"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="1.5"/><path d="M4 9.3h16M4 14.7h16M9.3 4v16M14.7 4v16"/></svg></button></div>
     </div>
     <div id="exbar" hidden><span id="exbartext"></span><button class="btn ghost" id="exbarrev" type="button">Review changes</button><button class="btn" id="exbarapply" type="button" hidden>Apply</button><button class="btn ghost" id="exbardisc" type="button">Discard all</button></div>
     <div id="dalign" hidden><span class="alcount"></span>
