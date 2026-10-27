@@ -357,6 +357,7 @@ p.note:not(.pst){display:none!important}
 .subsec>*:last-child{margin-bottom:12px}
 .addgrid .btn[data-tip]::after{white-space:normal;width:190px;text-align:left;z-index:30}
 .addgrid .btn:nth-child(3n)[data-tip]::after{left:auto;right:0}
+#dashpanel .addgrid .btn:hover,#dashpanel .addgrid .btn:focus-visible{z-index:60}
 .ico.md{width:36px;height:36px}
 .ico[hidden]{display:none}
 .ico.md svg{width:18px;height:18px}
@@ -757,7 +758,7 @@ fieldset{border-bottom-color:var(--line)}
         <button class="btn ghost" type="button" data-add="banner" data-tip="A wide strip of text. Double-click to add it, or drag it onto the canvas.">Banner</button>
         <button class="btn ghost bgpick" type="button" id="mapbgbtn" aria-expanded="false" aria-controls="bgpanel" data-tip="Change the map’s background color"><span>Background</span><i class="bgnow" id="mapbgnow"></i></button>
         <button class="btn ghost" type="button" data-add="shape" data-tip="An arrow, line or box. Double-click to add it, or drag it onto the canvas.">Shape</button>
-        <button class="btn ghost" type="button" id="showexisting" aria-expanded="false" aria-controls="objfs">Existing PRTG objects</button>
+        <button class="btn ghost" type="button" id="showexisting" aria-expanded="false" aria-controls="objfs" data-tip="Click to see the object files on the connected PRTG server, then add one to the canvas.">Server objects</button>
       </div>
       <p class="note">With a frame selected, new items go inside it.</p>
       <div id="bgpanel" hidden>
@@ -768,7 +769,7 @@ fieldset{border-bottom-color:var(--line)}
       </div>
     </fieldset>
     <fieldset id="objfs">
-    <legend>Existing PRTG objects</legend>
+    <legend>Server objects</legend>
     <p class="note" id="objnote">Connect to PRTG (step 1) to load the objects PRTG has. Files you make in the Object builder appear here once they are in PRTG&rsquo;s <code>mapobjects</code> folder.</p>
     <div class="row" style="margin:2px 0 8px"><button class="btn ghost" id="objrefresh" type="button" disabled>Refresh object list</button></div>
     <div id="defbox">
@@ -1140,7 +1141,7 @@ fieldset{border-bottom-color:var(--line)}
           <div class="oway"><span class="owayt">By hand, or from another computer</span><button class="btn ghost" id="odlall" type="button">Download ZIP</button><span class="ohint">Unzip it into the folder above on the server.</span></div>
         </div></div></div>
       <div class="ostep"><span class="onum">3</span><div class="obody"><b>Reload the Map Designer</b>
-        <p class="ohint">The objects appear under the category you chose. In the Map designer, Existing PRTG objects has a Refresh object list button.</p></div></div>
+        <p class="ohint">The objects appear under the category you chose. In the Map designer, Server objects has a Refresh object list button.</p></div></div>
     </div>
     <p class="note" id="oinstall"></p>
   </div>
