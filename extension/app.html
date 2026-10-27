@@ -145,6 +145,11 @@ body.dash #typegrid,body.editing #typegrid{display:none}
 .stylechip.on{border-color:var(--cyan);box-shadow:0 0 0 1px var(--cyan)}
 .stylechip .stylerow{display:flex;gap:6px;align-items:center;justify-content:center;min-height:32px}
 .stylechip .pname{display:block;margin-top:5px;font-size:10.5px;color:#6c7183;line-height:1.2}
+.gmsym{display:grid;grid-template-columns:repeat(auto-fill,minmax(38px,1fr));gap:6px;margin-top:4px}
+.gmsym-b{border:1px solid var(--g20);border-radius:8px;background:#fff;padding:6px;cursor:pointer;line-height:0;color:var(--ink)}
+.gmsym-b:hover{border-color:#9bd0e8}
+.gmsym-b.on{border-color:var(--cyan);background:#E6F3FA;color:var(--cyan)}
+.gmsym-b svg{width:100%;height:auto;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .icstrip{display:flex;flex-wrap:wrap;gap:20px 26px;padding:14px}
 .icell{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
 .pcap{font:11px/1.2 "Segoe UI",Arial,sans-serif;color:#8b90a0;max-width:150px}
