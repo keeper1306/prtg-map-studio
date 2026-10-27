@@ -6852,7 +6852,7 @@ try{
     }
     function split(v){
       var s=String(v==null?'':v).trim(), mm=s.match(/^([<>]?\s*-?[\d.,]+)\s*(.*)$/);
-      return mm?{n:mm[1],u:mm[2]}:{n:s||'–',u:''};
+      return mm?{n:mm[1],u:mm[2]}:{n:s||'\u2013',u:''};
     }
     function valHtml(sv){return esc(sv.n)+(sv.u?'<small>'+esc(sv.u)+'</small>':'');}
     function pick(sel){
@@ -6923,7 +6923,7 @@ try{
       if(hit(C.infoW))stS='paused';
       if(hit(C.warnW))stS='warning';
       if(hit(C.errW))stS='down';
-      body.innerHTML='<div class="tl-strbox"><div class="tl-str" style="color:'+C.c[stS]+'">'+esc(msg||'–')+'</div></div>';
+      body.innerHTML='<div class="tl-strbox"><div class="tl-str" style="color:'+C.c[stS]+'">'+esc(msg||'\u2013')+'</div></div>';
       var sbox=body.querySelector('.tl-strbox'), stxt=body.querySelector('.tl-str');
       var fitStr=function(){
         if(!sbox.clientWidth||!sbox.clientHeight)return;
@@ -6957,7 +6957,7 @@ try{
         return '<span class="tl-arr" style="color:'+col+'">'+arrow+'</span><div class="tl-mini"><div style="width:'+Math.max(1,100*util(c)).toFixed(1)+'%;background:'+col+'"></div></div><span class="tl-num" style="color:'+vc+'">'+valHtml(split(c?c.lastvalue:''))+'</span>';
       };
       var foot=cap?'Link '+(cap>=1000?fmt(cap/1000)+' Gbit/s':fmt(cap)+' Mbit/s'):'vs. peak';
-      body.innerHTML='<div class="tl-lines">'+line('↓',C.c.up,cin)+line('↑',C.accent,cout)+'</div><div class="tl-foot"><span>'+(ctot?'Total '+esc(ctot.lastvalue):'')+'</span><span>'+esc(foot)+'</span></div>';
+      body.innerHTML='<div class="tl-lines">'+line('\u2193',C.c.up,cin)+line('\u2191',C.accent,cout)+'</div><div class="tl-foot"><span>'+(ctot?'Total '+esc(ctot.lastvalue):'')+'</span><span>'+esc(foot)+'</span></div>';
     }
     /* ----- channel chips ----- */
     else if(K==='chips'||K==='chipsfit'){
