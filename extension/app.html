@@ -273,6 +273,14 @@ body.dash #typegrid,body.editing #typegrid{display:none}
 #dselbox .dh[data-ax=e]{left:100%;top:50%}#dselbox .dh[data-ax=se]{left:100%;top:100%}#dselbox .dh[data-ax=s]{left:50%;top:100%}
 #dselbox .dh[data-ax=sw]{left:0;top:100%}#dselbox .dh[data-ax=w]{left:0;top:50%}
 #dselbox .dh:hover{border-color:var(--cyan2);background:#EAF6FD}
+#dselbox.isln{border-color:transparent}
+#dselbox .dln{display:none;width:calc(var(--hs)*1.2);height:calc(var(--hs)*1.2);border-color:var(--cyan2);cursor:crosshair}
+#dselbox .drot{display:none;position:absolute;pointer-events:auto;left:50%;top:calc(-1*var(--rh,30px));width:var(--hs);height:var(--hs);transform:translate(-50%,-50%);border-radius:50%;background:#fff;border:var(--hb) solid var(--cyan2);box-sizing:border-box;cursor:grab;box-shadow:0 0 0 1px rgba(255,255,255,.8)}
+#dselbox .drot:before{content:'';position:absolute;left:50%;top:100%;height:calc(var(--rh,30px) - var(--hs)/2);border-left:var(--hb) solid var(--cyan2);transform:translateX(-50%)}
+#dselbox .drot:hover{background:#EAF6FD}
+#dselbox .drot.dn{top:calc(100% + var(--rh,30px))}
+#dselbox .drot.dn:before{top:auto;bottom:100%}
+#dselbox[data-rot]:after{content:attr(data-rot);position:absolute;left:50%;top:calc(100% + 10px*var(--ps,1));transform:translateX(-50%) rotate(var(--rd,0deg));background:#050F34;color:#fff;font:600 calc(12px*var(--ps,1))/1 Arial,sans-serif;padding:calc(4px*var(--ps,1)) calc(7px*var(--ps,1));border-radius:calc(4px*var(--ps,1))}
 .addgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
 .addgrid .btn{padding:8px 6px;font-size:11px}
 .addgrid .wide{grid-column:1 / -1}
