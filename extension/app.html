@@ -704,6 +704,26 @@ fieldset{border-bottom-color:var(--line)}
 #inlhost #preswrap > fieldset{border:0;padding:6px 2px 2px}
 #inlhost #advwrap > .geofs{margin-top:4px}
 #inlhost .wrapfs > .advbar,#inlhost .wrapfs > #prestoggle,#inlhost .wrapfs > #advtoggle{width:100%}
+
+/* smaller Build tiles, four to a row; the PRTG Server Objects tile takes the last two */
+#dashpanel .addgrid{grid-template-columns:repeat(4,1fr);gap:5px}
+#dashpanel .addgrid .btn,#dashpanel .addgrid .btn.ghost{padding:6px 2px 5px;gap:2px;border-radius:8px;font-size:10.5px;letter-spacing:0}
+#dashpanel .addgrid .btn svg{width:16px;height:16px}
+#dashpanel .addgrid .btn:hover,#dashpanel .addgrid .btn.ghost:hover{transform:none}
+#dashpanel .addgrid #showexisting{grid-column:span 2;flex-direction:row;gap:6px;padding:6px 6px}
+#dashpanel .addgrid .btn:nth-child(4n)[data-tip]::after{left:auto;right:0}
+#dashpanel .addgrid .bgnow{width:22px;height:8px}
+/* no Selected bar: the item's own settings follow the Build tiles */
+#dashpanel .secfs.nobar > .advbar{display:none}
+#dashpanel .secfs.nobar{margin-top:6px}
+/* the Canvas button above the canvas and what it unfolds */
+#dcanvasbtn.txt{width:auto;border-radius:15px;padding:0 12px 0 10px;display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500}
+#dcanvasbtn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#dcanvasbtn.on{background:#E6F3FA;border-color:var(--cyan2)}
+#dcanvaspop{position:absolute;right:0;top:calc(100% + 8px);z-index:300;width:340px;max-height:78vh;overflow:auto;padding:10px 12px;background:#fff;border:1px solid var(--g20);border-radius:12px;box-shadow:0 6px 24px rgba(15,23,42,.2);font-size:12px}
+#dcanvaspop[hidden]{display:none}
+#dcanvaspop .subsec{border-bottom:1px solid var(--g10);padding:4px 0}
+#dcanvaspop .subsec:last-child{border-bottom:0}
 </style>
 </head>
 <body>
