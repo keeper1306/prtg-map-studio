@@ -8966,9 +8966,9 @@ try{
     edTag();
   }
   function edTrack(onMove,onUp){
-    edBusy=true;
+    edBusy=true;if(OB.el)OB.el.style.visibility='hidden';
     function mv(e){onMove(e);}
-    function up(e){edBusy=false;window.removeEventListener('pointermove',mv);window.removeEventListener('pointerup',up);window.removeEventListener('pointercancel',up);onUp(e);}
+    function up(e){edBusy=false;if(OB.el)OB.el.style.visibility='';window.removeEventListener('pointermove',mv);window.removeEventListener('pointerup',up);window.removeEventListener('pointercancel',up);onUp(e);}
     window.addEventListener('pointermove',mv);window.addEventListener('pointerup',up);window.addEventListener('pointercancel',up);
   }
   function edStartResize(ev,sx,sy){
@@ -8977,7 +8977,7 @@ try{
     var S={x0:ev.clientX,y0:ev.clientY,W:wr.offsetWidth,H:wr.offsetHeight,rot:edRot()};S.cx=ED.x+S.W/2;S.cy=ED.y+S.H/2;
     var root=wr.querySelector('.map_object');
     edTrack(function(e){
-      var d=rotXY(e.clientX-S.x0,e.clientY-S.y0,-S.rot), nw=S.W, nh=S.H;
+      var d=rotXY((e.clientX-S.x0)/OZ(),(e.clientY-S.y0)/OZ(),-S.rot), nw=S.W, nh=S.H;
       if(sx)nw=Math.max(80,S.W+sx*d[0]);
       if(sy)nh=Math.max(40,S.H+sy*d[1]);
       if(e.shiftKey&&sx&&sy){var k=Math.max(nw/S.W,nh/S.H);nw=Math.max(80,S.W*k);nh=Math.max(40,S.H*k);}
@@ -9002,7 +9002,7 @@ try{
   function edTitleLocal(t){
     var wr=document.getElementById('edwrap');if(!wr||!t||!t.getBoundingClientRect)return null;
     var wb=wr.getBoundingClientRect(),tb=t.getBoundingClientRect(),W=wr.offsetWidth,H=wr.offsetHeight,w=t.offsetWidth,h_=t.offsetHeight;
-    var c=rotXY(tb.left+tb.width/2-(wb.left+wb.width/2),tb.top+tb.height/2-(wb.top+wb.height/2),-edRot());
+    var zz=OZ(), c=rotXY((tb.left+tb.width/2-(wb.left+wb.width/2))/zz,(tb.top+tb.height/2-(wb.top+wb.height/2))/zz,-edRot());
     return {L:W/2+c[0]-w/2,T:H/2+c[1]-h_/2,w:w,h:h_,W:W,H:H};
   }
   /* a title can be dragged anywhere, but never completely out of its table: at least a strip of it stays inside, so it can always be grabbed again */
@@ -9021,7 +9021,7 @@ try{
     var S={x0:ev.clientX,y0:ev.clientY,ox:Number(T.tOffX)||0,oy:Number(T.tOffY)||0,rot:edRot()},moved=false;
     S.loc=edTitleLocal(t);
     edTrack(function(e){
-      var dx=e.clientX-S.x0,dy=e.clientY-S.y0;
+      var dx=(e.clientX-S.x0)/OZ(),dy=(e.clientY-S.y0)/OZ();
       if(!moved&&Math.hypot(dx,dy)<3)return;
       moved=true;
       var d=rotXY(dx,dy,-S.rot);
@@ -9094,24 +9094,26 @@ try{
   function eoOk(){return CFG.edit.types.indexOf(TYPE)>-1&&!!eoModel()&&!(TYPE==='icon'&&IC.engine==='stock');}
   function eoSz(m,w,h_){var a=parseInt(m.initW,10), b=parseInt(m.initH,10);return [a>0?a:w,b>0?b:h_];}
   function eoBox(){
-    var ms=document.getElementById('mapshow'), root=prevEl.querySelector('.map_object'), ov=EO.ov, mr, rr;
+    var ms=document.getElementById('mapshow'), root=prevEl.querySelector('.map_object'), ov=EO.ov, mr, rr, z=OZ();
     if(!ms||!root||!ov)return;
     mr=ms.getBoundingClientRect();rr=root.getBoundingClientRect();
-    ov.style.left=Math.round(rr.left-mr.left)+'px';ov.style.top=Math.round(rr.top-mr.top)+'px';ov.style.width=Math.round(rr.width)+'px';ov.style.height=Math.round(rr.height)+'px';
+    ov.style.left=Math.round((rr.left-mr.left)/z)+'px';ov.style.top=Math.round((rr.top-mr.top)/z)+'px';ov.style.width=Math.round(rr.width/z)+'px';ov.style.height=Math.round(rr.height/z)+'px';
   }
-  function eoTag(){var t=document.getElementById('eotag'), root=prevEl.querySelector('.map_object');if(t&&root)t.textContent=Math.round(root.offsetWidth)+' \u00D7 '+Math.round(root.offsetHeight)+' px';}
+  function eoTag(){var t=document.getElementById('eotag'), root=prevEl.querySelector('.map_object');if(t&&root)t.textContent=Math.round(root.offsetWidth)+' × '+Math.round(root.offsetHeight)+' px';}
+  var EOPAD={x:70,y:70,t:''};   /* room left of and above the object, so it can grow in those directions; the file only keeps the size */
   function eoAttach(){
     var ms, root, ov, tag;
     EO.ov=null;EO.inp=null;
+    if(EOPAD.t!==TYPE){EOPAD.t=TYPE;EOPAD.x=70;EOPAD.y=70;}
     if(!eoOk())return;
     ms=document.getElementById('mapshow');root=prevEl.querySelector('.map_object');
     if(!ms||!root)return;
-    ms.classList.add('eoon');ms.style.position='relative';ms.style.padding='40px 76px 60px 40px';
+    ms.classList.add('eoon');ms.style.position='relative';ms.style.padding=EOPAD.y+'px 76px 60px '+EOPAD.x+'px';
     ov=h('div','edov');ov.style.right='auto';ov.style.bottom='auto';ms.appendChild(ov);EO.ov=ov;
     ov.appendChild(h('div','edframe'));
-    [['e',1,0],['s',0,1],['se',1,1]].forEach(function(d){
-      var e=h('div','edh');e.setAttribute('data-h',d[0]);e.style.left=(d[1]?100:50)+'%';e.style.top=(d[2]?100:50)+'%';
-      e.style.cursor=(d[0]==='e')?'ew-resize':((d[0]==='s')?'ns-resize':'nwse-resize');
+    [['nw',-1,-1],['n',0,-1],['ne',1,-1],['e',1,0],['se',1,1],['s',0,1],['sw',-1,1],['w',-1,0]].forEach(function(d){
+      var e=h('div','edh');e.setAttribute('data-h',d[0]);e.style.left=((d[1]+1)*50)+'%';e.style.top=((d[2]+1)*50)+'%';
+      e.style.cursor=(d[1]&&d[2])?((d[1]*d[2]>0)?'nwse-resize':'nesw-resize'):(d[1]?'ew-resize':'ns-resize');
       e.addEventListener('pointerdown',function(ev){eoResize(ev,d[1],d[2]);});
       ov.appendChild(e);
     });
@@ -9119,13 +9121,17 @@ try{
     eoBox();eoTag();
   }
   function eoResize(ev,sx,sy){
-    var root=prevEl.querySelector('.map_object'), m=eoModel(), W0, H0, x0=ev.clientX, y0=ev.clientY;
-    if(!root||!m)return;
+    var root=prevEl.querySelector('.map_object'), ms=document.getElementById('mapshow'), m=eoModel(), W0, H0, x0=ev.clientX, y0=ev.clientY, z=OZ(), px0=EOPAD.x, py0=EOPAD.y;
+    if(!root||!m||!ms)return;
     ev.preventDefault();ev.stopPropagation();
     W0=root.offsetWidth;H0=root.offsetHeight;
     edTrack(function(e){
-      var minW=(TYPE==='icon')?12:60, minH=(TYPE==='icon')?12:40, nw=sx?Math.max(minW,Math.round(W0+e.clientX-x0)):W0, nh=sy?Math.max(minH,Math.round(H0+e.clientY-y0)):H0, k;
+      var dx=(e.clientX-x0)/z, dy=(e.clientY-y0)/z, minW=(TYPE==='icon')?12:60, minH=(TYPE==='icon')?12:40, nw=sx?Math.max(minW,Math.round(W0+sx*dx)):W0, nh=sy?Math.max(minH,Math.round(H0+sy*dy)):H0, k;
       if(e.shiftKey&&sx&&sy){k=Math.max(nw/W0,nh/H0);nw=Math.round(Math.max(minW,W0*k));nh=Math.round(Math.max(minH,H0*k));}
+      if(sx<0)nw=Math.min(nw,W0+px0-8);   /* the left and top edges stop at the edge of the stage */
+      if(sy<0)nh=Math.min(nh,H0+py0-8);
+      EOPAD.x=sx<0?px0+(W0-nw):px0;EOPAD.y=sy<0?py0+(H0-nh):py0;
+      ms.style.padding=EOPAD.y+'px 76px 60px '+EOPAD.x+'px';
       [].forEach.call(prevEl.querySelectorAll('.map_object'),function(r){r.style.width=nw+'px';r.style.height=nh+'px';});
       m.initW=nw;m.initH=nh;eoBox();eoTag();codeEl.value=eoText();
     },function(){refreshUI();render();});
@@ -9159,6 +9165,104 @@ try{
       t=ev.target&&ev.target.closest?ev.target.closest('.gtitle'):null;
       if(t&&!EO.inp){ev.preventDefault();eoEditTitle(t);}
     });
+  }
+
+
+  /* ---------- zoom, pixel grid and the options bar over the preview ---------- */
+  var OB={el:null,key:'',syncs:[]};
+  function OZ(){
+    var ms=document.getElementById('mapshow'), w;
+    if(!ms||!ms.offsetWidth)return 1;
+    w=ms.getBoundingClientRect().width/ms.offsetWidth;
+    return (w>0.05&&w<20)?w:1;
+  }
+  function obZoom(){
+    var sel=document.getElementById('ozoom'), cv=document.getElementById('ocanvas'), grid=document.getElementById('ogridchk'), v=sel?sel.value:'1', z=1, nat, av;
+    prevEl.style.zoom='';
+    if(v==='fit'){nat=prevEl.scrollWidth;av=cv.clientWidth-48;z=(nat>av&&av>100)?Math.max(0.25,Math.floor(av/nat*100)/100):1;}
+    else z=parseFloat(v)||1;
+    if(z!==1)prevEl.style.zoom=String(z);
+    cv.classList.toggle('pxgrid',!!(grid&&grid.checked));
+    cv.style.backgroundSize=(grid&&grid.checked)?(Math.max(2,10*z)+'px '+Math.max(2,10*z)+'px'):'';
+  }
+  function obOk(){return !isLegacy(TYPE)&&!isPaste()&&TYPE!=='geomap'&&!(TYPE==='icon'&&IC.engine==='stock')&&!!M()&&!!M().look;}
+  function obRoot(){return TYPE==='table'?document.getElementById('edwrap'):prevEl.querySelector('.map_object');}
+  function obSet(fn){var m=M(), l=m.look;if(l.mode==='prtg')l.mode='custom';fn(l,m);refreshUI();render();}
+  function obBtn(label,title,get,set){
+    var b=h('button','fb-t',label);b.type='button';b.title=title;
+    b.addEventListener('click',function(){set(!get());});
+    OB.syncs.push(function(){b.classList.toggle('on',!!get());});return b;
+  }
+  function obNum(title,get,set,min,max){
+    var i=h('input','fb-n');i.type='number';i.title=title;i.min=min;i.max=max;i.setAttribute('aria-label',title);
+    i.addEventListener('input',function(){var v=parseFloat(i.value);if(!isNaN(v))set(Math.max(min,Math.min(max,v)));});
+    OB.syncs.push(function(){if(document.activeElement!==i)i.value=get();});return i;
+  }
+  function obColor(title,get,set){
+    var i=h('input','fb-c');i.type='color';i.title=title;i.setAttribute('aria-label',title);
+    i.addEventListener('input',function(){set(i.value);});
+    OB.syncs.push(function(){var v=get();if(/^#[0-9a-f]{6}$/i.test(v))i.value=v;});return i;
+  }
+  function obSep(){return h('i','fb-sep');}
+  function obBuild(){
+    var b=OB.el, m=M(), L=function(){return M().look;};
+    if(!b){b=h('div');b.id='obar';b.setAttribute('role','toolbar');b.setAttribute('aria-label','Options for this object');document.getElementById('ocanvas').appendChild(b);OB.el=b;}
+    b.innerHTML='';OB.syncs=[];
+    var fs=h('select','fb-s');fs.title='Font';fs.setAttribute('aria-label','Font');
+    Array.prototype.forEach.call(el.fam.options,function(o){var op=h('option');op.value=o.value;op.textContent=o.textContent;fs.appendChild(op);});
+    fs.addEventListener('change',function(){obSet(function(l){l.font=fs.value;});});
+    OB.syncs.push(function(){fs.value=L().font;});
+    b.appendChild(fs);
+    b.appendChild(obNum('Text size',function(){return L().size;},function(v){obSet(function(l){l.size=v;});},8,40));
+    b.appendChild(obSep());
+    b.appendChild(obColor('Text color',function(){return L().text;},function(v){obSet(function(l){l.text=v;});}));
+    b.appendChild(obColor('Fill color',function(){return L().cardBg;},function(v){obSet(function(l){l.card=true;l.cardBg=v;});}));
+    b.appendChild(obColor('Border color',function(){return L().border;},function(v){obSet(function(l){l.card=true;l.border=v;if(!(l.bw>0))l.bw=1;});}));
+    b.appendChild(obNum('Corner radius',function(){return L().radius;},function(v){obSet(function(l){l.card=true;l.radius=v;});},0,40));
+    var sp=false;
+    if(TYPE==='table'){
+      b.appendChild(obSep());sp=true;
+      b.appendChild(obBtn('Header','Show the header row',function(){return L().head;},function(v){obSet(function(l){l.head=v;});}));
+      b.appendChild(obBtn('Stripes','Striped rows',function(){return L().zebra;},function(v){obSet(function(l){l.zebra=v;});}));
+      b.appendChild(obBtn('Title','Show the title',function(){return M().showTitle!==false;},function(v){M().showTitle=v;refreshUI();render();}));
+    }else{
+      if(TYPE==='gauge'){
+        b.appendChild(obSep());
+        b.appendChild(obBtn('Needle','Show the needle',function(){return G.needle;},function(v){G.needle=v;refreshUI();render();}));
+        b.appendChild(obBtn('Min/max','Show the minimum and maximum',function(){return G.showMinMax;},function(v){G.showMinMax=v;refreshUI();render();}));
+      }
+      if('titleMode' in m){
+        b.appendChild(obSep());
+        b.appendChild(obBtn('Title','Show the title',function(){return M().titleMode!=='none';},function(v){M().titleMode=v?'object':'none';refreshUI();render();}));
+      }
+    }
+    if(eoOk()){
+      b.appendChild(obSep());
+      var rs=h('button','fb-t','Auto size');rs.type='button';rs.title='Let PRTG decide the size again';
+      rs.addEventListener('click',function(){M().initW=0;M().initH=0;EOPAD.x=70;EOPAD.y=70;refreshUI();render();});
+      b.appendChild(rs);
+    }
+    OB.key=obKey();
+  }
+  function obKey(){return TYPE+(TYPE==='icon'?IC.engine:'');}
+  function obPlace(){
+    var b=OB.el, cv=document.getElementById('ocanvas'), root, cr, rr, bh, left, top;
+    if(!b)return;
+    root=obRoot();
+    if(!obOk()||!root){b.hidden=true;return;}
+    b.hidden=false;
+    cr=cv.getBoundingClientRect();rr=root.getBoundingClientRect();
+    b.style.maxWidth=Math.max(260,cv.clientWidth-16)+'px';
+    bh=b.offsetHeight;left=rr.left-cr.left+cv.scrollLeft;top=rr.top-cr.top+cv.scrollTop-bh-12;
+    if(top<cv.scrollTop+4)top=rr.bottom-cr.top+cv.scrollTop+14;
+    left=Math.max(8,Math.min(left,cv.clientWidth+cv.scrollLeft-b.offsetWidth-8));
+    b.style.left=Math.round(left)+'px';b.style.top=Math.round(top)+'px';
+  }
+  function obRefresh(){
+    if(!obOk()){if(OB.el)OB.el.hidden=true;return;}
+    if(!OB.el||OB.key!==obKey())obBuild();
+    OB.syncs.forEach(function(f){f();});
+    obPlace();
   }
 
   /* ---------- undo, redo and reset: every object type keeps its own history ---------- */
@@ -9684,7 +9788,7 @@ try{
   }
   function drawPreview(){
     if(TYPE!=='table')prevEl.style.minHeight='';if(TYPE==='gauge')drawGaugePreview();else if(isPaste())drawPastePreview();else if(TYPE==='graph')drawGraphPreview();else if(TYPE==='donut')drawDonutPreview();else if(TYPE==='tile')drawTilePreview();else if(TYPE==='status')drawStatusPreview();else if(TYPE==='icon')drawIconPreview();else if(TYPE==='geomap')drawGeoPreview();else drawTablePreview();
-    eoAttach();}
+    obZoom();eoAttach();obRefresh();}
 
   /* ---------- render ---------- */
   function render(){
@@ -10283,6 +10387,8 @@ try{
   document.getElementById('owidth').addEventListener('input',function(){drawPreview();});
   document.getElementById('oheight').addEventListener('input',function(){drawPreview();});
   document.getElementById('osample').addEventListener('change',function(){sampleState=this.value;drawPreview();});
+  document.getElementById('ozoom').addEventListener('change',function(){drawPreview();});
+  document.getElementById('ogridchk').addEventListener('change',function(){obZoom();obPlace();});
   OBJAPI.enter=function(){TABS.show('obj');};
   OBJAPI.copyText=copyText;OBJAPI.toast=toast;   /* the library region copies its install script with these */
   /* The Dashboard edits one of its frames or backgrounds in this tab's editor. The tab's own frame and its undo history are set aside for the
