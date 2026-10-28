@@ -7642,6 +7642,7 @@ try{
     c.push(r+' .ggraph{flex:1 1 auto;min-height:0;display:flex;'+(bar?'margin:10px 14px;':'')+'}');
     c.push(r+' .gown{flex:1 1 auto;min-width:0;min-height:0;display:flex;flex-direction:column;}');
     c.push(r+' .gown img{display:block;width:100% !important;height:100% !important;object-fit:contain;}');
+    if(G.kind==='sensor'&&grInvert(G,L))c.push(r+' .gown[data-g="fallback"] img{filter:invert(1) hue-rotate(180deg);mix-blend-mode:screen;}');   /* PRTG's picture has dark text on a light plot: on a dark card it is inverted so it can be read */
     c.push(r+' .gwrap{position:relative;flex:1 1 auto;min-height:0;}');
     c.push(r+' .gsvg{position:absolute;left:0;top:0;width:100%;height:100%;display:block;overflow:visible;font-family:inherit;}');
     c.push(r+' .glegend{flex:0 0 auto;display:flex;flex-wrap:wrap;gap:4px 16px;padding-top:6px;font-size:12px;color:'+muted+';}');
