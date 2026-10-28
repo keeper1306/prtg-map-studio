@@ -6454,7 +6454,7 @@ try{
     titleStyle:'bar',titleBg:'#050F34',titleColor:'#FFFFFF',titleText:'#383B47',titleSize:13,accent:'#007DB8',cardPad:0,
     head:true,headStyle:'fill',headBg:'#F7F8FA',headColor:'#6B7385',muted:'#5F6674',headUpper:true,
     text:'#383B47',link:'#007DB8',line:'#F0F1F4',hover:'#F4F9FC',zebra:false,zebraBg:'#F8FAFC',pad:9,cellX:14,
-    status:'dot',dot:12,tint:true,stage:'',
+    status:'dot',dot:12,tint:true,stage:'',align:'',
     c:{up:'#2FA84F',warning:'#F0AD22',down:'#D8402F',unusual:'#F0AD22',paused:'#8B93A3',unknown:'#9AA0AD'}};
   function mix(a,b){var o={};for(var k in a)o[k]=a[k];for(var j in b)o[j]=b[j];return o;}
   var LOOKS={
@@ -6609,7 +6609,7 @@ try{
     c.push(r+' table{width:100%;border-collapse:collapse;}');
     if(L.head){
       var hs=L.headStyle||'fill';
-      var th='font-size:'+Math.max(9,L.size-3)+'px;font-weight:'+(hs==='fill'?500:600)+';letter-spacing:.8px;'+(L.headUpper?'text-transform:uppercase;':'')+'color:'+L.headColor+';text-align:left;padding:8px '+L.cellX+'px !important;';
+      var th='font-size:'+Math.max(9,L.size-3)+'px;font-weight:'+(hs==='fill'?500:600)+';letter-spacing:.8px;'+(L.headUpper?'text-transform:uppercase;':'')+'color:'+L.headColor+';text-align:'+(L.align||'left')+';padding:8px '+L.cellX+'px !important;';
       if(hs==='fill')th+='background:'+L.headBg+';border-bottom:1px solid '+L.line+' !important;';
       else if(hs==='line')th+='background:transparent;border-bottom:2px solid '+L.accent+' !important;';
       else th+='background:transparent;border-bottom:1px solid '+L.line+' !important;';
@@ -6618,6 +6618,7 @@ try{
     }else c.push(r+' thead{display:none;}');
     c.push(r+' tbody td{padding:'+L.pad+'px '+L.cellX+'px;border-bottom:1px solid '+L.line+';font-size:'+L.size+'px;color:'+L.text+';vertical-align:middle;}');
     c.push(r+' tbody td,'+r+' tbody td *{color:'+L.text+' !important;}');
+    if(L.align)c.push(r+' tbody td{text-align:'+L.align+';}');
     c.push(r+' tbody td .parentItem,'+r+' tbody td .parentItem *{color:'+(L.muted||L.headColor)+' !important;}');
     if(T.links)c.push(r+' tbody td a,'+r+' tbody td a *{color:'+L.link+' !important;}');
     c.push(r+' tbody tr:last-child td{border-bottom:0;}');
@@ -6853,6 +6854,7 @@ try{
       else tt+='padding:0 0 10px;margin:0;';
       c.push(sel+'{'+tt+'}');
     }
+    if(L.align)c.push(sel+'{text-align:'+L.align+';}');
     c.push(sel+','+sel+' *{color:'+col+' !important;}');
     return c;
   }
@@ -6872,6 +6874,7 @@ try{
     var ip=(bar?0:(L.cardPad||0))+((L.card&&L.bw>0)?L.bw:0);
     if(ip>0)gb+='padding:'+ip+'px;';
     if(G.engine==='ring')gb+='height:100%;display:flex;flex-direction:column;';
+    if(L.align)gb+='text-align:'+L.align+';';
     c.push(r+' .gbox{'+gb+'}');
     titleRules(L,r+' .gtitle',bar).forEach(function(x){c.push(x);});
     return c;
@@ -7182,7 +7185,7 @@ try{
     }
     c.push(r+'{'+grRoot(L,cardFill)+'}');
     if(G.layout==='card'){
-      var gb='box-sizing:border-box;height:100%;display:flex;flex-direction:column;'+(ip>0?'padding:'+ip+'px;':'');
+      var gb='box-sizing:border-box;height:100%;display:flex;flex-direction:column;'+(ip>0?'padding:'+ip+'px;':'')+(L.align?'text-align:'+L.align+';':'');
       c.push(r+' .gbox{'+gb+'}');
       titleRules(L,r+' .gtitle',bar).forEach(function(x){c.push(x);});
       c.push(r+' .ggraph{flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;'+(bar?'margin:10px 14px;':'')+'}');
@@ -7417,7 +7420,7 @@ try{
   function grOwn(G){return G.kind==='sensor'&&G.draw!=='pic';}
   function grLook(G){var L=G.look;return (grOwn(G)&&L.mode==='prtg')?lookOf('Light card'):L;}
   function graphOwnCss(G,cls,L){
-    var r='.'+cls, c=[], bar=(L.titleStyle==='bar'), muted=(L.muted||L.headColor||L.text), fillA=(L.cardA==null?100:L.cardA), cardFill=(fillA<100)?tint(L.cardBg,fillA/100):L.cardBg, ip=(bar?0:(L.cardPad||0))+((L.card&&L.bw>0)?L.bw:0), gb='box-sizing:border-box;height:100%;display:flex;flex-direction:column;'+(ip>0?'padding:'+ip+'px;':'');
+    var r='.'+cls, c=[], bar=(L.titleStyle==='bar'), muted=(L.muted||L.headColor||L.text), fillA=(L.cardA==null?100:L.cardA), cardFill=(fillA<100)?tint(L.cardBg,fillA/100):L.cardBg, ip=(bar?0:(L.cardPad||0))+((L.card&&L.bw>0)?L.bw:0), gb='box-sizing:border-box;height:100%;display:flex;flex-direction:column;'+(ip>0?'padding:'+ip+'px;':'')+(L.align?'text-align:'+L.align+';':'');
     c.push(r+'{'+grRoot(L,cardFill)+'}');
     c.push(r+' .gbox{'+gb+'}');
     titleRules(L,r+' .gtitle',bar).forEach(function(x){c.push(x);});
@@ -8573,7 +8576,7 @@ try{
   function blankGM(){
     var cols={};GMSTATES.forEach(function(s){cols[s.id]=s.col;});
     return {type:'geomap',cat:'Geo Maps',name:'Map Studio Geo map',fname:'',initW:0,initH:0,look:(function(){var l=lookOf('Minimal');l.card=false;return l;})(),
-      shape:'card',icon:'device',sym:'pin',palette:'prtg',cols:cols,shadow:true,legend:50};
+      shape:'card',size:100,icon:'device',sym:'pin',palette:'prtg',cols:cols,shadow:true,legend:50};
   }
   function gmClass(G){return 'pgm_'+slugOf(G.name);}
   function gmColor(G,id){
@@ -8585,21 +8588,37 @@ try{
     var svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="'+col+'" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">'+path+'</svg>';
     return 'url("data:image/svg+xml,'+encodeURIComponent(svg)+'")';
   }
+  /* the marker shapes: PRTG's own card, a badge, a circle, a ring, a map pin (white disc, or the symbol straight on the color) and a pulsing dot */
+  var GMSHAPES=[['card','Card'],['badge','Badge'],['circle','Circle'],['ring','Ring'],['pin','Pin'],['pinfill','Filled pin'],['pulse','Pulse']];
+  function gmPinUrl(col,hole){
+    var svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 36"><path d="M14 0C6.3 0 0 6.1 0 13.6c0 9.6 12.4 20.7 13.1 21.3.5.5 1.3.5 1.8 0C15.6 34.3 28 23.2 28 13.6 28 6.1 21.7 0 14 0z" fill="'+col+'"/>'+(hole?'<circle cx="14" cy="13.6" r="8" fill="#FFFFFF"/>':'')+'</svg>';
+    return 'url("data:image/svg+xml,'+encodeURIComponent(svg)+'")';
+  }
   function gmCss(G,cls){
-    var c=[], solid=(G.shape==='badge'||G.shape==='circle'), sz=(G.shape==='card')?14:16, mk='.'+cls+' .map-marker';
-    if(G.shape!=='card'){
-      c.push(mk+'{width:24px !important;height:24px !important;box-sizing:border-box !important;'+(G.shape==='badge'?'border-radius:7px':'border-radius:50%')+' !important;'+(solid?'border:0 !important;':'border-style:solid !important;border-width:3px !important;')+'}');
+    var c=[], shp=G.shape, sc=Math.max(0.5,Math.min(2,(parseFloat(G.size)||100)/100)), mk='.'+cls+' .map-marker', pin=(shp==='pin'||shp==='pinfill'), pulse=(shp==='pulse');
+    var solid=(shp==='badge'||shp==='circle'||pulse||shp==='pinfill'), sz=(shp==='card')?14:(pin?Math.round(12*sc):(pulse?Math.round(12*sc):Math.round(16*sc)));
+    var D=Math.round(24*sc), PW=Math.round(28*sc), PH=Math.round(36*sc), PD=Math.round(22*sc), IM='!important';
+    if(pin){
+      c.push(mk+'{width:'+PW+'px '+IM+';height:'+PH+'px '+IM+';margin:'+(-PH)+'px 0 0 '+(-Math.round(PW/2))+'px '+IM+';box-sizing:border-box '+IM+';border:0 '+IM+';border-radius:0 '+IM+';background-color:transparent '+IM+';background-size:100% 100% '+IM+';background-repeat:no-repeat '+IM+';box-shadow:none '+IM+';'+(G.shadow?'filter:drop-shadow(0 2px 2px rgba(0,0,0,.35));':'filter:none;')+'}');
+    }else if(pulse){
+      c.push(mk+'{width:'+PD+'px '+IM+';height:'+PD+'px '+IM+';margin:'+(-Math.round(PD/2))+'px 0 0 '+(-Math.round(PD/2))+'px '+IM+';box-sizing:border-box '+IM+';border:0 '+IM+';border-radius:50% '+IM+';}');
+    }else if(shp!=='card'){
+      c.push(mk+'{width:'+D+'px '+IM+';height:'+D+'px '+IM+';box-sizing:border-box '+IM+';'+(shp==='badge'?'border-radius:7px':'border-radius:50%')+' '+IM+';'+(solid?'border:0 '+IM+';':'border-style:solid '+IM+';border-width:3px '+IM+';')+'}');
     }
-    if(!G.shadow)c.push(mk+'{box-shadow:none !important;}');
+    if(!G.shadow&&!pin)c.push(mk+'{box-shadow:none '+IM+';}');
+    if(pin&&G.icon==='device')c.push(mk+' a{width:'+Math.round(16*sc)+'px '+IM+';height:'+Math.round(16*sc)+'px '+IM+';left:'+Math.round(6*sc)+'px '+IM+';top:'+Math.round(5.6*sc)+'px '+IM+';background-size:'+Math.round(13*sc)+'px '+Math.round(13*sc)+'px '+IM+';background-repeat:no-repeat '+IM+';background-position:center '+IM+';}');
+    if(pulse&&G.icon==='device')c.push(mk+' a{left:3px '+IM+';top:3px '+IM+';width:'+(PD-6)+'px '+IM+';height:'+(PD-6)+'px '+IM+';border-radius:50% '+IM+';background-color:#FFFFFF '+IM+';background-size:'+Math.round(12*sc)+'px '+Math.round(12*sc)+'px '+IM+';background-repeat:no-repeat '+IM+';background-position:center '+IM+';}');
     GMSTATES.forEach(function(s){
-      var col=gmColor(G,s.id), ink=solid?fgOn(col):col, r=[];
-      if(G.shape==='card')r.push('border-color:'+col+' !important');
-      else if(solid)r.push('background:'+col+' !important');
-      else r.push('border-color:'+col+' !important');
+      var col=gmColor(G,s.id), ink=(solid)?fgOn(col):(shp==='pin'?blend(col,'#000000',0.25):col), r=[];
+      if(shp==='card')r.push('border-color:'+col+' '+IM);
+      else if(pin)r.push('background-image:'+gmPinUrl(col,shp==='pin')+' '+IM);
+      else if(pulse)r.push('background:'+col+' '+IM,'box-shadow:0 0 0 '+Math.round(6*sc)+'px '+hexA(col,0.32)+',0 0 0 '+Math.round(12*sc)+'px '+hexA(col,0.14)+' '+IM);
+      else if(solid)r.push('background:'+col+' '+IM);
+      else r.push('border-color:'+col+' '+IM);
       c.push(mk+'.'+s.id+'{'+r.join(';')+';}');
       if(G.icon!=='device'){
-        var path=(G.icon==='status')?GLYPH[s.g]:gmSym(G.sym)[2];
-        c.push(mk+'.'+s.id+' a{background-image:'+gmSvgUrl(path,ink)+' !important;background-size:'+sz+'px '+sz+'px !important;background-repeat:no-repeat !important;background-position:center !important;}');
+        var path=(G.icon==='status')?GLYPH[s.g]:gmSym(G.sym)[2], pos=pin?('center '+Math.round(7.5*sc)+'px'):'center';
+        c.push(mk+'.'+s.id+' a{background-image:'+gmSvgUrl(path,ink)+' '+IM+';background-size:'+sz+'px '+sz+'px '+IM+';background-repeat:no-repeat '+IM+';background-position:'+pos+' '+IM+';}');
       }
     });
     return c.join('\n');
@@ -9064,8 +9083,7 @@ try{
       var ae0=document.activeElement;if(ae0&&ae0.closest&&ae0.closest('#typegrid')&&ae0.blur)ae0.blur();
       if(!edOn())return;
       var t=ev.target&&ev.target.closest?ev.target.closest('.tabletitle'):null;
-      if(t){if(edInput)return;edStartTitleDrag(ev,t);}
-      else if(!(ev.target.closest&&ev.target.closest('.edov'))&&ED.sel)edSelectTitle(false);
+      if(ED.sel)edSelectTitle(false);   /* the title is part of the table: it is not picked up or moved on its own; double-click still edits its text */
     });
     prevEl.addEventListener('dblclick',function(ev){
       if(!edOn())return;
@@ -9194,7 +9212,7 @@ try{
       if(m.engine!=='custom')return null;
       x='Icon - '+iStyle(m.style).name.toLowerCase()+(m.text&&m.text!=='none'?', with '+m.text:'');
     }else if(t==='geomap'){
-      x='Geo map - '+m.shape+' markers'+(m.icon==='device'?'':', '+m.icon+' icon');
+      x='Geo map - '+String(amLab(GMSHAPES,m.shape)).toLowerCase()+' markers'+(m.icon==='device'?'':', '+m.icon+' icon');
     }else return null;
     x=p+x;
     return x.length>64?x.slice(0,63).replace(/[ ,+\-]+$/,'')+'…':x;
@@ -9267,8 +9285,8 @@ try{
     ['safe','Color-blind safe',{up:'#009E73',warning:'#F0E442',down:'#D55E00',unusual:'#CC79A7',paused:'#56B4E9',unknown:'#999999'}],
     ['bright','Bright, for dark cards',{up:'#4ADE80',warning:'#FBBF24',down:'#F87171',unusual:'#FB923C',paused:'#93C5FD',unknown:'#9CA3AF'}]
   ];
-  function obOk(){return !isLegacy(TYPE)&&!isPaste()&&TYPE!=='geomap'&&!(TYPE==='icon'&&IC.engine==='stock')&&!!M()&&!!M().look;}
-  function obRoot(){return TYPE==='table'?document.getElementById('edwrap'):prevEl.querySelector('.map_object');}
+  function obOk(){return !isLegacy(TYPE)&&!isPaste()&&!(TYPE==='icon'&&IC.engine==='stock')&&!!M()&&!!M().look;}
+  function obRoot(){return TYPE==='table'?document.getElementById('edwrap'):(TYPE==='geomap'?prevEl.querySelector('.icstrip'):prevEl.querySelector('.map_object'));}
   function obSet(fn){var m=M(), l=m.look;if(l.mode==='prtg')l.mode='custom';fn(l,m);refreshUI();render();}
   function obBtn(label,title,get,set){
     var b=h('button','fb-t',label);b.type='button';b.title=title;
@@ -9355,6 +9373,7 @@ try{
     }else{var l=M().look;if(l.mode==='prtg')l.mode='custom';l.c=Object.assign({},set);}
   }
   function obBuild(){
+    if(TYPE==='geomap')return obBuildGeo();
     var b=OB.el, m=M(), L=function(){return M().look;};
     if(!b){b=h('div');b.id='obar';b.setAttribute('role','toolbar');b.setAttribute('aria-label','Options for this object');document.getElementById('ocanvas').appendChild(b);OB.el=b;}
     b.innerHTML='';OB.syncs=[];
@@ -9486,12 +9505,88 @@ try{
         sp.appendChild(obBtn('Title','Show the title',function(){return M().titleMode!=='none';},function(v){M().titleMode=v?'object':'none';refreshUI();render();}));
       }
     }
+    if(TYPE!=='icon'){
+      var al=h('span','fb-al');
+      [['left','Align left','<path d="M4 6h16M4 10h10M4 14h16M4 18h10"/>'],['center','Center','<path d="M4 6h16M7 10h10M4 14h16M7 18h10"/>'],['right','Align right','<path d="M4 6h16M10 10h10M4 14h16M10 18h10"/>']].forEach(function(a){
+        var q=h('button','fb-t fb-i','<svg viewBox="0 0 24 24" aria-hidden="true">'+a[2]+'</svg>');q.type='button';q.title=a[1];q.setAttribute('aria-label',a[1]);
+        q.addEventListener('click',function(){obSet(function(l,m){var on=(l.align===a[0]);l.align=on?'':a[0];if(TYPE==='table')m.tAlign=l.align;});});
+        OB.syncs.push(function(){q.classList.toggle('on',L().align===a[0]);});
+        al.appendChild(q);
+      });
+      sp.appendChild(obSep());sp.appendChild(al);
+    }
     if(eoOk()){
       sp.appendChild(obSep());
       var rs=h('button','fb-t','Auto size');rs.type='button';rs.title='Let PRTG decide the size again';
       rs.addEventListener('click',function(){M().initW=0;M().initH=0;EOPAD.x=70;EOPAD.y=70;refreshUI();render();});
       sp.appendChild(rs);
     }
+    OB.key=obKey();
+  }
+    /* the Geo map's bar: pick a marker shape by its picture, then the icon, colors and the other marker settings */
+  function gmShapeSvg(id,col){
+    var P={
+      card:'<rect x="6" y="5" width="12" height="14" rx="1" fill="#FFFFFF" stroke="#BFC5D0"/><rect x="4.5" y="5" width="3" height="14" rx="1" fill="'+col+'"/>',
+      badge:'<rect x="4" y="4" width="16" height="16" rx="5" fill="'+col+'"/><circle cx="12" cy="12" r="3" fill="#FFFFFF"/>',
+      circle:'<circle cx="12" cy="12" r="8" fill="'+col+'"/><circle cx="12" cy="12" r="3" fill="#FFFFFF"/>',
+      ring:'<circle cx="12" cy="12" r="7" fill="#FFFFFF" stroke="'+col+'" stroke-width="3"/>',
+      pin:'<path d="M12 2C7.6 2 4.5 5.2 4.5 9.2c0 5.4 6.6 11.7 7 12.1.3.3.7.3 1 0 .4-.4 7-6.7 7-12.1C19.5 5.2 16.4 2 12 2z" fill="'+col+'"/><circle cx="12" cy="9.2" r="3.8" fill="#FFFFFF"/>',
+      pinfill:'<path d="M12 2C7.6 2 4.5 5.2 4.5 9.2c0 5.4 6.6 11.7 7 12.1.3.3.7.3 1 0 .4-.4 7-6.7 7-12.1C19.5 5.2 16.4 2 12 2z" fill="'+col+'"/><circle cx="12" cy="9.2" r="2.2" fill="#FFFFFF"/>',
+      pulse:'<circle cx="12" cy="12" r="11" fill="'+col+'" opacity=".16"/><circle cx="12" cy="12" r="7.6" fill="'+col+'" opacity=".32"/><circle cx="12" cy="12" r="4.6" fill="'+col+'"/><circle cx="12" cy="12" r="1.8" fill="#FFFFFF"/>'
+    };
+    return '<svg viewBox="0 0 24 24" aria-hidden="true" style="width:24px;height:24px">'+P[id]+'</svg>';
+  }
+  function gmSetOf(){
+    var r='custom';
+    CSETS.forEach(function(x){var ok=true;GMSTATES.forEach(function(st){if(st.id!=='downack'&&String(gmColor(GM,st.id)).toLowerCase()!==x[2][st.id==='warn'?'warning':st.id].toLowerCase())ok=false;});if(ok)r=x[0];});
+    return r;
+  }
+  function obBuildGeo(){
+    var b=OB.el;
+    if(!b){b=h('div');b.id='obar';b.setAttribute('role','toolbar');b.setAttribute('aria-label','Options for this object');document.getElementById('ocanvas').appendChild(b);OB.el=b;}
+    b.innerHTML='';OB.syncs=[];OB.sty=null;
+    var shp=h('span','fb-shapes');
+    GMSHAPES.forEach(function(x){
+      var q=h('button','fb-t fb-sh');q.type='button';q.title=x[1]+' markers';q.setAttribute('aria-label',x[1]+' markers');
+      q.addEventListener('click',function(){obDo(function(){GM.shape=x[0];});});
+      OB.syncs.push(function(){q.innerHTML=gmShapeSvg(x[0],gmColor(GM,'up'));q.classList.toggle('on',GM.shape===x[0]);});
+      shp.appendChild(q);
+    });
+    b.appendChild(shp);b.appendChild(obSep());
+    b.appendChild(obMenu('Icon','What is drawn inside each marker',function(pop){
+      pfSel(pop,'Icon',function(){return GM.icon;},function(v){GM.icon=v;},[['device','The device’s own PRTG icon'],['status','A status icon that follows the state'],['symbol','One symbol for every state']]);
+      var g=h('div','pf-syms');pop.appendChild(h('div','pf-h','Symbol (when one symbol is chosen)'));pop.appendChild(g);
+      GMSYMS.forEach(function(sy){
+        var q=h('button','pf-sym','<svg viewBox="0 0 24 24" aria-hidden="true">'+sy[2]+'</svg>');q.type='button';q.title=sy[1];q.setAttribute('aria-label',sy[1]);
+        q.addEventListener('click',function(){obDo(function(){GM.icon='symbol';GM.sym=sy[0];});});g.appendChild(q);
+      });
+      OB.syncs.push(function(){[].forEach.call(g.children,function(q,i){q.classList.toggle('on',GM.icon==='symbol'&&GM.sym===GMSYMS[i][0]);});});
+    }));
+    b.appendChild(obMenu('Colors','Status colors',function(pop){
+      pop.appendChild(h('div','pf-h','Status colors'));
+      var g=h('div','pf-sets');pop.appendChild(g);
+      CSETS.forEach(function(x){
+        var q=h('button','pf-set');q.type='button';q.setAttribute('data-set',x[0]);
+        q.innerHTML='<span class="sw">'+['up','warning','down','unusual','paused','unknown'].map(function(k){return '<i style="background:'+x[2][k]+'"></i>';}).join('')+'</span><span>'+x[1]+'</span>';
+        q.addEventListener('click',function(){obDo(function(){csetApply(x[0]);});});g.appendChild(q);
+      });
+      OB.syncs.push(function(){var cur=gmSetOf();[].forEach.call(g.children,function(q){q.classList.toggle('on',q.getAttribute('data-set')===cur);});});
+      pop.appendChild(h('div','pf-h','Or pick each one'));
+      GMSTATES.forEach(function(st){
+        var w=h('div','pf pf-col'), i=h('input');i.type='color';w.appendChild(h('label',null,st.label));
+        i.addEventListener('input',function(){GM.palette='custom';GM.cols=GM.cols||{};GM.cols[st.id]=i.value;refreshUI();render();});
+        OB.syncs.push(function(){if(document.activeElement!==i)i.value=gmColor(GM,st.id);});w.appendChild(i);pop.appendChild(w);
+      });
+    }));
+    b.appendChild(obMenu('Markers','Size, shadow, legend and the size the object is dropped at',function(pop){
+      pfNum(pop,'Marker size %',function(){return GM.size||100;},function(v){GM.size=v;},50,200);
+      pfChk(pop,'Shadow under each marker',function(){return GM.shadow;},function(v){GM.shadow=v;});
+      pfNum(pop,'Most locations in the legend',function(){return GM.legend;},function(v){GM.legend=v;},0,500);
+      pfNum(pop,'Width when dropped (0 = PRTG’s default)',function(){return GM.initW;},function(v){GM.initW=v;},0,4000);
+      pfNum(pop,'Height when dropped',function(){return GM.initH;},function(v){GM.initH=v;},0,4000);
+    }));
+    b.appendChild(obSep());
+    b.appendChild(obBtn('Card','A card around the map: fill, border, rounded corners and shadow (details under Appearance)',function(){return GM.look.card;},function(v){GM.look.card=v;refreshUI();render();}));
     OB.key=obKey();
   }
   function obKey(){return TYPE+(TYPE==='icon'?IC.engine:(TYPE==='gauge'?G.engine:(TYPE==='donut'?DN.engine:(TYPE==='graph'?GR.draw:''))));}
@@ -10002,11 +10097,11 @@ try{
     +'.map-marker a{left:0;top:0;padding:0;margin:0;position:absolute !important;width:100% !important;height:100% !important;background-position:center center;background-size:14px 14px;background-repeat:no-repeat}'
     +GMSTATES.map(function(x){return '.map-marker.'+x.id+'{border-color:'+x.col+'}';}).join('');
   function drawGeoPreview(){
-    var cls=gmClass(GM), css=gmCss(GM,cls), L=lookOf('Minimal'), html='<div id="mapshow" class="map-body"><div class="icstrip pvgmcard">', dev=gmSvgUrl(gmSym('server')[2],'#6b7280');
-    prevEl.className='';
+    var cls=gmClass(GM), css=gmCss(GM,cls), L=lookOf('Minimal'), html='<div id="mapshow" class="map-body" style="padding-top:64px"><div class="icstrip pvgmcard">', dev=gmSvgUrl(gmSym('server')[2],'#6b7280');
+    prevEl.className='';prevEl.style.minHeight='400px';
     setStyle(GMBASE+css+gmCardCss(GM,'.pvgmcard'));applyFont(L);
     GMSTATES.forEach(function(x){
-      html+='<div class="icell"><div class="'+cls+'" style="position:relative;width:26px;height:30px;"><div class="map-marker '+x.id+'" style="position:absolute;left:0;top:0;"><a class="mapmarker" style="background-image:'+dev+'"></a></div></div><div class="pcap">'+esc(x.label)+'</div></div>';
+      html+='<div class="icell"><div class="'+cls+'" style="position:relative;width:60px;height:62px;"><div class="map-marker '+x.id+'" style="position:absolute;left:30px;top:34px;margin:-12.5px 0 0 -10.5px;"><a class="mapmarker" style="background-image:'+dev+'"></a></div></div><div class="pcap">'+esc(x.label)+'</div></div>';
     });
     prevEl.innerHTML=html+'</div><p class="pcap" style="padding:0 14px 12px;max-width:none">'+(GM.icon==='device'?'The icon in each marker is the device’s own PRTG icon (a server is shown here as an example).':'PRTG draws the map and the markers; this is how the markers look on it.')+'</p></div>';
     applyBg(L);
@@ -10059,6 +10154,7 @@ try{
   /* ---------- render ---------- */
   function render(){
     if(isLegacy(TYPE))return;
+    if(TYPE==='table'){T.tOffX=0;T.tOffY=0;}
     obAutoName();
     var text=(TYPE==='gauge')?buildGauge(G):(isPaste()?buildPaste(FRc()):(TYPE==='graph'?buildGraph(GR):(TYPE==='donut'?buildDonut(DN):(TYPE==='tile'?buildTile(TL):(TYPE==='status'?buildStatus(SC):(TYPE==='icon'?buildIcon(IC):(TYPE==='geomap'?buildGeoMap(GM):buildTable(T))))))));
     codeEl.value=text;
@@ -10442,7 +10538,8 @@ try{
     /* ---- geo map ---- */
     var gm1=section('Geo map markers');secIf(gm1,function(){return TYPE==='geomap';});
     gm1.appendChild(h('p','note','PRTG draws the map and decides where each marker goes and what state it has. This object restyles the markers. Put it on a map and the locations come from the devices PRTG knows.'));
-    gm1.appendChild(inSel('Marker shape',function(){return GM.shape;},function(v){GM.shape=v;},[['card','Card with a colored edge (PRTG’s look)'],['badge','Rounded badge, filled'],['circle','Circle, filled'],['ring','Ring']]));
+    gm1.appendChild(inSel('Marker shape',function(){return GM.shape;},function(v){GM.shape=v;},[['card','Card with a colored edge (PRTG’s look)'],['badge','Rounded badge, filled'],['circle','Circle, filled'],['ring','Ring'],['pin','Map pin with a white center'],['pinfill','Map pin, filled'],['pulse','Pulsing dot']]));
+    gm1.appendChild(inNum('Marker size %',function(){return GM.size||100;},function(v){GM.size=v;},50,200));
     gm1.appendChild(inSel('Icon in the marker',function(){return GM.icon;},function(v){GM.icon=v;refreshUI();},[['device','The device’s own PRTG icon (unchanged)'],['status','A status icon that changes with the state'],['symbol','One symbol for every state']]));
     var gmS=h('div'),gmG=h('div','gmsym');
     GMSYMS.forEach(function(sy){
@@ -10522,14 +10619,12 @@ try{
     gr3.appendChild(h('p','note','Added to PRTG\u2019s graph tag as written.'));
     var ed1=section('Size, rotation and title');secIf(ed1,isTable);
     ed1.appendChild(inChk('Edit in the preview',function(){return ED.on;},function(v){ED.on=v;},refreshUI));
-    ed1.appendChild(h('p','note','In the preview: drag the handles to resize (this sets the size when dropped), drag the round handle to rotate (hold Shift to snap to 15 degrees), double-click the title to edit it and drag it to move it. A selected title also moves with the arrow keys.'));
+    ed1.appendChild(h('p','note','In the preview: drag the handles to resize (this sets the size when dropped), drag the round handle to rotate (hold Shift to snap to 15 degrees), double-click the title to edit it. The title is part of the table and does not move on its own. A selected title also moves with the arrow keys.'));
     ed1.appendChild(inNum('Rotation (degrees)',function(){return T.rot;},function(v){T.rot=v;},-180,180));
     ed1.appendChild(inSel('Title alignment',function(){return T.tAlign;},function(v){T.tAlign=v;},[['','As the look has it'],['left','Left'],['center','Center'],['right','Right']]));
-    ed1.appendChild(pair(inNum('Title offset X',function(){return T.tOffX;},function(v){T.tOffX=v;},-2000,2000),inNum('Title offset Y',function(){return T.tOffY;},function(v){T.tOffY=v;},-2000,2000)));
     var edr=h('div','dpair');
     var b1=h('button','btn ghost','Reset rotation');b1.type='button';b1.addEventListener('click',function(){T.rot=0;refreshUI();render();});
-    var b2=h('button','btn ghost','Reset title position');b2.type='button';b2.addEventListener('click',function(){T.tOffX=0;T.tOffY=0;T.tAlign='';refreshUI();render();});
-    edr.appendChild(b1);edr.appendChild(b2);ed1.appendChild(edr);
+    edr.appendChild(b1);ed1.appendChild(edr);
     ed1.appendChild(h('p','note','Rotation turns the card inside the object. PRTG\u2019s own selection box and resize handle stay upright where they are, so the object can still be moved and resized in the designer. Leave the rotated card room: it is not clipped.'));
     var s3=section('Columns');secIf(s3,isTable);
     colsBody=h('div','drows');s3.appendChild(colsBody);
