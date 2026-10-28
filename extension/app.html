@@ -837,6 +837,20 @@ body:not(.dash):not(.objs) #panel > #preswrap:not([hidden]),body:not(.dash):not(
 #dfbar .fb-colors .cs-row b{width:42px;font-weight:500;font-size:11px;color:#6c7183}
 #dfbar .fb-colors .cs-sw{width:24px;height:24px;padding:0;border-radius:6px;border:1px solid rgba(0,0,0,.18);cursor:pointer}
 #dfbar .fb-colors .cs-sw:hover{box-shadow:0 0 0 2px var(--cyan)}
+
+.csp{position:relative;display:inline-block}
+.csp-btn{display:flex;align-items:center;gap:10px;min-width:190px;width:100%;padding:6px 9px;border:1px solid var(--g20);border-radius:7px;background:#fff;font-size:13px;color:var(--ink);cursor:pointer;text-align:left}
+.csp-btn:hover,.csp-btn.open{border-color:var(--cyan)}
+.csp-btn span:not(.sw){flex:1}.csp-btn b{font-size:11px;color:#6c7183}
+.csp .sw{display:flex;gap:2px}.csp .sw i{width:14px;height:14px;border-radius:3px;display:block}
+.csp-pop{position:fixed;z-index:100000;display:flex;flex-direction:column;gap:5px;padding:8px;background:#fff;border:1px solid var(--g20);border-radius:10px;box-shadow:0 8px 28px rgba(15,23,42,.22)}
+.csp-pop[hidden]{display:none}
+.csp-row{display:flex;align-items:center;gap:10px;padding:7px 9px;border:1px solid var(--g20);border-radius:7px;background:#fff;font-size:13px;color:var(--ink);cursor:pointer;text-align:left}
+.csp-row:hover{border-color:#9bd0e8}.csp-row.on{border-color:var(--cyan);background:#E6F3FA}
+#dfbar .fb-colors{width:270px}
+.csp-inline{display:block}.csp-inline .csp-btn{min-width:0}
+.csp-inline .csp-pop{position:static;box-shadow:none;border:0;padding:6px 0 0}
+.csp-inline .csp-row{padding:5px 8px;font-size:12px}
 </style>
 </head>
 <body>
@@ -1318,7 +1332,7 @@ body:not(.dash):not(.objs) #panel > #preswrap:not([hidden]),body:not(.dash):not(
   <div id="objstage">
     <div class="stage-head">
       <h2>Preview <span style="font-weight:300;color:#8b90a0;font-size:12px;">&mdash; sample data, PRTG shows live values</span></h2>
-      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end"><label for="owidth" id="owlabel" style="margin:0;font-size:12px">Width, blank = fit</label><input type="number" id="owidth" placeholder="fit" min="120" max="3000" step="20" style="width:84px"><span id="ogauge" hidden><span style="display:flex;gap:10px;align-items:center"><label for="oheight" style="margin:0;font-size:12px">Height</label><input type="number" id="oheight" placeholder="280" min="100" max="2000" step="20" style="width:84px"><span id="osamplebox"><label for="osample" style="margin:0 8px 0 0;font-size:12px">Sample</label><select id="osample" style="width:auto;padding:5px 8px"><option value="ok" selected>Normal</option><option value="warn">Warning</option><option value="crit">Critical</option><option value="paused">Paused</option></select></span></span></span><span id="ocsetw" style="display:inline-flex;gap:10px;align-items:center"><label for="ocset" style="margin:0;font-size:12px">Colors</label><select id="ocset" style="width:auto;padding:5px 8px" title="Status colors for every object"></select></span><label for="ozoom" style="margin:0;font-size:12px">Zoom</label><select id="ozoom" style="width:auto;padding:5px 8px"><option value="fit">Fit</option><option value="0.5">50%</option><option value="0.75">75%</option><option value="1" selected>100%</option><option value="1.5">150%</option><option value="2">200%</option></select><label style="margin:0;font-size:12px;display:inline-flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="ogridchk" style="width:auto;margin:0"> Pixel grid</label><label for="obg" style="margin:0;font-size:12px">Background</label><select id="obg" style="width:auto;padding:5px 8px"><option value="white" selected>PRTG white map</option><option value="look">The look&rsquo;s own</option><option value="dark">Dark</option></select></div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end"><label for="owidth" id="owlabel" style="margin:0;font-size:12px">Width, blank = fit</label><input type="number" id="owidth" placeholder="fit" min="120" max="3000" step="20" style="width:84px"><span id="ogauge" hidden><span style="display:flex;gap:10px;align-items:center"><label for="oheight" style="margin:0;font-size:12px">Height</label><input type="number" id="oheight" placeholder="280" min="100" max="2000" step="20" style="width:84px"><span id="osamplebox"><label for="osample" style="margin:0 8px 0 0;font-size:12px">Sample</label><select id="osample" style="width:auto;padding:5px 8px"><option value="ok" selected>Normal</option><option value="warn">Warning</option><option value="crit">Critical</option><option value="paused">Paused</option></select></span></span></span><span id="ocsetw" style="display:inline-flex;gap:10px;align-items:center"><label for="ocset" style="margin:0;font-size:12px">Colors</label><span id="ocset"></span></span><label for="ozoom" style="margin:0;font-size:12px">Zoom</label><select id="ozoom" style="width:auto;padding:5px 8px"><option value="fit">Fit</option><option value="0.5">50%</option><option value="0.75">75%</option><option value="1" selected>100%</option><option value="1.5">150%</option><option value="2">200%</option></select><label style="margin:0;font-size:12px;display:inline-flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="ogridchk" style="width:auto;margin:0"> Pixel grid</label><label for="obg" style="margin:0;font-size:12px">Background</label><select id="obg" style="width:auto;padding:5px 8px"><option value="white" selected>PRTG white map</option><option value="look">The look&rsquo;s own</option><option value="dark">Dark</option></select></div>
     </div>
     <div id="ocanvas"><div id="opreview"></div></div>
     <div class="stage-head" style="margin-top:26px">
