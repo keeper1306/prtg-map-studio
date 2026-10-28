@@ -8572,7 +8572,7 @@ try{
   function gmSym(id){var r=GMSYMS[0];GMSYMS.forEach(function(s){if(s[0]===id)r=s;});return r;}
   function blankGM(){
     var cols={};GMSTATES.forEach(function(s){cols[s.id]=s.col;});
-    return {type:'geomap',cat:'Geo Maps',name:'Geo map with my markers',fname:'',initW:0,initH:0,look:lookOf('Minimal'),
+    return {type:'geomap',cat:'Geo Maps',name:'Geo map with my markers',fname:'',initW:0,initH:0,look:(function(){var l=lookOf('Minimal');l.card=false;return l;})(),
       shape:'card',icon:'device',sym:'pin',palette:'prtg',cols:cols,shadow:true,legend:50};
   }
   function gmClass(G){return 'pgm_'+slugOf(G.name);}
@@ -8604,6 +8604,15 @@ try{
     });
     return c.join('\n');
   }
+  /* the shared Appearance card for the Geo Map: fill, border, corners and shadow go on the box PRTG draws the map in */
+  function gmCardCss(G,sel){
+    var L=G.look||{};
+    if(!L.card)return '';
+    var a=(L.cardA==null?100:L.cardA), fill=(a<100)?tint(L.cardBg,a/100):L.cardBg, d='background:'+fill+' !important;border-radius:'+(L.radius||0)+'px !important;overflow:hidden !important;';
+    if(L.bw>0)d+='outline:'+L.bw+'px solid '+L.border+' !important;outline-offset:-'+L.bw+'px !important;';
+    var sh=shadowOf(L);if(sh)d+='box-shadow:'+sh+' !important;';
+    return sel+'{'+d+'}';
+  }
   function buildGeoMap(G){
     var o=[], cls=gmClass(G), w=parseInt(G.initW,10), h=parseInt(G.initH,10), n=parseInt(G.legend,10);
     var init=(w>0&&h>0)?' initialwidth="'+Math.min(w,4000)+'" initialheight="'+Math.min(h,4000)+'"':'';
@@ -8612,6 +8621,7 @@ try{
     o.push('<style>');
     o.push('.onepreview .geomap-preview{');o.push('\theight: 176px;');o.push('}');
     o.push(gmCss(G,cls));
+    o.push(gmCardCss(G,'.'+cls));
     o.push('</style>');
     o.push('<div class="map_object map_graph geomap-preview '+cls+'" id="<@itemid>" objectid="<@objectid>" subid="<@subid>"'+init+' style="<#mapobject type="coordinates" subid="<@subid>" mode="<@editmode>">">');
     o.push('<#mapobject type="objectgrip" mode="<@editmode>">');
@@ -9622,9 +9632,9 @@ try{
     +'.map-marker a{left:0;top:0;padding:0;margin:0;position:absolute !important;width:100% !important;height:100% !important;background-position:center center;background-size:14px 14px;background-repeat:no-repeat}'
     +GMSTATES.map(function(x){return '.map-marker.'+x.id+'{border-color:'+x.col+'}';}).join('');
   function drawGeoPreview(){
-    var cls=gmClass(GM), css=gmCss(GM,cls), L=lookOf('Minimal'), html='<div id="mapshow" class="map-body"><div class="icstrip">', dev=gmSvgUrl(gmSym('server')[2],'#6b7280');
+    var cls=gmClass(GM), css=gmCss(GM,cls), L=lookOf('Minimal'), html='<div id="mapshow" class="map-body"><div class="icstrip pvgmcard">', dev=gmSvgUrl(gmSym('server')[2],'#6b7280');
     prevEl.className='';
-    setStyle(GMBASE+css);applyFont(L);
+    setStyle(GMBASE+css+gmCardCss(GM,'.pvgmcard'));applyFont(L);
     GMSTATES.forEach(function(x){
       html+='<div class="icell"><div class="'+cls+'" style="position:relative;width:26px;height:30px;"><div class="map-marker '+x.id+'" style="position:absolute;left:0;top:0;"><a class="mapmarker" style="background-image:'+dev+'"></a></div></div><div class="pcap">'+esc(x.label)+'</div></div>';
     });
@@ -10218,6 +10228,16 @@ try{
     galleryEl=h('div','lookgrid');s7.appendChild(galleryEl);
     s7.appendChild(h('p','note','Click one to apply it, then fine-tune under Look details. The preview shows them on PRTG\u2019s own white map. Switch Background to \u201cThe look\u2019s own\u201d to see the stage each one was drawn for.'));
 
+    var s8a=section('Appearance');secIf(s8a,function(){return notIcStock()&&notPaste();});
+    var g=h('div');s8a.appendChild(g);
+    g.appendChild(inChk('Card background and border',function(){return Lk().card;},function(v){Lk().card=v;}));
+    g.appendChild(pair(inColor('Card fill',function(){return Lk().cardBg;},function(v){Lk().cardBg=v;}),inNum('Fill opacity %',function(){return Lk().cardA;},function(v){Lk().cardA=v;},0,100)));
+    g.appendChild(h('p','note','Below 100% the map shows through the card. PRTG\u2019s map is white by default, so light text on a see-through card turns unreadable. Keep 100% unless your map background is dark.'));
+    g.appendChild(pair(inColor('Border color',function(){return Lk().border;},function(v){Lk().border=v;}),inNum('Border width',function(){return Lk().bw;},function(v){Lk().bw=v;},0,6)));
+    g.appendChild(pair(inNum('Corner radius',function(){return Lk().radius;},function(v){Lk().radius=v;},0,40),inSel('Shadow',function(){return Lk().shadow;},function(v){Lk().shadow=v;},[['none','None'],['soft','Soft'],['strong','Strong'],['glow','Glow']])));
+    g=h('div');showIf(g,function(){return TYPE!=='geomap';});s8a.appendChild(g);
+    g.appendChild(pair(inNum('Padding inside the card',function(){return Lk().cardPad;},function(v){Lk().cardPad=v;},0,60),inColor('Accent color',function(){return Lk().accent;},function(v){Lk().accent=v;})));
+    g.appendChild(h('p','note','Padding applies to every title style except the colored bar, which runs edge to edge.'));
     var s8=section('Look details');secIf(s8,function(){return notIcStock()&&notPaste()&&TYPE!=='geomap';});
     lookDetail=h('div');s8.appendChild(lookDetail);
     var famOptions=Array.prototype.map.call(el.fam.options,function(o){return [o.value,o.textContent];});
@@ -10225,14 +10245,6 @@ try{
     function grp(label,fn){var b=h('div');if(label)b.appendChild(h('label',null,label));D.appendChild(b);if(fn)showIf(b,fn);return b;}
     var g=grp('');
     g.appendChild(pair(inSel('Font',function(){return Lk().font;},function(v){Lk().font=v;},famOptions),inNum('Size',function(){return Lk().size;},function(v){Lk().size=v;},8,40)));
-    g=grp('Card');
-    g.appendChild(inChk('Card background and border',function(){return Lk().card;},function(v){Lk().card=v;}));
-    g.appendChild(pair(inColor('Card fill',function(){return Lk().cardBg;},function(v){Lk().cardBg=v;}),inNum('Fill opacity %',function(){return Lk().cardA;},function(v){Lk().cardA=v;},0,100)));
-    g.appendChild(h('p','note','Below 100% the map shows through the card. PRTG\u2019s map is white by default, so light text on a see-through card turns unreadable. Keep 100% unless your map background is dark.'));
-    g.appendChild(pair(inColor('Border color',function(){return Lk().border;},function(v){Lk().border=v;}),inNum('Border width',function(){return Lk().bw;},function(v){Lk().bw=v;},0,6)));
-    g.appendChild(pair(inNum('Corner radius',function(){return Lk().radius;},function(v){Lk().radius=v;},0,40),inSel('Shadow',function(){return Lk().shadow;},function(v){Lk().shadow=v;},[['none','None'],['soft','Soft'],['strong','Strong'],['glow','Glow']])));
-    g.appendChild(pair(inNum('Padding inside the card',function(){return Lk().cardPad;},function(v){Lk().cardPad=v;},0,60),inColor('Accent color',function(){return Lk().accent;},function(v){Lk().accent=v;})));
-    g.appendChild(h('p','note','Padding applies to every title style except the colored bar, which runs edge to edge.'));
     g=grp('Title');
     g.appendChild(pair(inSel('Title style',function(){return Lk().titleStyle;},function(v){Lk().titleStyle=v;},[['bar','Colored bar'],['heading','Heading'],['divider','Heading with line'],['accent','Heading with accent']]),inNum('Title size',function(){return Lk().titleSize;},function(v){Lk().titleSize=v;},8,60)));
     g.appendChild(pair(inColor('Heading color',function(){return Lk().titleText;},function(v){Lk().titleText=v;}),inColor('Bar color',function(){return Lk().titleBg;},function(v){Lk().titleBg=v;})));
