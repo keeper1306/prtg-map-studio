@@ -7377,7 +7377,7 @@ try{
       if(location.protocol==='about:')return ask(path,params);
       for(k in params)q.push(k+'='+encodeURIComponent(params[k]));
       pre=/^\/api\/v1\//.test(location.pathname)?'/api/v1':'';
-      return fetch(pre+path+'?'+q.join('&'),{credentials:'include'}).then(function(r){if(!r.ok)throw new Error('http');return r.json();});
+      return fetch(pre+path+'?'+q.join('&'),{credentials:'include',headers:{'X-Requested-With':'XMLHttpRequest'}}).then(function(r){if(!r.ok)throw new Error('http');return r.json();});
     }
     function load(){
       if(C.sample){D=build(sample());draw();return;}
@@ -7552,7 +7552,7 @@ try{
       if(location.protocol==='about:')return ask(path,params);
       for(k in params)q.push(k+'='+encodeURIComponent(params[k]));
       pre=/^\/api\/v1\//.test(location.pathname)?'/api/v1':'';
-      return fetch(pre+path+'?'+q.join('&'),{credentials:'include'}).then(function(r){if(!r.ok)throw new Error('http');return r.json();});
+      return fetch(pre+path+'?'+q.join('&'),{credentials:'include',headers:{'X-Requested-With':'XMLHttpRequest'}}).then(function(r){if(!r.ok)throw new Error('http');return r.json();});
     }
     function want(){var w=[];if(C.names)C.names.split(',').forEach(function(x){x=x.replace(/^\s+|\s+$/g,'').toLowerCase();if(x)w.push(x);});return w;}
     function pass(nm,w){nm=nm.toLowerCase();return !w.length||w.some(function(x){return nm.indexOf(x)>-1;});}
