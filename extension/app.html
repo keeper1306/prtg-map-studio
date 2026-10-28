@@ -738,6 +738,16 @@ fieldset{border-bottom-color:var(--line)}
 /* Cancel on the connecting screen */
 .gl-x{margin-top:4px;padding:7px 22px;border:1px solid var(--g20);border-radius:20px;background:#fff;color:#383B47;font-size:13px;font-weight:500;cursor:pointer}
 .gl-x:hover{border-color:var(--cyan);color:var(--cyan)}
+
+/* the Object builder's sections look like the Selected panel's: soft rounded cards with a small caret */
+body:not(.dash) #objpanel > .secfs{border:1px solid var(--line);border-radius:10px;margin:10px 20px;overflow:hidden;background:#fff}
+body:not(.dash) #objpanel > .secfs > .advbar{background:var(--soft);border-bottom:0;padding:11px 14px;font-size:12.5px}
+body:not(.dash) #objpanel > .secfs > .advbar.open{border-bottom:1px solid var(--line);background:#fff}
+body:not(.dash) #objpanel > .secfs > .secbody{padding:10px 14px 14px}
+body:not(.dash) #objpanel .secbody .secfs{border:1px solid var(--line);border-radius:10px;margin:10px 0;overflow:hidden;background:#fff}
+body:not(.dash) #objpanel .secbody .secfs > .advbar{background:var(--soft);border-bottom:0;padding:11px 14px;font-size:12.5px}
+body:not(.dash) #objpanel .secbody .secfs > .advbar.open{border-bottom:1px solid var(--line);background:#fff}
+body:not(.dash) #objpanel .secbody .secfs > .secbody{padding:10px 14px 14px}
 </style>
 </head>
 <body>
