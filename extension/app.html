@@ -724,6 +724,20 @@ fieldset{border-bottom-color:var(--line)}
 #dcanvaspop[hidden]{display:none}
 #dcanvaspop .subsec{border-bottom:1px solid var(--g10);padding:4px 0}
 #dcanvaspop .subsec:last-child{border-bottom:0}
+
+/* the Build tiles all the same size; Build has no bar; PRTG Server Objects has a plain title */
+#dashpanel .addgrid #showexisting{grid-column:auto;flex-direction:column;gap:2px;padding:6px 2px 5px}
+#dashpanel .secfs.nobar > h4.ftitle{margin:12px 20px 4px;font-size:13px;font-weight:500;color:var(--blue)}
+#dashpanel #objfs.nobar{padding-top:0}
+/* the connection line: the server name is cut short with an ellipsis and shows in full on hover; the buttons sit beside it */
+#prtgbar{flex-wrap:nowrap}
+#prtgbar #prtgtxt{flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#prtgbar .ico.md{flex:0 0 auto}
+/* the canvas size next to the Canvas button's name */
+#dcanvasbtn small{font-size:11px;font-weight:400;color:#8b90a0;letter-spacing:0}
+/* Cancel on the connecting screen */
+.gl-x{margin-top:4px;padding:7px 22px;border:1px solid var(--g20);border-radius:20px;background:#fff;color:#383B47;font-size:13px;font-weight:500;cursor:pointer}
+.gl-x:hover{border-color:var(--cyan);color:var(--cyan)}
 </style>
 </head>
 <body>
