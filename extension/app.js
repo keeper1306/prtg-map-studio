@@ -1716,6 +1716,14 @@ try{
     'Dark':{fill:'#0F172A',fillA:100,bcolor:'#0F172A',bw:0,radius:6,shadow:'none',tcolor:'#F8FAFC',scolor:'#94A3B8'},
     'Light':{fill:'#F1F5F9',fillA:100,bcolor:'#CBD5E1',bw:1,radius:6,shadow:'none',tcolor:'#0F172A',scolor:'#475569'}
   };
+  /* sets of status colors, shared by the Object builder and the Map designer */
+  window.PMSSETS={cur:'',sets:[
+    ['prtg','PRTG\u2019s own',{up:'#B8C419',warning:'#F5C500',down:'#E30613',unusual:'#F59C00',paused:'#477EC0',unknown:'#878787'}],
+    ['fresh','Fresh green',{up:'#2FA84F',warning:'#F0AD22',down:'#D8402F',unusual:'#F08A22',paused:'#8B93A3',unknown:'#9AA0AD'}],
+    ['vivid','Vivid',{up:'#22C55E',warning:'#FACC15',down:'#EF4444',unusual:'#F97316',paused:'#3B82F6',unknown:'#94A3B8'}],
+    ['safe','Color-blind safe',{up:'#009E73',warning:'#F0E442',down:'#D55E00',unusual:'#CC79A7',paused:'#56B4E9',unknown:'#999999'}],
+    ['bright','Bright, for dark cards',{up:'#4ADE80',warning:'#FBBF24',down:'#F87171',unusual:'#FB923C',paused:'#93C5FD',unknown:'#9CA3AF'}]
+  ]};
   var CHIPS={success:['#DCFCE7','#166534'],warning:['#FEF3C7','#92400E'],danger:['#FEE2E2','#991B1B'],info:['#DBEAFE','#1E40AF'],neutral:['#E2E8F0','#334155']};
 
   /* a shape is a frame that draws a form instead of a titled card: box shapes, a line, an arrow, or a flowing arrow whose chevrons blink one after the other in the direction of the flow */
@@ -2226,6 +2234,31 @@ try{
     });
     return g;
   }
+  /* the Colors menu of the bar: pick a set, then click one of its status colors to put it on this item as fill or as text/shape color */
+  function fbColorsFill(it,pop,A,FD){
+    var PSd=window.PMSSETS, sel=el_('select'), rows=el_('div'), NAMES=[['up','Up'],['warning','Warning'],['down','Down'],['unusual','Unusual'],['paused','Paused'],['unknown','Unknown']];
+    pop.appendChild(el_('div','cs-h','Color set'));
+    PSd.sets.forEach(function(x){var o=el_('option');o.value=x[0];o.textContent=x[1];sel.appendChild(o);});
+    sel.value=PSd.cur||PSd.sets[0][0];fbStop(sel);
+    pop.appendChild(sel);pop.appendChild(rows);
+    function setNow(){var r=PSd.sets[0][2];PSd.sets.forEach(function(x){if(x[0]===sel.value)r=x[2];});return r;}
+    function draw(){
+      rows.innerHTML='';
+      var set=setNow();
+      [[FD?'Fill':null,FD?function(c){FD.a[1](c);}:null],[A.color?((FD||it.type!=='frame')?'Text':'Color'):null,A.color?function(c){A.color[1](c);}:null]].forEach(function(r){
+        if(!r[0])return;
+        var row=el_('div','cs-row');row.appendChild(el_('b',null,r[0]));
+        NAMES.forEach(function(n){
+          var b=el_('button','cs-sw');b.type='button';b.style.background=set[n[0]];b.title=r[0]+': '+n[1]+' ('+set[n[0]]+')';b.setAttribute('aria-label',b.title);
+          b.addEventListener('click',function(e){e.stopPropagation();fbApply(it,function(){r[1](set[n[0]]);});});
+          row.appendChild(b);
+        });
+        rows.appendChild(row);
+      });
+    }
+    sel.addEventListener('change',function(){PSd.cur=sel.value;draw();});
+    draw();
+  }
   function fbCloseAll(){if(!fbar)return;[].forEach.call(fbar.querySelectorAll('.fb-pop'),function(p){p.hidden=true;});[].forEach.call(fbar.querySelectorAll('.fb.open'),function(b){b.classList.remove('open');});}
   function fbToggle(pop,btn){var open=pop.hidden;fbCloseAll();pop.hidden=!open;if(btn)btn.classList.toggle('open',open);}
   document.addEventListener('mousedown',function(e){if(fbar&&!fbar.hidden&&!fbar.contains(e.target))fbCloseAll();});
@@ -2324,6 +2357,13 @@ try{
       fi.addEventListener('input',function(){fbApply(it,function(){FD.a[1](fi.value);});fl.style.setProperty('--sw',fi.value);});
       fi.addEventListener('change',function(){commit();buildList();});fbStop(fi);fbStop(fl);
       fl.appendChild(fi);fbar.appendChild(fl);R.fill=fi;R.fillBox=fl;R.fillD=FD;
+    }
+    if(A.color||FD){
+      sep();
+      var pcb=fbarBtn('fb-t','Status colors: apply a color of the chosen set','<circle cx="8" cy="9" r="3.2"/><circle cx="16" cy="9" r="3.2"/><circle cx="12" cy="15.5" r="3.2"/>',function(){fbToggle(pcp,pcb);});
+      var pcp=el_('div','fb-pop fb-colors');pcp.hidden=true;fbStop(pcp);
+      fbColorsFill(it,pcp,A,FD);
+      fbar.appendChild(pcb);fbar.appendChild(pcp);
     }
     if(A.align){
       var order=['left','center','right'];
@@ -8787,6 +8827,7 @@ try{
     var wi=document.getElementById('owidth');if(wi)wi.placeholder=(TYPE==='status')?'420':(TYPE==='tile')?'300':(TYPE==='gauge')?'320':(TYPE==='graph'?(GR.kind==='sensors'?'760':(GR.kind==='toplist'?'240':'520')):(TYPE==='donut'?(DN.engine==='ring'?'340':'auto'):(TYPE==='icon'?String(iStyle(IC.style).w):'fit')));
     var hi=document.getElementById('oheight');if(hi)hi.placeholder=(TYPE==='status')?'200':(TYPE==='tile')?'150':(TYPE==='graph'?(GR.kind==='sensors'?'420':(GR.kind==='toplist'?'240':'300')):(TYPE==='donut'?(DN.engine==='ring'?'220':'auto'):(TYPE==='icon'?String(iStyle(IC.style).h):'280')));
     var pasteMode=isPaste();
+    var csb=document.getElementById('ocsetw');if(csb){csb.style.display=pasteMode?'none':'';var csl=document.getElementById('ocset');if(csl)csl.value=PS.cur||'';}
     [['odl'],['ofname']].forEach(function(x){var e=document.getElementById(x[0]);if(e)e.style.display=pasteMode?'none':'';});   /* style, not the hidden attribute: a label has its own display rule */
     [['owlabel'],['owidth']].forEach(function(x){var e=document.getElementById(x[0]);if(e)e.style.display=(pasteMode||(TYPE==='table'&&ED.on))?'none':'';});
     var fh=document.getElementById('ofheadtext');if(fh)fh.textContent=pasteMode?'Paste into HTML Before':'File';
@@ -9282,13 +9323,7 @@ try{
     cv.style.backgroundSize=(grid&&grid.checked)?(Math.max(2,10*z)+'px '+Math.max(2,10*z)+'px'):'';
   }
   /* sets of status colors: PRTG's own, and others with a clearer green or friendlier to color blindness */
-  var CSETS=[
-    ['prtg','PRTG\u2019s own',{up:'#B8C419',warning:'#F5C500',down:'#E30613',unusual:'#F59C00',paused:'#477EC0',unknown:'#878787'}],
-    ['fresh','Fresh green',{up:'#2FA84F',warning:'#F0AD22',down:'#D8402F',unusual:'#F08A22',paused:'#8B93A3',unknown:'#9AA0AD'}],
-    ['vivid','Vivid',{up:'#22C55E',warning:'#FACC15',down:'#EF4444',unusual:'#F97316',paused:'#3B82F6',unknown:'#94A3B8'}],
-    ['safe','Color-blind safe',{up:'#009E73',warning:'#F0E442',down:'#D55E00',unusual:'#CC79A7',paused:'#56B4E9',unknown:'#999999'}],
-    ['bright','Bright, for dark cards',{up:'#4ADE80',warning:'#FBBF24',down:'#F87171',unusual:'#FB923C',paused:'#93C5FD',unknown:'#9CA3AF'}]
-  ];
+  var PS=window.PMSSETS, CSETS=PS.sets;   /* the color sets are shared with the Map designer's bar; PS.cur is the one chosen */
   function obOk(){return !isLegacy(TYPE)&&!isPaste()&&!(TYPE==='icon'&&IC.engine==='stock')&&!!M()&&!!M().look;}
   function obRoot(){return TYPE==='table'?document.getElementById('edwrap'):(TYPE==='geomap'?prevEl.querySelector('.icstrip'):prevEl.querySelector('.map_object'));}
   function obSet(fn){var m=M(), l=m.look;if(l.mode==='prtg')l.mode='custom';fn(l,m);refreshUI();render();}
@@ -9368,15 +9403,21 @@ try{
     CSETS.forEach(function(x){var ok=true;for(var k in x[2]){if(String((l.c||{})[k]||'').toLowerCase()!==x[2][k].toLowerCase())ok=false;}if(ok)r=x[0];});
     return r;
   }
-  function csetApply(id){
-    var set=null;CSETS.forEach(function(x){if(x[0]===id)set=x[2];});
+  function csetGet(id){var r=null;CSETS.forEach(function(x){if(x[0]===id)r=x[2];});return r;}
+  /* paint the current object with the chosen set; it is done again on every render, so choosing a look or a preset afterwards keeps the colors */
+  function csetPaint(id){
+    var set=csetGet(id);
     if(!set)return;
     if(TYPE==='geomap'){
       GM.palette='custom';GM.cols=GM.cols||{};
       GMSTATES.forEach(function(st){GM.cols[st.id]=(st.id==='downack')?blend(set.down,'#FFFFFF',0.45):set[st.id==='warn'?'warning':st.id];});
-    }else{var l=M().look;if(l.mode==='prtg')l.mode='custom';l.c=Object.assign({},set);}
+    }else{var l=M().look;if(l&&l.mode!=='prtg')l.c=Object.assign({},set);}
   }
-
+  function csetApply(id){
+    PS.cur=id;
+    if(TYPE!=='geomap'&&M().look.mode==='prtg')M().look.mode='custom';
+    csetPaint(id);
+  }
   /* small pictures of what each ready-made object looks like, for the Presets menu in the bar */
   function presetObj(v){
     var src=(TYPE==='tile')?TLPRESETS:(TYPE==='status')?SPRESETS:(TYPE==='gauge')?GPRESETS:(TYPE==='graph')?GRPRESETS:(TYPE==='donut')?DPRESETS:(TYPE==='icon')?ICPRESETS:PRESETS, r=null;
@@ -9626,7 +9667,7 @@ try{
       pop.appendChild(h('div','pf-h','Or pick each one'));
       GMSTATES.forEach(function(st){
         var w=h('div','pf pf-col'), i=h('input');i.type='color';w.appendChild(h('label',null,st.label));
-        i.addEventListener('input',function(){GM.palette='custom';GM.cols=GM.cols||{};GM.cols[st.id]=i.value;refreshUI();render();});
+        i.addEventListener('input',function(){GM.palette='custom';GM.cols=GM.cols||{};GM.cols[st.id]=i.value;PS.cur='';refreshUI();render();});
         OB.syncs.push(function(){if(document.activeElement!==i)i.value=gmColor(GM,st.id);});w.appendChild(i);pop.appendChild(w);
       });
     }));
@@ -10206,6 +10247,7 @@ try{
   /* ---------- render ---------- */
   function render(){
     if(isLegacy(TYPE))return;
+    if(PS.cur&&!isPaste())csetPaint(PS.cur);
     if(TYPE==='table'){T.tOffX=0;T.tOffY=0;}
     obAutoName();
     var text=(TYPE==='gauge')?buildGauge(G):(isPaste()?buildPaste(FRc()):(TYPE==='graph'?buildGraph(GR):(TYPE==='donut'?buildDonut(DN):(TYPE==='tile'?buildTile(TL):(TYPE==='status'?buildStatus(SC):(TYPE==='icon'?buildIcon(IC):(TYPE==='geomap'?buildGeoMap(GM):buildTable(T))))))));
@@ -10601,9 +10643,9 @@ try{
       gmG.appendChild(b);
     });
     gmS.appendChild(h('label',null,'Symbol'));gmS.appendChild(gmG);showIf(gmS,function(){return TYPE==='geomap'&&GM.icon==='symbol';});gm1.appendChild(gmS);
-    gm1.appendChild(inSel('Colors',function(){return GM.palette;},function(v){GM.palette=v;refreshUI();},[['prtg','PRTG’s own state colors'],['custom','My own colors']]));
+    gm1.appendChild(inSel('Colors',function(){return GM.palette;},function(v){GM.palette=v;PS.cur='';refreshUI();},[['prtg','PRTG’s own state colors'],['custom','My own colors']]));
     var gmC=h('div');
-    GMSTATES.forEach(function(st){gmC.appendChild(inColor(st.label,function(){return gmColor(GM,st.id);},function(v){GM.cols=GM.cols||{};GM.cols[st.id]=v;}));});
+    GMSTATES.forEach(function(st){gmC.appendChild(inColor(st.label,function(){return gmColor(GM,st.id);},function(v){GM.cols=GM.cols||{};GM.cols[st.id]=v;PS.cur='';}));});
     showIf(gmC,function(){return TYPE==='geomap'&&GM.palette==='custom';});gm1.appendChild(gmC);
     var gmW=h('div');gmW.appendChild(inChk('Shadow under each marker',function(){return GM.shadow;},function(v){GM.shadow=v;}));gm1.appendChild(gmW);
     gm1.appendChild(inNum('Most locations in the legend',function(){return GM.legend;},function(v){GM.legend=v;},0,500));
@@ -10747,7 +10789,7 @@ try{
     s7.appendChild(h('p','note','Click one to apply it, then fine-tune under Look details. The preview shows them on PRTG\u2019s own white map. Switch Background to \u201cThe look\u2019s own\u201d to see the stage each one was drawn for.'));
 
     var s8a=section('Appearance');secIf(s8a,function(){return notIcStock()&&notPaste();});
-    s8a.appendChild(inSel('Status colors',function(){return (TYPE==='geomap')?(function(){var r='custom';CSETS.forEach(function(x){var ok=true;GMSTATES.forEach(function(st){if(st.id!=='downack'&&String(gmColor(GM,st.id)).toLowerCase()!==x[2][st.id==='warn'?'warning':st.id].toLowerCase())ok=false;});if(ok)r=x[0];});return r;})():csetOf(M().look);},function(v){if(v!=='custom')csetApply(v);refreshUI();},CSETS.map(function(x){return [x[0],x[1]];}).concat([['custom','My own mix']])));
+    s8a.appendChild(inSel('Status colors',function(){return (TYPE==='geomap')?(function(){var r='custom';CSETS.forEach(function(x){var ok=true;GMSTATES.forEach(function(st){if(st.id!=='downack'&&String(gmColor(GM,st.id)).toLowerCase()!==x[2][st.id==='warn'?'warning':st.id].toLowerCase())ok=false;});if(ok)r=x[0];});return r;})():csetOf(M().look);},function(v){if(v!=='custom')csetApply(v);else PS.cur='';refreshUI();},CSETS.map(function(x){return [x[0],x[1]];}).concat([['custom','My own mix']])));
     var g=h('div');s8a.appendChild(g);
     g.appendChild(inChk('Card background and border',function(){return Lk().card;},function(v){Lk().card=v;}));
     g.appendChild(pair(inColor('Card fill',function(){return Lk().cardBg;},function(v){Lk().cardBg=v;}),inNum('Fill opacity %',function(){return Lk().cardA;},function(v){Lk().cardA=v;},0,100)));
@@ -10783,9 +10825,9 @@ try{
     g.appendChild(pair(inSel('Shown as',function(){return Lk().status;},function(v){Lk().status=v;},[['dot','Colored dot'],['dottext','Dot and text'],['pill','Pill'],['text','Text only']]),inNum('Dot size',function(){return Lk().dot;},function(v){Lk().dot=v;},6,40)));
     g.appendChild(inChk('Tint rows that are down or warning',function(){return Lk().tint;},function(v){Lk().tint=v;}));
     g=grp('Status colors',notFrame);
-    g.appendChild(pair(inColor('Up',function(){return Lk().c.up;},function(v){Lk().c.up=v;}),inColor('Warning',function(){return Lk().c.warning;},function(v){Lk().c.warning=v;})));
-    g.appendChild(pair(inColor('Down',function(){return Lk().c.down;},function(v){Lk().c.down=v;}),inColor('Unusual',function(){return Lk().c.unusual;},function(v){Lk().c.unusual=v;})));
-    g.appendChild(pair(inColor('Paused',function(){return Lk().c.paused;},function(v){Lk().c.paused=v;}),inColor('Unknown',function(){return Lk().c.unknown;},function(v){Lk().c.unknown=v;})));
+    g.appendChild(pair(inColor('Up',function(){return Lk().c.up;},function(v){Lk().c.up=v;PS.cur='';}),inColor('Warning',function(){return Lk().c.warning;},function(v){Lk().c.warning=v;PS.cur='';})));
+    g.appendChild(pair(inColor('Down',function(){return Lk().c.down;},function(v){Lk().c.down=v;PS.cur='';}),inColor('Unusual',function(){return Lk().c.unusual;},function(v){Lk().c.unusual=v;PS.cur='';})));
+    g.appendChild(pair(inColor('Paused',function(){return Lk().c.paused;},function(v){Lk().c.paused=v;PS.cur='';}),inColor('Unknown',function(){return Lk().c.unknown;},function(v){Lk().c.unknown=v;PS.cur='';})));
     var n1=h('p','note','Dots, pills and tinted rows use a small script in the file. It runs only on View Map.');showIf(n1,isTable);D.appendChild(n1);
     var n2=h('p','note','The ring gauge draws itself with a small script in the file. It runs only on View Map.');showIf(n2,isRing);D.appendChild(n2);
     hostEl.appendChild(s7.parentNode);   /* Look presets is the last section: moving the node puts it after Look details */
@@ -10802,6 +10844,16 @@ try{
   document.getElementById('owidth').addEventListener('input',function(){drawPreview();});
   document.getElementById('oheight').addEventListener('input',function(){drawPreview();});
   document.getElementById('osample').addEventListener('change',function(){sampleState=this.value;drawPreview();});
+  (function(){
+    var sel=document.getElementById('ocset');
+    if(!sel)return;
+    var o0=h('option');o0.value='';o0.textContent='The look\u2019s own';sel.appendChild(o0);
+    CSETS.forEach(function(x){var o=h('option');o.value=x[0];o.textContent=x[1];sel.appendChild(o);});
+    sel.addEventListener('change',function(){
+      if(!sel.value){PS.cur='';refreshUI();render();return;}
+      obDo(function(){csetApply(sel.value);});
+    });
+  })();
   document.getElementById('ozoom').addEventListener('change',function(){drawPreview();});
   obWire();
   document.getElementById('ogridchk').addEventListener('change',function(){obZoom();obPlace();});
