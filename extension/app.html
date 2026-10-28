@@ -810,6 +810,20 @@ body:not(.dash):not(.objs) #panel > #preswrap:not([hidden]),body:not(.dash):not(
 .nmbox{width:min(440px,92vw);background:#fff;border-radius:12px;padding:20px 22px;box-shadow:0 10px 40px rgba(15,23,42,.35)}
 .nmbox h3{margin:0 0 8px;font-size:16px;font-weight:500;color:var(--blue)}
 .nmbtns{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+
+#obar .fb-shapes{display:inline-flex;gap:2px}
+#obar .fb-sh{width:34px;height:34px;padding:3px;display:inline-flex;align-items:center;justify-content:center;border:1px solid transparent}
+#obar .fb-i{width:30px;padding:0;display:inline-flex;align-items:center;justify-content:center}
+#obar .fb-i svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+#obar .fb-al{display:inline-flex;gap:1px}
+#obar .pf-syms{display:grid;grid-template-columns:repeat(6,1fr);gap:5px}
+#obar .pf-sym{border:1px solid var(--g20);border-radius:7px;background:#fff;padding:5px;line-height:0;cursor:pointer;color:var(--ink)}
+#obar .pf-sym:hover{border-color:#9bd0e8}
+#obar .pf-sym.on{border-color:var(--cyan);background:#E6F3FA;color:var(--cyan)}
+#obar .pf-sym svg{width:100%;height:auto;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#obar .pf-col{display:flex;align-items:center;justify-content:space-between;gap:8px}
+#obar .pf-col label{margin:0;flex:1}
+#obar .pf-col input[type=color]{width:46px;height:26px;padding:1px 2px;border:1px solid var(--g20);border-radius:6px;background:#fff}
 </style>
 </head>
 <body>
