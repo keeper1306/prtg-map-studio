@@ -7208,11 +7208,11 @@ try{
 
   /* ====================== graphs ====================== */
   var GPERIODS=[[0,'Live data'],[1,'Last 2 days'],[2,'Last 30 days'],[3,'Last 365 days']];
-  var GRKINDS=[['sensor','Graph of a sensor'],['sensors','Graphs of every sensor on a device, group or probe'],['toplist','Toplist of a sensor']];
+  var GRKINDS=[['sensor','Graph of a sensor'],['bars','Bars: live values or sensor states'],['sensors','Graphs of every sensor on a device, group or probe'],['toplist','Toplist of a sensor']];
   function periodTag(p){return p===0?'<#lang key="html.sensor.livwdata" default="Live Data">':'<#system type="'+(p+1)+'period">';}
   function blankGR(){
     return {type:'graph',kind:'sensor',cat:'Graphs',name:'Sensor graph',fname:'',period:0,fontSize:12,legend:true,axis:true,tooltips:false,check:true,extra:[],
-      layout:'card',titleMode:'object',title:'',invert:'auto',tileW:336,tileH:175,mapTags:true,initW:520,initH:300,draw:'own',cstyle:'area',dots:false,maxCh:3,chNames:'',look:lookOf('PRTG new UI')};
+      layout:'card',titleMode:'object',title:'',invert:'auto',tileW:336,tileH:175,mapTags:true,initW:520,initH:300,draw:'own',cstyle:'area',dots:false,maxCh:3,chNames:'',bsrc:'status',bdir:'row',bcolor:'status',bmax:8,look:lookOf('PRTG new UI')};
   }
   function graphFromPreset(p){
     var G=blankGR();
@@ -7528,7 +7528,111 @@ try{
   function graphScript(G,L){
     return '(function(){\n  var root=document.getElementById("<@itemid>");\n  if(!root)return;\n  var CFG='+JSON.stringify(graphConfig(G,L))+';\n  ('+graphRuntime.toString()+')(root,CFG);\n})();';
   }
-  function grOwn(G){return G.kind==='sensor'&&G.draw!=='pic';}
+  /* ---- the Bars kind: bars of live values, or the share of sensors in each state. Runs in the item, with the viewer's own PRTG login. ---- */
+  function barsRuntime(root,C){
+    var box=root.querySelector('.gown'), timer=null, data=null, SN={up:'Up',warning:'Warning',down:'Down',unusual:'Unusual',paused:'Paused',unknown:'Unknown'}, KEYS=['up','warning','down','unusual','paused','unknown'];
+    if(!box)return;
+    function dv(c,p,t){var e=document.createElement('div');e.className=c;if(t!=null)e.textContent=t;if(p)p.appendChild(e);return e;}
+    function clear(n){while(n.firstChild)n.removeChild(n.firstChild);}
+    function say(t){clear(box);dv('gmsg',box,t);box.setAttribute('data-g','message');}
+    function num(v){if(typeof v==='number')return isFinite(v)?v:null;if(typeof v==='string'&&v!==''){var f=parseFloat(v.replace(/,/g,''));return isFinite(f)?f:null;}return null;}
+    function strip(t){return String(t==null?'':t).replace(/<[^>]*>/g,'').replace(/^\s+|\s+$/g,'');}
+    function stKey(c){c=parseInt(c,10);return c===3?'up':(c===4?'warning':((c===5||c===13||c===14)?'down':(c===10?'unusual':(((c>=7&&c<=9)||c===11||c===12)?'paused':'unknown'))));}
+    function ask(path,params){
+      return new Promise(function(res,rej){
+        var id='h'+Math.random().toString(36).slice(2);
+        function on(e){var d=e.data;if(!d||d.type!=='pm-hist-r'||d.id!==id)return;window.removeEventListener('message',on);if(d.ok)res(d.json);else rej(new Error('x'));}
+        window.addEventListener('message',on);
+        window.top.postMessage({type:'pm-hist',id:id,path:path,params:params},'*');
+        setTimeout(function(){window.removeEventListener('message',on);rej(new Error('t'));},20000);
+      });
+    }
+    function getJ(path,params){
+      var q=[],k,pre;
+      if(location.protocol==='about:')return ask(path,params);
+      for(k in params)q.push(k+'='+encodeURIComponent(params[k]));
+      pre=/^\/api\/v1\//.test(location.pathname)?'/api/v1':'';
+      return fetch(pre+path+'?'+q.join('&'),{credentials:'include'}).then(function(r){if(!r.ok)throw new Error('http');return r.json();});
+    }
+    function want(){var w=[];if(C.names)C.names.split(',').forEach(function(x){x=x.replace(/^\s+|\s+$/g,'').toLowerCase();if(x)w.push(x);});return w;}
+    function pass(nm,w){nm=nm.toLowerCase();return !w.length||w.some(function(x){return nm.indexOf(x)>-1;});}
+    function sample(){
+      var st={up:214,warning:9,down:3,unusual:2,paused:12,unknown:1};
+      if(C.src==='status')return {kind:'status',counts:st};
+      if(C.src==='sensors')return {kind:'items',items:[['Ping core-sw-01',12,'12 ms','up'],['Ping web-01',18,'18 ms','up'],['Ping fw-02',96,'96 ms','warning'],['Ping ap-17',140,'140 ms','down'],['Ping db-01',22,'22 ms','up']].map(function(a){return {name:a[0],v:a[1],text:a[2],st:a[3]};})};
+      return {kind:'items',items:[['Traffic In',72,'72 Mbit/s'],['Traffic Out',31,'31 Mbit/s'],['Errors in',4,'4 #'],['Errors out',9,'9 #'],['Discards',2,'2 #']].map(function(a){return {name:a[0],v:a[1],text:a[2]};})};
+    }
+    function load(){
+      var id=root.getAttribute('objectid'), p, w=want();
+      if(C.sample){data=sample();draw();return;}
+      if(C.src==='status')p=getJ('/api/table.json',{content:'sensors',columns:'objid,status_raw',count:'*',id:id}).then(function(j){var c={up:0,warning:0,down:0,unusual:0,paused:0,unknown:0};((j&&j.sensors)||[]).forEach(function(r){c[stKey(r.status_raw)]++;});return {kind:'status',counts:c};});
+      else if(C.src==='channels')p=getJ('/api/table.json',{content:'channels',columns:'name,lastvalue,lastvalue_raw',id:id}).then(function(j){
+        var it=[];((j&&j.channels)||[]).forEach(function(r){var v=num(r.lastvalue_raw),nm=strip(r.name);if(v===null||nm==='Downtime'||!pass(nm,w))return;it.push({name:nm,v:Math.abs(v),text:strip(r.lastvalue)||String(v)});});
+        return {kind:'items',items:it.slice(0,C.max)};});
+      else p=getJ('/api/table.json',{content:'sensors',columns:'objid,sensor,lastvalue,lastvalue_raw,status_raw',count:'*',id:id}).then(function(j){
+        var it=[];((j&&j.sensors)||[]).forEach(function(r){var v=num(r.lastvalue_raw),nm=strip(r.sensor);if(v===null||!pass(nm,w))return;it.push({name:nm,v:Math.abs(v),text:strip(r.lastvalue)||String(v),st:stKey(r.status_raw)});});
+        it.sort(function(a,b){return b.v-a.v;});return {kind:'items',items:it.slice(0,C.max)};});
+      p.then(function(d){data=d;draw();}).catch(function(){say('No data');});
+    }
+    function colorOf(it,i){return (C.cm==='status'&&it.st)?C.P[it.st]:(C.cm==='one'?C.colors[0]:C.colors[i%C.colors.length]);}
+    function draw(){
+      var w,tot=0,max=0,items;
+      if(!data)return;
+      clear(box);box.setAttribute('data-g','ok');w=dv('bwrap',box);
+      if(data.kind==='status'){
+        KEYS.forEach(function(k){tot+=data.counts[k]||0;});
+        if(!tot){say('No sensors here');return;}
+        var bar=dv('bstack '+(C.dir==='col'?'bcol':'brow'),w);
+        KEYS.forEach(function(k){var n=data.counts[k];if(!n)return;var sg=dv('bseg',bar);sg.style.flex=n+' 1 0';sg.style.background=C.P[k];sg.title=SN[k]+': '+n;});
+        var lg=dv('blegend',w);
+        KEYS.forEach(function(k){var n=data.counts[k];if(!n)return;var li=dv('bli',lg),sw=dv('bsw',li);sw.style.background=C.P[k];dv('bnm',li,SN[k]);dv('bvl',li,n+' ('+Math.round(n*100/tot)+'%)');});
+        return;
+      }
+      items=data.items;
+      if(!items.length){say('No data');return;}
+      items.forEach(function(it){if(it.v>max)max=it.v;});if(!max)max=1;
+      if(C.dir==='col'){
+        var cs=dv('bcols',w);
+        items.forEach(function(it,k){var c=dv('bcol1',cs);dv('bval',c,it.text);var tr=dv('btrk',c),b=dv('bfill',tr);b.style.height=Math.max(1,it.v/max*100)+'%';b.style.background=colorOf(it,k);dv('blab',c,it.name).title=it.name;});
+      }else{
+        items.forEach(function(it,k){var r=dv('brow1',w);dv('blab',r,it.name).title=it.name;var tr=dv('btrk',r),b=dv('bfill',tr);b.style.width=Math.max(0.5,it.v/max*100)+'%';b.style.background=colorOf(it,k);dv('bval',r,it.text);});
+      }
+    }
+    box.setAttribute('data-g','loading');
+    load();
+    if(!C.sample)timer=setInterval(function(){if(!document.body.contains(box)){clearInterval(timer);return;}load();},30000);
+  }
+  function barsConfig(G,L){
+    var c=graphConfig(G,L), P=donutPalette(L);
+    return {src:G.bsrc||'status',dir:G.bdir||'row',cm:G.bcolor||'status',max:Math.max(1,Math.min(40,parseInt(G.bmax,10)||8)),names:clean(G.chNames||''),colors:c.colors,P:{up:P.up,warning:P.warning,down:P.down,unusual:P.unusual,paused:P.paused,unknown:P.unknown}};
+  }
+  function barsScript(G,L){
+    return '(function(){\n  var root=document.getElementById("<@itemid>");\n  if(!root)return;\n  var CFG='+JSON.stringify(barsConfig(G,L))+';\n  ('+barsRuntime.toString()+')(root,CFG);\n})();';
+  }
+  function buildBars(G,cls,css,L){
+    var o=[], init=initAttr(G), gt=graphTitleHtml(G,'');
+    o.push('<!'+'--'+clean(G.cat||'Graphs')+': '+clean(G.name||'Bars')+'-->');
+    o.push('');
+    o.push('<div class="map_object map_graph '+cls+'" id="<@itemid>" objectid="<@objectid>" subid="<@subid>"'+init+' style="overflow:hidden;<#mapobject type="coordinates" subid="<@subid>" mode="<@editmode>">">');
+    o.push('<#mapobject type="objectgrip" mode="<@editmode>">');
+    o.push('<#mapobject type="htmlbefore" subid="<@subid>">');
+    o.push('<#checkobjecttype objecttype="'+(G.bsrc==='channels'?'sensor':'sensor,device,group,probenode')+'" nicemessage="true" id="<@objectid>">');
+    if(needsFontLink(L))o.push(fontLinkOf(L));
+    o.push('<style>');o.push(css);o.push('</style>');
+    o.push('');
+    o.push('  <div class="gbox">');
+    if(gt)o.push('    <div class="gtitle">'+gt+'</div>');
+    o.push('    <div class="ggraph">');
+    o.push('      <div class="gown" data-g="loading"></div>');
+    o.push('    </div>');
+    o.push('  </div>');
+    o.push('<#mapobject type="htmlafter" subid="<@subid>">');
+    o.push('</div>');
+    o.push('');
+    o.push('<scr'+'ipt>');o.push(barsScript(G,L));o.push('<\/script>');
+    return o.join('\n')+'\n';
+  }
+  function grOwn(G){return (G.kind==='sensor'&&G.draw!=='pic')||G.kind==='bars';}
   function grLook(G){var L=G.look;return (grOwn(G)&&L.mode==='prtg')?lookOf('Light card'):L;}
   function graphOwnCss(G,cls,L){
     var r='.'+cls, c=[], bar=(L.titleStyle==='bar'), muted=(L.muted||L.headColor||L.text), fillA=(L.cardA==null?100:L.cardA), cardFill=(fillA<100)?tint(L.cardBg,fillA/100):L.cardBg, ip=(bar?0:(L.cardPad||0))+((L.card&&L.bw>0)?L.bw:0), gb='box-sizing:border-box;height:100%;display:flex;flex-direction:column;'+(ip>0?'padding:'+ip+'px;':'')+(L.align?'text-align:'+L.align+';':'');
@@ -7548,6 +7652,29 @@ try{
     c.push(r+' .gmsg{flex:1 1 auto;display:flex;align-items:center;justify-content:center;color:'+muted+';font-size:13px;}');
     c.push(r+' .gtip{position:absolute;pointer-events:none;z-index:2;background:'+cardFill+';color:'+L.text+';border:1px solid '+blend(cardFill.charAt(0)==='#'?cardFill:'#FFFFFF',L.text,0.2)+';border-radius:6px;padding:6px 9px;font-size:12px;line-height:1.5;box-shadow:0 4px 14px rgba(0,0,0,.18);white-space:nowrap;}');
     c.push(r+' .gtip i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;}');
+    /* the Bars kind */
+    var trk='rgba(128,128,128,.18)';
+    c.push(r+' .bwrap{display:flex;flex-direction:column;gap:10px;height:100%;min-height:0;box-sizing:border-box;overflow:auto;}');
+    c.push(r+' .bstack{display:flex;gap:2px;border-radius:8px;overflow:hidden;}');
+    c.push(r+' .bstack.brow{height:34px;flex:0 0 auto;}');
+    c.push(r+' .bstack.bcol{flex:1 1 auto;flex-direction:column;min-height:80px;width:90px;margin:0 auto;}');
+    c.push(r+' .bseg{min-width:2px;min-height:2px;}');
+    c.push(r+' .blegend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:'+muted+';}');
+    c.push(r+' .bli{display:flex;align-items:center;gap:6px;}');
+    c.push(r+' .bsw{width:10px;height:10px;border-radius:3px;flex:0 0 auto;}');
+    c.push(r+' .bvl{color:'+L.text+';font-weight:600;white-space:nowrap;}');
+    c.push(r+' .brow1{display:flex;align-items:center;gap:10px;font-size:12px;}');
+    c.push(r+' .brow1 .blab{flex:0 0 28%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:'+muted+';}');
+    c.push(r+' .brow1 .btrk{flex:1 1 auto;height:14px;background:'+trk+';border-radius:7px;overflow:hidden;}');
+    c.push(r+' .brow1 .bfill{height:100%;}');
+    c.push(r+' .brow1 .bval{flex:0 0 auto;min-width:56px;text-align:right;font-weight:600;color:'+L.text+';}');
+    c.push(r+' .bfill{border-radius:7px;min-width:2px;min-height:2px;}');
+    c.push(r+' .bcols{display:flex;gap:10px;align-items:stretch;flex:1 1 auto;min-height:0;}');
+    c.push(r+' .bcol1{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:4px;}');
+    c.push(r+' .bcol1 .btrk{flex:1 1 auto;display:flex;align-items:flex-end;background:'+trk+';border-radius:7px;overflow:hidden;}');
+    c.push(r+' .bcol1 .bfill{width:100%;}');
+    c.push(r+' .bcol1 .blab{text-align:center;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:'+muted+';}');
+    c.push(r+' .bcol1 .bval{text-align:center;font-size:12px;font-weight:600;color:'+L.text+';white-space:nowrap;}');
     return c.join('\n');
   }
   function grExtra(G){
@@ -7634,6 +7761,7 @@ try{
       o.push('</div>');
       return o.join('\n')+'\n';
     }
+    if(kind==='bars')return buildBars(G,cls,css,L);
     /* a single sensor graph */
     o.push('<div class="map_object map_graph'+(styled?' '+cls:'')+'" id="<@itemid>" objectid="<@objectid>" subid="<@subid>"'+init+' style="'+(styled?'overflow:hidden;':'')+'<#mapobject type="coordinates" subid="<@subid>" mode="<@editmode>">">');
     o.push('<#mapobject type="objectgrip" mode="<@editmode>">');
@@ -9312,7 +9440,7 @@ try{
       x='Gauge - '+(m.shape==='half'?'half ring':'ring')+', '+({'sensor-primary':'main channel','sensor-all':'all channels',device:'device sensors'}[m.kind]||m.kind);
     }else if(t==='graph'){
       if(m.draw==='pic')return null;
-      x='Graph - '+({sensor:'sensor',sensors:'sensor list',toplist:'toplist'}[m.kind]||m.kind)+', '+String(amLab(GPERIODS,m.period)).toLowerCase();
+      x=(m.kind==='bars')?('Bars - '+({status:'sensor states',channels:'channels',sensors:'sensors'}[m.bsrc||'status'])+', '+(m.bdir==='col'?'vertical':'horizontal')):('Graph - '+({sensor:'sensor',sensors:'sensor list',toplist:'toplist'}[m.kind]||m.kind)+', '+String(amLab(GPERIODS,m.period)).toLowerCase()+((m.kind==='sensor'&&m.draw!=='pic'&&m.cstyle&&m.cstyle!=='area')?', '+m.cstyle:''));
     }else if(t==='donut'){
       if(m.engine!=='ring')return null;
       x='Donut - '+(m.mode==='alarms'?'alarms only':'all states')+(m.legend==='none'?', no legend':', legend '+m.legend);
@@ -9602,11 +9730,17 @@ try{
     }else if(TYPE==='graph'){
       b.appendChild(obMenu('Graph','What the graph shows and over what period',function(pop){
         pfSel(pop,'Shows',function(){return GR.kind;},function(v){GR.kind=v;if(v==='sensors'&&GR.titleMode==='object')GR.titleMode='stock';else if(v!=='sensors'&&GR.titleMode==='stock')GR.titleMode='object';},GRKINDS);
-        pfSel(pop,'Period',function(){return GR.period;},function(v){GR.period=parseInt(v,10);},GPERIODS);
-        if(GR.kind==='sensor'&&GR.draw!=='pic'){pfSel(pop,'Chart style',function(){return GR.cstyle||'area';},function(v){GR.cstyle=v;},[['area','Line, soft fill'],['smooth','Smooth, soft fill'],['line','Line only'],['bars','Bars'],['stacked','Stacked bars']]);pfChk(pop,'Dots',function(){return GR.dots;},function(v){GR.dots=v;});}
-        pfChk(pop,'Legend',function(){return GR.legend;},function(v){GR.legend=v;});
-        pfChk(pop,'Axis',function(){return GR.axis;},function(v){GR.axis=v;});
-        pfChk(pop,'Tooltips',function(){return GR.tooltips;},function(v){GR.tooltips=v;});
+        if(GR.kind==='bars'){
+          pfSel(pop,'Bars show',function(){return GR.bsrc||'status';},function(v){GR.bsrc=v;if(v==='status'&&GR.bcolor==='cat')GR.bcolor='status';},[['status','Sensor states'],['channels','Channels of a sensor'],['sensors','Sensors by value']]);
+          pfSel(pop,'Direction',function(){return GR.bdir||'row';},function(v){GR.bdir=v;},[['row','Horizontal'],['col','Vertical']]);
+          if(GR.bsrc!=='status')pfSel(pop,'Bar colors',function(){return GR.bcolor||'status';},function(v){GR.bcolor=v;},[['status','By sensor state'],['cat','One color per bar'],['one','All the same']]);
+        }else{
+          pfSel(pop,'Period',function(){return GR.period;},function(v){GR.period=parseInt(v,10);},GPERIODS);
+          if(GR.kind==='sensor'&&GR.draw!=='pic'){pfSel(pop,'Chart style',function(){return GR.cstyle||'area';},function(v){GR.cstyle=v;},[['area','Line, soft fill'],['smooth','Smooth, soft fill'],['line','Line only'],['bars','Bars'],['stacked','Stacked bars']]);pfChk(pop,'Dots',function(){return GR.dots;},function(v){GR.dots=v;});}
+          pfChk(pop,'Legend',function(){return GR.legend;},function(v){GR.legend=v;});
+          pfChk(pop,'Axis',function(){return GR.axis;},function(v){GR.axis=v;});
+          pfChk(pop,'Tooltips',function(){return GR.tooltips;},function(v){GR.tooltips=v;});
+        }
       }));
     }else if(TYPE==='donut'&&DN.engine==='ring'){
       b.appendChild(obMenu('Donut','What the donut counts and how it is laid out',function(pop){
@@ -10132,6 +10266,13 @@ try{
       for(i=0;i<4;i++)tiles+='<div class="achannel"><span class="channelname">'+names[i]+'</span><img class="PNGGraph" width="'+tw+'" height="'+th+'" src="'+mockGraphUri(tw,th,{fontSize:9,legend:false,axis:true,period:GR.period})+'"></div>';
       var inner=(title?(styled?'<div class="gtitle"><b>'+esc(title)+'</b></div>':'<b>'+esc(title)+'</b>'):'')+'<div class="sensorgraphs"><div class="prtg-plugin deviceoverviewsensorvalues">'+tiles+'</div></div><div style="clear:both"></div>';
       html+='<div class="map_object map_table reaload_wo_params'+(styled?' '+cls:'')+'" style="position:relative;overflow:auto;width:'+w+'px;height:'+hh+'px;">'+(styled?'<div class="gbox">'+inner+'</div>':inner)+'</div>';
+    }else if(kind==='bars'){
+      var gtb=(tm==='none')?'':(tm==='custom'?clean(GR.title):(GR.bsrc==='status'?'Sensor states':'Core switch'));
+      html+='<div class="map_object map_graph '+cls+'" style="position:relative;overflow:hidden;width:'+w+'px;height:'+hh+'px;"><div class="gbox">'+(gtb?'<div class="gtitle">'+esc(gtb)+'</div>':'')+'<div class="ggraph"><div class="gown" data-g="loading"></div></div></div></div>';
+      prevEl.innerHTML=html+'</div>';
+      applyBg(L);
+      try{var bcfg=barsConfig(GR,L);bcfg.sample=true;barsRuntime(prevEl.querySelector('.map_graph'),bcfg);}catch(be){}
+      return;
     }else{
       if(grOwn(GR)){
         var gt1=(tm==='none')?'':(tm==='custom'?clean(GR.title):'Core switch uplink');
@@ -10430,7 +10571,8 @@ try{
   var isGraph=function(){return TYPE==='graph';};
   var gSensor=function(){return TYPE==='graph'&&GR.kind==='sensor';};
   var gList=function(){return TYPE==='graph'&&GR.kind==='sensors';};
-  var gPeriod=function(){return TYPE==='graph'&&GR.kind!=='toplist';};
+  var gPeriod=function(){return TYPE==='graph'&&GR.kind!=='toplist'&&GR.kind!=='bars';};
+  var gBars=function(){return TYPE==='graph'&&GR.kind==='bars';};
   var gTitled=function(){return TYPE==='graph'&&GR.kind!=='toplist'&&GR.look.mode!=='prtg';};
   var isDonut=function(){return TYPE==='donut';};
   var isStatus=function(){return TYPE==='status';};
@@ -10744,6 +10886,17 @@ try{
       refreshUI();
     },GRKINDS));
     var grp_=h('div');grp_.appendChild(inSel('Period',function(){return GR.period;},function(v){GR.period=parseInt(v,10);},GPERIODS));showIf(grp_,gPeriod);gr1.appendChild(grp_);
+    var gbr=h('div');
+    gbr.appendChild(inSel('Bars show',function(){return GR.bsrc||'status';},function(v){GR.bsrc=v;if(v==='status'&&GR.bcolor==='cat')GR.bcolor='status';refreshUI();},[['status','Share of sensors in each state: put it on a device, group or probe'],['channels','The channels of a sensor: put it on a sensor'],['sensors','The sensors on a device or group, by their value']]));
+    gbr.appendChild(inSel('Direction',function(){return GR.bdir||'row';},function(v){GR.bdir=v;},[['row','Horizontal bars'],['col','Vertical bars']]));
+    var gbc=h('div');gbc.appendChild(inSel('Bar colors',function(){return GR.bcolor||'status';},function(v){GR.bcolor=v;},[['status','By the state of each sensor'],['cat','One color per bar'],['one','All the same color']]));
+    showIf(gbc,function(){return GR.bsrc!=='status';});gbr.appendChild(gbc);
+    var gbn=h('div');
+    gbn.appendChild(inNum('Most bars shown',function(){return GR.bmax;},function(v){GR.bmax=v;},1,40));
+    gbn.appendChild(inText('Only names containing (comma separated)',function(){return GR.chNames||'';},function(v){GR.chNames=v;}));
+    showIf(gbn,function(){return GR.bsrc!=='status';});gbr.appendChild(gbn);
+    gbr.appendChild(h('p','note','The bars are drawn from the live values, using the viewer’s own PRTG login. Bars of different units in one object only make sense when you filter to one kind of value, for example “Ping”. “By the state” only applies to sensors; channels use one color per bar.'));
+    showIf(gbr,gBars);gr1.appendChild(gbr);
     var gdw=h('div');
     gdw.appendChild(inSel('Drawing',function(){return GR.draw||'own';},function(v){GR.draw=v;refreshUI();},[['own','Modern line chart: drawn by the tool, follows the look'],['pic','PRTG\u2019s own picture']]));
     showIf(gdw,gSensor);gr1.appendChild(gdw);
@@ -10772,7 +10925,7 @@ try{
     var gti=h('div');
     gti.appendChild(inSel('Title',function(){return GR.titleMode;},function(v){GR.titleMode=v;},[['object','The object\u2019s name'],['stock','PRTG\u2019s \u201cGraphs of \u2026 (period)\u201d (lists)'],['custom','Custom text'],['none','No title']]));
     gti.appendChild(inText('Custom title text',function(){return GR.title;},function(v){GR.title=v;}));
-    showIf(gti,function(){return TYPE==='graph'&&(GR.kind==='sensors'||(GR.kind==='sensor'&&GR.look.mode!=='prtg'));});gr2.appendChild(gti);
+    showIf(gti,function(){return TYPE==='graph'&&(GR.kind==='sensors'||GR.kind==='bars'||(GR.kind==='sensor'&&GR.look.mode!=='prtg'));});gr2.appendChild(gti);
     var gcol=h('div');
     gcol.appendChild(inSel('Graph colors',function(){return GR.invert;},function(v){GR.invert=v;},[['auto','Automatic: invert on dark cards'],['never','Leave exactly as PRTG draws them'],['always','Always invert']]));
     gcol.appendChild(h('p','note','PRTG\u2019s graph is a picture with a light background and dark text. On a dark card it is inverted and blended in, so the card shows through and the text turns light. The line colors keep their hue but change in brightness.'));
