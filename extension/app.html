@@ -748,6 +748,18 @@ body:not(.dash) #objpanel .secbody .secfs{border:1px solid var(--line);border-ra
 body:not(.dash) #objpanel .secbody .secfs > .advbar{background:var(--soft);border-bottom:0;padding:11px 14px;font-size:12.5px}
 body:not(.dash) #objpanel .secbody .secfs > .advbar.open{border-bottom:1px solid var(--line);background:#fff}
 body:not(.dash) #objpanel .secbody .secfs > .secbody{padding:10px 14px 14px}
+
+/* the Text label and Button tool (what the page shows when it first opens) gets the same cards */
+body:not(.dash):not(.objs) #panel > fieldset.secfs{border:1px solid var(--line);border-radius:10px;margin:10px 20px;overflow:hidden;background:#fff}
+body:not(.dash):not(.objs) #panel > fieldset.secfs > .advbar{background:var(--soft);border-bottom:0;padding:11px 14px;font-size:12.5px}
+body:not(.dash):not(.objs) #panel > fieldset.secfs > .advbar.open{border-bottom:1px solid var(--line);background:#fff}
+body:not(.dash):not(.objs) #panel > fieldset.secfs > .secbody{padding:10px 14px 14px}
+body:not(.dash):not(.objs) #panel > #prestoggle,body:not(.dash):not(.objs) #panel > #advtoggle{display:block;width:calc(100% - 40px);margin:10px 20px 0;border:1px solid var(--line);border-radius:10px;background:var(--soft);padding:11px 14px;font-size:12.5px;font-weight:500;letter-spacing:0;text-transform:none;color:var(--ink)}
+body:not(.dash):not(.objs) #panel > #prestoggle.open,body:not(.dash):not(.objs) #panel > #advtoggle.open{border-radius:10px 10px 0 0;background:#fff;color:var(--cyan)}
+body:not(.dash):not(.objs) #panel > #preswrap:not([hidden]),body:not(.dash):not(.objs) #panel > #advwrap:not([hidden]){margin:0 20px 10px;padding:10px 14px 14px;border:1px solid var(--line);border-top:1px solid var(--line);border-radius:0 0 10px 10px;background:#fff}
+body:not(.dash):not(.objs) #panel > #prestoggle:not(.open),body:not(.dash):not(.objs) #panel > #advtoggle:not(.open){margin-bottom:0}
+body:not(.dash):not(.objs) #panel > #preswrap > fieldset,body:not(.dash):not(.objs) #panel > #advwrap > fieldset{border:0;margin:0;padding:6px 0 2px;background:none;border-radius:0}
+body:not(.dash):not(.objs) #panel > #preswrap:not([hidden]),body:not(.dash):not(.objs) #panel > #advwrap:not([hidden]){border-top:0;padding-top:4px}
 </style>
 </head>
 <body>
