@@ -778,6 +778,38 @@ body:not(.dash):not(.objs) #panel > #preswrap:not([hidden]),body:not(.dash):not(
 #obar .fb-t:hover{background:var(--soft);color:var(--cyan)}
 #obar .fb-t.on{background:#E6F3FA;border-color:var(--cyan2);color:var(--cyan)}
 #obar .fb-sep{width:1px;height:20px;background:var(--g20);margin:0 4px}
+
+/* nothing selected: the box, handles and bar go away so the object shows as it will look */
+#ocanvas.nosel .edov,#ocanvas.nosel #obar{display:none!important}
+#obar .fb-g{display:contents}
+#obar .fb-g[hidden]{display:none}
+#obar .fb-pop{position:absolute;left:0;top:calc(100% + 6px);z-index:60;min-width:230px;max-width:340px;max-height:340px;overflow:auto;padding:10px 12px;background:#fff;border:1px solid var(--g20);border-radius:10px;box-shadow:0 6px 24px rgba(15,23,42,.2);font-size:12px}
+#obar .fb-pop[hidden]{display:none}
+#obar .pf{margin:7px 0}
+#obar .pf label{display:block;margin:0 0 3px;color:#6c7183;font-size:11px}
+#obar .pf select,#obar .pf input[type=number],#obar .fb-pop>select{width:100%;padding:5px 6px;font-size:12px;box-sizing:border-box}
+#obar .pf-c{display:flex;align-items:center;gap:7px;color:var(--ink);cursor:pointer}
+#obar .pf-c input{width:auto;margin:0}
+#obar .pf-h{margin:6px 0 4px;color:#6c7183;font-size:11px}
+#obar .pf-r{display:flex;align-items:center;gap:6px;padding:3px 0}
+#obar .pf-r label{display:flex;align-items:center;gap:7px;flex:1;margin:0;color:var(--ink);font-size:12px;cursor:pointer}
+#obar .pf-r input{width:auto;margin:0}
+#obar .pf-r .cp{flex:none;border:1px solid var(--g20);background:#fff;border-radius:3px;font-size:10px;padding:2px 6px;cursor:pointer}
+#obar .pf-looks{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+#obar .pf-look{padding:6px 8px;border:1px solid var(--g20);border-radius:7px;background:#fff;font-size:12px;text-align:left;cursor:pointer;color:var(--ink)}
+#obar .pf-look:hover{border-color:#9bd0e8}
+#obar .pf-look.on{border-color:var(--cyan);background:#E6F3FA;color:var(--cyan)}
+#obar .pf-sets{display:flex;flex-direction:column;gap:5px}
+#obar .pf-set{display:flex;align-items:center;gap:10px;padding:6px 8px;border:1px solid var(--g20);border-radius:7px;background:#fff;font-size:12px;cursor:pointer;color:var(--ink);text-align:left}
+#obar .pf-set:hover{border-color:#9bd0e8}
+#obar .pf-set.on{border-color:var(--cyan);background:#E6F3FA}
+#obar .pf-set .sw{display:flex;gap:2px}
+#obar .pf-set .sw i{width:14px;height:14px;border-radius:3px;display:block}
+/* the two-name dialog when adding to the list */
+.nmov{position:fixed;inset:0;z-index:100001;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center}
+.nmbox{width:min(440px,92vw);background:#fff;border-radius:12px;padding:20px 22px;box-shadow:0 10px 40px rgba(15,23,42,.35)}
+.nmbox h3{margin:0 0 8px;font-size:16px;font-weight:500;color:var(--blue)}
+.nmbtns{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
 </style>
 </head>
 <body>
