@@ -151,8 +151,8 @@ body.dash #typegrid,body.editing #typegrid{display:none}
 .gmsym-b.on{border-color:var(--cyan);background:#E6F3FA;color:var(--cyan)}
 .gmsym-b svg{width:100%;height:auto;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .icstrip{display:flex;flex-wrap:wrap;gap:20px 26px;padding:14px}
-.icell{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
-.pcap{font:11px/1.2 "Segoe UI",Arial,sans-serif;color:#8b90a0;max-width:150px}
+.icell{display:flex;flex-direction:column;align-items:center;gap:8px}
+.pcap{font:11px/1.2 "Segoe UI",Arial,sans-serif;color:#8b90a0;max-width:150px;text-align:center}
 .icstock{margin:14px;padding:16px 18px;border:1px dashed #b8bccb;border-radius:6px;background:rgba(255,255,255,.7);color:#575b6b;font:13px/1.5 "Segoe UI",Arial,sans-serif;max-width:560px}
 #dscroll{overflow:auto;max-width:100%}
 #dwrap{position:relative;overflow:hidden;border:1px solid var(--g20);background:#fff}
@@ -824,6 +824,11 @@ body:not(.dash):not(.objs) #panel > #preswrap:not([hidden]),body:not(.dash):not(
 #obar .pf-col{display:flex;align-items:center;justify-content:space-between;gap:8px}
 #obar .pf-col label{margin:0;flex:1}
 #obar .pf-col input[type=color]{width:46px;height:26px;padding:1px 2px;border:1px solid var(--g20);border-radius:6px;background:#fff}
+
+#obar .fb-pop.fb-wide{width:346px;max-width:346px;max-height:430px}
+#obar .presetgrid .lookchip{padding:6px 5px}
+#obar .presetgrid .lookchip .pname{display:block;margin-top:4px;font-size:11px;color:#6c7183}
+#obar .presetchip .swatch svg{max-width:100%}
 </style>
 </head>
 <body>
