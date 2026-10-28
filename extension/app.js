@@ -46,7 +46,7 @@ var CFG={
   dashTabs:{start:'map',canvasClickMs:600,
     tabs:[
       {id:'map',icon:'1',label:'Map',sections:['Map']},
-      {id:'add',icon:'2',label:'Design',sections:['Build','Selected','PRTG Server Objects','Canvas']},
+      {id:'add',icon:'2',label:'Design',sections:['Build','Selected','PRTG Server Objects']},
       {id:'pub',icon:'3',label:'Push',sections:['Push to PRTG']}
     ],
     fold:['Canvas'],
@@ -10492,6 +10492,32 @@ try{
       fromCanvas=0;
       DASHAPI.addAt(type,e.clientX,e.clientY);added();
     });
+  })();
+  /* the Selected bar is gone: the selected item's settings sit under the Build tiles, headed by the item's own name, and only while something is selected */
+  (function(){
+    var sf=bars['Selected'];if(!sf)return;
+    sf.classList.add('nobar');sf.hidden=true;
+    function sync(){var s=null;try{s=window.DASHAPI&&DASHAPI.selected&&DASHAPI.selected();}catch(e){}sf.hidden=!s;}
+    document.addEventListener('dashselect',sync);sync();
+  })();
+  /* the Canvas section is a button at the top of the canvas that unfolds its three parts */
+  (function(){
+    var cv=bars['Canvas'], head=document.querySelector('#dashstage .undoredo'), det=cv?[].slice.call(cv.querySelectorAll('details.subsec')):[];
+    if(!cv||!head||!det.length)return;
+    var pop=document.createElement('div');pop.id='dcanvaspop';pop.hidden=true;
+    det.forEach(function(d){pop.appendChild(d);});
+    cv.style.display='none';   /* its note still counts the items for the Design tab */
+    ['mousedown','click','dblclick','keydown'].forEach(function(ev){pop.addEventListener(ev,function(e){e.stopPropagation();});});
+    var btn=document.createElement('button');btn.type='button';btn.id='dcanvasbtn';btn.className='ico txt';btn.setAttribute('data-tip','Canvas size, zoom, items and saved layouts');
+    btn.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 5v14"/></svg><span>Canvas</span>';
+    head.insertBefore(btn,head.firstChild);head.appendChild(pop);
+    function close(){pop.hidden=true;btn.classList.remove('on');}
+    btn.addEventListener('click',function(e){
+      e.stopPropagation();
+      if(pop.hidden){pop.hidden=false;btn.classList.add('on');if(!pop.querySelector('details[open]')&&det[1])det[1].open=true;}else close();
+    });
+    document.addEventListener('mousedown',function(e){if(!pop.hidden&&!pop.contains(e.target)&&!btn.contains(e.target))close();});
+    document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!pop.hidden)close();});
   })();
   show(cur);refresh();
   /* sections without a fold are opened once and cannot be closed */
