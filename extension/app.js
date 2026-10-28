@@ -2483,6 +2483,7 @@ try{
     scale=(D.zoom==='fit')?Math.min(1,Math.max(0.1,Math.min(avail/D.w,availH/D.h))):(parseFloat(D.zoom)||1);
     scale=Math.max(0.1,Math.min(4,scale));
     canvas.style.width=D.w+'px';canvas.style.height=D.h+'px';
+    try{document.dispatchEvent(new CustomEvent('dsize',{detail:{w:D.w,h:D.h}}));}catch(e){}
     canvas.style.transform='scale('+scale+')';
     wrap.style.width=Math.round(D.w*scale)+'px';wrap.style.height=Math.round(D.h*scale)+'px';
     zoomSync();gridPaint();
@@ -3256,7 +3257,7 @@ try{
       it.ord=layerOf(it)*100000+(++D.ordSeq);
       D.items.unshift(it);
     }else{
-      if(type==='shape'){it.type='frame';it.w=CFG.shape.w;it.h=CFG.shape.h;it.p=newShapeP('arrow');}
+      if(type==='shape'){it.type='frame';it.w=CFG.shape.w;it.h=CFG.shape.h;it.p=newShapeP('b_arrow','right');}
       else if(type==='frame'){it.w=CFG.frame.w;it.h=CFG.frame.h;it.p=newFrameP('Light card');}
       else if(type==='tile'){it.w=230;it.h=112;it.p=newTileP('Light tile');}
       else if(type==='banner'){it.w=640;it.h=90;it.p=newBannerP('Info');}
@@ -3843,6 +3844,7 @@ try{
   function fetchWithTimeout(url,init){
     if(!(window.AbortController))return fetch(url,init);
     var ac=new AbortController(), t=setTimeout(function(){ac.abort();},HTTP_TIMEOUT_MS);
+    if(document.getElementById('pushconnect')&&document.getElementById('pushconnect').disabled)CONN.acs.push(ac);   /* a request made while connecting can be cancelled */
     init=Object.assign({},init,{signal:ac.signal});
     return fetch(url,init).then(function(r){clearTimeout(t);return r;},function(e){clearTimeout(t);throw e;});
   }
@@ -4109,6 +4111,19 @@ try{
     n.querySelector('.gl-t').textContent=text||'Loading\u2026';
   }
   function gloadHide(key){var n=GLOAD[key];if(!n)return;clearTimeout(n._t);if(n.parentNode)n.parentNode.removeChild(n);delete GLOAD[key];}
+  /* Cancel on the connecting screen: stops the waiting, aborts the requests still in flight and brings the address back */
+  var CONN={gen:0,acs:[]}, CONNCANCEL={cancelled:true};
+  function connCancel(){
+    var i;
+    CONN.gen++;
+    for(i=0;i<CONN.acs.length;i++){try{CONN.acs[i].abort();}catch(e){}}
+    CONN.acs=[];
+    gloadHide('conn');
+    $('pushconnect').disabled=false;S.maps=null;S.objFile=null;S.lastErr='cancelled';
+    say('Cancelled. Change the address if you need to, then press Connect.','');
+    $('prtgpop').hidden=false;swSync();updateButtons();
+    try{$('pushserver').focus();$('pushserver').select();}catch(e){}
+  }
   function connect(){
     describeWhere();
     if(!pageOrigin()&&!base()){say('Enter your PRTG server\u2019s address below, then press Connect.','err');S.lastErr='enter a server address';$('prtgpop').hidden=false;try{$('pushserver').focus();}catch(e){}swSync();return;}
@@ -4116,10 +4131,14 @@ try{
     loginMark(false,false);
     say('Connecting\u2026','');
     gloadShow($('prtgpop').querySelector('.lgcard'),'conn','Connecting to PRTG\u2026');
+    var gen=++CONN.gen, gn=GLOAD['conn'];CONN.acs=[];
+    if(gn&&!gn.querySelector('.gl-x')){var cb=document.createElement('button');cb.type='button';cb.className='gl-x';cb.textContent='Cancel';cb.addEventListener('click',connCancel);gn.appendChild(cb);}
     $('pushconnect').disabled=true;S.maps=null;S.objFile=null;S.reviewed=null;S.cls=null;$('pushgo').hidden=true;$('pushlist').hidden=true;S.lastErr=null;S.reauth=!$('prtgpop').hidden;S.authAsked=false;swSync();
     ensureHostPermission(rawBase()).then(function(ok){
+      if(gen!==CONN.gen)return;
       if(!ok){gloadHide('conn');$('pushconnect').disabled=false;say('This page needs permission to talk to that server. Press Connect again and allow it when Chrome asks.','err');S.lastErr='permission not granted';swSync();return;}
-      detectUI(rawBase()).then(function(){describeWhere();gloadShow($('prtgpop').querySelector('.lgcard'),'conn','Reading your maps\u2026');return http('GET','/api/table.json',{content:'maps',columns:'name,objid'});}).then(function(t){
+      detectUI(rawBase()).then(function(){if(gen!==CONN.gen)throw CONNCANCEL;describeWhere();gloadShow($('prtgpop').querySelector('.lgcard'),'conn','Reading your maps\u2026');return http('GET','/api/table.json',{content:'maps',columns:'name,objid'});}).then(function(t){
+        if(gen!==CONN.gen)throw CONNCANCEL;
         var j=parseJson(t,'The list of maps'), maps=(j&&j.maps)||[], sel=$('pushmap');
         sel.innerHTML='';
         maps.forEach(function(m){var o=document.createElement('option');o.value=String(m.objid);o.textContent=m.name;sel.appendChild(o);});
@@ -4127,6 +4146,7 @@ try{
         gloadShow($('prtgpop').querySelector('.lgcard'),'conn','Reading the object list\u2026');
         return http('GET','/api/mapobject.json');
       }).then(function(t){
+        if(gen!==CONN.gen)throw CONNCANCEL;
         var catj=parseJson(t,'The list of object files');
         S.objFile=findCustomHtml(catj);S.catalog=parseCatalog(catj);S.tgt={};
         openApp();
@@ -4135,6 +4155,7 @@ try{
         else if(!S.objFile)say('Connected, but PRTG\u2019s object list has no \u201CCustom HTML element\u201D, so nothing can be pushed.','err');
         else say('Connected. '+S.maps.length+(S.maps.length===1?' map':' maps')+' found.','ok');
       }).catch(function(err){
+        if(err===CONNCANCEL||gen!==CONN.gen)return;
         S.maps=null;S.objFile=null;S.catalog=null;S.lastErr=(err&&err.status===401)?'login needed':((err&&err.message)||'could not connect');
         if(err&&err.status===401){
           authNeeded();
@@ -4142,6 +4163,7 @@ try{
           else say('PRTG refused the request (401: not authorised), even though you are logged in here. Enter your username and passhash (or an API token) below, then press Connect again. In PRTG, your passhash is on your My Account page.','err');
         }else say(err.message,'err');
       }).then(function(){
+        if(gen!==CONN.gen)return;
         gloadHide('conn');
         $('pushconnect').disabled=false;PV.cache={};PV.pending={};PV.inflight={};PV.queue=[];PV.applied={};trReset();updateButtons();renderObjList();pickerSync();pvSync();resolveDefaults();
         $('objnote').textContent=objNoteText();
@@ -5390,7 +5412,7 @@ try{
     var connected=!!(S&&S.maps&&S.objFile), busy=!!$('pushconnect').disabled&&!connected, err=S&&S.lastErr;
     $('prtgdot').className='pdot '+(connected?'ok':(busy?'busy':(err?'err':'off')));
     $('prtgtxt').textContent=connected?('Connected to '+hostOf(base()||pageOrigin()||'PRTG')):(busy?'Connecting\u2026':(err?('Not connected \u00B7 '+String(err).slice(0,48)):'Not connected'));
-    $('prtgtxt').dataset.tip=connected?('Connected to '+(base()||pageOrigin()||'PRTG')+' \u00B7 '+S.maps.length+(S.maps.length===1?' map':' maps')):String(err||'');
+    $('prtgtxt').title=connected?('Connected to '+(base()||pageOrigin()||'PRTG')+' \u00B7 '+S.maps.length+(S.maps.length===1?' map':' maps')):String(err||'Not connected');
     $('prtgswitch').hidden=!connected;$('prtgrefresh').hidden=!connected;$('prtgdisconnect').hidden=!connected;$('prtgcog').hidden=connected;
     if(connected&&CSSX&&CSSX.origin!==(base()||pageOrigin()||''))try{prtgCss();}catch(e){}
     window.PRTGSTATE={connected:connected,map:connected&&!!$('pushmap').value};
@@ -8640,7 +8662,7 @@ try{
   function M(){return TYPE==='gauge'?G:((TYPE==='frame'||TYPE==='bg'||TYPE==='shape')?FRc():(TYPE==='graph'?GR:(TYPE==='donut'?DN:(TYPE==='icon'?IC:(TYPE==='status'?SC:(TYPE==='tile'?TL:(TYPE==='geomap'?GM:T)))))));}
   /* Frame and Background are the Dashboard's own frame, pasted into a Custom HTML item. The Dashboard hands over its generator, so the code is the same. */
   function blankFR(kind){
-    var p=(kind==='shape')?FRAMEAPI.newShapeP('arrow'):FRAMEAPI.newFrameP(kind==='bg'?'Background dark':'Light card');
+    var p=(kind==='shape')?FRAMEAPI.newShapeP('b_arrow','right'):FRAMEAPI.newFrameP(kind==='bg'?'Background dark':'Light card');
     if(kind==='bg')p.title='';
     return {kind:kind,p:p,w:(kind==='bg'?CFG.canvas.w:(kind==='shape'?CFG.shape.w:CFG.frame.w)),h:(kind==='bg'?CFG.canvas.h:(kind==='shape'?CFG.shape.h:CFG.frame.h)),cat:'Pasted',name:(kind==='bg'?'Background':(kind==='shape'?'Shape':'Frame')),fname:'',initW:0,initH:0,look:lookOf('Minimal')};
   }
@@ -10409,7 +10431,7 @@ try{
       label:'<path d="M5 6h14M12 6v13M9 19h6"/>',
       button:'<rect x="3" y="8" width="18" height="9" rx="4.5"/><path d="M8 12.5h8"/>',
       bg:'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 17l9-9M8 12l4-4M13 17l4-4"/>',
-      shape:'<path d="M4 12h13"/><path d="m13 7 5 5-5 5"/>',
+      shape:'<path d="M3 9.5h10V6l8 6-8 6v-3.5H3z"/>',
       banner:'<rect x="2" y="7" width="20" height="10" rx="2"/><path d="M6 12h12"/>',
       existing:'<rect x="4" y="4" width="16" height="6" rx="1.5"/><rect x="4" y="14" width="16" height="6" rx="1.5"/><path d="M8 7h.01M8 17h.01"/>'
     };
@@ -10500,6 +10522,16 @@ try{
     function sync(){var s=null;try{s=window.DASHAPI&&DASHAPI.selected&&DASHAPI.selected();}catch(e){}sf.hidden=!s;}
     document.addEventListener('dashselect',sync);sync();
   })();
+  /* Build has no title bar (the tiles say what they are); PRTG Server Objects shows a plain title like the other items do */
+  (function(){
+    var bf=bars['Build'];if(bf)bf.classList.add('nobar');
+    var of=bars['PRTG Server Objects'];
+    if(of){
+      of.classList.add('nobar');
+      var t=document.createElement('h4');t.className='ftitle';t.textContent='PRTG Server Objects';
+      var bar=of.querySelector(':scope > .advbar');of.insertBefore(t,bar?bar.nextSibling:of.firstChild);
+    }
+  })();
   /* the Canvas section is a button at the top of the canvas that unfolds its three parts */
   (function(){
     var cv=bars['Canvas'], head=document.querySelector('#dashstage .undoredo'), det=cv?[].slice.call(cv.querySelectorAll('details.subsec')):[];
@@ -10509,8 +10541,14 @@ try{
     cv.style.display='none';   /* its note still counts the items for the Design tab */
     ['mousedown','click','dblclick','keydown'].forEach(function(ev){pop.addEventListener(ev,function(e){e.stopPropagation();});});
     var btn=document.createElement('button');btn.type='button';btn.id='dcanvasbtn';btn.className='ico txt';btn.setAttribute('data-tip','Canvas size, zoom, items and saved layouts');
-    btn.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 5v14"/></svg><span>Canvas</span>';
+    btn.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 5v14"/></svg><span>Canvas</span><small id="dcanvassize"></small>';
     head.insertBefore(btn,head.firstChild);head.appendChild(pop);
+    var szEl=btn.querySelector('#dcanvassize');
+    function szSync(w,h){
+      if(!(w>0&&h>0)){w=parseInt(document.getElementById('dw').value,10);h=parseInt(document.getElementById('dh').value,10);}
+      if(w>0&&h>0){szEl.textContent=w+' \u00D7 '+h;btn.title='Canvas size: '+w+' \u00D7 '+h+' px';}
+    }
+    document.addEventListener('dsize',function(e){szSync(e.detail.w,e.detail.h);});szSync();
     function close(){pop.hidden=true;btn.classList.remove('on');}
     btn.addEventListener('click',function(e){
       e.stopPropagation();
