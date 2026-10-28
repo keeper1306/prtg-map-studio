@@ -76,7 +76,7 @@ var CFG={
     'Channel and range':false,
     'Gauge style':false,
     'PRTG gauge options':false,
-    'Look presets':true,
+    'Looks':true,
     'Look details':false
   },
   /* the names the tool saves things under in the browser. Changing one forgets what was saved under the old name. */
@@ -3157,9 +3157,9 @@ try{
       kids=[].slice.call(op.children);
       kids.forEach(function(f){
         t=stdTitle(f);if(f.hidden||!t)return;
-        if(/^Appearance/.test(t)&&!ap)ap=f;else if(/^Look presets/.test(t)&&!pr)pr=f;
+        if(/^Appearance/.test(t)&&!ap)ap=f;else if(/^Looks/.test(t)&&!pr)pr=f;
       });
-      if(pr)stdName(pr.children[0],'Look presets','Presets');
+      if(pr)stdName(pr.children[0],'Looks','Presets');
       /* Text: the title fields that sit in Appearance */
       if(ap&&pr&&(!it.p.shape||isBoxShape(it.p.shape))&&!(it.p.group===false&&!it.p.shape)){
         flds={};body=ap.children[1];
@@ -7208,6 +7208,16 @@ try{
 
   /* ====================== graphs ====================== */
   var GPERIODS=[[0,'Live data'],[1,'Last 2 days'],[2,'Last 30 days'],[3,'Last 365 days']];
+  var GRSTYLES=[['area','Line, soft fill'],['smooth','Smooth, soft fill'],['line','Line only'],['bars','Bars'],['stacked','Stacked bars']];
+  function grStyleSvg(k){   /* a small picture of each chart style, for the bar */
+    var B='#2f6fed', A='#f2b01e', o='<svg viewBox="0 0 64 40" width="64" height="40" aria-hidden="true"><path d="M4 36.5H60" stroke="#c9cdd6" stroke-width="1"/>';
+    if(k==='area')o+='<path d="M4 30L14 20L24 24L34 12L44 18L60 8V36H4Z" fill="'+B+'" fill-opacity=".2"/><path d="M4 30L14 20L24 24L34 12L44 18L60 8" fill="none" stroke="'+B+'" stroke-width="2" stroke-linejoin="round"/>';
+    else if(k==='smooth')o+='<path d="M4 30C10 18 16 18 22 22S34 8 42 15S54 8 60 7V36H4Z" fill="'+B+'" fill-opacity=".2"/><path d="M4 30C10 18 16 18 22 22S34 8 42 15S54 8 60 7" fill="none" stroke="'+B+'" stroke-width="2" stroke-linecap="round"/>';
+    else if(k==='line')o+='<path d="M4 30L14 20L24 24L34 12L44 18L60 8" fill="none" stroke="'+B+'" stroke-width="2" stroke-linejoin="round"/><path d="M4 33L14 29L24 31L34 22L44 27L60 20" fill="none" stroke="'+A+'" stroke-width="2" stroke-linejoin="round"/>';
+    else if(k==='bars'){[[7,24,14],[17,16,8],[27,28,12],[37,10,6],[47,20,10]].forEach(function(b){o+='<rect x="'+b[0]+'" y="'+b[1]+'" width="4.5" height="'+(36-b[1])+'" rx="1.2" fill="'+B+'"/><rect x="'+(b[0]+5)+'" y="'+(36-b[2])+'" width="4.5" height="'+b[2]+'" rx="1.2" fill="'+A+'"/>';});}
+    else{[[6,12,10],[17,20,8],[28,8,14],[39,16,10],[50,22,6]].forEach(function(b){o+='<rect x="'+b[0]+'" y="'+(36-b[1]-b[2])+'" width="8" height="'+b[2]+'" rx="1.2" fill="'+A+'"/><rect x="'+b[0]+'" y="'+(36-b[1])+'" width="8" height="'+b[1]+'" rx="1.2" fill="'+B+'"/>';});}
+    return o+'</svg>';
+  }
   var GRKINDS=[['sensor','Graph of a sensor'],['bars','Bars: live values or sensor states'],['sensors','Graphs of every sensor on a device, group or probe'],['toplist','Toplist of a sensor']];
   function periodTag(p){return p===0?'<#lang key="html.sensor.livwdata" default="Live Data">':'<#system type="'+(p+1)+'period">';}
   function blankGR(){
@@ -7216,8 +7226,8 @@ try{
   }
   function graphFromPreset(p){
     var G=blankGR();
-    G.draw='pic';G.kind=p.kind;G.cat=p.cat;G.name=p.name+' custom';G.period=p.period||0;G.check=!!p.check;G.look=lookOf('PRTG default');G.initW=0;G.initH=0;G.layout='edge';G.tooltips=true;
-    if(p.kind==='sensor'){G.fontSize=p.fontSize;G.legend=!!p.legend;G.axis=!!p.axis;G.tooltips=!!p.tooltips;G.titleMode='none';}
+    G.draw=(p.kind==='sensor')?'own':'pic';G.kind=p.kind;G.cat=p.cat;G.name=p.name+' custom';G.period=p.period||0;G.check=!!p.check;G.look=lookOf(p.kind==='sensor'?'PRTG new UI':'PRTG default');G.initW=(p.kind==='sensor')?520:0;G.initH=(p.kind==='sensor')?300:0;G.layout=(p.kind==='sensor')?'card':'edge';G.tooltips=true;
+    if(p.kind==='sensor'){G.fontSize=p.fontSize;G.legend=!!p.legend;G.axis=!!p.axis;G.tooltips=!!p.tooltips;G.titleMode='object';}
     if(p.kind==='sensors'){G.tileW=p.tileW;G.tileH=p.tileH;G.mapTags=!!p.mapTags;G.titleMode='stock';G.layout='card';}
     if(p.kind==='toplist')G.titleMode='none';
     return G;
@@ -9682,8 +9692,8 @@ try{
     fs.addEventListener('change',function(){obSet(function(l){l.font=fs.value;});});
     OB.syncs.push(function(){fs.value=L().font;});
     /* presets and looks first: they change the most */
-    b.appendChild(obMenu('Presets','Start from a ready-made '+({table:'table',gauge:'gauge',graph:'graph',donut:'donut',status:'status counts',icon:'icon',tile:'tile'}[TYPE]||'object'),function(pop){pop.className+=' fb-wide';},function(pop){obPresetGrid(pop);}));
-    b.appendChild(obMenu('Look','Change the whole look',function(pop){
+    b.appendChild(obMenu('Templates','Start from a ready-made '+({table:'table',gauge:'gauge',graph:'graph',donut:'donut',status:'status counts',icon:'icon',tile:'tile'}[TYPE]||'object'),function(pop){pop.className+=' fb-wide';},function(pop){obPresetGrid(pop);}));
+    b.appendChild(obMenu('Looks','Change the whole look',function(pop){
       pop.className+=' fb-wide';
       var g=h('div','presetgrid');pop.appendChild(g);
       LOOKORDER.forEach(function(name){
@@ -9737,7 +9747,13 @@ try{
           if(GR.bsrc!=='status')pfSel(pop,'Bar colors',function(){return GR.bcolor||'status';},function(v){GR.bcolor=v;},[['status','By sensor state'],['cat','One color per bar'],['one','All the same']]);
         }else{
           pfSel(pop,'Period',function(){return GR.period;},function(v){GR.period=parseInt(v,10);},GPERIODS);
-          if(GR.kind==='sensor'&&GR.draw!=='pic'){pfSel(pop,'Chart style',function(){return GR.cstyle||'area';},function(v){GR.cstyle=v;},[['area','Line, soft fill'],['smooth','Smooth, soft fill'],['line','Line only'],['bars','Bars'],['stacked','Stacked bars']]);pfChk(pop,'Dots',function(){return GR.dots;},function(v){GR.dots=v;});}
+          if(GR.kind==='sensor'&&GR.draw!=='pic'){
+          pop.appendChild(h('div','pf-h','Chart style'));
+          var gsg=h('div','presetgrid');pop.appendChild(gsg);
+          GRSTYLES.forEach(function(x){var q=h('button','lookchip');q.type='button';q.setAttribute('data-cs',x[0]);q.title=x[1];q.innerHTML=grStyleSvg(x[0])+'<span class="pname">'+x[1]+'</span>';q.addEventListener('click',function(){obDo(function(){GR.cstyle=x[0];});});gsg.appendChild(q);});
+          OB.syncs.push(function(){[].forEach.call(gsg.children,function(q){q.classList.toggle('on',(GR.cstyle||'area')===q.getAttribute('data-cs'));});});
+          pfChk(pop,'Dots',function(){return GR.dots;},function(v){GR.dots=v;});
+        }
           pfChk(pop,'Legend',function(){return GR.legend;},function(v){GR.legend=v;});
           pfChk(pop,'Axis',function(){return GR.axis;},function(v){GR.axis=v;});
           pfChk(pop,'Tooltips',function(){return GR.tooltips;},function(v){GR.tooltips=v;});
@@ -9885,7 +9901,7 @@ try{
     b.appendChild(obBtn('Card','A card around the map: fill, border, rounded corners and shadow (details under Appearance)',function(){return GM.look.card;},function(v){GM.look.card=v;refreshUI();render();}));
     OB.key=obKey();
   }
-  function obKey(){return TYPE+(TYPE==='icon'?IC.engine:(TYPE==='gauge'?G.engine:(TYPE==='donut'?DN.engine:(TYPE==='graph'?GR.draw:''))));}
+  function obKey(){return TYPE+(TYPE==='icon'?IC.engine:(TYPE==='gauge'?G.engine:(TYPE==='donut'?DN.engine:(TYPE==='graph'?GR.draw+GR.kind+(GR.kind==='bars'?GR.bsrc:''):''))));}
   function obPlace(){
     var b=OB.el, cv=document.getElementById('ocanvas'), root, cr, rr, bh, left, top;
     if(!b)return;
@@ -10617,7 +10633,7 @@ try{
     });
     syncs.push(function(){engineSel.value=G.engine;});
     wE.appendChild(engineSel);showIf(wE,isGauge);s1.appendChild(wE);
-    var w2=h('div','dfld');w2.appendChild(h('label',null,'Start from'));
+    var w2=h('div','dfld');w2.appendChild(h('label',null,'Start from a template'));
     presetSel=h('select');buildPresetOptions();
     presetSel.addEventListener('change',function(){
       var v=presetSel.value;
@@ -10631,7 +10647,7 @@ try{
         else{var dp_=null;DPRESETS.forEach(function(x){if(x.id===v)dp_=x;});DN=donutFromPreset(dp_);}
       }else if(TYPE==='graph'){
         var glk=GR.look;
-        if(v!=='__blank'&&v!==''&&((GR.cstyle&&GR.cstyle!=='area')||PS.cur||GR.kind==='bars')&&!window.confirm('Starting from one of PRTG\u2019s own graphs replaces the chart style, the look and the status colors you chose. Continue?')){presetSel.value='';return;}
+        if(v!=='__blank'&&v!==''&&((GR.cstyle&&GR.cstyle!=='area')||PS.cur||GR.kind==='bars')&&!window.confirm('Starting from a template replaces the chart style, the look and the status colors you chose. Continue?')){presetSel.value='';return;}
         if(v==='__blank'){GR=blankGR();GR.look=glk;}
         else{var rp=null;GRPRESETS.forEach(function(x){if(x.id===v)rp=x;});GR=graphFromPreset(rp);}
       }else if(TYPE==='gauge'){
@@ -10648,7 +10664,7 @@ try{
       refreshUI();render();
     });
     w2.appendChild(presetSel);s1.appendChild(w2);showIf(w2,function(){return notPaste()&&TYPE!=='geomap';});
-    showIf(s1.appendChild(h('p','note','A table, gauge, graph, donut or icon from PRTG\u2019s own set keeps PRTG\u2019s look until you choose another under Look. Tables, gauges, graphs, donuts and status icons share the same looks, so a dashboard of them stays consistent.')),notPaste);
+    showIf(s1.appendChild(h('p','note','A table, gauge, graph, donut or icon from PRTG\u2019s own set keeps PRTG\u2019s look until you choose another under Looks. Tables, gauges, graphs, donuts and status icons share the same looks, so a dashboard of them stays consistent.')),notPaste);
 
     var s2=section('Name and title');secIf(s2,notPaste);
     s2.appendChild(inText('Category in the designer',function(){return M().cat;},function(v){M().cat=v;},'Data Tables'));
@@ -10751,7 +10767,7 @@ try{
     shL.appendChild(shF);sh1.appendChild(shD);sh1.appendChild(shL);
 
     /* ---- Look presets for frames, backgrounds and shapes ---- */
-    var fl1=section('Look presets');secIf(fl1,isPaste);
+    var fl1=section('Looks');secIf(fl1,isPaste);
     var fGal=h('div','fgal');fl1.appendChild(fGal);
     function fKind(){return TYPE==='bg'?'bg':(TYPE==='shape'?'shape':'frame');}
     function drawFGal(){
@@ -10932,7 +10948,7 @@ try{
     gcol.appendChild(inSel('Graph colors',function(){return GR.invert;},function(v){GR.invert=v;},[['auto','Automatic: invert on dark cards'],['never','Leave exactly as PRTG draws them'],['always','Always invert']]));
     gcol.appendChild(h('p','note','PRTG\u2019s graph is a picture with a light background and dark text. On a dark card it is inverted and blended in, so the card shows through and the text turns light. The line colors keep their hue but change in brightness.'));
     showIf(gcol,gTitled);gr2.appendChild(gcol);
-    gr2.appendChild(showIf(h('p','note','Layout, title and colors apply once you choose a look under Look presets. PRTG\u2019s own look is written exactly as PRTG ships it.'),function(){return TYPE==='graph'&&GR.look.mode==='prtg';}));
+    gr2.appendChild(showIf(h('p','note','Layout, title and colors apply once you choose a look under Looks. PRTG\u2019s own look is written exactly as PRTG ships it.'),function(){return TYPE==='graph'&&GR.look.mode==='prtg';}));
     var gr3=section('Extra graph tag attributes');secIf(gr3,gSensor);
     gr3.appendChild(inArea('One per line, name="value"',function(){return (GR.extra||[]).join('\n');},function(v){GR.extra=v.split(/\r?\n/).filter(function(x){return x.trim();});},'bgcolor="1E293B"'));
     gr3.appendChild(h('p','note','Added to PRTG\u2019s graph tag as written.'));
@@ -11009,7 +11025,7 @@ try{
     g3.appendChild(inSel('Status strip on each gauge',function(){return G.strip;},function(v){G.strip=v;},[['thin','Thin'],['keep','PRTG\u2019s wide strip'],['hide','Hidden']]));
     g3.appendChild(inChk('Hide PRTG\u2019s settings icons',function(){return G.hideSettings!==false;},function(v){G.hideSettings=v;}));
 
-    var s7=section('Look presets');secIf(s7,function(){return notIcStock()&&notPaste()&&TYPE!=='geomap';});
+    var s7=section('Looks');secIf(s7,function(){return notIcStock()&&notPaste()&&TYPE!=='geomap';});
     galleryEl=h('div','lookgrid');s7.appendChild(galleryEl);
     s7.appendChild(h('p','note','Click one to apply it, then fine-tune under Look details. The preview shows them on PRTG\u2019s own white map. Switch Background to \u201cThe look\u2019s own\u201d to see the stage each one was drawn for.'));
 
@@ -11122,7 +11138,7 @@ try{
     [].forEach.call(hostEl.children,function(f){
       var bar=f.children[0], body=f.children[1], open;
       if(!bar||!body||bar.tagName!=='BUTTON'||!bar.classList.contains('advbar'))return;
-      open=/Look presets/.test(bar.textContent);
+      open=/Looks/.test(bar.textContent);
       body.hidden=!open;bar.classList.toggle('open',open);
       if(bar.firstChild)bar.firstChild.textContent=open?'\u25BE':'\u25B8';
     });
