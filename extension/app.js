@@ -1724,6 +1724,39 @@ try{
     ['safe','Color-blind safe',{up:'#009E73',warning:'#F0E442',down:'#D55E00',unusual:'#CC79A7',paused:'#56B4E9',unknown:'#999999'}],
     ['bright','Bright, for dark cards',{up:'#4ADE80',warning:'#FBBF24',down:'#F87171',unusual:'#FB923C',paused:'#93C5FD',unknown:'#9CA3AF'}]
   ]};
+  /* a drop-down list of the color sets that shows each set's six colors, not only its name; opts: get() -> chosen id, pick(id), extra [[id,label],...] rows without colors */
+  window.PMSSETS.picker=function(opts){
+    var PSx=window.PMSSETS, root=el_('div','csp'+(opts.inline?' csp-inline':'')), btn=el_('button','csp-btn'), pop=el_('div','csp-pop'), KEYS=['up','warning','down','unusual','paused','unknown'];
+    btn.type='button';pop.hidden=true;root.appendChild(btn);root.appendChild(pop);
+    function sw(set){return '<span class="sw">'+KEYS.map(function(k){return '<i style="background:'+set[k]+'"></i>';}).join('')+'</span>';}
+    function row(id,label,set){
+      var q=el_('button','csp-row');q.type='button';q.setAttribute('data-set',id);q.innerHTML=(set?sw(set):'')+'<span>'+label+'</span>';
+      q.addEventListener('click',function(e){e.stopPropagation();close();opts.pick(id);});pop.appendChild(q);
+    }
+    (opts.extraFirst||[]).forEach(function(x){row(x[0],x[1],null);});
+    PSx.sets.forEach(function(x){row(x[0],x[1],x[2]);});
+    (opts.extra||[]).forEach(function(x){row(x[0],x[1],null);});
+    function close(){pop.hidden=true;btn.classList.remove('open');document.removeEventListener('mousedown',away,true);}
+    function away(e){if(!root.contains(e.target))close();}
+    btn.addEventListener('click',function(e){
+      e.stopPropagation();
+      if(!pop.hidden){close();return;}
+      pop.hidden=false;btn.classList.add('open');
+      if(opts.inline){document.addEventListener('mousedown',away,true);return;}
+      var r=btn.getBoundingClientRect();pop.style.minWidth=Math.max(r.width,230)+'px';
+      pop.style.left=Math.max(6,Math.min(r.left,window.innerWidth-pop.offsetWidth-6))+'px';
+      var top=r.bottom+4;if(top+pop.offsetHeight>window.innerHeight-6)top=Math.max(6,r.top-pop.offsetHeight-4);pop.style.top=top+'px';
+      document.addEventListener('mousedown',away,true);
+    });
+    root.sync=function(){
+      var id=opts.get(), all=(opts.extraFirst||[]).concat(opts.extra||[]), set=null, label='';
+      PSx.sets.forEach(function(x){if(x[0]===id){set=x[2];label=x[1];}});
+      all.forEach(function(x){if(x[0]===id&&!set)label=x[1];});
+      btn.innerHTML=(set?sw(set):'')+'<span>'+(label||'Choose\u2026')+'</span><b>\u25BE</b>';
+      [].forEach.call(pop.children,function(q){q.classList.toggle('on',q.getAttribute('data-set')===id);});
+    };
+    root.sync();return root;
+  };
   var CHIPS={success:['#DCFCE7','#166534'],warning:['#FEF3C7','#92400E'],danger:['#FEE2E2','#991B1B'],info:['#DBEAFE','#1E40AF'],neutral:['#E2E8F0','#334155']};
 
   /* a shape is a frame that draws a form instead of a titled card: box shapes, a line, an arrow, or a flowing arrow whose chevrons blink one after the other in the direction of the flow */
@@ -2236,12 +2269,12 @@ try{
   }
   /* the Colors menu of the bar: pick a set, then click one of its status colors to put it on this item as fill or as text/shape color */
   function fbColorsFill(it,pop,A,FD){
-    var PSd=window.PMSSETS, sel=el_('select'), rows=el_('div'), NAMES=[['up','Up'],['warning','Warning'],['down','Down'],['unusual','Unusual'],['paused','Paused'],['unknown','Unknown']];
+    var PSd=window.PMSSETS, pk, rows=el_('div'), NAMES=[['up','Up'],['warning','Warning'],['down','Down'],['unusual','Unusual'],['paused','Paused'],['unknown','Unknown']];
     pop.appendChild(el_('div','cs-h','Color set'));
-    PSd.sets.forEach(function(x){var o=el_('option');o.value=x[0];o.textContent=x[1];sel.appendChild(o);});
-    sel.value=PSd.cur||PSd.sets[0][0];fbStop(sel);
-    pop.appendChild(sel);pop.appendChild(rows);
-    function setNow(){var r=PSd.sets[0][2];PSd.sets.forEach(function(x){if(x[0]===sel.value)r=x[2];});return r;}
+    var shown=PSd.cur||PSd.sets[0][0];
+    pk=PSd.picker({inline:true,get:function(){return shown;},pick:function(id){shown=id;PSd.cur=id;pk.sync();draw();}});fbStop(pk);
+    pop.appendChild(pk);pop.appendChild(rows);
+    function setNow(){var r=PSd.sets[0][2];PSd.sets.forEach(function(x){if(x[0]===shown)r=x[2];});return r;}
     function draw(){
       rows.innerHTML='';
       var set=setNow();
@@ -2256,7 +2289,6 @@ try{
         rows.appendChild(row);
       });
     }
-    sel.addEventListener('change',function(){PSd.cur=sel.value;draw();});
     draw();
   }
   function fbCloseAll(){if(!fbar)return;[].forEach.call(fbar.querySelectorAll('.fb-pop'),function(p){p.hidden=true;});[].forEach.call(fbar.querySelectorAll('.fb.open'),function(b){b.classList.remove('open');});}
@@ -8827,7 +8859,7 @@ try{
     var wi=document.getElementById('owidth');if(wi)wi.placeholder=(TYPE==='status')?'420':(TYPE==='tile')?'300':(TYPE==='gauge')?'320':(TYPE==='graph'?(GR.kind==='sensors'?'760':(GR.kind==='toplist'?'240':'520')):(TYPE==='donut'?(DN.engine==='ring'?'340':'auto'):(TYPE==='icon'?String(iStyle(IC.style).w):'fit')));
     var hi=document.getElementById('oheight');if(hi)hi.placeholder=(TYPE==='status')?'200':(TYPE==='tile')?'150':(TYPE==='graph'?(GR.kind==='sensors'?'420':(GR.kind==='toplist'?'240':'300')):(TYPE==='donut'?(DN.engine==='ring'?'220':'auto'):(TYPE==='icon'?String(iStyle(IC.style).h):'280')));
     var pasteMode=isPaste();
-    var csb=document.getElementById('ocsetw');if(csb){csb.style.display=pasteMode?'none':'';var csl=document.getElementById('ocset');if(csl)csl.value=PS.cur||'';}
+    var csb=document.getElementById('ocsetw');if(csb){csb.style.display=pasteMode?'none':'';if(window.PMSHDR)window.PMSHDR.sync();}
     [['odl'],['ofname']].forEach(function(x){var e=document.getElementById(x[0]);if(e)e.style.display=pasteMode?'none':'';});   /* style, not the hidden attribute: a label has its own display rule */
     [['owlabel'],['owidth']].forEach(function(x){var e=document.getElementById(x[0]);if(e)e.style.display=(pasteMode||(TYPE==='table'&&ED.on))?'none':'';});
     var fh=document.getElementById('ofheadtext');if(fh)fh.textContent=pasteMode?'Paste into HTML Before':'File';
@@ -10789,7 +10821,12 @@ try{
     s7.appendChild(h('p','note','Click one to apply it, then fine-tune under Look details. The preview shows them on PRTG\u2019s own white map. Switch Background to \u201cThe look\u2019s own\u201d to see the stage each one was drawn for.'));
 
     var s8a=section('Appearance');secIf(s8a,function(){return notIcStock()&&notPaste();});
-    s8a.appendChild(inSel('Status colors',function(){return (TYPE==='geomap')?(function(){var r='custom';CSETS.forEach(function(x){var ok=true;GMSTATES.forEach(function(st){if(st.id!=='downack'&&String(gmColor(GM,st.id)).toLowerCase()!==x[2][st.id==='warn'?'warning':st.id].toLowerCase())ok=false;});if(ok)r=x[0];});return r;})():csetOf(M().look);},function(v){if(v!=='custom')csetApply(v);else PS.cur='';refreshUI();},CSETS.map(function(x){return [x[0],x[1]];}).concat([['custom','My own mix']])));
+    (function(){
+      var w=h('div','dfld');w.appendChild(h('label',null,'Status colors'));
+      var cur=function(){return (TYPE==='geomap')?(function(){var r='custom';CSETS.forEach(function(x){var ok=true;GMSTATES.forEach(function(st){if(st.id!=='downack'&&String(gmColor(GM,st.id)).toLowerCase()!==x[2][st.id==='warn'?'warning':st.id].toLowerCase())ok=false;});if(ok)r=x[0];});return r;})():csetOf(M().look);};
+      var pk=PS.picker({get:cur,pick:function(v){csetApply(v);refreshUI();render();},extra:[['custom','My own mix']]});
+      syncs.push(function(){pk.sync();});w.appendChild(pk);s8a.appendChild(w);
+    })();
     var g=h('div');s8a.appendChild(g);
     g.appendChild(inChk('Card background and border',function(){return Lk().card;},function(v){Lk().card=v;}));
     g.appendChild(pair(inColor('Card fill',function(){return Lk().cardBg;},function(v){Lk().cardBg=v;}),inNum('Fill opacity %',function(){return Lk().cardA;},function(v){Lk().cardA=v;},0,100)));
@@ -10845,14 +10882,10 @@ try{
   document.getElementById('oheight').addEventListener('input',function(){drawPreview();});
   document.getElementById('osample').addEventListener('change',function(){sampleState=this.value;drawPreview();});
   (function(){
-    var sel=document.getElementById('ocset');
-    if(!sel)return;
-    var o0=h('option');o0.value='';o0.textContent='The look\u2019s own';sel.appendChild(o0);
-    CSETS.forEach(function(x){var o=h('option');o.value=x[0];o.textContent=x[1];sel.appendChild(o);});
-    sel.addEventListener('change',function(){
-      if(!sel.value){PS.cur='';refreshUI();render();return;}
-      obDo(function(){csetApply(sel.value);});
-    });
+    var host=document.getElementById('ocset');
+    if(!host)return;
+    var pk=PS.picker({get:function(){return PS.cur||'';},pick:function(id){if(!id){PS.cur='';refreshUI();render();return;}obDo(function(){csetApply(id);});},extraFirst:[['','The look\u2019s own']]});
+    host.appendChild(pk);window.PMSHDR=pk;
   })();
   document.getElementById('ozoom').addEventListener('change',function(){drawPreview();});
   obWire();
