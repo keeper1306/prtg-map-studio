@@ -14,8 +14,8 @@
 /* @region: config -- the values you would otherwise hunt for. Change them here; nothing else in the file holds them. */
 var CFG={
   name:'PRTG Map Studio',
-  version:'1.2.0',
-  changelog:'1.2.0: Map designer lines are now connectors — drag either end onto a frame, shape or PRTG object and it glues there (a highlight shows the drop target); glued ends follow that object when it is moved, resized or rotated, and come unglued automatically if the object is deleted. A Branch button on a glued line adds another end from the same start, for one-to-many connections. 1.1.1: Link style animation now runs on systems that ask for reduced motion (it was switched off there); a new option pauses it again if you want that. 1.1.0: new Link style object in the Object builder. Curve, S-curve, elbow, rounded elbow and arc lines; solid, dashed, dotted and dash-dot styles; dot and arrow markers; optional flowing dashes. The straight lines PRTG draws are hidden from the first moment, so they never flash. 1.0.0: items can be reordered on the canvas. Bring to front, send backward, send to back and a Layer control next to Width and Height in Selected; Up/Down buttons in the Layers tab. Items already on the chosen PRTG map now also show up in the Layers tab (read-only, sorted by their real layer), with a link back to Existing PRTG maps to change them there. v64: one Existing PRTG maps section at the bottom of the Add tab holds the map choice and everything from Already on this map; it can be minimized. v63: the map choice has its own Map section on the Add tab, with Already on this map (show and clear items) under it; Publish keeps Push to PRTG and Save and load layout, and shows which map it will push to. v62: the Button tool has the same groups of presets as the Label tool (Basic, Map buttons, Status buttons, and the eight table, gauge and frame looks). v61: the chart.svg picture is now requested with exactly the address PRTG put in the page (PRTG signs it with a URL hash, so any change gives 401). v60: Collect PRTG samples blanks out passhash, username, map id and URL hash in the saved file, and also saves the chart.svg picture of up to two graph items. v59: a Clear items from the canvas button removes the items shown by Show items already on this map (it asks twice if you have unapplied changes). v58: choosing a Build tile (Frame, Label, Button, Background, Shape) closes the Existing PRTG objects section, so the area below stays blank until the Existing PRTG objects tile is pressed. v57: copy, cut and paste are back on the Dashboard (Ctrl+C, Ctrl+X, Ctrl+V and the Copy and Paste buttons; a frame is copied with everything inside it). v56: a Refresh object list button in Existing PRTG objects reads PRTG\u2019s list of object files again without reconnecting. v55: the Dashboard tabs (Add, Selected, Layers, Publish) and the Build tiles (click then place, double-click, drag) are in the file; their tab names, grouping and timing are now in config. v54: the ready-made objects section is gone. v53: signing in with a username and passhash is required to connect, in a new login card. v52: previews of counting objects (status counts, donuts) read every sensor, not the first five. v50: Status counts object (tiles of sensors by status) and the Brand navy look. v49: authorship marks in the core. v48: after a push the map is read back; items PRTG did not keep are added again and any that still fail are named. v47: shape presets give each look its own color and thickness; push and edit results show over the Dashboard and a failed login opens the login panel. v46: status dots in the device tree; the object preview can be dragged onto the canvas. v45: graphs and icons are edited in the preview too. v44: gauges and donuts are edited in the preview like tables (drag the handles, double-click the title). v43: Look presets for frames, backgrounds and the new shapes (lines, arrows, flowing arrows). v42: notes became hover icons, undo/redo arrows over the canvas, a tidier Dashboard panel, a PRTG connection switch. v41: click, drag, resize, delete on the canvas. v40: edit, move, delete with Review and Undo. v39: existing items show the object they are bound to (name, type, place) and a summary of what they show. v38: shows the items already on a map. v37: Collect samples reads the map items. v36: frames edited in the Objects view. v35: no comments in generated files. v34: file list. v33: install script. v32: config, tabs.',
+  version:'1.2.1',
+  changelog:'1.2.1: A connector’s look now matches the shared Link style by default (the same curve/dash/color/markers/flow settings as the Link style object you push to PRTG), so the Map designer previews what the live map will actually show. Per-connector style is still there — untick Match Link style on a line to set its own thickness, line type, dash, markers and animation. Choosing a specific line format from the shape gallery now also switches that line off Match Link style automatically. The Link style preview in the Object builder also now shows one point-to-point link instead of a branching demo (PRTG links are always point to point). 1.2.0: Map designer lines are now connectors — drag either end onto a frame, shape or PRTG object and it glues there (a highlight shows the drop target); glued ends follow that object when it is moved, resized or rotated, and come unglued automatically if the object is deleted. A Branch button on a glued line adds another end from the same start, for one-to-many connections. 1.1.1: Link style animation now runs on systems that ask for reduced motion (it was switched off there); a new option pauses it again if you want that. 1.1.0: new Link style object in the Object builder. Curve, S-curve, elbow, rounded elbow and arc lines; solid, dashed, dotted and dash-dot styles; dot and arrow markers; optional flowing dashes. The straight lines PRTG draws are hidden from the first moment, so they never flash. 1.0.0: items can be reordered on the canvas. Bring to front, send backward, send to back and a Layer control next to Width and Height in Selected; Up/Down buttons in the Layers tab. Items already on the chosen PRTG map now also show up in the Layers tab (read-only, sorted by their real layer), with a link back to Existing PRTG maps to change them there. v64: one Existing PRTG maps section at the bottom of the Add tab holds the map choice and everything from Already on this map; it can be minimized. v63: the map choice has its own Map section on the Add tab, with Already on this map (show and clear items) under it; Publish keeps Push to PRTG and Save and load layout, and shows which map it will push to. v62: the Button tool has the same groups of presets as the Label tool (Basic, Map buttons, Status buttons, and the eight table, gauge and frame looks). v61: the chart.svg picture is now requested with exactly the address PRTG put in the page (PRTG signs it with a URL hash, so any change gives 401). v60: Collect PRTG samples blanks out passhash, username, map id and URL hash in the saved file, and also saves the chart.svg picture of up to two graph items. v59: a Clear items from the canvas button removes the items shown by Show items already on this map (it asks twice if you have unapplied changes). v58: choosing a Build tile (Frame, Label, Button, Background, Shape) closes the Existing PRTG objects section, so the area below stays blank until the Existing PRTG objects tile is pressed. v57: copy, cut and paste are back on the Dashboard (Ctrl+C, Ctrl+X, Ctrl+V and the Copy and Paste buttons; a frame is copied with everything inside it). v56: a Refresh object list button in Existing PRTG objects reads PRTG\u2019s list of object files again without reconnecting. v55: the Dashboard tabs (Add, Selected, Layers, Publish) and the Build tiles (click then place, double-click, drag) are in the file; their tab names, grouping and timing are now in config. v54: the ready-made objects section is gone. v53: signing in with a username and passhash is required to connect, in a new login card. v52: previews of counting objects (status counts, donuts) read every sensor, not the first five. v50: Status counts object (tiles of sensors by status) and the Brand navy look. v49: authorship marks in the core. v48: after a push the map is read back; items PRTG did not keep are added again and any that still fail are named. v47: shape presets give each look its own color and thickness; push and edit results show over the Dashboard and a failed login opens the login panel. v46: status dots in the device tree; the object preview can be dragged onto the canvas. v45: graphs and icons are edited in the preview too. v44: gauges and donuts are edited in the preview like tables (drag the handles, double-click the title). v43: Look presets for frames, backgrounds and the new shapes (lines, arrows, flowing arrows). v42: notes became hover icons, undo/redo arrows over the canvas, a tidier Dashboard panel, a PRTG connection switch. v41: click, drag, resize, delete on the canvas. v40: edit, move, delete with Review and Undo. v39: existing items show the object they are bound to (name, type, place) and a summary of what they show. v38: shows the items already on a map. v37: Collect samples reads the map items. v36: frames edited in the Objects view. v35: no comments in generated files. v34: file list. v33: install script. v32: config, tabs.',
   /* the Dashboard canvas when the page opens, and the size a new Frame starts at */
   canvas:{w:1920,h:1080,grid:10,zoom:'fit'},
   frame:{w:360,h:220},
@@ -91,10 +91,11 @@ var CFG={
     pickerView:'prtgMapTool.pickerView',
     livePreview:'prtgMapTool.livePreview',
     mapEdits:'prtgMapTool.mapEdits',
+    linkStyle:'prtgMapTool.linkStyle',
     previewWith:'prtgMapTool.previewWith'   /* the PRTG server address is added after this name */
   }
 };
-CFG.version=(function(){try{return chrome.runtime.getManifest().version;}catch(e){return '1.2.0';}})();   /* the version is the extension's own, from manifest.json */
+CFG.version=(function(){try{return chrome.runtime.getManifest().version;}catch(e){return '1.2.1';}})();   /* the version is the extension's own, from manifest.json */
 document.title=CFG.name+' v'+CFG.version;
 document.getElementById('ver').textContent='v'+CFG.version;
 document.getElementById('dw').value=CFG.canvas.w;
@@ -122,6 +123,26 @@ var TABS={
   }
 };
 /* @endregion: tabs */
+
+/* ---------- the shared map link style: one saved look, used both by the Link style object (built in the dashboard module's objects tab)
+   you push to PRTG, and, by default, by the Map designer's own connectors (also in the dashboard module). Top-level and not inside
+   either module's IIFE, since both need to read and write it, and the two modules do not share a closure. ---------- */
+var LK_VKEYS=['line','dash','width','opacity','glow','round','colorMode','color','bend','radius','start','end','inset','flow','flowSec','calm','wait'];
+var LK_DEFAULTS={line:'curve',dash:'solid',width:5,opacity:100,glow:true,round:true,colorMode:'status',color:'#2f80ed',bend:22,radius:20,
+  start:'none',end:'none',inset:28,flow:false,flowSec:1.4,calm:false,wait:4};
+function lkDefLoad(){try{var o=JSON.parse(localStorage.getItem(CFG.keys.linkStyle)||'null');return (o&&typeof o==='object')?o:null;}catch(e){return null;}}
+function lkDefSave(o){try{localStorage.setItem(CFG.keys.linkStyle,JSON.stringify(o));}catch(e){}}
+var LKDEF=(function(){var saved=lkDefLoad(), o={};LK_VKEYS.forEach(function(k){o[k]=(saved&&saved[k]!==undefined)?saved[k]:LK_DEFAULTS[k];});return o;})();
+function lkDefSync(L){   /* called whenever the Link style object's own fields render, so editing it updates the shared default live */
+  var changed=false;
+  LK_VKEYS.forEach(function(k){if(JSON.stringify(LKDEF[k])!==JSON.stringify(L[k])){LKDEF[k]=L[k];changed=true;}});
+  if(changed)lkDefSave(LKDEF);
+}
+function lkNum(v,lo,hi,d){v=parseFloat(v);if(isNaN(v))v=d;return Math.max(lo,Math.min(hi,v));}
+/* the Map designer's three line shapes (straight/elbow/curve) are a subset of the Link style vocabulary; this is the closest match */
+function lsLnType(line){return (line==='elbow'||line==='relbow')?'elbow':(line==='straight'?'straight':'curve');}
+function lsSpeed(){var s=lkNum(LKDEF.flowSec,0.4,20,1.4);return s>=2.2?3:(s<=1.0?0.8:1.6);}
+function lsColor(){return (LKDEF.colorMode==='custom'&&/^#[0-9a-fA-F]{6}$/.test(String(LKDEF.color)))?LKDEF.color:'#2f80ed';}
 
 /* @region: page (the label and button tool, folding sections, the preview) */
 function _cs(){return [].concat([227,61,148,198,255,200,154,240],[140,37,52,63,146,221,107,244],[219,82,213,234,121,85,64,214],[133,200,171,62,157,66,43,91]);}
@@ -1866,10 +1887,13 @@ try{
   /* ---------- lines: a line has two free ends, at any angle, and can be straight, an elbow or a curve ---------- */
   function isLineK(k){return k==='line'||k==='arrow'||k==='flow';}
   function isLine(it){return !!it&&it.type==='frame'&&!!it.p&&isLineK(it.p.shape);}
-  function lnPad(p){return Math.max(12,Math.ceil((Math.max(1,parseInt(p.thick,10)||6))*3)+8);}
+  function lnPad(p){return Math.max(12,Math.ceil(lnOpts(p).t*3)+8);}   /* always from the line's effective thickness, matched or not, so a thick Link style line is never clipped */
   /* what the line looks like; a kind (line, arrow, flowing arrow) only decides the defaults */
   function lnOpts(p){
     var k=p.shape;
+    if(p.matchLS!==false&&typeof LKDEF!=='undefined')   /* by default a connector previews the map's shared Link style, so the designer matches the real map */
+      return {t:lkNum(LKDEF.width,1,40,5),c:lsColor(),type:lsLnType(LKDEF.line),dash:LKDEF.dash||'solid',
+        ha:LKDEF.start||'none',hb:LKDEF.end||'none',anim:!!LKDEF.flow,sp:lsSpeed()};
     return {t:Math.max(1,parseFloat(p.thick)||6),c:p.color||'#007DB8',type:p.lt||'straight',dash:p.dash||(k==='flow'?'dashed':'solid'),
       ha:p.ha||'none',hb:(p.hb!=null)?p.hb:((k==='arrow'||k==='flow')?'arrow':'none'),anim:(p.anim!=null)?!!p.anim:(k==='flow'),sp:parseFloat(p.speed)||1.6};
   }
@@ -2401,12 +2425,15 @@ try{
     if(t==='frame'&&isLineK(p.shape)){
       var lo=lnOpts(p);
       function LP(k,g){return [function(){return lnOpts(p)[g||k];},function(x){p[k]=x;}];}
-      return [{l:'Thickness',k:'num',min:1,max:40,a:P('thick',6)},
-        {l:'Line type',k:'sel',opts:[['straight','Straight'],['elbow','Elbow'],['curve','Curve']],a:LP('lt','type')},
-        {l:'Line style',k:'sel',opts:[['solid','Solid'],['dashed','Dashed'],['dotted','Dotted'],['dashdot','Dash and dot']],a:LP('dash')},
-        {l:'Start',k:'sel',opts:LNHEADS,a:LP('ha')},{l:'End',k:'sel',opts:LNHEADS,a:LP('hb')},
-        {l:'Animate flow',k:'chk',a:[function(){return lnOpts(p).anim;},function(x){p.anim=!!x;}]},
-        {l:'Flow speed',k:'sel',opts:[['3','Slow'],['1.6','Normal'],['0.8','Fast']],a:[function(){return String(p.speed||'1.6');},function(x){p.speed=x;}]}];
+      var ml=[{l:'Match Link style',k:'chk',a:[function(){return p.matchLS!==false;},function(x){p.matchLS=!!x;}]}];
+      if(p.matchLS===false)
+        return ml.concat([{l:'Thickness',k:'num',min:1,max:40,a:P('thick',6)},
+          {l:'Line type',k:'sel',opts:[['straight','Straight'],['elbow','Elbow'],['curve','Curve']],a:LP('lt','type')},
+          {l:'Line style',k:'sel',opts:[['solid','Solid'],['dashed','Dashed'],['dotted','Dotted'],['dashdot','Dash and dot']],a:LP('dash')},
+          {l:'Start',k:'sel',opts:LNHEADS,a:LP('ha')},{l:'End',k:'sel',opts:LNHEADS,a:LP('hb')},
+          {l:'Animate flow',k:'chk',a:[function(){return lnOpts(p).anim;},function(x){p.anim=!!x;}]},
+          {l:'Flow speed',k:'sel',opts:[['3','Slow'],['1.6','Normal'],['0.8','Fast']],a:[function(){return String(p.speed||'1.6');},function(x){p.speed=x;}]}]);
+      return ml;   /* matched: the look comes from the Link style object (Object builder), so there is nothing else to set here */
     }
     if(t==='banner'||t==='tile'||(t==='frame'&&!(p.shape&&!isBoxShape(p.shape)))){
       return [{l:'Fill',k:'color',a:P('fill','#FFFFFF')},{l:'Fill opacity %',k:'num',min:0,max:100,a:P('fillA',100)},
@@ -2517,7 +2544,7 @@ try{
   function shapeThumb(k,d,extra){
     var w=46, h=28, p, g, a='#475569';
     if(isLineK(k)){
-      var lo=lnOpts(extend({shape:k,color:a,thick:2.6},extra||{}));
+      var lo=lnOpts(extend({shape:k,color:a,thick:2.6,matchLS:false},extra||{}));
       lo.anim=false;
       return lnSvg(lo,[7,((extra&&(extra.lt))?21:14)],[39,((extra&&(extra.lt))?7:14)],46,28,true).replace('<svg ','<svg viewBox="0 0 46 28" ');
     }
@@ -2532,13 +2559,17 @@ try{
   }
   /* change what an item draws, keeping its place; a turn between flat and upright swaps width and height */
   function lnSame(p,k,extra){
-    var a=lnOpts(p), b=lnOpts(extend({shape:k},extra||{}));
+    /* which shape-grid preset this is: always compares the item's own stored fields, regardless of "Match Link style" */
+    var a=lnOpts(extend(extend({},p),{matchLS:false})), b=lnOpts(extend({shape:k,matchLS:false},extra||{}));
     return a.type===b.type&&a.dash===b.dash&&a.ha===b.ha&&a.hb===b.hb&&a.anim===b.anim;
   }
   function setShape(it,k,d,extra){
     var p=it.p, was=(p.dir==='left'||p.dir==='right'||!p.dir), tmp, now;
     shapeKindSwitch(p,k);
-    if(isLineK(k)){delete p.lt;delete p.dash;delete p.ha;delete p.hb;delete p.anim;if(extra)extend(p,extra);}
+    if(isLineK(k)){
+      delete p.lt;delete p.dash;delete p.ha;delete p.hb;delete p.anim;if(extra)extend(p,extra);
+      if(extra&&(extra.lt||extra.dash||extra.ha||extra.hb))p.matchLS=false;   /* picking a specific look here means they want it, not the shared Link style */
+    }
     if(d&&hasDir(k))p.dir=d;
     if(!hasDir(k))p.dir='right';
     now=(p.dir==='left'||p.dir==='right'||!p.dir);
@@ -9493,7 +9524,7 @@ try{
   }
 
   var FRAMEAPI=DASHAPI.frame||null, FRM={frame:null,bg:null,shape:null};
-  var T=blankT(), G=blankG(), GR=blankGR(), DN=blankD(), IC=blankI(), SC=blankSC(), TL=blankTL(), GM=blankGM(), LK=blankLK(), TYPE='label', syncs=[], vis=[], hostEl=document.getElementById('objpanel');
+  var T=blankT(), G=blankG(), GR=blankGR(), DN=blankD(), IC=blankI(), SC=blankSC(), TL=blankTL(), GM=blankGM(), LK=Object.assign(blankLK(),LKDEF), TYPE='label', syncs=[], vis=[], hostEl=document.getElementById('objpanel');
   function M(){return TYPE==='gauge'?G:((TYPE==='frame'||TYPE==='bg'||TYPE==='shape')?FRc():(TYPE==='graph'?GR:(TYPE==='donut'?DN:(TYPE==='icon'?IC:(TYPE==='status'?SC:(TYPE==='tile'?TL:(TYPE==='geomap'?GM:(TYPE==='links'?LK:T))))))));}
   /* Frame and Background are the Dashboard's own frame, pasted into a Custom HTML item. The Dashboard hands over its generator, so the code is the same. */
   function blankFR(kind){
@@ -10531,7 +10562,7 @@ try{
   function resetCurrent(){
     var k=TYPE;
     if(isLegacy(k))return;
-    if(k==='table')T=blankT();else if(k==='gauge')G=blankG();else if(k==='graph')GR=blankGR();else if(k==='donut')DN=blankD();else if(k==='icon')IC=blankI();else if(k==='status')SC=blankSC();else if(k==='tile')TL=blankTL();else if(k==='geomap')GM=blankGM();else if(k==='links')LK=blankLK();else FRM[k]=blankFR(k);
+    if(k==='table')T=blankT();else if(k==='gauge')G=blankG();else if(k==='graph')GR=blankGR();else if(k==='donut')DN=blankD();else if(k==='icon')IC=blankI();else if(k==='status')SC=blankSC();else if(k==='tile')TL=blankTL();else if(k==='geomap')GM=blankGM();else if(k==='links')LK=Object.assign(blankLK(),LKDEF);else FRM[k]=blankFR(k);
     ED.sel=null;buildPresetOptions();refreshUI();render();
     toast('Reset. Ctrl+Z brings it back.');
   }
@@ -11058,6 +11089,7 @@ try{
     if(isLegacy(TYPE))return;
     if(PS.cur&&!isPaste())csetPaint(PS.cur);
     if(TYPE==='table'){T.tOffX=0;T.tOffY=0;}
+    if(TYPE==='links')lkDefSync(LK);   /* the Link style object IS the shared map link style; Map designer connectors read it live */
     obAutoName();
     var text=(TYPE==='gauge')?buildGauge(G):(isPaste()?buildPaste(FRc()):(TYPE==='graph'?buildGraph(GR):(TYPE==='donut'?buildDonut(DN):(TYPE==='tile'?buildTile(TL):(TYPE==='status'?buildStatus(SC):(TYPE==='icon'?buildIcon(IC):(TYPE==='geomap'?buildGeoMap(GM):(TYPE==='links'?buildLinks(LK):buildTable(T)))))))));
     codeEl.value=text;
