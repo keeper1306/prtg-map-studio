@@ -31,6 +31,11 @@
     inner.setAttribute('aria-hidden', 'true');
     inner.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;border:0;margin:0;padding:0;background:transparent';
     var source = e.source;
+    /* Note: this page cannot read the nested frame it creates, and app.js cannot read this one. Both are
+       opaque-origin (this is a manifest sandbox page), and allow-same-origin on a frame whose parent is
+       already opaque grants nothing -- contentDocument comes back null either way. Anything the preview
+       content has to report therefore has to come from inside it, by postMessage; see the status script
+       pvDoc() puts in the document itself. */
     inner.addEventListener('load', function () {
       try { source.postMessage({ type: 'pv-ready', seq: seq }, '*'); } catch (err) {}
     });
