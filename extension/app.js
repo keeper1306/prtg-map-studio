@@ -14,8 +14,8 @@
 /* @region: config -- the values you would otherwise hunt for. Change them here; nothing else in the file holds them. */
 var CFG={
   name:'PRTG Map Studio',
-  version:'1.4.0',
-  changelog:'1.4.0: A new Connector tool, next to Shape in Build — adds a line already set up to glue to two objects and push to PRTG as a real, self-updating link (Push as a live link in PRTG starts switched on). Shapes keeps its own plain Lines and arrows, unchanged and never pushed live unless you ask. 1.3.1: PRTG’s own built-in icon sets (Default Icons A/B, Icons A/B/C and their static variants, Static Images — whatever this server’s list has) now show up alongside the object files in Existing PRTG objects. Pick one, bind it to a device, sensor or group like any other object, and it recolors itself with that target’s live status once pushed, the same as PRTG’s own icons. 1.3.0: A glued connector can now be pushed as a real, self-updating line on the map itself (“Push as a live link in PRTG” on a connector with both ends glued) — separate from PRTG’s own native connections, which this tool still cannot create (there is no API for that; PRTG only builds them from a hand drag in its own Map Designer). Once pushed, the line finds its two objects on the live page by itself and redraws its own path whenever either one moves, with no re-push needed; with Match Link style left on, it also recolors itself from each end’s live status, split two ways like PRTG’s own lines when the two differ. 1.2.1: A connector’s look now matches the shared Link style by default (the same curve/dash/color/markers/flow settings as the Link style object you push to PRTG), so the Map designer previews what the live map will actually show. Per-connector style is still there — untick Match Link style on a line to set its own thickness, line type, dash, markers and animation. Choosing a specific line format from the shape gallery now also switches that line off Match Link style automatically. The Link style preview in the Object builder also now shows one point-to-point link instead of a branching demo (PRTG links are always point to point). 1.2.0: Map designer lines are now connectors — drag either end onto a frame, shape or PRTG object and it glues there (a highlight shows the drop target); glued ends follow that object when it is moved, resized or rotated, and come unglued automatically if the object is deleted. A Branch button on a glued line adds another end from the same start, for one-to-many connections. 1.1.1: Link style animation now runs on systems that ask for reduced motion (it was switched off there); a new option pauses it again if you want that. 1.1.0: new Link style object in the Object builder. Curve, S-curve, elbow, rounded elbow and arc lines; solid, dashed, dotted and dash-dot styles; dot and arrow markers; optional flowing dashes. The straight lines PRTG draws are hidden from the first moment, so they never flash. 1.0.0: items can be reordered on the canvas. Bring to front, send backward, send to back and a Layer control next to Width and Height in Selected; Up/Down buttons in the Layers tab. Items already on the chosen PRTG map now also show up in the Layers tab (read-only, sorted by their real layer), with a link back to Existing PRTG maps to change them there. v64: one Existing PRTG maps section at the bottom of the Add tab holds the map choice and everything from Already on this map; it can be minimized. v63: the map choice has its own Map section on the Add tab, with Already on this map (show and clear items) under it; Publish keeps Push to PRTG and Save and load layout, and shows which map it will push to. v62: the Button tool has the same groups of presets as the Label tool (Basic, Map buttons, Status buttons, and the eight table, gauge and frame looks). v61: the chart.svg picture is now requested with exactly the address PRTG put in the page (PRTG signs it with a URL hash, so any change gives 401). v60: Collect PRTG samples blanks out passhash, username, map id and URL hash in the saved file, and also saves the chart.svg picture of up to two graph items. v59: a Clear items from the canvas button removes the items shown by Show items already on this map (it asks twice if you have unapplied changes). v58: choosing a Build tile (Frame, Label, Button, Background, Shape) closes the Existing PRTG objects section, so the area below stays blank until the Existing PRTG objects tile is pressed. v57: copy, cut and paste are back on the Dashboard (Ctrl+C, Ctrl+X, Ctrl+V and the Copy and Paste buttons; a frame is copied with everything inside it). v56: a Refresh object list button in Existing PRTG objects reads PRTG\u2019s list of object files again without reconnecting. v55: the Dashboard tabs (Add, Selected, Layers, Publish) and the Build tiles (click then place, double-click, drag) are in the file; their tab names, grouping and timing are now in config. v54: the ready-made objects section is gone. v53: signing in with a username and passhash is required to connect, in a new login card. v52: previews of counting objects (status counts, donuts) read every sensor, not the first five. v50: Status counts object (tiles of sensors by status) and the Brand navy look. v49: authorship marks in the core. v48: after a push the map is read back; items PRTG did not keep are added again and any that still fail are named. v47: shape presets give each look its own color and thickness; push and edit results show over the Dashboard and a failed login opens the login panel. v46: status dots in the device tree; the object preview can be dragged onto the canvas. v45: graphs and icons are edited in the preview too. v44: gauges and donuts are edited in the preview like tables (drag the handles, double-click the title). v43: Look presets for frames, backgrounds and the new shapes (lines, arrows, flowing arrows). v42: notes became hover icons, undo/redo arrows over the canvas, a tidier Dashboard panel, a PRTG connection switch. v41: click, drag, resize, delete on the canvas. v40: edit, move, delete with Review and Undo. v39: existing items show the object they are bound to (name, type, place) and a summary of what they show. v38: shows the items already on a map. v37: Collect samples reads the map items. v36: frames edited in the Objects view. v35: no comments in generated files. v34: file list. v33: install script. v32: config, tabs.',
+  version:'1.4.1',
+  changelog:'1.4.1: Connector fixes. Dragging a Connector from Build onto the canvas works now (it silently did nothing before); drop it on top of an object and it glues itself to the nearest side right away. Gluing anywhere — Connector or a Shapes line — now only offers the four side centers, not a free slide along the edge. A connector reads live status from the state PRTG itself put on the object (the same class PRTG and our own Icon objects use), not just a plain background color, so Icon-object endpoints now color correctly too. The Selected panel (title, shape gallery, and the inline Shape section when editing in place) calls a Connector a Connector and only offers Line, Arrow and Flowing arrow for it, never a flowchart box or callout. 1.4.0: A new Connector tool, next to Shape in Build — adds a line already set up to glue to two objects and push to PRTG as a real, self-updating link (Push as a live link in PRTG starts switched on). Shapes keeps its own plain Lines and arrows, unchanged and never pushed live unless you ask. 1.3.1: PRTG’s own built-in icon sets (Default Icons A/B, Icons A/B/C and their static variants, Static Images — whatever this server’s list has) now show up alongside the object files in Existing PRTG objects. Pick one, bind it to a device, sensor or group like any other object, and it recolors itself with that target’s live status once pushed, the same as PRTG’s own icons. 1.3.0: A glued connector can now be pushed as a real, self-updating line on the map itself (“Push as a live link in PRTG” on a connector with both ends glued) — separate from PRTG’s own native connections, which this tool still cannot create (there is no API for that; PRTG only builds them from a hand drag in its own Map Designer). Once pushed, the line finds its two objects on the live page by itself and redraws its own path whenever either one moves, with no re-push needed; with Match Link style left on, it also recolors itself from each end’s live status, split two ways like PRTG’s own lines when the two differ. 1.2.1: A connector’s look now matches the shared Link style by default (the same curve/dash/color/markers/flow settings as the Link style object you push to PRTG), so the Map designer previews what the live map will actually show. Per-connector style is still there — untick Match Link style on a line to set its own thickness, line type, dash, markers and animation. Choosing a specific line format from the shape gallery now also switches that line off Match Link style automatically. The Link style preview in the Object builder also now shows one point-to-point link instead of a branching demo (PRTG links are always point to point). 1.2.0: Map designer lines are now connectors — drag either end onto a frame, shape or PRTG object and it glues there (a highlight shows the drop target); glued ends follow that object when it is moved, resized or rotated, and come unglued automatically if the object is deleted. A Branch button on a glued line adds another end from the same start, for one-to-many connections. 1.1.1: Link style animation now runs on systems that ask for reduced motion (it was switched off there); a new option pauses it again if you want that. 1.1.0: new Link style object in the Object builder. Curve, S-curve, elbow, rounded elbow and arc lines; solid, dashed, dotted and dash-dot styles; dot and arrow markers; optional flowing dashes. The straight lines PRTG draws are hidden from the first moment, so they never flash. 1.0.0: items can be reordered on the canvas. Bring to front, send backward, send to back and a Layer control next to Width and Height in Selected; Up/Down buttons in the Layers tab. Items already on the chosen PRTG map now also show up in the Layers tab (read-only, sorted by their real layer), with a link back to Existing PRTG maps to change them there. v64: one Existing PRTG maps section at the bottom of the Add tab holds the map choice and everything from Already on this map; it can be minimized. v63: the map choice has its own Map section on the Add tab, with Already on this map (show and clear items) under it; Publish keeps Push to PRTG and Save and load layout, and shows which map it will push to. v62: the Button tool has the same groups of presets as the Label tool (Basic, Map buttons, Status buttons, and the eight table, gauge and frame looks). v61: the chart.svg picture is now requested with exactly the address PRTG put in the page (PRTG signs it with a URL hash, so any change gives 401). v60: Collect PRTG samples blanks out passhash, username, map id and URL hash in the saved file, and also saves the chart.svg picture of up to two graph items. v59: a Clear items from the canvas button removes the items shown by Show items already on this map (it asks twice if you have unapplied changes). v58: choosing a Build tile (Frame, Label, Button, Background, Shape) closes the Existing PRTG objects section, so the area below stays blank until the Existing PRTG objects tile is pressed. v57: copy, cut and paste are back on the Dashboard (Ctrl+C, Ctrl+X, Ctrl+V and the Copy and Paste buttons; a frame is copied with everything inside it). v56: a Refresh object list button in Existing PRTG objects reads PRTG\u2019s list of object files again without reconnecting. v55: the Dashboard tabs (Add, Selected, Layers, Publish) and the Build tiles (click then place, double-click, drag) are in the file; their tab names, grouping and timing are now in config. v54: the ready-made objects section is gone. v53: signing in with a username and passhash is required to connect, in a new login card. v52: previews of counting objects (status counts, donuts) read every sensor, not the first five. v50: Status counts object (tiles of sensors by status) and the Brand navy look. v49: authorship marks in the core. v48: after a push the map is read back; items PRTG did not keep are added again and any that still fail are named. v47: shape presets give each look its own color and thickness; push and edit results show over the Dashboard and a failed login opens the login panel. v46: status dots in the device tree; the object preview can be dragged onto the canvas. v45: graphs and icons are edited in the preview too. v44: gauges and donuts are edited in the preview like tables (drag the handles, double-click the title). v43: Look presets for frames, backgrounds and the new shapes (lines, arrows, flowing arrows). v42: notes became hover icons, undo/redo arrows over the canvas, a tidier Dashboard panel, a PRTG connection switch. v41: click, drag, resize, delete on the canvas. v40: edit, move, delete with Review and Undo. v39: existing items show the object they are bound to (name, type, place) and a summary of what they show. v38: shows the items already on a map. v37: Collect samples reads the map items. v36: frames edited in the Objects view. v35: no comments in generated files. v34: file list. v33: install script. v32: config, tabs.',
   /* the Dashboard canvas when the page opens, and the size a new Frame starts at */
   canvas:{w:1920,h:1080,grid:10,zoom:'fit'},
   frame:{w:360,h:220},
@@ -95,7 +95,7 @@ var CFG={
     previewWith:'prtgMapTool.previewWith'   /* the PRTG server address is added after this name */
   }
 };
-CFG.version=(function(){try{return chrome.runtime.getManifest().version;}catch(e){return '1.4.0';}})();   /* the version is the extension's own, from manifest.json */
+CFG.version=(function(){try{return chrome.runtime.getManifest().version;}catch(e){return '1.4.1';}})();   /* the version is the extension's own, from manifest.json */
 document.title=CFG.name+' v'+CFG.version;
 document.getElementById('ver').textContent='v'+CFG.version;
 document.getElementById('dw').value=CFG.canvas.w;
@@ -1961,13 +1961,9 @@ try{
       if(Math.abs(tlx)<=hw+6&&Math.abs(tly)<=hh+6){best=it;lx=tlx;ly=tly;break;}
     }
     if(!best)return null;
-    var hw=best.w/2, hh=best.h/2, dl=Math.abs(lx+hw), dr=Math.abs(lx-hw), dt=Math.abs(ly+hh), db=Math.abs(ly-hh), m=Math.min(dl,dr,dt,db), s, t;
-    function c01(v){return Math.max(0,Math.min(1,v));}
-    if(m===dl){s='l';t=c01((ly+hh)/(2*hh));}
-    else if(m===dr){s='r';t=c01((ly+hh)/(2*hh));}
-    else if(m===dt){s='t';t=c01((lx+hw)/(2*hw));}
-    else{s='b';t=c01((lx+hw)/(2*hw));}
-    return {id:best.id,s:s,t:Math.round(t*100)/100};
+    var hw=best.w/2, hh=best.h/2, dl=Math.abs(lx+hw), dr=Math.abs(lx-hw), dt=Math.abs(ly+hh), db=Math.abs(ly-hh), m=Math.min(dl,dr,dt,db), s;
+    if(m===dl)s='l';else if(m===dr)s='r';else if(m===dt)s='t';else s='b';
+    return {id:best.id,s:s,t:0.5};   /* always the center of that side: four fixed points per object, not a free slide along the edge */
   }
   /* "Branch": a second (or third...) end from the same start, so one source fans out to several targets */
   function branchLine(it){
@@ -3409,6 +3405,7 @@ try{
       kids.forEach(function(f){
         t=stdTitle(f);if(f.hidden||!t)return;
         if(/^Appearance/.test(t)&&!ap)ap=f;else if(/^Looks/.test(t)&&!pr)pr=f;
+        else if(t==='Shape'&&it.p.isConnector)stdName(f.children[0],'Shape','Connector');
       });
       if(pr)stdName(pr.children[0],'Looks','Presets');
       /* Text: the title fields that sit in Appearance */
@@ -3499,7 +3496,7 @@ try{
     var it=byId(D.sel);
       if(window.SECAPI)SECAPI.note('Selected',it?itemName(it):'nothing selected');
     if(!it){formEl.appendChild(el_('p','note pst','Click an item on the canvas to change how it looks.'));inlSync();return;}
-    formEl.appendChild(el_('h4',null,(it.type==='frame'&&it.p.shape)?'Shape':((it.type==='frame'&&it.p.group===false)?'Background':TYPENAME[it.type])));
+    formEl.appendChild(el_('h4',null,(it.type==='frame'&&it.p.shape)?(it.p.isConnector?'Connector':'Shape'):((it.type==='frame'&&it.p.group===false)?'Background':TYPENAME[it.type])));
     /* Duplicate and Delete are in the bar over the item; Ctrl+C, Ctrl+V, Ctrl+D and Delete work from the keyboard */
     var geoFs=acc('Size, position and layer',[geoRow(it),layerRow(it),parentSel(it)]), inlineOk=!!(OBJAPI.inline&&DASHAPI.active);
     STD.geo=geoFs;
@@ -3606,6 +3603,14 @@ try{
       }
       it.ord=layerOf(it)*100000+(++D.ordSeq);
       D.items.push(it);
+      if(type==='connector'&&extra&&extra.at){   /* dropped (or placed) on top of an object: glue the start end to the nearest side right away */
+        var hit=connHit([extra.at.x,extra.at.y],it.id);
+        if(hit){
+          var A=connAnchorAbs(hit), away={l:[-170,0],r:[170,0],t:[0,-170],b:[0,170]}[hit.s];
+          lnSetAbs(it,A,[A[0]+away[0],A[1]+away[1]]);
+          it.p.ga={id:hit.id,s:hit.s,t:hit.t};
+        }
+      }
     }
     D.sel=it.id;renderAll();buildForm();commit();
   }
@@ -4133,8 +4138,15 @@ try{
         a=p.getPointAtLength(s);b=p.getPointAtLength(atEnd?s-1.5:s+1.5);ang=Math.atan2(a.y-b.y,a.x-b.x);
         cap(g,kind,a.x,a.y,ang,w,paint);
       }
+      var LST={g:'up',r:'down',y:'warning',o:'unusual',b:'paused',bl:'paused',gr:'unknown'};
+      var LCOL={up:'#b4cc38',down:'#d71920',warning:'#ffd400',unusual:'#f5821f',paused:'#3b8dd0',unknown:'#9aa4af'};
       function statusColor(elx){
         if(!elx)return null;
+        /* the live status class PRTG (or our own Icon objects, which ask for it the same way) puts on the bound
+           element itself -- this works no matter how that element paints its own status (background-color,
+           an inner SVG fill, anything), unlike reading computed style, which only sees a plain status dot */
+        var m=/\bmap_objectstate_sens([a-z]+)\b/.exec(elx.className||''), k=m?LST[m[1]]:null;
+        if(k)return LCOL[k];
         try{var bg=getComputedStyle(elx).backgroundColor;if(bg&&bg!=='rgba(0, 0, 0, 0)'&&bg!=='transparent')return bg;}catch(e){}
         return null;
       }
@@ -11540,7 +11552,21 @@ try{
     /* ---- shape: what it draws ---- */
     var sh1=section('Shape');secIf(sh1,function(){return TYPE==='shape';});
     var FRPs=function(){return FRc().p;};
-    sh1.appendChild(inSel('Kind',function(){return FRPs().shape;},function(v){FRAMEAPI.kindSwitch(FRPs(),v);refreshUI();},FRAMEAPI.SHAPES));   /* refreshUI also redraws the look tiles, so they show this kind */
+    var LINEKINDS=['line','arrow','flow'];
+    var shKindW=h('div','dfld');shKindW.appendChild(h('label',null,'Kind'));
+    var shKindSel=h('select');
+    shKindSel.addEventListener('change',function(){FRAMEAPI.kindSwitch(FRPs(),shKindSel.value);refreshUI();});
+    syncs.push(function(){   /* rebuilt each refresh: a Connector only ever offers Line, Arrow and Flowing arrow -- it never becomes a flowchart box or callout */
+      var isConn=!!FRPs().isConnector, cur=String(FRPs().shape);
+      shKindSel.innerHTML='';
+      FRAMEAPI.SHAPES.forEach(function(o){
+        var k=(o instanceof Array)?o[0]:o;
+        if(isConn&&LINEKINDS.indexOf(k)<0)return;
+        var op=h('option');op.value=k;op.textContent=(o instanceof Array)?o[1]:o;shKindSel.appendChild(op);
+      });
+      shKindSel.value=cur;
+    });
+    shKindW.appendChild(shKindSel);sh1.appendChild(shKindW);   /* refreshUI also redraws the look tiles, so they show this kind */
     var shD=h('div');showIf(shD,function(){var q=FRPs();return FRAMEAPI.hasDir(q.shape)&&!(q.ln&&(q.shape==='line'||q.shape==='arrow'||q.shape==='flow'));});   /* a line with free ends has no direction of its own */
     var shL=h('div');showIf(shL,function(){var k=FRPs().shape;return k==='line'||k==='arrow'||k==='flow';});
     shD.appendChild(inSel('Direction',function(){return FRPs().dir;},function(v){var p=FRPs(), fr=FRc(), was=(p.dir==='right'||p.dir==='left'), now=(v==='right'||v==='left'), t;if(was!==now){t=fr.w;fr.w=fr.h;fr.h=t;}p.dir=v;refreshUI();},[['right','Right'],['left','Left'],['down','Down'],['up','Up']]));   /* turning the arrow a quarter turn turns its box too */
@@ -12072,6 +12098,7 @@ try{
       button:'<rect x="3" y="8" width="18" height="9" rx="4.5"/><path d="M8 12.5h8"/>',
       bg:'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 17l9-9M8 12l4-4M13 17l4-4"/>',
       shape:'<path d="M3 9.5h10V6l8 6-8 6v-3.5H3z"/>',
+      connector:'<circle cx="4" cy="6" r="2"/><circle cx="20" cy="18" r="2"/><path d="M6 6h5a3 3 0 0 1 3 3v3a3 3 0 0 0 3 3h3"/>',
       banner:'<rect x="2" y="7" width="20" height="10" rx="2"/><path d="M6 12h12"/>',
       existing:'<rect x="4" y="4" width="16" height="6" rx="1.5"/><rect x="4" y="14" width="16" height="6" rx="1.5"/><path d="M8 7h.01M8 17h.01"/>'
     };
@@ -12096,7 +12123,7 @@ try{
   (function(){
     var grid=document.querySelector('#dashpanel .addgrid'), wrapEl=document.getElementById('dwrap');
     if(!grid||!wrapEl||!window.DASHAPI||!DASHAPI.addAt)return;
-    var NAMES={frame:'frame',label:'label',button:'button',banner:'banner',bg:'background',shape:'shape'}, armed=null, tiles=[].slice.call(grid.querySelectorAll('[data-add]'));
+    var NAMES={frame:'frame',label:'label',button:'button',banner:'banner',bg:'background',shape:'shape',connector:'connector'}, armed=null, tiles=[].slice.call(grid.querySelectorAll('[data-add]'));
     var hint=document.createElement('p');hint.id='addhint';hint.className='note pst';
     var base='';   /* the tiles' own tooltips explain how to add; the line shows only while a tile is armed */
     hint.textContent=base;hint.hidden=true;grid.parentNode.insertBefore(hint,grid.nextSibling);
