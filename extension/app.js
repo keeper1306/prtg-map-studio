@@ -15,7 +15,7 @@
 var CFG={
   name:'PRTG Map Studio',
   version:'1.4.2',
-  changelog:'1.5.1: A Connector\u2019s presets are now its looks, shown as pictures, in the left panel and in the floating bar, and the separate Look picker is gone. A Connector is black until the objects it joins report a status, then takes their colours. 1.5.0: Connectors get eleven looks (soft glow, tube, beads, chevron, taper, rail, lifted, pulse, circuit, dash sweep, plain) and text on the line, with a pill, filled or text-only style. Both are chosen from pictures, in the left panel and in the floating bar, and both are drawn on the live PRTG map as well as in the designer. 1.4.9: A Connector now takes its colour from the \u201cName and status\u201d icons too. Those mark state with rollup flags (has red, has green and so on) rather than a single status class, which the preview did not read, so the line stayed one colour. The worst state present wins. 1.4.8: The Target panel now says what status the preview reported for the selected object, and lists the class names it found in the preview, so you can see why a Connector is or is not taking its colour. 1.4.7: An object dragged onto the canvas now starts on something of its own kind. Every object used to begin on the Local Probe unless it only took a sensor, so anything meant to read a device showed probe data until you picked a real target. The tool now reads what the object actually accepts — PRTG files declare probe, group, device or sensor, often several at once — and starts it on the most specific of those: a device where one will do, otherwise a group, otherwise the probe, and a sensor for the files that only take a sensor. The first device and group on the server are looked up alongside the default sensor, and “This object takes…” now offers all four kinds if you want to correct one. A default you have chosen yourself still wins. 1.4.6: The Map designer now draws a Connector in the colours the live map will actually show: each end takes the state of the object it is glued to, blending from one to the other when they differ. Until now the canvas painted every status-coloured link flat blue, so there was no way to see beforehand what the pushed version would look like. The state is read out of PRTG’s own drawing of each object, so this needs the live object previews switched on — with them off, or for an end whose object reports no state, the line simply keeps its plain colour instead of inventing one. 1.4.5: A Connector now really does take its colour from the two objects it joins, instead of staying one flat colour on the live map. Two separate things were stopping it. PRTG marks an ordinary device or sensor icon with a different status class than the link was looking for, so it found no status at all on exactly the icons people connect most — it now reads that form as well. And a Connector that did not follow the shared Link style was locked to a single colour permanently, because choosing any line style for it quietly turned status colouring off; such a Connector now shows status by default, and a new “Colour” setting goes back to one colour when that is what you want. Connectors already on a map keep their old look until they are pushed again. 1.4.4: The Map step has a new “Clear the canvas” option under the list of loaded items. It takes the map you loaded back off the canvas without sending anything to PRTG, so the map itself is untouched — useful when the wrong map was loaded, or when you simply want an empty canvas to work on. If edits or deletion marks are waiting on those items it asks for a second click first, so none of that work is thrown away by accident. 1.4.3: Connectors pushed to a map were still coming out invisible, with no line and no status colour, and the reason was found on the live server itself: PRTG rewrites the quotes around an HTML attribute when it saves an object, which cut the connector’s own drawing code short after thirty-seven characters, so there was never anything left to run. That code now travels in an encoded form that contains no quotes at all, so saving cannot break it apart. A connector also no longer confuses one icon with another when several icons are still bound to the same PRTG object: each end now picks the icon standing where that end was glued, so the line joins the right two icons and each end shows its own status colour. 1.4.2: A pushed connector was coming out empty on the live map, with no colored status and no visible line. The cause: PRTG strips <script> tags out of a map object’s HTML when it is saved, so the connector’s own live-drawing code was being thrown away before it ever reached the page. It now starts itself a different way (through an image element’s error handler, which survives PRTG’s save), so the line draws and updates again. While tracking that down: a connector glued to a PRTG probe or other object with many children now reads its live status correctly too — those use a different set of status flags than a single sensor or device does, worst status wins when several apply. A connector also now notices a status change on a nested part of its target, not only the target element itself, and lines up against the actual icon picture rather than the wider clickable box around it, so the endpoint lands on the icon instead of beside it. 1.4.1: Connector fixes. Dragging a Connector from Build onto the canvas works now (it silently did nothing before); drop it on top of an object and it glues itself to the nearest side right away. Gluing anywhere — Connector or a Shapes line — now only offers the four side centers, not a free slide along the edge. A connector reads live status from the state PRTG itself put on the object (the same class PRTG and our own Icon objects use), not just a plain background color, so Icon-object endpoints now color correctly too. The Selected panel (title, shape gallery, and the inline Shape section when editing in place) calls a Connector a Connector and only offers Line, Arrow and Flowing arrow for it, never a flowchart box or callout. 1.4.0: A new Connector tool, next to Shape in Build — adds a line already set up to glue to two objects and push to PRTG as a real, self-updating link (Push as a live link in PRTG starts switched on). Shapes keeps its own plain Lines and arrows, unchanged and never pushed live unless you ask. 1.3.1: PRTG’s own built-in icon sets (Default Icons A/B, Icons A/B/C and their static variants, Static Images — whatever this server’s list has) now show up alongside the object files in Existing PRTG objects. Pick one, bind it to a device, sensor or group like any other object, and it recolors itself with that target’s live status once pushed, the same as PRTG’s own icons. 1.3.0: A glued connector can now be pushed as a real, self-updating line on the map itself (“Push as a live link in PRTG” on a connector with both ends glued) — separate from PRTG’s own native connections, which this tool still cannot create (there is no API for that; PRTG only builds them from a hand drag in its own Map Designer). Once pushed, the line finds its two objects on the live page by itself and redraws its own path whenever either one moves, with no re-push needed; with Match Link style left on, it also recolors itself from each end’s live status, split two ways like PRTG’s own lines when the two differ. 1.2.1: A connector’s look now matches the shared Link style by default (the same curve/dash/color/markers/flow settings as the Link style object you push to PRTG), so the Map designer previews what the live map will actually show. Per-connector style is still there — untick Match Link style on a line to set its own thickness, line type, dash, markers and animation. Choosing a specific line format from the shape gallery now also switches that line off Match Link style automatically. The Link style preview in the Object builder also now shows one point-to-point link instead of a branching demo (PRTG links are always point to point). 1.2.0: Map designer lines are now connectors — drag either end onto a frame, shape or PRTG object and it glues there (a highlight shows the drop target); glued ends follow that object when it is moved, resized or rotated, and come unglued automatically if the object is deleted. A Branch button on a glued line adds another end from the same start, for one-to-many connections. 1.1.1: Link style animation now runs on systems that ask for reduced motion (it was switched off there); a new option pauses it again if you want that. 1.1.0: new Link style object in the Object builder. Curve, S-curve, elbow, rounded elbow and arc lines; solid, dashed, dotted and dash-dot styles; dot and arrow markers; optional flowing dashes. The straight lines PRTG draws are hidden from the first moment, so they never flash. 1.0.0: items can be reordered on the canvas. Bring to front, send backward, send to back and a Layer control next to Width and Height in Selected; Up/Down buttons in the Layers tab. Items already on the chosen PRTG map now also show up in the Layers tab (read-only, sorted by their real layer), with a link back to Existing PRTG maps to change them there. v64: one Existing PRTG maps section at the bottom of the Add tab holds the map choice and everything from Already on this map; it can be minimized. v63: the map choice has its own Map section on the Add tab, with Already on this map (show and clear items) under it; Publish keeps Push to PRTG and Save and load layout, and shows which map it will push to. v62: the Button tool has the same groups of presets as the Label tool (Basic, Map buttons, Status buttons, and the eight table, gauge and frame looks). v61: the chart.svg picture is now requested with exactly the address PRTG put in the page (PRTG signs it with a URL hash, so any change gives 401). v60: Collect PRTG samples blanks out passhash, username, map id and URL hash in the saved file, and also saves the chart.svg picture of up to two graph items. v59: a Clear items from the canvas button removes the items shown by Show items already on this map (it asks twice if you have unapplied changes). v58: choosing a Build tile (Frame, Label, Button, Background, Shape) closes the Existing PRTG objects section, so the area below stays blank until the Existing PRTG objects tile is pressed. v57: copy, cut and paste are back on the Dashboard (Ctrl+C, Ctrl+X, Ctrl+V and the Copy and Paste buttons; a frame is copied with everything inside it). v56: a Refresh object list button in Existing PRTG objects reads PRTG\u2019s list of object files again without reconnecting. v55: the Dashboard tabs (Add, Selected, Layers, Publish) and the Build tiles (click then place, double-click, drag) are in the file; their tab names, grouping and timing are now in config. v54: the ready-made objects section is gone. v53: signing in with a username and passhash is required to connect, in a new login card. v52: previews of counting objects (status counts, donuts) read every sensor, not the first five. v50: Status counts object (tiles of sensors by status) and the Brand navy look. v49: authorship marks in the core. v48: after a push the map is read back; items PRTG did not keep are added again and any that still fail are named. v47: shape presets give each look its own color and thickness; push and edit results show over the Dashboard and a failed login opens the login panel. v46: status dots in the device tree; the object preview can be dragged onto the canvas. v45: graphs and icons are edited in the preview too. v44: gauges and donuts are edited in the preview like tables (drag the handles, double-click the title). v43: Look presets for frames, backgrounds and the new shapes (lines, arrows, flowing arrows). v42: notes became hover icons, undo/redo arrows over the canvas, a tidier Dashboard panel, a PRTG connection switch. v41: click, drag, resize, delete on the canvas. v40: edit, move, delete with Review and Undo. v39: existing items show the object they are bound to (name, type, place) and a summary of what they show. v38: shows the items already on a map. v37: Collect samples reads the map items. v36: frames edited in the Objects view. v35: no comments in generated files. v34: file list. v33: install script. v32: config, tabs.',
+  changelog:'1.5.2: A Connector starts as one green end and one red end and takes its objects\u2019 real status colours once they report; the status color set you pick replaces those colours, on the canvas and on the live map. The text styles are presets next to the looks, and choosing one adds text editing (text, font, size, color) to the floating bar. Thickness, line type, start, end and animation are one picture-based option in the floating bar, and Kind, Line style and Color are gone from the left panel. 1.5.1: A Connector\u2019s presets are now its looks, shown as pictures, in the left panel and in the floating bar, and the separate Look picker is gone. A Connector is black until the objects it joins report a status, then takes their colours. 1.5.0: Connectors get eleven looks (soft glow, tube, beads, chevron, taper, rail, lifted, pulse, circuit, dash sweep, plain) and text on the line, with a pill, filled or text-only style. Both are chosen from pictures, in the left panel and in the floating bar, and both are drawn on the live PRTG map as well as in the designer. 1.4.9: A Connector now takes its colour from the \u201cName and status\u201d icons too. Those mark state with rollup flags (has red, has green and so on) rather than a single status class, which the preview did not read, so the line stayed one colour. The worst state present wins. 1.4.8: The Target panel now says what status the preview reported for the selected object, and lists the class names it found in the preview, so you can see why a Connector is or is not taking its colour. 1.4.7: An object dragged onto the canvas now starts on something of its own kind. Every object used to begin on the Local Probe unless it only took a sensor, so anything meant to read a device showed probe data until you picked a real target. The tool now reads what the object actually accepts — PRTG files declare probe, group, device or sensor, often several at once — and starts it on the most specific of those: a device where one will do, otherwise a group, otherwise the probe, and a sensor for the files that only take a sensor. The first device and group on the server are looked up alongside the default sensor, and “This object takes…” now offers all four kinds if you want to correct one. A default you have chosen yourself still wins. 1.4.6: The Map designer now draws a Connector in the colours the live map will actually show: each end takes the state of the object it is glued to, blending from one to the other when they differ. Until now the canvas painted every status-coloured link flat blue, so there was no way to see beforehand what the pushed version would look like. The state is read out of PRTG’s own drawing of each object, so this needs the live object previews switched on — with them off, or for an end whose object reports no state, the line simply keeps its plain colour instead of inventing one. 1.4.5: A Connector now really does take its colour from the two objects it joins, instead of staying one flat colour on the live map. Two separate things were stopping it. PRTG marks an ordinary device or sensor icon with a different status class than the link was looking for, so it found no status at all on exactly the icons people connect most — it now reads that form as well. And a Connector that did not follow the shared Link style was locked to a single colour permanently, because choosing any line style for it quietly turned status colouring off; such a Connector now shows status by default, and a new “Colour” setting goes back to one colour when that is what you want. Connectors already on a map keep their old look until they are pushed again. 1.4.4: The Map step has a new “Clear the canvas” option under the list of loaded items. It takes the map you loaded back off the canvas without sending anything to PRTG, so the map itself is untouched — useful when the wrong map was loaded, or when you simply want an empty canvas to work on. If edits or deletion marks are waiting on those items it asks for a second click first, so none of that work is thrown away by accident. 1.4.3: Connectors pushed to a map were still coming out invisible, with no line and no status colour, and the reason was found on the live server itself: PRTG rewrites the quotes around an HTML attribute when it saves an object, which cut the connector’s own drawing code short after thirty-seven characters, so there was never anything left to run. That code now travels in an encoded form that contains no quotes at all, so saving cannot break it apart. A connector also no longer confuses one icon with another when several icons are still bound to the same PRTG object: each end now picks the icon standing where that end was glued, so the line joins the right two icons and each end shows its own status colour. 1.4.2: A pushed connector was coming out empty on the live map, with no colored status and no visible line. The cause: PRTG strips <script> tags out of a map object’s HTML when it is saved, so the connector’s own live-drawing code was being thrown away before it ever reached the page. It now starts itself a different way (through an image element’s error handler, which survives PRTG’s save), so the line draws and updates again. While tracking that down: a connector glued to a PRTG probe or other object with many children now reads its live status correctly too — those use a different set of status flags than a single sensor or device does, worst status wins when several apply. A connector also now notices a status change on a nested part of its target, not only the target element itself, and lines up against the actual icon picture rather than the wider clickable box around it, so the endpoint lands on the icon instead of beside it. 1.4.1: Connector fixes. Dragging a Connector from Build onto the canvas works now (it silently did nothing before); drop it on top of an object and it glues itself to the nearest side right away. Gluing anywhere — Connector or a Shapes line — now only offers the four side centers, not a free slide along the edge. A connector reads live status from the state PRTG itself put on the object (the same class PRTG and our own Icon objects use), not just a plain background color, so Icon-object endpoints now color correctly too. The Selected panel (title, shape gallery, and the inline Shape section when editing in place) calls a Connector a Connector and only offers Line, Arrow and Flowing arrow for it, never a flowchart box or callout. 1.4.0: A new Connector tool, next to Shape in Build — adds a line already set up to glue to two objects and push to PRTG as a real, self-updating link (Push as a live link in PRTG starts switched on). Shapes keeps its own plain Lines and arrows, unchanged and never pushed live unless you ask. 1.3.1: PRTG’s own built-in icon sets (Default Icons A/B, Icons A/B/C and their static variants, Static Images — whatever this server’s list has) now show up alongside the object files in Existing PRTG objects. Pick one, bind it to a device, sensor or group like any other object, and it recolors itself with that target’s live status once pushed, the same as PRTG’s own icons. 1.3.0: A glued connector can now be pushed as a real, self-updating line on the map itself (“Push as a live link in PRTG” on a connector with both ends glued) — separate from PRTG’s own native connections, which this tool still cannot create (there is no API for that; PRTG only builds them from a hand drag in its own Map Designer). Once pushed, the line finds its two objects on the live page by itself and redraws its own path whenever either one moves, with no re-push needed; with Match Link style left on, it also recolors itself from each end’s live status, split two ways like PRTG’s own lines when the two differ. 1.2.1: A connector’s look now matches the shared Link style by default (the same curve/dash/color/markers/flow settings as the Link style object you push to PRTG), so the Map designer previews what the live map will actually show. Per-connector style is still there — untick Match Link style on a line to set its own thickness, line type, dash, markers and animation. Choosing a specific line format from the shape gallery now also switches that line off Match Link style automatically. The Link style preview in the Object builder also now shows one point-to-point link instead of a branching demo (PRTG links are always point to point). 1.2.0: Map designer lines are now connectors — drag either end onto a frame, shape or PRTG object and it glues there (a highlight shows the drop target); glued ends follow that object when it is moved, resized or rotated, and come unglued automatically if the object is deleted. A Branch button on a glued line adds another end from the same start, for one-to-many connections. 1.1.1: Link style animation now runs on systems that ask for reduced motion (it was switched off there); a new option pauses it again if you want that. 1.1.0: new Link style object in the Object builder. Curve, S-curve, elbow, rounded elbow and arc lines; solid, dashed, dotted and dash-dot styles; dot and arrow markers; optional flowing dashes. The straight lines PRTG draws are hidden from the first moment, so they never flash. 1.0.0: items can be reordered on the canvas. Bring to front, send backward, send to back and a Layer control next to Width and Height in Selected; Up/Down buttons in the Layers tab. Items already on the chosen PRTG map now also show up in the Layers tab (read-only, sorted by their real layer), with a link back to Existing PRTG maps to change them there. v64: one Existing PRTG maps section at the bottom of the Add tab holds the map choice and everything from Already on this map; it can be minimized. v63: the map choice has its own Map section on the Add tab, with Already on this map (show and clear items) under it; Publish keeps Push to PRTG and Save and load layout, and shows which map it will push to. v62: the Button tool has the same groups of presets as the Label tool (Basic, Map buttons, Status buttons, and the eight table, gauge and frame looks). v61: the chart.svg picture is now requested with exactly the address PRTG put in the page (PRTG signs it with a URL hash, so any change gives 401). v60: Collect PRTG samples blanks out passhash, username, map id and URL hash in the saved file, and also saves the chart.svg picture of up to two graph items. v59: a Clear items from the canvas button removes the items shown by Show items already on this map (it asks twice if you have unapplied changes). v58: choosing a Build tile (Frame, Label, Button, Background, Shape) closes the Existing PRTG objects section, so the area below stays blank until the Existing PRTG objects tile is pressed. v57: copy, cut and paste are back on the Dashboard (Ctrl+C, Ctrl+X, Ctrl+V and the Copy and Paste buttons; a frame is copied with everything inside it). v56: a Refresh object list button in Existing PRTG objects reads PRTG\u2019s list of object files again without reconnecting. v55: the Dashboard tabs (Add, Selected, Layers, Publish) and the Build tiles (click then place, double-click, drag) are in the file; their tab names, grouping and timing are now in config. v54: the ready-made objects section is gone. v53: signing in with a username and passhash is required to connect, in a new login card. v52: previews of counting objects (status counts, donuts) read every sensor, not the first five. v50: Status counts object (tiles of sensors by status) and the Brand navy look. v49: authorship marks in the core. v48: after a push the map is read back; items PRTG did not keep are added again and any that still fail are named. v47: shape presets give each look its own color and thickness; push and edit results show over the Dashboard and a failed login opens the login panel. v46: status dots in the device tree; the object preview can be dragged onto the canvas. v45: graphs and icons are edited in the preview too. v44: gauges and donuts are edited in the preview like tables (drag the handles, double-click the title). v43: Look presets for frames, backgrounds and the new shapes (lines, arrows, flowing arrows). v42: notes became hover icons, undo/redo arrows over the canvas, a tidier Dashboard panel, a PRTG connection switch. v41: click, drag, resize, delete on the canvas. v40: edit, move, delete with Review and Undo. v39: existing items show the object they are bound to (name, type, place) and a summary of what they show. v38: shows the items already on a map. v37: Collect samples reads the map items. v36: frames edited in the Objects view. v35: no comments in generated files. v34: file list. v33: install script. v32: config, tabs.',
   /* the Dashboard canvas when the page opens, and the size a new Frame starts at */
   canvas:{w:1920,h:1080,grid:10,zoom:'fit'},
   frame:{w:360,h:220},
@@ -95,7 +95,7 @@ var CFG={
     previewWith:'prtgMapTool.previewWith'   /* the PRTG server address is added after this name */
   }
 };
-CFG.version=(function(){try{return chrome.runtime.getManifest().version;}catch(e){return '1.5.1';}})();   /* the version is the extension's own, from manifest.json */
+CFG.version=(function(){try{return chrome.runtime.getManifest().version;}catch(e){return '1.5.2';}})();   /* the version is the extension's own, from manifest.json */
 document.title=CFG.name+' v'+CFG.version;
 document.getElementById('ver').textContent='v'+CFG.version;
 document.getElementById('dw').value=CFG.canvas.w;
@@ -145,7 +145,28 @@ function lsLnType(line){return (line==='elbow'||line==='relbow')?'elbow':(line==
    pickers' thumbnails and the pushed live link (it is sent to PRTG as text, so it carries everything it
    needs and refers to nothing else in this file). Given the line's path data and paint it returns SVG
    markup: defs, the line itself, and what goes over the line (the label). */
-var LNBLACK='#111827';   /* what a Connector shows until the objects it joins report a status */
+/* the colours a Connector paints each state with: PRTG's by default, or the colour set chosen for it */
+var LNPAL0={up:'#b4cc38',warning:'#ffd400',down:'#d71920',unusual:'#f5821f',paused:'#3b8dd0',unknown:'#9aa4af'};
+function lnPal(p){
+  var o={}, k, set=null, i, S=(window.PMSSETS&&window.PMSSETS.sets)||[];
+  for(k in LNPAL0)o[k]=LNPAL0[k];
+  if(p&&p.colorSet)for(i=0;i<S.length;i++)if(S[i][0]===p.colorSet)set=S[i][2];
+  if(set)for(k in set)if(o[k]!==undefined)o[k]=set[k];
+  return o;
+}
+/* A Connector always carries its own line settings and takes its colour from status. Older ones followed the
+   shared Link style; this brings them across once, keeping how they looked. */
+function connNorm(p){
+  if(!p||!p.isConnector||p.cn2)return p;
+  p.cn2=1;
+  if(p.matchLS!==false){
+    if(typeof LKDEF!=='undefined'){p.lt=lsLnType(LKDEF.line);p.thick=lkNum(LKDEF.width,1,40,5);p.anim=!!LKDEF.flow;p.ha='none';p.hb='none';}
+    p.matchLS=false;
+  }
+  p.dash=p.dash||'solid';p.colorMode='status';
+  if(p.label&&!p.labelStyle)p.labelStyle='pill';
+  return p;
+}
 var LNLOOKS=[['plain','Plain'],['glow','Soft glow'],['tube','Tube'],['beads','Beads'],['chevron','Chevron'],['taper','Taper'],['rail','Rail'],['lifted','Lifted'],['pulse','Pulse'],['circuit','Circuit'],['sweep','Dash sweep']];
 function mkLook(S){
   var NS='http://www.w3.org/2000/svg', w=S.w, u=String(S.uid).replace(/[^\w-]/g,''), look=S.look||'plain', d=S.d, paint=S.paint, c1=S.c1, c2=S.c2||S.c1, defs='', body='', over='', m=null, L=0, run=!!S.anim&&!S.thumb, sp=S.sp||1.6;
@@ -207,18 +228,20 @@ function mkLook(S){
     per=w*6.5+w*2.4;
     body='<path d="'+d+'" fill="none" stroke="'+paint+'" stroke-width="'+R(w)+'" stroke-linecap="round" stroke-dasharray="'+R(w*5)+' '+R(w*2.8)+'">'+flow(w*7.8)+'</path>';
   }
-  if(S.label&&S.label.text&&m&&L>4){
-    var fs=Math.max(8,Math.min(60,+S.label.size||14)), tx=String(S.label.text).slice(0,60), tw=tx.length*fs*0.58+fs*1.5, th=fs*1.9, mid=at(L/2), st=S.label.style||'pill', cx=R(mid[0]), cy=R(mid[1]);
-    var ff='font-family="Segoe UI,Arial,sans-serif" font-size="'+fs+'" font-weight="600" text-anchor="middle"';
-    if(st==='solid')over='<rect x="'+R(cx-tw/2)+'" y="'+R(cy-th/2)+'" width="'+R(tw)+'" height="'+R(th)+'" rx="'+R(th/2)+'" fill="'+paint+'"/><text x="'+cx+'" y="'+R(cy+fs*0.35)+'" '+ff+' fill="#ffffff">'+esc(tx)+'</text>';
-    else if(st==='plain')over='<text x="'+cx+'" y="'+R(cy+fs*0.35)+'" '+ff+' fill="#0f172a" stroke="#ffffff" stroke-width="'+R(fs*0.3)+'" paint-order="stroke" stroke-linejoin="round">'+esc(tx)+'</text>';
-    else over='<rect x="'+R(cx-tw/2)+'" y="'+R(cy-th/2)+'" width="'+R(tw)+'" height="'+R(th)+'" rx="'+R(th/2)+'" fill="#ffffff" stroke="'+paint+'" stroke-width="'+R(Math.max(1.6,fs*0.14))+'"/><text x="'+cx+'" y="'+R(cy+fs*0.35)+'" '+ff+' fill="#0f172a">'+esc(tx)+'</text>';
+  if(S.label&&S.label.text&&(S.label.style==='pill'||S.label.style==='solid'||S.label.style==='plain')&&m&&L>4){
+    var fs=Math.max(8,Math.min(60,+S.label.size||14)), tx=String(S.label.text).slice(0,60), tw=tx.length*fs*0.58+fs*1.5, th=fs*1.9, mid=at(L/2), st=S.label.style, cx=R(mid[0]), cy=R(mid[1]);
+    var fam=String(S.label.fam||'Segoe UI').replace(/[^\w ,-]/g,''), tc=/^#[0-9a-fA-F]{6}$/.test(String(S.label.color||''))?S.label.color:(st==='solid'?'#ffffff':'#0f172a');
+    var ff='font-family="'+fam+',Arial,sans-serif" font-size="'+fs+'" font-weight="600" text-anchor="middle"';
+    if(st==='solid')over='<rect x="'+R(cx-tw/2)+'" y="'+R(cy-th/2)+'" width="'+R(tw)+'" height="'+R(th)+'" rx="'+R(th/2)+'" fill="'+paint+'"/><text x="'+cx+'" y="'+R(cy+fs*0.35)+'" '+ff+' fill="'+tc+'">'+esc(tx)+'</text>';
+    else if(st==='plain')over='<text x="'+cx+'" y="'+R(cy+fs*0.35)+'" '+ff+' fill="'+tc+'" stroke="#ffffff" stroke-width="'+R(fs*0.3)+'" paint-order="stroke" stroke-linejoin="round">'+esc(tx)+'</text>';
+    else over='<rect x="'+R(cx-tw/2)+'" y="'+R(cy-th/2)+'" width="'+R(tw)+'" height="'+R(th)+'" rx="'+R(th/2)+'" fill="#ffffff" stroke="'+paint+'" stroke-width="'+R(Math.max(1.6,fs*0.14))+'"/><text x="'+cx+'" y="'+R(cy+fs*0.35)+'" '+ff+' fill="'+tc+'">'+esc(tx)+'</text>';
   }
   return {defs:defs,body:body,over:over};
 }
 /* a small picture of each way of showing the text */
 function lblThumb(st){
   var a='#b4cc38';
+  if(st==='none')return '<svg viewBox="0 0 72 34" width="72" height="34"><path d="M4 17H68" stroke="'+a+'" stroke-width="3.4" stroke-linecap="round"/></svg>';
   if(st==='solid')return '<svg viewBox="0 0 72 34" width="72" height="34"><path d="M4 17H68" stroke="'+a+'" stroke-width="3.4" stroke-linecap="round"/><rect x="18" y="8" width="36" height="18" rx="9" fill="'+a+'"/><text x="36" y="21" text-anchor="middle" font-family="Arial" font-size="10" font-weight="700" fill="#fff">Text</text></svg>';
   if(st==='plain')return '<svg viewBox="0 0 72 34" width="72" height="34"><path d="M4 17H68" stroke="'+a+'" stroke-width="3.4" stroke-linecap="round"/><text x="36" y="21" text-anchor="middle" font-family="Arial" font-size="10" font-weight="700" fill="#0f172a" stroke="#fff" stroke-width="3" paint-order="stroke">Text</text></svg>';
   return '<svg viewBox="0 0 72 34" width="72" height="34"><path d="M4 17H68" stroke="'+a+'" stroke-width="3.4" stroke-linecap="round"/><rect x="18" y="8" width="36" height="18" rx="9" fill="#fff" stroke="'+a+'" stroke-width="1.8"/><text x="36" y="21" text-anchor="middle" font-family="Arial" font-size="10" font-weight="700" fill="#0f172a">Text</text></svg>';
@@ -1983,11 +2006,12 @@ try{
   /* what the line looks like; a kind (line, arrow, flowing arrow) only decides the defaults */
   function lnOpts(p){
     var k=p.shape;
+    connNorm(p);
     if(p.matchLS!==false&&typeof LKDEF!=='undefined')   /* by default a connector previews the map's shared Link style, so the designer matches the real map */
-      return {t:lkNum(LKDEF.width,1,40,5),c:(p.isConnector&&LKDEF.colorMode!=='custom')?LNBLACK:lsColor(),type:lsLnType(LKDEF.line),dash:LKDEF.dash||'solid',
-        ha:LKDEF.start||'none',hb:LKDEF.end||'none',anim:!!LKDEF.flow,sp:lsSpeed(),look:p.look||'plain',label:{text:p.label||'',size:p.labelSize,style:p.labelStyle}};
-    return {t:Math.max(1,parseFloat(p.thick)||6),c:(p.isConnector&&p.colorMode!=='custom')?LNBLACK:(p.color||'#007DB8'),type:p.lt||'straight',dash:p.dash||(k==='flow'?'dashed':'solid'),
-      ha:p.ha||'none',hb:(p.hb!=null)?p.hb:((k==='arrow'||k==='flow')?'arrow':'none'),anim:(p.anim!=null)?!!p.anim:(k==='flow'),sp:parseFloat(p.speed)||1.6,look:p.look||'plain',label:{text:p.label||'',size:p.labelSize,style:p.labelStyle}};
+      return {t:lkNum(LKDEF.width,1,40,5),c:lsColor(),type:lsLnType(LKDEF.line),dash:LKDEF.dash||'solid',
+        ha:LKDEF.start||'none',hb:LKDEF.end||'none',anim:!!LKDEF.flow,sp:lsSpeed(),look:p.look||'plain',label:{text:p.labelStyle?(p.label||''):'',size:p.labelSize,style:p.labelStyle,color:p.labelColor,fam:p.labelFont}};
+    return {t:Math.max(1,parseFloat(p.thick)||6),c:p.isConnector?lnPal(p).up:(p.color||'#007DB8'),type:p.lt||'straight',dash:p.dash||(k==='flow'?'dashed':'solid'),
+      ha:p.ha||'none',hb:(p.hb!=null)?p.hb:((k==='arrow'||k==='flow')?'arrow':'none'),anim:(p.anim!=null)?!!p.anim:(k==='flow'),sp:parseFloat(p.speed)||1.6,look:p.look||'plain',label:{text:p.labelStyle?(p.label||''):'',size:p.labelSize,style:p.labelStyle,color:p.labelColor,fam:p.labelFont}};
   }
   /* the two ends inside the item's box. Until the ends are dragged they follow the box and its direction. */
   function lnPts(it){
@@ -2127,6 +2151,7 @@ try{
   /* Is this line meant to take its colour from what it joins? Matched connectors follow the shared Link
      style's own setting; unmatched ones carry their own. */
   function lnStatusMode(p){
+    if(p.isConnector)return true;
     if(p.matchLS!==false&&typeof LKDEF!=='undefined')return LKDEF.colorMode!=='custom';
     return p.colorMode!=='custom';
   }
@@ -2135,19 +2160,23 @@ try{
   var LNSTLET={g:'up',r:'down',y:'warning',o:'unusual',b:'paused',bl:'paused',gr:'unknown'};
   var LNSTCOL={up:'#b4cc38',down:'#d71920',warning:'#ffd400',unusual:'#f5821f',paused:'#3b8dd0',unknown:'#9aa4af'};
   /* the colour one end should take, from whatever state that object reported out of its preview frame */
-  function lnEndColor(g){
+  function lnEndColor(g,pal){
     if(!g)return null;
     var st=(DASHAPI&&DASHAPI.pvst)?DASHAPI.pvst[String(g.id)]:null;
     var k=st?LNSTLET[st]:null;
-    return k?LNSTCOL[k]:null;
+    return k?(pal||LNSTCOL)[k]:null;
   }
   function lineHTML(it){
     var q=lnPts(it), o=lnOpts(it.p), p=it.p, ca, cb;
     /* with no live preview loaded, or an end that reports no state, this simply does not apply and the
        line keeps its plain colour -- the canvas never invents a status it has not been told about */
-    if(p.isConnector&&p.ga&&p.gb&&lnStatusMode(p)){
-      ca=lnEndColor(p.ga);cb=lnEndColor(p.gb);
-      if(ca||cb){o=extend({},o);o.c=ca||cb;o.c2=cb||ca;o.gid='lng'+it.id;}
+    if(p.isConnector){
+      var pal=lnPal(p);
+      if(p.ga&&p.gb){ca=lnEndColor(p.ga,pal);cb=lnEndColor(p.gb,pal);}
+      o=extend({},o);
+      /* until the objects it joins report a state this shows one end up and one end down, as a stand-in */
+      if(ca||cb){o.c=ca||cb;o.c2=cb||ca;}else{o.c=pal.up;o.c2=pal.down;}
+      o.gid='lng'+it.id;
     }
     o=extend({},o);o.uid='i'+it.id;
     return lnSvg(o,[q.ax,q.ay],[q.bx,q.by],it.w,it.h,false);
@@ -2595,7 +2624,12 @@ try{
         applyPresetTo(it.state,p.v);v.txt=keep.txt;v.link=keep.link;v.linktype=keep.linktype;c.newtab=keep.newtab;}});});
     }else if(t==='frame'&&(!it.p.shape||isBoxShape(it.p.shape)))tbl(FSTYLES,/^Background/);
     else if(t==='frame'&&it.p.shape&&it.p.isConnector){
-      LNLOOKS.forEach(function(x){out.push({n:x[1],html:lookThumb(x[0],72,34),on:(it.p.look||'plain')===x[0],go:function(){it.p.look=x[0];}});});
+      LNLOOKS.forEach(function(x){out.push({g:'Line look',n:x[1],html:lookThumb(x[0],72,34),on:(it.p.look||'plain')===x[0],go:function(){it.p.look=x[0];}});});
+      [['none','No text'],['pill','Pill'],['solid','Filled'],['plain','Text only']].forEach(function(x){
+        out.push({g:'Text on the line',n:x[1],html:lblThumb(x[0]),on:(it.p.labelStyle||'none')===x[0],go:function(){
+          if(x[0]==='none')it.p.labelStyle='';else{it.p.labelStyle=x[0];if(!it.p.label)it.p.label='Text';}
+        }});
+      });
     }
     else if(t==='frame'&&it.p.shape){
       [['Slate','#475569'],['Blue','#007DB8'],['Green','#2FA84F'],['Amber','#F0AD22'],['Red','#D8402F'],['White','#FFFFFF']].forEach(function(c){
@@ -2623,6 +2657,14 @@ try{
   }
   /* the Colors menu of the bar: pick a set, then click one of its status colors to put it on this item as fill or as text/shape color */
   function fbColorsFill(it,pop,A,FD){
+    if(it.p&&it.p.isConnector){
+      var PSc=window.PMSSETS, pkc;
+      pop.appendChild(el_('div','cs-h','Status colors for this line'));
+      pkc=PSc.picker({inline:true,extraFirst:[['','Standard status colors']],get:function(){return it.p.colorSet||'';},pick:function(id){fbApply(it,function(){it.p.colorSet=id;});pkc.sync();}});
+      fbStop(pkc);pop.appendChild(pkc);
+      pop.appendChild(el_('p','note','Each end of the line takes the color its status has in this set, on the canvas and on the live map.'));
+      return;
+    }
     var PSd=window.PMSSETS, pk, rows=el_('div'), NAMES=[['up','Up'],['warning','Warning'],['down','Down'],['unusual','Unusual'],['paused','Paused'],['unknown','Unknown']];
     pop.appendChild(el_('div','cs-h','Color set'));
     var shown=PSd.cur||PSd.sets[0][0];
@@ -2694,6 +2736,11 @@ try{
     g=shapeGeom(k,w,h,p);
     return '<svg viewBox="0 0 '+w+' '+h+'"><path d="'+g.d+'"'+(g.tf?' transform="'+g.tf+'"':'')+' fill="'+a+'"/></svg>';
   }
+  function lnThumb(extra){
+    var lo=lnOpts(extend({shape:'line',color:'#475569',thick:2.6,matchLS:false},extra||{}));
+    lo.anim=false;
+    return lnSvg(lo,[7,(extra&&extra.flat)?14:21],[39,(extra&&extra.flat)?14:7],46,28,true).replace('<svg ','<svg viewBox="0 0 46 28" ');
+  }
   /* change what an item draws, keeping its place; a turn between flat and upright swaps width and height */
   function lnSame(p,k,extra){
     /* which shape-grid preset this is: always compares the item's own stored fields, regardless of "Match Link style" */
@@ -2740,7 +2787,7 @@ try{
     }
     var BX0=fbBox(it), FD=null;
     if(BX0)BX0.forEach(function(d){if(d.l==='Fill'&&d.k==='color')FD=d;});
-    if(A.color){
+    if(A.color&&!it.p.isConnector){
       sep();
       var cname=FD?'Text color':(it.type==='frame'&&it.p.shape?'Shape color':'Color');
       var cl=el_('label','fb fb-c');cl.setAttribute('data-tip',cname);cl.setAttribute('aria-label',cname);
@@ -2758,7 +2805,7 @@ try{
       fi.addEventListener('change',function(){commit();buildList();});fbStop(fi);fbStop(fl);
       fl.appendChild(fi);fbar.appendChild(fl);R.fill=fi;R.fillBox=fl;R.fillD=FD;
     }
-    if(A.color||FD){
+    if(A.color||FD||(it.p&&it.p.isConnector)){
       sep();
       var pcb=fbarBtn('fb-t','Status colors: apply a color of the chosen set','<circle cx="8" cy="9" r="3.2"/><circle cx="16" cy="9" r="3.2"/><circle cx="12" cy="15.5" r="3.2"/>',function(){fbToggle(pcp,pcb);});
       var pcp=el_('div','fb-pop fb-colors');pcp.hidden=true;fbStop(pcp);
@@ -2783,7 +2830,7 @@ try{
       pp2.appendChild(fbPresetGrid(it,PL,function(){fbCloseAll();}));
       fbar.appendChild(pb);fbar.appendChild(pp2);R.pre=pb;
     }
-    var BX=fbBox(it);
+    var BX=(it.p&&it.p.isConnector)?null:fbBox(it);
     if(BX){
       var xb=fbarBtn('fb-t',isLine(it)?'Line type, style and ends':'Fill, border, corner radius and shadow',isLine(it)?FB_SVG.lnk:FB_SVG.box,function(){fbToggle(xp,xb);});
       var xp=el_('div','fb-pop fb-box');xp.hidden=true;fbStop(xp);R.bx=[];
@@ -2808,8 +2855,8 @@ try{
         fbar.appendChild(brb);R.branch=brb;
       }
     }
-    if(it.type==='frame'&&it.p.shape){
-      var kb=fbarBtn('fb-t',it.p.isConnector?'Change line style':'Change shape',FB_SVG.shape,function(){fbToggle(kp,kb);});
+    if(it.type==='frame'&&it.p.shape&&!it.p.isConnector){
+      var kb=fbarBtn('fb-t','Change shape',FB_SVG.shape,function(){fbToggle(kp,kb);});
       var kp=el_('div','fb-pop fb-shapes');kp.hidden=true;fbStop(kp);
       (it.p.isConnector?SHPCAT.slice(0,1):SHPCAT).forEach(function(g){   /* a Connector stays a line/arrow — it never offers to become a flowchart box or callout */
         kp.appendChild(el_('div','pgroup',g.g));
@@ -2824,25 +2871,70 @@ try{
         kp.appendChild(grid);
       });
       fbar.appendChild(kb);fbar.appendChild(kp);R.shp=kb;
-      if(it.p.isConnector){
-        /* text on the line */
+    }
+    if(it.p&&it.p.isConnector){
+      sep();
+      var softT=null;
+      function soft(fn){fn();refreshItem(it);clearTimeout(softT);softT=setTimeout(function(){commit();},400);}
+      /* line settings: thickness, the shape of the line, both ends and the flow */
+      var lsb=fbarBtn('fb-t','Line: thickness, type, ends and animation',FB_SVG.lnk,function(){fbToggle(lsp,lsb);});
+      var lsp=el_('div','fb-pop fb-line');lsp.hidden=true;fbStop(lsp);
+      var lnPick=function(title,items,get,set,thumb){
+        lsp.appendChild(el_('div','pgroup',title));
+        var grid=el_('div','shpgrid'), btns=[];
+        items.forEach(function(x){
+          var b=el_('button','shpb'+(get()===x[0]?' on':''));b.type='button';b.title=x[1];b.setAttribute('aria-label',x[1]);
+          b.innerHTML=thumb(x[0]);
+          b.addEventListener('click',function(e){e.stopPropagation();soft(function(){set(x[0]);});btns.forEach(function(y){y[1].classList.toggle('on',y[0]===x[0]);});});
+          btns.push([x[0],b]);grid.appendChild(b);
+        });
+        lsp.appendChild(grid);
+      };
+      var thk=el_('label','fb-row');thk.appendChild(el_('span',null,'Thickness'));
+      var thi=el_('input');thi.type='number';thi.min='1';thi.max='40';thi.value=it.p.thick||5;fbStop(thi);
+      thi.addEventListener('input',function(){var n=parseFloat(thi.value);if(n>=1&&n<=40)soft(function(){it.p.thick=n;});});
+      thk.appendChild(thi);lsp.appendChild(thk);
+      lnPick('Line type',[['straight','Straight'],['elbow','Elbow'],['curve','Curve']],function(){return lnOpts(it.p).type;},function(v){it.p.lt=v;},function(v){return lnThumb({lt:v,hb:'none'});});
+      lnPick('Start',LNHEADS,function(){return lnOpts(it.p).ha;},function(v){it.p.ha=v;},function(v){return lnThumb({lt:'straight',ha:v,hb:'none',flat:1});});
+      lnPick('End',LNHEADS,function(){return lnOpts(it.p).hb;},function(v){it.p.hb=v;},function(v){return lnThumb({lt:'straight',ha:'none',hb:v,flat:1});});
+      var anr=el_('label','fb-row');anr.appendChild(el_('span',null,'Animate the flow'));
+      var ani=el_('input');ani.type='checkbox';ani.checked=!!lnOpts(it.p).anim;fbStop(ani);
+      ani.addEventListener('change',function(){soft(function(){it.p.anim=ani.checked;});});
+      anr.appendChild(ani);lsp.appendChild(anr);
+      if(it.p.ga&&it.p.gb){
+        var plr=el_('label','fb-row');plr.appendChild(el_('span',null,'Push as a live link in PRTG'));
+        var pli=el_('input');pli.type='checkbox';pli.checked=!!it.p.pushLive;fbStop(pli);
+        pli.addEventListener('change',function(){soft(function(){it.p.pushLive=pli.checked;});});
+        plr.appendChild(pli);lsp.appendChild(plr);
+      }
+      fbar.appendChild(lsb);fbar.appendChild(lsp);R.lineset=lsb;
+      if(it.p.ga){
+        var brb=fbarBtn('fb-t','Branch: add another end from this same start',
+          '<circle cx="5" cy="12" r="2.4"/><path d="M7.3 12H13M13 12L19 7M13 12L19 17" stroke-width="1.6" fill="none" stroke-linecap="round"/><circle cx="19.5" cy="7" r="1.8"/><circle cx="19.5" cy="17" r="1.8"/>',
+          function(){branchLine(it);});
+        fbar.appendChild(brb);R.branch=brb;
+      }
+      /* once a text style is chosen under Presets, the bar offers the text to edit */
+      if(it.p.labelStyle){
         var lbb=fbarBtn('fb-t','Text on the line',FB_SVG.lbl,function(){fbToggle(lbp,lbb);});
         var lbp=el_('div','fb-pop fb-lbl');lbp.hidden=true;fbStop(lbp);
         var lbi=el_('input');lbi.type='text';lbi.placeholder='Text on the line, e.g. 1 Gbps';lbi.maxLength=60;lbi.value=it.p.label||'';lbi.setAttribute('aria-label','Text on the line');fbStop(lbi);
-        var lbt=null;
-        lbi.addEventListener('input',function(){it.p.label=lbi.value;refreshItem(it);clearTimeout(lbt);lbt=setTimeout(commit,400);});
+        lbi.addEventListener('input',function(){soft(function(){it.p.label=lbi.value;});});
         lbp.appendChild(lbi);
-        var lbs=el_('div','shpgrid');
-        [['pill','Pill'],['solid','Filled'],['plain','Text only']].forEach(function(x){
-          var b=el_('button','shpb'+(((it.p.labelStyle||'pill')===x[0])?' on':''));b.type='button';b.title=x[1];b.setAttribute('aria-label',x[1]);
-          b.innerHTML=lblThumb(x[0])+'<span class="lkcap">'+x[1]+'</span>';
-          b.addEventListener('click',function(e){e.stopPropagation();it.p.labelStyle=x[0];refreshItem(it);buildForm();commit();});
-          lbs.appendChild(b);
-        });
-        lbp.appendChild(lbs);
-        var lbn=el_('input');lbn.type='number';lbn.min='8';lbn.max='60';lbn.value=it.p.labelSize||14;lbn.title='Text size';lbn.setAttribute('aria-label','Text size');fbStop(lbn);
-        lbn.addEventListener('input',function(){var n=parseFloat(lbn.value);if(n>=8&&n<=60){it.p.labelSize=n;refreshItem(it);clearTimeout(lbt);lbt=setTimeout(commit,400);}});
-        lbp.appendChild(lbn);fbar.appendChild(lbb);fbar.appendChild(lbp);R.lbl=lbb;
+        var lbf=el_('select');lbf.setAttribute('aria-label','Font');fbStop(lbf);
+        [['','Default font']].concat(famOpts()).forEach(function(o){var op=el_('option');op.value=o[0];op.textContent=o[1];lbf.appendChild(op);});
+        lbf.value=it.p.labelFont||'';
+        lbf.addEventListener('change',function(){soft(function(){it.p.labelFont=lbf.value;});});
+        lbp.appendChild(lbf);
+        var lbr=el_('label','fb-row');lbr.appendChild(el_('span',null,'Size'));
+        var lbn=el_('input');lbn.type='number';lbn.min='8';lbn.max='60';lbn.value=it.p.labelSize||14;fbStop(lbn);
+        lbn.addEventListener('input',function(){var n=parseFloat(lbn.value);if(n>=8&&n<=60)soft(function(){it.p.labelSize=n;});});
+        lbr.appendChild(lbn);lbp.appendChild(lbr);
+        var lcr=el_('label','fb-row');lcr.appendChild(el_('span',null,'Text color'));
+        var lci=el_('input');lci.type='color';lci.value=it.p.labelColor||(it.p.labelStyle==='solid'?'#ffffff':'#0f172a');fbStop(lci);
+        lci.addEventListener('input',function(){soft(function(){it.p.labelColor=lci.value;});});
+        lcr.appendChild(lci);lbp.appendChild(lcr);
+        fbar.appendChild(lbb);fbar.appendChild(lbp);R.lbl=lbb;
       }
     }
     if(A.link){
@@ -2940,7 +3032,7 @@ try{
       wrap.appendChild(fbar);
     }
     if(!it||(drag&&drag.mode!=='size')||editing){fbar.hidden=true;fbarKey='';return;}   /* it stays while you resize, and goes only while you move */
-    var key=it.id+'|'+it.type+'|'+(it.p&&it.p.shape?it.p.shape+(it.p.dir||''):'')+'|'+(it.type==='banner'?(it.p.fit?'f':'m'):'');
+    var key=it.id+'|'+it.type+'|'+(it.p&&it.p.shape?it.p.shape+(it.p.dir||''):'')+'|'+(it.type==='banner'?(it.p.fit?'f':'m'):'')+((it.p&&it.p.isConnector)?('|c'+(it.p.labelStyle?'t':'')+(it.p.ga?'a':'')+(it.p.gb?'b':'')):'');
     if(key!==fbarKey){fbarBuild(it);fbarKey=key;}else fbarSync(it);
     fbar.hidden=false;
     /* the bar follows the zoom a little, so a small item on a zoomed-out canvas is not dwarfed by it */
@@ -3744,7 +3836,7 @@ try{
       D.items.unshift(it);
     }else{
       if(type==='shape'){it.type='frame';it.w=CFG.shape.w;it.h=CFG.shape.h;it.p=newShapeP('b_arrow','right');}
-      else if(type==='connector'){it.type='frame';it.w=CFG.shape.w;it.h=CFG.shape.h;it.p=newShapeP('line','right');it.p.isConnector=true;it.p.pushLive=true;}   /* same line/glue machinery as a Shapes line, just born ready to link two objects and push live */
+      else if(type==='connector'){it.type='frame';it.w=CFG.shape.w;it.h=CFG.shape.h;it.p=newShapeP('line','right');it.p.isConnector=true;it.p.pushLive=true;it.p.matchLS=false;it.p.lt='curve';it.p.thick=5;it.p.anim=false;it.p.ha='none';it.p.hb='none';it.p.colorMode='status';it.p.cn2=1;}   /* same line/glue machinery as a Shapes line, just born ready to link two objects and push live */
       else if(type==='frame'){it.w=CFG.frame.w;it.h=CFG.frame.h;it.p=newFrameP('Light card');}
       else if(type==='tile'){it.w=230;it.h=112;it.p=newTileP('Light tile');}
       else if(type==='banner'){it.w=640;it.h=90;it.p=newBannerP('Info');}
@@ -4241,7 +4333,7 @@ try{
       return '[data-msid="ms'+gid+'"]';
     }
     function connLiveCfg(it){
-      var p=it.p, matched=(p.matchLS!==false&&typeof LKDEF!=='undefined'), L=matched?LKDEF:null;
+      var p=connNorm(it.p), matched=(p.matchLS!==false&&typeof LKDEF!=='undefined'&&!p.isConnector), L=matched?LKDEF:null;
       function end(v){return (v==='dot'||v==='arrow')?v:'none';}
       if(matched){
         return {type:(L.line==='elbow'||L.line==='relbow'||L.line==='scurve'||L.line==='arc'||L.line==='straight')?L.line:'curve',
@@ -4250,17 +4342,17 @@ try{
           color:(L.colorMode==='custom'&&/^#[0-9a-fA-F]{6}$/.test(String(L.color)))?L.color:'#111827',
           bend:lkNum(L.bend,4,60,22),radius:lkNum(L.radius,2,80,20),start:end(L.start),end:end(L.end),inset:lkNum(L.inset,0,150,28),
           flow:!!L.flow,flowSec:lkNum(L.flowSec,0.4,20,1.4),
-          look:p.look||'plain',label:String(p.label||'').slice(0,60),labelSize:parseFloat(p.labelSize)||14,labelStyle:p.labelStyle||'pill'};
+          look:p.look||'plain',label:p.labelStyle?String(p.label||'').slice(0,60):'',labelSize:parseFloat(p.labelSize)||14,labelStyle:p.labelStyle||'',labelColor:p.labelColor||'',labelFont:p.labelFont||''};
       }
       /* A connector that does not follow the shared Link style used to be forced to colorMode:'custom',
          so picking any line style for it -- which is what clears matchLS -- silently made live status
          colouring impossible for good. A live connector exists to show the state of what it joins, so
          status is the default here now; "One colour" under Colour opts back out. */
       return {type:(p.lt==='elbow')?'elbow':(p.lt==='curve'?'curve':'straight'),dash:p.dash||'solid',width:Math.max(1,parseFloat(p.thick)||6),
-        opacity:100,glow:false,round:true,colorMode:(p.colorMode==='custom')?'custom':'status',
-        color:(p.colorMode==='custom'&&/^#[0-9a-fA-F]{6}$/.test(String(p.color)))?p.color:'#111827',bend:22,radius:20,start:end(p.ha),end:end(p.hb),
+        opacity:100,glow:false,round:true,colorMode:'status',pal:lnPal(p),
+        color:lnPal(p).unknown,bend:22,radius:20,start:end(p.ha),end:end(p.hb),
         inset:28,flow:!!p.anim,flowSec:parseFloat(p.speed)||1.4,
-        look:p.look||'plain',label:String(p.label||'').slice(0,60),labelSize:parseFloat(p.labelSize)||14,labelStyle:p.labelStyle||'pill'};
+        look:p.look||'plain',label:p.labelStyle?String(p.label||'').slice(0,60):'',labelSize:parseFloat(p.labelSize)||14,labelStyle:p.labelStyle||'',labelColor:p.labelColor||'',labelFont:p.labelFont||''};
     }
     /* self-contained: sent to the browser as text (via toString()) and run there, inside the live PRTG map page --
        not called from here, so it cannot reach anything else in this file and must carry everything it needs in C. */
@@ -4307,7 +4399,7 @@ try{
         cap(g,kind,a.x,a.y,ang,w,paint);
       }
       var LST={g:'up',r:'down',y:'warning',o:'unusual',b:'paused',bl:'paused',gr:'unknown'};
-      var LCOL={up:'#b4cc38',down:'#d71920',warning:'#ffd400',unusual:'#f5821f',paused:'#3b8dd0',unknown:'#9aa4af'};
+      var LCOL=(C.pal&&C.pal.up)?C.pal:{up:'#b4cc38',down:'#d71920',warning:'#ffd400',unusual:'#f5821f',paused:'#3b8dd0',unknown:'#9aa4af'};
       /* PRTG's native rendering of a map item bound to a probe or other container object (aggregating many
          children) signals status with a different scheme: boolean map_iconcolor_has<color>/hasno<color> flag
          classes on a nested label span, rather than a single state class on the item itself. Several can be
@@ -4399,7 +4491,7 @@ try{
         }
         svg.appendChild(g);
         var lkSp=C.flowSec>=2.2?3:(C.flowSec<=1?0.8:1.6), lk=null, lkOn=!!C.look&&C.look!=='plain';
-        if(lkOn||C.label)lk=mkLook({look:lkOn?C.look:'plain',d:d,paint:paint,w:w,c1:colA,c2:colB,uid:C.uid,anim:!!C.flow,sp:lkSp,label:{text:C.label,size:C.labelSize,style:C.labelStyle}});
+        if(lkOn||C.label)lk=mkLook({look:lkOn?C.look:'plain',d:d,paint:paint,w:w,c1:colA,c2:colB,uid:C.uid,anim:!!C.flow,sp:lkSp,label:{text:C.label,size:C.labelSize,style:C.labelStyle,color:C.labelColor,fam:C.labelFont}});
         if(lkOn)g.insertAdjacentHTML('beforeend',lk.defs+lk.body);
         if(C.glow&&!lkOn)g.appendChild(el('path',{d:d,fill:'none',stroke:paint,'stroke-width':f(w*2.2),'stroke-linecap':'round',style:'opacity:.22;filter:blur(4px)'}));
         var p2=el('path',{d:d,fill:'none',stroke:paint,'stroke-width':w,'stroke-linecap':round,'stroke-linejoin':'round'});
@@ -11913,7 +12005,7 @@ try{
     showIf(tlh,function(){return tlKind('chips','chipsfit');});tl1.appendChild(tlh);
 
     /* ---- shape: what it draws ---- */
-    var sh1=section('Shape');secIf(sh1,function(){return TYPE==='shape';});
+    var sh1=section('Shape');secIf(sh1,function(){return TYPE==='shape'&&!(FRc()&&FRc().p&&FRc().p.isConnector);});
     var FRPs=function(){return FRc().p;};
     var LINEKINDS=['line','arrow','flow'];
     var shKindW=h('div','dfld');shKindW.appendChild(h('label',null,'Kind'));
@@ -11941,23 +12033,6 @@ try{
     var shF=h('div');showIf(shF,function(){return LNO().anim;});
     shF.appendChild(inSel('Flow speed',function(){return String(FRPs().speed||'1.6');},function(v){FRPs().speed=v;},[['3','Slow'],['1.6','Normal'],['0.8','Fast']]));
     shL.appendChild(shF);sh1.appendChild(shD);sh1.appendChild(shL);
-    /* Connectors only: the look, and text on the line, chosen from pictures */
-    var shK=h('div');showIf(shK,function(){var q=FRPs();return !!q.isConnector&&(q.shape==='line'||q.shape==='arrow'||q.shape==='flow');});
-    shK.appendChild(inText('Text on the line',function(){return FRPs().label||'';},function(v){FRPs().label=String(v).slice(0,60);},'e.g. 1 Gbps'));
-    shK.appendChild(h('label',null,'Text style'));
-    var lsGal=h('div','fgal');shK.appendChild(lsGal);
-    syncs.push(function(){
-      var cur=FRPs().labelStyle||'pill';lsGal.textContent='';
-      [['pill','Pill'],['solid','Filled'],['plain','Text only']].forEach(function(x){
-        var t=h('button','fgtile'+(cur===x[0]?' on':'')), pv=h('div','fgprev'), cap=h('span','fgcap');
-        t.type='button';t.title=x[1];pv.style.background='#F3F4F6';pv.innerHTML=lblThumb(x[0]);cap.textContent=x[1];
-        t.appendChild(pv);t.appendChild(cap);
-        t.addEventListener('click',function(){FRPs().labelStyle=x[0];refreshUI();render();});
-        lsGal.appendChild(t);
-      });
-    });
-    shK.appendChild(inNum('Text size',function(){return FRPs().labelSize||14;},function(v){FRPs().labelSize=Math.max(8,Math.min(60,v||14));},8,60));
-    sh1.appendChild(shK);
 
     /* ---- Look presets for frames, backgrounds and shapes ---- */
     var fl1=section('Looks');secIf(fl1,isPaste);
@@ -11967,14 +12042,19 @@ try{
       var kind=fKind(), SH=FRAMEAPI.SHADOW, cur=FRc().p.style;
       if(!isPaste())return;
       fGal.textContent='';
-      if(kind==='shape'&&FRc().p.isConnector){   /* a Connector's presets are its looks, shown as pictures */
-        var lcur=FRc().p.look||'plain';
-        LNLOOKS.forEach(function(x){
-          var t=h('button','fgtile'+(lcur===x[0]?' on':'')), pv=h('div','fgprev'), cap=h('span','fgcap');
-          t.type='button';t.title=x[1];pv.style.background='#F3F4F6';pv.innerHTML=lookThumb(x[0],72,34);cap.textContent=x[1];
-          t.appendChild(pv);t.appendChild(cap);
-          t.addEventListener('click',function(){FRc().p.look=x[0];refreshUI();render();});
-          fGal.appendChild(t);
+      if(kind==='shape'&&FRc().p.isConnector){   /* a Connector's presets are its line looks and its text styles, shown as pictures */
+        var cp=FRc().p, lcur=cp.look||'plain', tcur=cp.labelStyle||'none';
+        function grp(title){var g=h('div','pgroup');g.textContent=title;g.style.cssText='grid-column:1/-1;margin:6px 0 0;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:#8b90a0';fGal.appendChild(g);}
+        function tile(x,html,on,go){
+          var t=h('button','fgtile'+(on?' on':'')), pv=h('div','fgprev'), cap=h('span','fgcap');
+          t.type='button';t.title=x[1];pv.style.background='#F3F4F6';pv.innerHTML=html;cap.textContent=x[1];
+          t.appendChild(pv);t.appendChild(cap);t.addEventListener('click',function(){go();refreshUI();render();});fGal.appendChild(t);
+        }
+        grp('Line look');
+        LNLOOKS.forEach(function(x){tile(x,lookThumb(x[0],72,34),lcur===x[0],function(){FRc().p.look=x[0];});});
+        grp('Text on the line');
+        [['none','No text'],['pill','Pill'],['solid','Filled'],['plain','Text only']].forEach(function(x){
+          tile(x,lblThumb(x[0]),tcur===x[0],function(){var q=FRc().p;if(x[0]==='none')q.labelStyle='';else{q.labelStyle=x[0];if(!q.label)q.label='Text';}});
         });
         return;
       }
@@ -12014,7 +12094,7 @@ try{
       });
     }
     syncs.push(drawFGal);
-    fl1.appendChild(h('p','note','Click one to apply it to this '+'frame, background or shape. A background takes the look\u2019s own map color. For a Connector these are the line looks.'));
+    fl1.appendChild(h('p','note','Click one to apply it to this '+'frame, background or shape. A background takes the look\u2019s own map color. For a Connector these are the line look and the text on the line; edit the text, the thickness and the ends from the floating bar.'));
 
     var fr1=section('Appearance');secIf(fr1,isPaste);
     var FRP=function(){return FRc().p;};
