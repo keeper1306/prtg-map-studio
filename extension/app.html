@@ -461,6 +461,9 @@ body.dash #prtgbar{display:flex}
 .dellink{display:block;margin-top:14px;color:#8b93a3;text-decoration:underline}
 .dellink:hover:not(:disabled){color:#b4232b}
 .dellink:disabled{opacity:.4;cursor:default}
+.unloadlink{display:block;margin-top:10px;color:#8b93a3;text-decoration:underline}
+.unloadlink:hover:not(:disabled){color:#007db8}
+.unloadlink.armed{color:#b26a00}
 .stepnextrow{display:block;margin-top:16px}
 .stepnextrow .btn{width:100%}
 .stepnextrow .btn:disabled{opacity:.4;cursor:default}
@@ -944,6 +947,7 @@ body:not(.dash):not(.objs) #panel > #preswrap:not([hidden]),body:not(.dash):not(
           <button type="button" class="ico sm" id="xeundo" data-tip="Undo last change" aria-label="Undo last change" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10h11a5 5 0 0 1 0 10H9"/><path d="M3 10l5-5M3 10l5 5"/></svg></button>
         </div>
         <div id="exlist" class="exlist" hidden></div>
+        <button type="button" class="linkbtn unloadlink" id="exunload" hidden>Clear the canvas</button>
         <div id="exedit" class="exedit" hidden>
           <h4 id="exedtitle"></h4>
           <div class="row3">
