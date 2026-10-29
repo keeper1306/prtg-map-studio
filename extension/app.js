@@ -59,6 +59,7 @@ var CFG={
   install:{dir:'C:\\Program Files (x86)\\PRTG Network Monitor\\webroot\\mapobjects',maxChars:500000},
   /* which Objects-tab sections start open (true) or closed (false). A section that is not listed starts closed. */
   sections:{
+    'Link style':true,
     'Object':false,
     'Name and title':false,
     'Appearance':true,
@@ -9186,6 +9187,184 @@ try{
     return o.join('\n')+'\n';
   }
 
+  /* ---------- Link style: restyles the lines PRTG draws between map objects ----------
+     PRTG builds those lines with its own script after the page loads and rebuilds them on every refresh.
+     This object hides PRTG's lines by CSS (so they are never seen), draws its own paths from the same coordinates and colors,
+     and draws them again whenever PRTG rebuilds the lines. If anything fails, PRTG's lines come back. */
+  function mlsRuntime(C){
+    var NS='http://www.w3.org/2000/svg', PI=Math.PI, pend=false, mo=null, tick=0;
+    if(window.__mls&&window.__mls.stop)window.__mls.stop();
+    function f(n){return Math.round(n*10)/10;}
+    function polyline(P,r){
+      var d='M'+f(P[0][0])+' '+f(P[0][1]), i, a, b, c, l1, l2, k1, k2, p, q;
+      for(i=1;i<P.length-1;i++){
+        a=P[i-1];b=P[i];c=P[i+1];
+        l1=Math.sqrt(Math.pow(b[0]-a[0],2)+Math.pow(b[1]-a[1],2));
+        l2=Math.sqrt(Math.pow(c[0]-b[0],2)+Math.pow(c[1]-b[1],2));
+        k1=Math.min(r,l1/2);k2=Math.min(r,l2/2);
+        if(r<=0||l1<1||l2<1){d+='L'+f(b[0])+' '+f(b[1]);continue;}
+        p=[b[0]-(b[0]-a[0])/l1*k1,b[1]-(b[1]-a[1])/l1*k1];
+        q=[b[0]+(c[0]-b[0])/l2*k2,b[1]+(c[1]-b[1])/l2*k2];
+        d+='L'+f(p[0])+' '+f(p[1])+'Q'+f(b[0])+' '+f(b[1])+' '+f(q[0])+' '+f(q[1]);
+      }
+      return d+'L'+f(P[P.length-1][0])+' '+f(P[P.length-1][1]);
+    }
+    /* the path for one link, from (x1,y1) to (x2,y2) */
+    function geo(t,x1,y1,x2,y2){
+      var dx=x2-x1,dy=y2-y1,len=Math.sqrt(dx*dx+dy*dy)||1,mx=(x1+x2)/2,my=(y1+y2)/2,k,cx,cy,P,R;
+      if(t==='curve'){
+        k=len*(C.bend/100);if(x2<x1)k=-k;
+        cx=mx+(dy/len)*k;cy=my-(dx/len)*k;
+        return 'M'+f(x1)+' '+f(y1)+'Q'+f(cx)+' '+f(cy)+' '+f(x2)+' '+f(y2);
+      }
+      if(t==='scurve'){
+        if(Math.abs(dx)>=Math.abs(dy))return 'M'+f(x1)+' '+f(y1)+'C'+f(mx)+' '+f(y1)+' '+f(mx)+' '+f(y2)+' '+f(x2)+' '+f(y2);
+        return 'M'+f(x1)+' '+f(y1)+'C'+f(x1)+' '+f(my)+' '+f(x2)+' '+f(my)+' '+f(x2)+' '+f(y2);
+      }
+      if(t==='elbow'||t==='relbow'){
+        P=(Math.abs(dx)>=Math.abs(dy))?[[x1,y1],[mx,y1],[mx,y2],[x2,y2]]:[[x1,y1],[x1,my],[x2,my],[x2,y2]];
+        return polyline(P,t==='relbow'?C.radius:0);
+      }
+      if(t==='arc'){
+        R=len*0.8;
+        return 'M'+f(x1)+' '+f(y1)+'A'+f(R)+' '+f(R)+' 0 0 '+((x2>=x1)?1:0)+' '+f(x2)+' '+f(y2);
+      }
+      return 'M'+f(x1)+' '+f(y1)+'L'+f(x2)+' '+f(y2);
+    }
+    function el(n,at){var e=document.createElementNS(NS,n),k;for(k in at)e.setAttribute(k,at[k]);return e;}
+    /* a marker sits a little way in from the line's end, because PRTG ends every line at the device's centre, under its icon */
+    function capOn(g,p,atEnd,kind,w,paint){
+      var L, d, s, a, b, ang;
+      if(kind!=='dot'&&kind!=='arrow')return;
+      L=p.getTotalLength();d=Math.min(C.inset,L*0.4);s=atEnd?L-d:d;
+      a=p.getPointAtLength(s);b=p.getPointAtLength(atEnd?s-1.5:s+1.5);
+      ang=Math.atan2(a.y-b.y,a.x-b.x);
+      cap(g,kind,a.x,a.y,ang,w,paint);
+    }
+    function cap(g,kind,x,y,ang,w,paint){
+      var r,s,c,sn,h;
+      if(kind==='dot'){
+        r=Math.max(w*0.9,3.5);
+        g.appendChild(el('circle',{cx:f(x),cy:f(y),r:f(r),fill:paint}));
+      }else if(kind==='arrow'){
+        s=Math.max(w*3,11);c=Math.cos(ang);sn=Math.sin(ang);h=s*0.5;
+        g.appendChild(el('polygon',{points:f(x)+','+f(y)+' '+f(x-s*c-h*sn)+','+f(y-s*sn+h*c)+' '+f(x-s*c+h*sn)+','+f(y-s*sn-h*c),fill:paint}));
+      }
+    }
+    function dashOf(w){
+      if(C.dash==='dashed')return [w*2.6,w*1.8];
+      if(C.dash==='dotted')return [0.1,w*2.2];
+      if(C.dash==='dashdot')return [w*3,w*1.6,0.1,w*1.6];
+      return null;
+    }
+    function draw(){
+      var svg=document.getElementById('mapsvg'), lines, g, old, i, l, x1, y1, x2, y2, paint, o, w=C.width, ds, sum, p, round;
+      if(!svg)return;
+      if(svg.closest&&svg.closest('#mapeditor'))return; /* the editor keeps PRTG's own lines, so a link can still be removed */
+      if(mo)mo.disconnect();
+      try{
+        old=svg.querySelector('g.mls-g');if(old)old.parentNode.removeChild(old);
+        lines=svg.querySelectorAll('line.connectionline');
+        g=el('g',{'class':'mls-g',opacity:C.opacity/100});
+        svg.appendChild(g); /* in the page before the markers are placed, so the path can be measured */
+        ds=dashOf(w);sum=0;if(ds)for(i=0;i<ds.length;i++)sum+=ds[i];
+        round=(C.round||C.dash==='dotted'||C.dash==='dashdot')?'round':'butt';
+        for(i=0;i<lines.length;i++){
+          l=lines[i];
+          x1=parseFloat(l.getAttribute('x1'));y1=parseFloat(l.getAttribute('y1'));x2=parseFloat(l.getAttribute('x2'));y2=parseFloat(l.getAttribute('y2'));
+          if(isNaN(x1+y1+x2+y2)||(x1===x2&&y1===y2))continue;
+          paint=C.color||l.getAttribute('stroke')||'#9aa4af';
+          o=geo(C.type,x1,y1,x2,y2);
+          if(C.glow)g.appendChild(el('path',{d:o,fill:'none',stroke:paint,'stroke-width':f(w*2.2),'stroke-linecap':'round','class':'mls-glow'}));
+          p=el('path',{d:o,fill:'none',stroke:paint,'stroke-width':w,'stroke-linecap':round,'stroke-linejoin':'round','class':'mls-line'+((C.flow&&ds)?' mls-flow':'')});
+          if(ds){p.setAttribute('stroke-dasharray',ds.map(f).join(' '));p.style.setProperty('--mls-p',f(sum)+'px');}
+          g.appendChild(p);
+          capOn(g,p,false,C.start,w,paint);
+          capOn(g,p,true,C.end,w,paint);
+        }
+        svg.setAttribute('class',(svg.getAttribute('class')||'').replace(/\bmls-(on|off)\b/g,'').trim()+' mls-on');
+      }catch(e){
+        svg.setAttribute('class',(svg.getAttribute('class')||'').replace(/\bmls-(on|off)\b/g,'').trim()+' mls-off'); /* show PRTG's lines again if anything goes wrong */
+      }
+      if(mo)watch();
+    }
+    function schedule(){if(pend)return;pend=true;Promise.resolve().then(function(){pend=false;draw();});}
+    function inSvg(n){return n&&n.nodeType===1&&(n.id==='mapsvg'||(n.closest&&n.closest('#mapsvg')));}
+    function hasSvg(n){return n&&n.nodeType===1&&(n.id==='mapsvg'||(n.querySelector&&n.querySelector('#mapsvg')));}
+    function watch(){
+      mo.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['x1','y1','x2','y2','stroke']});
+    }
+    mo=new MutationObserver(function(recs){
+      var i, j, r, need=false;
+      for(i=0;i<recs.length&&!need;i++){
+        r=recs[i];
+        if(r.target.closest&&r.target.closest('g.mls-g'))continue;
+        if(inSvg(r.target)){need=true;break;}
+        if(r.type==='childList'){
+          for(j=0;j<r.addedNodes.length;j++)if(hasSvg(r.addedNodes[j])){need=true;break;}
+        }
+      }
+      if(need)schedule();
+    });
+    watch();
+    tick=setInterval(function(){
+      var svg=document.getElementById('mapsvg');
+      if(svg&&!/\bmls-(on|off)\b/.test(svg.getAttribute('class')||''))schedule();
+    },1500);
+    window.__mls={stop:function(){if(mo)mo.disconnect();clearInterval(tick);var g=document.querySelector('#mapsvg g.mls-g');if(g)g.parentNode.removeChild(g);}};
+    schedule();
+  }
+  var LKTYPES=[['straight','Straight (PRTG’s own shape)'],['curve','Curve'],['scurve','S-curve'],['elbow','Elbow (right angles)'],['relbow','Rounded elbow'],['arc','Arc']];
+  var LKDASH=[['solid','Solid'],['dashed','Dashed'],['dotted','Dotted'],['dashdot','Dash and dot']];
+  var LKENDS=[['none','None'],['dot','Dot'],['arrow','Arrow']];
+  function blankLK(){
+    return {type:'links',cat:'Links',name:'Map Studio Link style',fname:'',initW:48,initH:48,look:lookOf('Minimal'),
+      line:'curve',dash:'solid',width:5,opacity:100,glow:true,round:true,colorMode:'status',color:'#2f80ed',bend:22,radius:20,
+      start:'none',end:'none',inset:28,flow:false,flowSec:1.4,wait:4};
+  }
+  function lkNum(v,lo,hi,d){v=parseFloat(v);if(isNaN(v))v=d;return Math.max(lo,Math.min(hi,v));}
+  function lkCfg(L){
+    var line=LKTYPES.some(function(x){return x[0]===L.line;})?L.line:'curve', dash=LKDASH.some(function(x){return x[0]===L.dash;})?L.dash:'solid';
+    function end(v){return (v==='dot'||v==='arrow')?v:'none';}
+    return {type:line,dash:dash,width:lkNum(L.width,1,16,5),opacity:lkNum(L.opacity,10,100,100),glow:!!L.glow,round:!!L.round,
+      color:(L.colorMode==='custom'&&/^#[0-9a-fA-F]{6}$/.test(String(L.color)))?String(L.color):'',
+      bend:lkNum(L.bend,4,60,22),radius:lkNum(L.radius,2,80,20),start:end(L.start),end:end(L.end),inset:lkNum(L.inset,0,150,28),flow:!!L.flow};
+  }
+  function linksCss(L){
+    var wait=lkNum(L.wait,1,10,4), sec=lkNum(L.flowSec,0.4,20,1.4);
+    return [
+      '#mapsvg line.connectionline{visibility:hidden;animation:mlsShow 0s linear '+wait+'s forwards}',
+      '@keyframes mlsShow{to{visibility:visible}}',
+      '#mapsvg.mls-on line.connectionline{animation:none;visibility:hidden}',
+      '#mapsvg.mls-off line.connectionline,#mapeditor #mapsvg line.connectionline{animation:none;visibility:visible}',
+      '.mls-g{pointer-events:none}',
+      '.mls-glow{opacity:.22;filter:blur(4px)}',
+      '@keyframes mlsFlow{to{stroke-dashoffset:calc(var(--mls-p) * -1)}}',
+      '.mls-flow{animation:mlsFlow '+sec+'s linear infinite}',
+      '@media (prefers-reduced-motion:reduce){.mls-flow{animation:none}}',
+      '.map_links .mls-chip{display:none}',
+      '#mapeditor .map_links .mls-chip{display:block;font:11px/1.2 Roboto,"Segoe UI",Arial,sans-serif;color:#6b7280;background:#fff;border:1px dashed #9aa4af;border-radius:4px;padding:2px 6px;white-space:nowrap}'
+    ].join('\n');
+  }
+  function lkScript(cfg){
+    return '('+String(mlsRuntime).replace(/\/\*[\s\S]*?\*\//g,'').replace(/\n\s*/g,'\n')+')('+JSON.stringify(cfg)+');';
+  }
+  function buildLinks(L){
+    var o=[], w=parseInt(L.initW,10), hh=parseInt(L.initH,10);
+    var init=(w>0&&hh>0)?' initialwidth="'+Math.min(w,4000)+'" initialheight="'+Math.min(hh,4000)+'"':'';
+    o.push('<!'+'--'+clean(L.cat||'Links')+': '+clean(L.name||'Link style')+'-->');
+    o.push('<style>');o.push(linksCss(L));o.push('</style>');
+    o.push('<div class="map_object map_links" id="<@itemid>" objectid="<@objectid>" subid="<@subid>"'+init+' style="<#mapobject type="coordinates" subid="<@subid>" mode="<@editmode>">">');
+    o.push('<#mapobject type="objectgrip" mode="<@editmode>">');
+    o.push('<#mapobject type="htmlbefore" subid="<@subid>">');
+    o.push('<span class="mls-chip">Link style</span>');
+    o.push('<#mapobject type="htmlafter" subid="<@subid>">');
+    o.push('</div>');
+    o.push('');
+    o.push('<scr'+'ipt>');o.push(lkScript(lkCfg(L)));o.push('<\/script>');
+    return o.join('\n')+'\n';
+  }
+
   /*PURE2-END*/
 
   /* ---------- helpers ---------- */
@@ -9217,8 +9396,8 @@ try{
   }
 
   var FRAMEAPI=DASHAPI.frame||null, FRM={frame:null,bg:null,shape:null};
-  var T=blankT(), G=blankG(), GR=blankGR(), DN=blankD(), IC=blankI(), SC=blankSC(), TL=blankTL(), GM=blankGM(), TYPE='label', syncs=[], vis=[], hostEl=document.getElementById('objpanel');
-  function M(){return TYPE==='gauge'?G:((TYPE==='frame'||TYPE==='bg'||TYPE==='shape')?FRc():(TYPE==='graph'?GR:(TYPE==='donut'?DN:(TYPE==='icon'?IC:(TYPE==='status'?SC:(TYPE==='tile'?TL:(TYPE==='geomap'?GM:T)))))));}
+  var T=blankT(), G=blankG(), GR=blankGR(), DN=blankD(), IC=blankI(), SC=blankSC(), TL=blankTL(), GM=blankGM(), LK=blankLK(), TYPE='label', syncs=[], vis=[], hostEl=document.getElementById('objpanel');
+  function M(){return TYPE==='gauge'?G:((TYPE==='frame'||TYPE==='bg'||TYPE==='shape')?FRc():(TYPE==='graph'?GR:(TYPE==='donut'?DN:(TYPE==='icon'?IC:(TYPE==='status'?SC:(TYPE==='tile'?TL:(TYPE==='geomap'?GM:(TYPE==='links'?LK:T))))))));}
   /* Frame and Background are the Dashboard's own frame, pasted into a Custom HTML item. The Dashboard hands over its generator, so the code is the same. */
   function blankFR(kind){
     var p=(kind==='shape')?FRAMEAPI.newShapeP('b_arrow','right'):FRAMEAPI.newFrameP(kind==='bg'?'Background dark':'Light card');
@@ -9744,6 +9923,8 @@ try{
       x='Icon - '+iStyle(m.style).name.toLowerCase()+(m.text&&m.text!=='none'?', with '+m.text:'');
     }else if(t==='geomap'){
       x='Geo map - '+String(amLab(GMSHAPES,m.shape)).toLowerCase()+' markers'+(m.icon==='device'?'':', '+m.icon+' icon');
+    }else if(t==='links'){
+      x='Link style - '+String(amLab(LKTYPES,m.line)).replace(/ \(.*$/,'').toLowerCase()+(m.dash==='solid'?'':', '+String(amLab(LKDASH,m.dash)).toLowerCase());
     }else return null;
     x=p+x;
     return x.length>64?x.slice(0,63).replace(/[ ,+\-]+$/,'')+'…':x;
@@ -9810,7 +9991,7 @@ try{
   }
   /* sets of status colors: PRTG's own, and others with a clearer green or friendlier to color blindness */
   var PS=window.PMSSETS, CSETS=PS.sets;   /* the color sets are shared with the Map designer's bar; PS.cur is the one chosen */
-  function obOk(){return !isLegacy(TYPE)&&!isPaste()&&!(TYPE==='icon'&&IC.engine==='stock')&&!!M()&&!!M().look;}
+  function obOk(){return !isLegacy(TYPE)&&!isPaste()&&TYPE!=='links'&&!(TYPE==='icon'&&IC.engine==='stock')&&!!M()&&!!M().look;}
   function obRoot(){return TYPE==='table'?document.getElementById('edwrap'):(TYPE==='geomap'?prevEl.querySelector('.icstrip'):prevEl.querySelector('.map_object'));}
   function obSet(fn){var m=M(), l=m.look;if(l.mode==='prtg')l.mode='custom';fn(l,m);refreshUI();render();}
   function obBtn(label,title,get,set){
@@ -10220,8 +10401,8 @@ try{
 
   /* ---------- undo, redo and reset: every object type keeps its own history ---------- */
   var HIST={}, HLOCK=false, undoBtn=null, redoBtn=null;
-  function hModelGet(k){return k==='table'?T:(k==='gauge'?G:(k==='graph'?GR:(k==='donut'?DN:(k==='icon'?IC:(k==='status'?SC:(k==='tile'?TL:(k==='geomap'?GM:(FRM[k]||(FRM[k]=blankFR(k))))))))));}
-  function hModelSet(k,m){if(k==='table')T=m;else if(k==='gauge')G=m;else if(k==='graph')GR=m;else if(k==='donut')DN=m;else if(k==='icon')IC=m;else if(k==='status')SC=m;else if(k==='tile')TL=m;else if(k==='geomap')GM=m;else FRM[k]=m;}
+  function hModelGet(k){return k==='table'?T:(k==='gauge'?G:(k==='graph'?GR:(k==='donut'?DN:(k==='icon'?IC:(k==='status'?SC:(k==='tile'?TL:(k==='geomap'?GM:(k==='links'?LK:(FRM[k]||(FRM[k]=blankFR(k)))))))))));}
+  function hModelSet(k,m){if(k==='table')T=m;else if(k==='gauge')G=m;else if(k==='graph')GR=m;else if(k==='donut')DN=m;else if(k==='icon')IC=m;else if(k==='status')SC=m;else if(k==='tile')TL=m;else if(k==='geomap')GM=m;else if(k==='links')LK=m;else FRM[k]=m;}
   function hUpdate(){
     var h_=HIST[TYPE];
     if(undoBtn)undoBtn.disabled=!(h_&&h_.i>0);
@@ -10253,7 +10434,7 @@ try{
   function resetCurrent(){
     var k=TYPE;
     if(isLegacy(k))return;
-    if(k==='table')T=blankT();else if(k==='gauge')G=blankG();else if(k==='graph')GR=blankGR();else if(k==='donut')DN=blankD();else if(k==='icon')IC=blankI();else if(k==='status')SC=blankSC();else if(k==='tile')TL=blankTL();else if(k==='geomap')GM=blankGM();else FRM[k]=blankFR(k);
+    if(k==='table')T=blankT();else if(k==='gauge')G=blankG();else if(k==='graph')GR=blankGR();else if(k==='donut')DN=blankD();else if(k==='icon')IC=blankI();else if(k==='status')SC=blankSC();else if(k==='tile')TL=blankTL();else if(k==='geomap')GM=blankGM();else if(k==='links')LK=blankLK();else FRM[k]=blankFR(k);
     ED.sel=null;buildPresetOptions();refreshUI();render();
     toast('Reset. Ctrl+Z brings it back.');
   }
@@ -10712,6 +10893,22 @@ try{
     prevEl.innerHTML=html+'</div><p class="pcap" style="padding:0 14px 12px;max-width:none">'+(GM.icon==='device'?'The icon in each marker is the device’s own PRTG icon (a server is shown here as an example).':'PRTG draws the map and the markers; this is how the markers look on it.')+'</p></div>';
     applyBg(L);
   }
+  /* the Link style preview: a small map with PRTG's own straight lines, restyled by the very script the map will run */
+  var LKCOL={up:'#b4cc38',warning:'#ffd400',down:'#d71920'};
+  function drawLinksPreview(){
+    var W=620, HH=340, L=lookOf('Minimal'), N=[[90,170,'up'],[510,60,'up'],[510,190,'warning'],[330,295,'down']], E=[[0,1],[0,2],[0,3],[1,2]], defs='', lines='', devs='';
+    E.forEach(function(e,i){
+      var a=N[e[0]], b=N[e[1]];
+      defs+='<linearGradient id="lkg'+i+'" gradientUnits="userSpaceOnUse" x1="'+a[0]+'" y1="'+a[1]+'" x2="'+b[0]+'" y2="'+b[1]+'"><stop offset="40%" stop-color="'+LKCOL[a[2]]+'"/><stop offset="60%" stop-color="'+LKCOL[b[2]]+'"/></linearGradient>';
+      lines+='<line x1="'+a[0]+'" y1="'+a[1]+'" x2="'+b[0]+'" y2="'+b[1]+'" class="elmfrom'+e[0]+' elmto'+e[1]+' connectionline" stroke="url(#lkg'+i+')" stroke-width="2"/>';
+    });
+    N.forEach(function(n){devs+='<div style="position:absolute;left:'+(n[0]-22)+'px;top:'+(n[1]-22)+'px;width:44px;height:44px;box-sizing:border-box;border-radius:10px;background:#f3f4f6;border:3px solid '+LKCOL[n[2]]+'"></div>';});
+    prevEl.className='';prevEl.style.minHeight='400px';
+    setStyle(linksCss(LK));applyFont(L);
+    prevEl.innerHTML='<div id="mapshow" class="map-body" style="padding-top:24px"><div style="position:relative;width:'+W+'px;height:'+HH+'px;margin:0 auto;background:#fff;border-radius:8px"><svg id="mapsvg" width="'+W+'" height="'+HH+'" style="position:absolute;left:0;top:0">'+'<defs>'+defs+'</defs>'+lines+'</svg>'+devs+'</div><p class="pcap" style="padding:10px 14px 12px;max-width:none">PRTG draws these four links straight. This is how they look once this object is on the map.</p></div>';
+    applyBg(L);
+    mlsRuntime(lkCfg(LK));
+  }
   var icGalEl=null, icGalStyle=null;
   function refreshStyleGallery(){
     if(!icGalEl||TYPE!=='icon'||IC.engine!=='custom')return;
@@ -10754,7 +10951,8 @@ try{
     applyBg(lookOf('Minimal'));
   }
   function drawPreview(){
-    if(TYPE!=='table')prevEl.style.minHeight='';if(TYPE==='gauge')drawGaugePreview();else if(isPaste())drawPastePreview();else if(TYPE==='graph')drawGraphPreview();else if(TYPE==='donut')drawDonutPreview();else if(TYPE==='tile')drawTilePreview();else if(TYPE==='status')drawStatusPreview();else if(TYPE==='icon')drawIconPreview();else if(TYPE==='geomap')drawGeoPreview();else drawTablePreview();
+    if(TYPE!=='table')prevEl.style.minHeight='';if(TYPE==='gauge')drawGaugePreview();else if(isPaste())drawPastePreview();else if(TYPE==='graph')drawGraphPreview();else if(TYPE==='donut')drawDonutPreview();else if(TYPE==='tile')drawTilePreview();else if(TYPE==='status')drawStatusPreview();else if(TYPE==='icon')drawIconPreview();else if(TYPE==='geomap')drawGeoPreview();else if(TYPE==='links')drawLinksPreview();else drawTablePreview();
+    if(TYPE!=='links'&&window.__mls&&window.__mls.stop)window.__mls.stop();   /* the Link style preview runs the same script as the map; stop it when another type is shown */
     obZoom();eoAttach();obRefresh();}
 
   /* ---------- render ---------- */
@@ -10763,7 +10961,7 @@ try{
     if(PS.cur&&!isPaste())csetPaint(PS.cur);
     if(TYPE==='table'){T.tOffX=0;T.tOffY=0;}
     obAutoName();
-    var text=(TYPE==='gauge')?buildGauge(G):(isPaste()?buildPaste(FRc()):(TYPE==='graph'?buildGraph(GR):(TYPE==='donut'?buildDonut(DN):(TYPE==='tile'?buildTile(TL):(TYPE==='status'?buildStatus(SC):(TYPE==='icon'?buildIcon(IC):(TYPE==='geomap'?buildGeoMap(GM):buildTable(T))))))));
+    var text=(TYPE==='gauge')?buildGauge(G):(isPaste()?buildPaste(FRc()):(TYPE==='graph'?buildGraph(GR):(TYPE==='donut'?buildDonut(DN):(TYPE==='tile'?buildTile(TL):(TYPE==='status'?buildStatus(SC):(TYPE==='icon'?buildIcon(IC):(TYPE==='geomap'?buildGeoMap(GM):(TYPE==='links'?buildLinks(LK):buildTable(T)))))))));
     codeEl.value=text;
     document.getElementById('ofname').textContent=fileNameOf(M());
     document.getElementById('ofnote').textContent=text.length+' characters';
@@ -10782,7 +10980,7 @@ try{
   var typeSel=null, engineSel=null, legSel=null;
   /* Text label and Button are the page's basic tools. Choosing one shows that tool, unchanged, under the Objects tab. */
   var TYPES=[
-    ['Files for \\webroot\\mapobjects',[['table','Data table (list of sensors)'],['gauge','Gauge'],['graph','Graph'],['donut','Donut'],['status','Status counts'],['icon','Status icon'],['tile','Tile'],['geomap','Geo map']]],
+    ['Files for \\webroot\\mapobjects',[['table','Data table (list of sensors)'],['gauge','Gauge'],['graph','Graph'],['donut','Donut'],['status','Status counts'],['icon','Status icon'],['tile','Tile'],['geomap','Geo map'],['links','Link style']]],
     ['Pasted into a Custom HTML item',[['label','Text label'],['button','Button']].concat(FRAMEAPI?[['frame','Frame'],['bg','Background'],['shape','Shape']]:[])]
   ];
   function isLegacy(t){return t==='label'||t==='button';}
@@ -10809,10 +11007,11 @@ try{
     shape:sv('<path d="M4 12h13"/><path d="m13 7 5 5-5 5"/>'),
     tile:sv('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 14h10"/><path d="M7 10h4"/>'),
     geomap:sv('<path d="M12 21s-6-5.5-6-10a6 6 0 0 1 12 0c0 4.5-6 10-6 10z"/><circle cx="12" cy="11" r="2"/>'),
-    status:sv('<rect x="3" y="6" width="8" height="12" rx="1.5"/><rect x="13" y="6" width="8" height="12" rx="1.5"/><path d="M5.5 11h3M15.5 11h3"/>')
+    status:sv('<rect x="3" y="6" width="8" height="12" rx="1.5"/><rect x="13" y="6" width="8" height="12" rx="1.5"/><path d="M5.5 11h3M15.5 11h3"/>'),
+    links:sv('<circle cx="5" cy="18" r="2"/><circle cx="19" cy="6" r="2"/><path d="M7 18c8 0 2-12 10-12"/>')
   };
-  var TYPESHORT={table:'Table',gauge:'Gauge',graph:'Graph',donut:'Donut',icon:'Icon',tile:'Tile',label:'Label',button:'Button',frame:'Frame',bg:'Background',shape:'Shape',status:'Status',geomap:'Geo map'};
-  var TYPETIP={table:'Data table (list of sensors)',gauge:'Gauge',graph:'Graph',donut:'Donut',icon:'Status icon',tile:'Tile (stat, string, bar, interface, channel chips)',label:'Text label',button:'Button',frame:'Frame',bg:'Background',status:'Status counts (tiles of sensors by status)',geomap:'Geo map (restyle the markers on PRTG\u2019s map)'};
+  var TYPESHORT={table:'Table',gauge:'Gauge',graph:'Graph',donut:'Donut',icon:'Icon',tile:'Tile',label:'Label',button:'Button',frame:'Frame',bg:'Background',shape:'Shape',status:'Status',geomap:'Geo map',links:'Links'};
+  var TYPETIP={table:'Data table (list of sensors)',gauge:'Gauge',graph:'Graph',donut:'Donut',icon:'Status icon',tile:'Tile (stat, string, bar, interface, channel chips)',label:'Text label',button:'Button',frame:'Frame',bg:'Background',status:'Status counts (tiles of sensors by status)',geomap:'Geo map (restyle the markers on PRTG\u2019s map)',links:'Link style (curved, elbow and dashed lines between the items on a map)'};
   var GRIDHEAD=[['Save as file','A file you save in \\webroot\\mapobjects',sv('<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/>')],['Paste into Custom HTML','Code you paste into the HTML Before of a Custom HTML item',sv('<rect x="6" y="5" width="12" height="16" rx="2"/><path d="M9 5V3h6v2"/>')]];
   var gridTiles=[];
   function buildTypeGrid(){
@@ -10853,7 +11052,7 @@ try{
       document.body.classList.remove('objs');
       setMode(v);
     }else{
-      if(lk&&!isPaste())M().look=lk;
+      if(lk&&!isPaste()&&TYPE!=='links')M().look=lk;
       if(!isPaste()&&(TYPE==='icon'||TYPE==='status'||TYPE==='tile'||(TYPE==='gauge'&&G.engine==='ring')||(TYPE==='donut'&&DN.engine==='ring'))&&M().look.mode==='prtg')M().look=lookOf(TYPE==='icon'?'Minimal':'Light card');
       document.body.classList.add('objs');
       buildPresetOptions();refreshUI();render();
@@ -10950,8 +11149,8 @@ try{
       }
       refreshUI();render();
     });
-    w2.appendChild(presetSel);s1.appendChild(w2);showIf(w2,function(){return notPaste()&&TYPE!=='geomap';});
-    showIf(s1.appendChild(h('p','note','A table, gauge, graph, donut or icon from PRTG\u2019s own set keeps PRTG\u2019s look until you choose another under Looks. Tables, gauges, graphs, donuts and status icons share the same looks, so a dashboard of them stays consistent.')),notPaste);
+    w2.appendChild(presetSel);s1.appendChild(w2);showIf(w2,function(){return notPaste()&&TYPE!=='geomap'&&TYPE!=='links';});
+    showIf(s1.appendChild(h('p','note','A table, gauge, graph, donut or icon from PRTG\u2019s own set keeps PRTG\u2019s look until you choose another under Looks. Tables, gauges, graphs, donuts and status icons share the same looks, so a dashboard of them stays consistent.')),function(){return notPaste()&&TYPE!=='links';});
 
     var s2=section('Name and title');secIf(s2,notPaste);
     s2.appendChild(inText('Category in the designer',function(){return M().cat;},function(v){M().cat=v;},'Data Tables'));
@@ -11168,6 +11367,26 @@ try{
     showIf(gmC,function(){return TYPE==='geomap'&&GM.palette==='custom';});gm1.appendChild(gmC);
     var gmW=h('div');gmW.appendChild(inChk('Shadow under each marker',function(){return GM.shadow;},function(v){GM.shadow=v;}));gm1.appendChild(gmW);
     gm1.appendChild(inNum('Most locations in the legend',function(){return GM.legend;},function(v){GM.legend=v;},0,500));
+    /* ---- link style ---- */
+    var lkOn=function(){return TYPE==='links';};
+    var lk1=section('Link style');secIf(lk1,lkOn);
+    lk1.appendChild(h('p','note','PRTG draws the lines between the items on a map. Put this object on a map and it restyles every line on that map. PRTG’s own lines are hidden from the first moment, so you never see them change. In the Map Designer PRTG’s lines stay as they are, so a link can still be removed there; the new style shows when you view the map.'));
+    lk1.appendChild(inSel('Line type',function(){return LK.line;},function(v){LK.line=v;refreshUI();},LKTYPES));
+    var lkB=h('div');lkB.appendChild(inNum('Curve strength %',function(){return LK.bend;},function(v){LK.bend=v;},4,60));showIf(lkB,function(){return TYPE==='links'&&LK.line==='curve';});lk1.appendChild(lkB);
+    var lkR=h('div');lkR.appendChild(inNum('Corner radius (px)',function(){return LK.radius;},function(v){LK.radius=v;},2,80));showIf(lkR,function(){return TYPE==='links'&&LK.line==='relbow';});lk1.appendChild(lkR);
+    lk1.appendChild(inSel('Line style',function(){return LK.dash;},function(v){LK.dash=v;refreshUI();},LKDASH));
+    lk1.appendChild(pair(inNum('Width (px)',function(){return LK.width;},function(v){LK.width=v;},1,16),inNum('Opacity %',function(){return LK.opacity;},function(v){LK.opacity=v;},10,100)));
+    lk1.appendChild(pair(inChk('Soft glow',function(){return LK.glow;},function(v){LK.glow=v;}),inChk('Round line ends',function(){return LK.round;},function(v){LK.round=v;})));
+    lk1.appendChild(inSel('Color',function(){return LK.colorMode;},function(v){LK.colorMode=v;refreshUI();},[['status','From the two items’ status (like PRTG)'],['custom','One color for every line']]));
+    var lkC=h('div');lkC.appendChild(inColor('Line color',function(){return LK.color;},function(v){LK.color=v;}));showIf(lkC,function(){return TYPE==='links'&&LK.colorMode==='custom';});lk1.appendChild(lkC);
+    lk1.appendChild(pair(inSel('Start marker',function(){return LK.start;},function(v){LK.start=v;refreshUI();},LKENDS),inSel('End marker',function(){return LK.end;},function(v){LK.end=v;refreshUI();},LKENDS)));
+    var lkI=h('div');lkI.appendChild(inNum('Marker distance from the item centre (px)',function(){return LK.inset;},function(v){LK.inset=v;},0,150));
+    lkI.appendChild(h('p','note','PRTG ends every line at the centre of an item, under its icon, so a marker sits this far in from the end to stay visible.'));
+    showIf(lkI,function(){return TYPE==='links'&&(LK.start!=='none'||LK.end!=='none');});lk1.appendChild(lkI);
+    var lkF=h('div');lkF.appendChild(inChk('Animate: dashes flow along the line',function(){return LK.flow;},function(v){LK.flow=v;},refreshUI));
+    var lkS=h('div');lkS.appendChild(inNum('Seconds per loop',function(){return LK.flowSec;},function(v){LK.flowSec=v;},0.4,20));showIf(lkS,function(){return TYPE==='links'&&LK.flow;});lkF.appendChild(lkS);
+    showIf(lkF,function(){return TYPE==='links'&&LK.dash!=='solid';});lk1.appendChild(lkF);
+    lk1.appendChild(inNum('Show PRTG’s own lines if this has not run after (seconds)',function(){return LK.wait;},function(v){LK.wait=v;},1,10));
     /* ---- donut ---- */
     var dn1=section('Donut');secIf(dn1,isDonut);
     dn1.appendChild(inSel('Engine',function(){return DN.engine;},function(v){DN.engine=v;if(v==='ring'){if(!(parseInt(DN.initW,10)>0)){DN.initW=340;DN.initH=220;}if(DN.look.mode==='prtg')DN.look=lookOf('Light card');}refreshUI();},DENGINES));
@@ -11317,11 +11536,11 @@ try{
     g3.appendChild(inSel('Status strip on each gauge',function(){return G.strip;},function(v){G.strip=v;},[['thin','Thin'],['keep','PRTG\u2019s wide strip'],['hide','Hidden']]));
     g3.appendChild(inChk('Hide PRTG\u2019s settings icons',function(){return G.hideSettings!==false;},function(v){G.hideSettings=v;}));
 
-    var s7=section('Looks');secIf(s7,function(){return notIcStock()&&notPaste()&&TYPE!=='geomap';});
+    var s7=section('Looks');secIf(s7,function(){return notIcStock()&&notPaste()&&TYPE!=='geomap'&&TYPE!=='links';});
     galleryEl=h('div','lookgrid');s7.appendChild(galleryEl);
     s7.appendChild(h('p','note','Click one to apply it, then fine-tune under Look details. The preview shows them on PRTG\u2019s own white map. Switch Background to \u201cThe look\u2019s own\u201d to see the stage each one was drawn for.'));
 
-    var s8a=section('Appearance');secIf(s8a,function(){return notIcStock()&&notPaste();});
+    var s8a=section('Appearance');secIf(s8a,function(){return notIcStock()&&notPaste()&&TYPE!=='links';});
     (function(){
       var w=h('div','dfld');w.appendChild(h('label',null,'Status colors'));
       var cur=function(){return (TYPE==='geomap')?(function(){var r='custom';CSETS.forEach(function(x){var ok=true;GMSTATES.forEach(function(st){if(st.id!=='downack'&&String(gmColor(GM,st.id)).toLowerCase()!==x[2][st.id==='warn'?'warning':st.id].toLowerCase())ok=false;});if(ok)r=x[0];});return r;})():csetOf(M().look);};
@@ -11337,7 +11556,7 @@ try{
     g=h('div');showIf(g,function(){return TYPE!=='geomap';});s8a.appendChild(g);
     g.appendChild(pair(inNum('Padding inside the card',function(){return Lk().cardPad;},function(v){Lk().cardPad=v;},0,60),inColor('Accent color',function(){return Lk().accent;},function(v){Lk().accent=v;})));
     g.appendChild(h('p','note','Padding applies to every title style except the colored bar, which runs edge to edge.'));
-    var s8=section('Look details');secIf(s8,function(){return notIcStock()&&notPaste()&&TYPE!=='geomap';});
+    var s8=section('Look details');secIf(s8,function(){return notIcStock()&&notPaste()&&TYPE!=='geomap'&&TYPE!=='links';});
     lookDetail=h('div');s8.appendChild(lookDetail);
     var famOptions=Array.prototype.map.call(el.fam.options,function(o){return [o.value,o.textContent];});
     var D=lookDetail;
