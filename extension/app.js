@@ -14,8 +14,8 @@
 /* @region: config -- the values you would otherwise hunt for. Change them here; nothing else in the file holds them. */
 var CFG={
   name:'PRTG Map Studio',
-  version:'1.1.1',
-  changelog:'1.1.1: Link style animation now runs on systems that ask for reduced motion (it was switched off there); a new option pauses it again if you want that. 1.1.0: new Link style object in the Object builder. Curve, S-curve, elbow, rounded elbow and arc lines; solid, dashed, dotted and dash-dot styles; dot and arrow markers; optional flowing dashes. The straight lines PRTG draws are hidden from the first moment, so they never flash. 1.0.0: items can be reordered on the canvas. Bring to front, send backward, send to back and a Layer control next to Width and Height in Selected; Up/Down buttons in the Layers tab. Items already on the chosen PRTG map now also show up in the Layers tab (read-only, sorted by their real layer), with a link back to Existing PRTG maps to change them there. v64: one Existing PRTG maps section at the bottom of the Add tab holds the map choice and everything from Already on this map; it can be minimized. v63: the map choice has its own Map section on the Add tab, with Already on this map (show and clear items) under it; Publish keeps Push to PRTG and Save and load layout, and shows which map it will push to. v62: the Button tool has the same groups of presets as the Label tool (Basic, Map buttons, Status buttons, and the eight table, gauge and frame looks). v61: the chart.svg picture is now requested with exactly the address PRTG put in the page (PRTG signs it with a URL hash, so any change gives 401). v60: Collect PRTG samples blanks out passhash, username, map id and URL hash in the saved file, and also saves the chart.svg picture of up to two graph items. v59: a Clear items from the canvas button removes the items shown by Show items already on this map (it asks twice if you have unapplied changes). v58: choosing a Build tile (Frame, Label, Button, Background, Shape) closes the Existing PRTG objects section, so the area below stays blank until the Existing PRTG objects tile is pressed. v57: copy, cut and paste are back on the Dashboard (Ctrl+C, Ctrl+X, Ctrl+V and the Copy and Paste buttons; a frame is copied with everything inside it). v56: a Refresh object list button in Existing PRTG objects reads PRTG\u2019s list of object files again without reconnecting. v55: the Dashboard tabs (Add, Selected, Layers, Publish) and the Build tiles (click then place, double-click, drag) are in the file; their tab names, grouping and timing are now in config. v54: the ready-made objects section is gone. v53: signing in with a username and passhash is required to connect, in a new login card. v52: previews of counting objects (status counts, donuts) read every sensor, not the first five. v50: Status counts object (tiles of sensors by status) and the Brand navy look. v49: authorship marks in the core. v48: after a push the map is read back; items PRTG did not keep are added again and any that still fail are named. v47: shape presets give each look its own color and thickness; push and edit results show over the Dashboard and a failed login opens the login panel. v46: status dots in the device tree; the object preview can be dragged onto the canvas. v45: graphs and icons are edited in the preview too. v44: gauges and donuts are edited in the preview like tables (drag the handles, double-click the title). v43: Look presets for frames, backgrounds and the new shapes (lines, arrows, flowing arrows). v42: notes became hover icons, undo/redo arrows over the canvas, a tidier Dashboard panel, a PRTG connection switch. v41: click, drag, resize, delete on the canvas. v40: edit, move, delete with Review and Undo. v39: existing items show the object they are bound to (name, type, place) and a summary of what they show. v38: shows the items already on a map. v37: Collect samples reads the map items. v36: frames edited in the Objects view. v35: no comments in generated files. v34: file list. v33: install script. v32: config, tabs.',
+  version:'1.2.0',
+  changelog:'1.2.0: Map designer lines are now connectors — drag either end onto a frame, shape or PRTG object and it glues there (a highlight shows the drop target); glued ends follow that object when it is moved, resized or rotated, and come unglued automatically if the object is deleted. A Branch button on a glued line adds another end from the same start, for one-to-many connections. 1.1.1: Link style animation now runs on systems that ask for reduced motion (it was switched off there); a new option pauses it again if you want that. 1.1.0: new Link style object in the Object builder. Curve, S-curve, elbow, rounded elbow and arc lines; solid, dashed, dotted and dash-dot styles; dot and arrow markers; optional flowing dashes. The straight lines PRTG draws are hidden from the first moment, so they never flash. 1.0.0: items can be reordered on the canvas. Bring to front, send backward, send to back and a Layer control next to Width and Height in Selected; Up/Down buttons in the Layers tab. Items already on the chosen PRTG map now also show up in the Layers tab (read-only, sorted by their real layer), with a link back to Existing PRTG maps to change them there. v64: one Existing PRTG maps section at the bottom of the Add tab holds the map choice and everything from Already on this map; it can be minimized. v63: the map choice has its own Map section on the Add tab, with Already on this map (show and clear items) under it; Publish keeps Push to PRTG and Save and load layout, and shows which map it will push to. v62: the Button tool has the same groups of presets as the Label tool (Basic, Map buttons, Status buttons, and the eight table, gauge and frame looks). v61: the chart.svg picture is now requested with exactly the address PRTG put in the page (PRTG signs it with a URL hash, so any change gives 401). v60: Collect PRTG samples blanks out passhash, username, map id and URL hash in the saved file, and also saves the chart.svg picture of up to two graph items. v59: a Clear items from the canvas button removes the items shown by Show items already on this map (it asks twice if you have unapplied changes). v58: choosing a Build tile (Frame, Label, Button, Background, Shape) closes the Existing PRTG objects section, so the area below stays blank until the Existing PRTG objects tile is pressed. v57: copy, cut and paste are back on the Dashboard (Ctrl+C, Ctrl+X, Ctrl+V and the Copy and Paste buttons; a frame is copied with everything inside it). v56: a Refresh object list button in Existing PRTG objects reads PRTG\u2019s list of object files again without reconnecting. v55: the Dashboard tabs (Add, Selected, Layers, Publish) and the Build tiles (click then place, double-click, drag) are in the file; their tab names, grouping and timing are now in config. v54: the ready-made objects section is gone. v53: signing in with a username and passhash is required to connect, in a new login card. v52: previews of counting objects (status counts, donuts) read every sensor, not the first five. v50: Status counts object (tiles of sensors by status) and the Brand navy look. v49: authorship marks in the core. v48: after a push the map is read back; items PRTG did not keep are added again and any that still fail are named. v47: shape presets give each look its own color and thickness; push and edit results show over the Dashboard and a failed login opens the login panel. v46: status dots in the device tree; the object preview can be dragged onto the canvas. v45: graphs and icons are edited in the preview too. v44: gauges and donuts are edited in the preview like tables (drag the handles, double-click the title). v43: Look presets for frames, backgrounds and the new shapes (lines, arrows, flowing arrows). v42: notes became hover icons, undo/redo arrows over the canvas, a tidier Dashboard panel, a PRTG connection switch. v41: click, drag, resize, delete on the canvas. v40: edit, move, delete with Review and Undo. v39: existing items show the object they are bound to (name, type, place) and a summary of what they show. v38: shows the items already on a map. v37: Collect samples reads the map items. v36: frames edited in the Objects view. v35: no comments in generated files. v34: file list. v33: install script. v32: config, tabs.',
   /* the Dashboard canvas when the page opens, and the size a new Frame starts at */
   canvas:{w:1920,h:1080,grid:10,zoom:'fit'},
   frame:{w:360,h:220},
@@ -94,7 +94,7 @@ var CFG={
     previewWith:'prtgMapTool.previewWith'   /* the PRTG server address is added after this name */
   }
 };
-CFG.version=(function(){try{return chrome.runtime.getManifest().version;}catch(e){return '1.1.1';}})();   /* the version is the extension's own, from manifest.json */
+CFG.version=(function(){try{return chrome.runtime.getManifest().version;}catch(e){return '1.2.0';}})();   /* the version is the extension's own, from manifest.json */
 document.title=CFG.name+' v'+CFG.version;
 document.getElementById('ver').textContent='v'+CFG.version;
 document.getElementById('dw').value=CFG.canvas.w;
@@ -1890,6 +1890,71 @@ try{
     it.p.ax=Math.round((A[0]-it.x)*10)/10;it.p.ay=Math.round((A[1]-it.y)*10)/10;it.p.bx=Math.round((B[0]-it.x)*10)/10;it.p.by=Math.round((B[1]-it.y)*10)/10;
     it.p.ln=true;
   }
+  /* ---------- connectors: glue a line's end to a box so it follows that box ---------- */
+  /* a glue is {id, s:'l'|'r'|'t'|'b', t:0..1}: which side of the target, and how far along it */
+  function connAnchorAbs(g){
+    var it=byId(g.id);if(!it)return null;
+    var hw=it.w/2, hh=it.h/2, lx, ly;
+    if(g.s==='l'){lx=-hw;ly=-hh+2*hh*g.t;}
+    else if(g.s==='r'){lx=hw;ly=-hh+2*hh*g.t;}
+    else if(g.s==='t'){ly=-hh;lx=-hw+2*hw*g.t;}
+    else{ly=hh;lx=-hw+2*hw*g.t;}
+    var rot=(+it.rot||0)*Math.PI/180, co=Math.cos(rot), si=Math.sin(rot), cx=it.x+hw, cy=it.y+hh;
+    return [cx+lx*co-ly*si,cy+lx*si+ly*co];
+  }
+  /* recompute a glued line's box and end points from its target(s); a free end keeps its last absolute spot */
+  function connSyncOne(li){
+    if(!isLine(li)||!li.p||(!li.p.ga&&!li.p.gb))return;
+    var ab=lnAbs(li), A=li.p.ga?connAnchorAbs(li.p.ga):ab[0], B=li.p.gb?connAnchorAbs(li.p.gb):ab[1];
+    if(li.p.ga&&!A)delete li.p.ga;if(li.p.gb&&!B)delete li.p.gb;
+    if(!A)A=ab[0];if(!B)B=ab[1];
+    lnSetAbs(li,A,B);
+  }
+  function connSyncAll(){D.items.forEach(connSyncOne);}
+  /* lines glued to any of these targets need their geometry (and node) refreshed after a move/resize/rotate */
+  function glueFollowers(ids){
+    D.items.forEach(function(li){
+      if(!isLine(li))return;
+      if((li.p.ga&&ids[li.p.ga.id])||(li.p.gb&&ids[li.p.gb.id])){connSyncOne(li);refreshItem(li);}
+    });
+  }
+  var CONN_HOV=null;
+  function connHilite(id){
+    if(CONN_HOV===id)return;
+    if(CONN_HOV!=null){var o=nodeOf(CONN_HOV);if(o){o.style.outline='';o.style.outlineOffset='';}}
+    CONN_HOV=id;
+    if(id!=null){var n=nodeOf(id);if(n){n.style.outline='2px solid #2f80ed';n.style.outlineOffset='2px';}}
+  }
+  /* what the pointer is over, for gluing a dragged line end: the topmost box item, and the nearest point on its edge */
+  function connHit(pt,excludeId){
+    var best=null, lx=0, ly=0;
+    for(var i=D.items.length-1;i>=0;i--){
+      var it=D.items[i];
+      if(it.id===excludeId||isLine(it)||!isBox(it))continue;
+      if(it.type==='frame'&&it.p&&it.p.group===false&&!it.p.shape)continue;   /* not the full-page background */
+      var hw=it.w/2, hh=it.h/2, rot=(+it.rot||0)*Math.PI/180, co=Math.cos(-rot), si=Math.sin(-rot),
+          cx=it.x+hw, cy=it.y+hh, dx=pt[0]-cx, dy=pt[1]-cy, tlx=dx*co-dy*si, tly=dx*si+dy*co;
+      if(Math.abs(tlx)<=hw+6&&Math.abs(tly)<=hh+6){best=it;lx=tlx;ly=tly;break;}
+    }
+    if(!best)return null;
+    var hw=best.w/2, hh=best.h/2, dl=Math.abs(lx+hw), dr=Math.abs(lx-hw), dt=Math.abs(ly+hh), db=Math.abs(ly-hh), m=Math.min(dl,dr,dt,db), s, t;
+    function c01(v){return Math.max(0,Math.min(1,v));}
+    if(m===dl){s='l';t=c01((ly+hh)/(2*hh));}
+    else if(m===dr){s='r';t=c01((ly+hh)/(2*hh));}
+    else if(m===dt){s='t';t=c01((lx+hw)/(2*hw));}
+    else{s='b';t=c01((lx+hw)/(2*hw));}
+    return {id:best.id,s:s,t:Math.round(t*100)/100};
+  }
+  /* "Branch": a second (or third...) end from the same start, so one source fans out to several targets */
+  function branchLine(it){
+    if(!isLine(it))return;
+    var ab=lnAbs(it), c=clone(it);
+    c.id=D.nextId++;c.p=clone(it.p);delete c.p.gb;
+    lnSetAbs(c,ab[0],[ab[1][0]+36,ab[1][1]+36]);
+    if(it.p.ga)c.p.ga=clone(it.p.ga);
+    c.ord=layerOf(c)*100000+(++D.ordSeq);
+    D.items.push(c);D.sel=c.id;renderAll();buildForm();commit();
+  }
   function lnSvg(o,A,B,w,h,thumb){
     var t=o.t, c=o.c, dx=B[0]-A[0], dy=B[1]-A[1], hz=Math.abs(dx)>=Math.abs(dy), sg=function(v){return v<0?-1:1;}, R=function(n){return Math.round(n*100)/100;},
         L=Math.max(8,t*2.6), HW=Math.max(5,t*1.5), dist=Math.sqrt(dx*dx+dy*dy), tr, pts, i, d, dash='', cap='round', P=0, out='', s, a2=A.slice(), b2=B.slice(), C1, C2;
@@ -2171,6 +2236,7 @@ try{
     if(document.fonts&&document.fonts.ready){document.fonts.ready.then(function(){if(DASHAPI.active){measure();updateSel();buildList();}});}
   }
   function renderAll(){
+    connSyncAll();
     var olds=canvas.querySelectorAll('.ditem');for(var oi=0;oi<olds.length;oi++)olds[oi].parentNode.removeChild(olds[oi]);   /* the live preview layer stays put, so previews do not reload on every redraw */
     var ord=order();
     for(var i=0;i<ord.length;i++)canvas.appendChild(makeNode(ord[i],i+1));
@@ -2200,7 +2266,7 @@ try{
     selBox.style.transform=(rot&&!ln)?'rotate('+rot+'deg)':'';
     selBox.style.setProperty('--rh',(30/scale)+'px');selBox.style.setProperty('--ps',String(1/scale));
     lnA.style.display=lnB.style.display=ln?'block':'none';
-    if(ln){var qp=lnPts(it);lnA.style.left=qp.ax+'px';lnA.style.top=qp.ay+'px';lnB.style.left=qp.bx+'px';lnB.style.top=qp.by+'px';}
+    if(ln){var qp=lnPts(it);lnA.style.left=qp.ax+'px';lnA.style.top=qp.ay+'px';lnB.style.left=qp.bx+'px';lnB.style.top=qp.by+'px';lnA.classList.toggle('glued',!!it.p.ga);lnB.classList.toggle('glued',!!it.p.gb);}
     rotH.style.display=canRotate(it)?'block':'none';
     rotH.classList.toggle('dn',rotFlip(it));
     var hpx=Math.max(8,Math.min(13,Math.min(sw,sh)/2.2));   /* smaller handles on a small item, so they do not cover it */
@@ -2567,6 +2633,12 @@ try{
         fbStop(ctl);row.appendChild(ctl);xp.appendChild(row);R.bx.push({d:d,c:ctl});
       });
       fbar.appendChild(xb);fbar.appendChild(xp);R.box=xb;
+      if(isLine(it)&&it.p.ga){
+        var brb=fbarBtn('fb-t','Branch: add another end from this same start',
+          '<circle cx="5" cy="12" r="2.4"/><path d="M7.3 12H13M13 12L19 7M13 12L19 17" stroke-width="1.6" fill="none" stroke-linecap="round"/><circle cx="19.5" cy="7" r="1.8"/><circle cx="19.5" cy="17" r="1.8"/>',
+          function(){branchLine(it);});
+        fbar.appendChild(brb);R.branch=brb;
+      }
     }
     if(it.type==='frame'&&it.p.shape){
       var kb=fbarBtn('fb-t','Change shape',FB_SVG.shape,function(){fbToggle(kp,kb);});
@@ -3543,6 +3615,12 @@ try{
   function del(it){
     var rm=[it.id];
     if(it.type==='frame')descendants(it.id).forEach(function(c){rm.push(c.id);});
+    var rmSet={};rm.forEach(function(id){rmSet[id]=1;});
+    D.items.forEach(function(x){
+      if(!isLine(x)||!x.p)return;
+      if(x.p.ga&&rmSet[x.p.ga.id])delete x.p.ga;
+      if(x.p.gb&&rmSet[x.p.gb.id])delete x.p.gb;
+    });
     D.items=D.items.filter(function(x){return rm.indexOf(x.id)<0;});
     D.sel=null;renderAll();buildForm();commit();
   }
@@ -3759,12 +3837,18 @@ try{
       var nx=snapX(drag.ox+dx), ny=snapV(drag.oy+dy);
       if(e.altKey)guidesOff();else{var gs=guideSnap(drag.it,nx,ny,drag.it.w,drag.it.h,drag.skip||{},'move');nx=gs.x;ny=gs.y;}
       var ddx=nx-drag.ox, ddy=ny-drag.oy;
-      drag.it.x=nx;drag.it.y=ny;place(drag.it);
+      drag.it.x=nx;drag.it.y=ny;
+      if(isLine(drag.it)&&(drag.it.p.ga||drag.it.p.gb)){connSyncOne(drag.it);refreshItem(drag.it);}else place(drag.it);
       drag.kids.forEach(function(o){o.k.x=o.x+ddx;o.k.y=o.y+ddy;place(o.k);});
+      var movedIds={};movedIds[drag.it.id]=1;drag.kids.forEach(function(o){movedIds[o.k.id]=1;});
+      glueFollowers(movedIds);
       updateSel();
     }else if(drag.mode==='ln'){
       var mine=(drag.w==='a')?drag.A0:drag.B0, other=(drag.w==='a')?drag.B0:drag.A0, P=[mine[0]+dx,mine[1]+dy], ex, ey, an, dd;
-      if(e.shiftKey){   /* the angle jumps in steps of 15 degrees */
+      var hit=connHit(P,drag.it.id);
+      if(hit){
+        P=connAnchorAbs(hit);
+      }else if(e.shiftKey){   /* the angle jumps in steps of 15 degrees */
         ex=P[0]-other[0];ey=P[1]-other[1];dd=Math.sqrt(ex*ex+ey*ey);an=Math.round(Math.atan2(ey,ex)/(Math.PI/12))*(Math.PI/12);
         P=[other[0]+Math.cos(an)*dd,other[1]+Math.sin(an)*dd];
       }else if(!e.altKey){
@@ -3772,6 +3856,7 @@ try{
         if(Math.abs(P[1]-other[1])<4/scale)P[1]=other[1];   /* close to level or upright: make it so */
         if(Math.abs(P[0]-other[0])<4/scale)P[0]=other[0];
       }
+      drag.hit=hit;connHilite(hit?hit.id:null);
       if(drag.w==='a')lnSetAbs(drag.it,P,other);else lnSetAbs(drag.it,other,P);
       refreshItem(drag.it);
     }else if(drag.mode==='rot'){
@@ -3782,6 +3867,8 @@ try{
       if(!drag.it.rot)delete drag.it.rot;
       drag.kids.forEach(function(o){rotAround(o.k,drag.cx,drag.cy,delta,o);if(isLine(o.k))refreshItem(o.k);else refreshItem(o.k);});
       refreshItem(drag.it);
+      var rotIds={};rotIds[drag.it.id]=1;drag.kids.forEach(function(o){rotIds[o.k.id]=1;});
+      glueFollowers(rotIds);
       selBox.setAttribute('data-rot',(drag.it.rot||0)+'\u00B0');selBox.style.setProperty('--rd',(-(drag.it.rot||0))+'deg');
     }else if(drag.mode==='size'){
       var ax=drag.ax||'se', mn=isBox(drag.it)?40:20, nx=drag.ox, ny=drag.oy, nw=drag.ow, nh=drag.oh, gz;
@@ -3799,6 +3886,7 @@ try{
         drag.it.x=Math.round(c1x-nw/2);drag.it.y=Math.round(c1y-nh/2);place(drag.it);
         if(isBox(drag.it)){drag.it.w=Math.round(nw);drag.it.h=Math.round(nh);}else setBoxSize(drag.it,Math.round(nw),Math.round(nh));
         refreshItem(drag.it);
+        glueFollowers((function(o){o[drag.it.id]=1;return o;})({}));
         return;
       }
       if(ax.indexOf('e')>=0)nw=snapX(drag.ox+drag.ow+dx)-drag.ox;
@@ -3813,13 +3901,22 @@ try{
       if(isBox(drag.it)){drag.it.w=nw;drag.it.h=nh;}
       else setBoxSize(drag.it,nw,nh);
       refreshItem(drag.it);
+      glueFollowers((function(o){o[drag.it.id]=1;return o;})({}));
     }
   });
   document.addEventListener('mouseup',function(){
     if(!drag)return;
     var d=drag, wasFree=FREE;drag=null;FREE=false;guidesOff();
     if(d.mode==='move'&&d.moved){d.it.parent=reparentTarget(d.it);layDrop(d,wasFree);renderAll();buildForm();commit();}
-    else if(d.mode==='size'||d.mode==='ln'||d.mode==='rot'){selBox.removeAttribute('data-rot');if(d.mode==='rot')renderAll();buildForm();buildList();commit();}
+    else if(d.mode==='size'||d.mode==='ln'||d.mode==='rot'){
+      selBox.removeAttribute('data-rot');
+      if(d.mode==='ln'){
+        var gk=(d.w==='a')?'ga':'gb';
+        if(d.hit)d.it.p[gk]=clone(d.hit);else delete d.it.p[gk];
+        connHilite(null);connSyncOne(d.it);refreshItem(d.it);
+      }
+      if(d.mode==='rot')renderAll();buildForm();buildList();commit();
+    }
     updateSel();   /* the bar comes back (or stays) once the drag is over */
   });
   document.addEventListener('keydown',function(e){
