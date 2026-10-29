@@ -10993,16 +10993,17 @@ try{
   /* the Link style preview: a small map with PRTG's own straight lines, restyled by the very script the map will run */
   var LKCOL={up:'#b4cc38',warning:'#ffd400',down:'#d71920'};
   function drawLinksPreview(){
-    var W=620, HH=340, L=lookOf('Minimal'), N=[[90,170,'up'],[510,60,'up'],[510,190,'warning'],[330,295,'down']], E=[[0,1],[0,2],[0,3],[1,2]], defs='', lines='', devs='';
+    /* PRTG links are always point to point (one line, two devices) — so the preview shows exactly that, not a branching demo graph */
+    var W=620, HH=220, L=lookOf('Minimal'), N=[[130,110,'up'],[490,110,'down']], E=[[0,1]], defs='', lines='', devs='';
     E.forEach(function(e,i){
       var a=N[e[0]], b=N[e[1]];
       defs+='<linearGradient id="lkg'+i+'" gradientUnits="userSpaceOnUse" x1="'+a[0]+'" y1="'+a[1]+'" x2="'+b[0]+'" y2="'+b[1]+'"><stop offset="40%" stop-color="'+LKCOL[a[2]]+'"/><stop offset="60%" stop-color="'+LKCOL[b[2]]+'"/></linearGradient>';
       lines+='<line x1="'+a[0]+'" y1="'+a[1]+'" x2="'+b[0]+'" y2="'+b[1]+'" class="elmfrom'+e[0]+' elmto'+e[1]+' connectionline" stroke="url(#lkg'+i+')" stroke-width="2"/>';
     });
     N.forEach(function(n){devs+='<div style="position:absolute;left:'+(n[0]-22)+'px;top:'+(n[1]-22)+'px;width:44px;height:44px;box-sizing:border-box;border-radius:10px;background:#f3f4f6;border:3px solid '+LKCOL[n[2]]+'"></div>';});
-    prevEl.className='';prevEl.style.minHeight='400px';
+    prevEl.className='';prevEl.style.minHeight='300px';
     setStyle(linksCss(LK));applyFont(L);
-    prevEl.innerHTML='<div id="mapshow" class="map-body" style="padding-top:24px"><div style="position:relative;width:'+W+'px;height:'+HH+'px;margin:0 auto;background:#fff;border-radius:8px"><svg id="mapsvg" width="'+W+'" height="'+HH+'" style="position:absolute;left:0;top:0">'+'<defs>'+defs+'</defs>'+lines+'</svg>'+devs+'</div><p class="pcap" style="padding:10px 14px 12px;max-width:none">PRTG draws these four links straight. This is how they look once this object is on the map.</p></div>';
+    prevEl.innerHTML='<div id="mapshow" class="map-body" style="padding-top:24px"><div style="position:relative;width:'+W+'px;height:'+HH+'px;margin:0 auto;background:#fff;border-radius:8px"><svg id="mapsvg" width="'+W+'" height="'+HH+'" style="position:absolute;left:0;top:0">'+'<defs>'+defs+'</defs>'+lines+'</svg>'+devs+'</div><p class="pcap" style="padding:10px 14px 12px;max-width:none">PRTG draws a link like this straight, one line between two devices. This is how it looks once this object is on the map.</p></div>';
     applyBg(L);
     mlsRuntime(lkCfg(LK));
   }
