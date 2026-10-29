@@ -14,8 +14,8 @@
 /* @region: config -- the values you would otherwise hunt for. Change them here; nothing else in the file holds them. */
 var CFG={
   name:'PRTG Map Studio',
-  version:'1.2.1',
-  changelog:'1.2.1: A connector’s look now matches the shared Link style by default (the same curve/dash/color/markers/flow settings as the Link style object you push to PRTG), so the Map designer previews what the live map will actually show. Per-connector style is still there — untick Match Link style on a line to set its own thickness, line type, dash, markers and animation. Choosing a specific line format from the shape gallery now also switches that line off Match Link style automatically. The Link style preview in the Object builder also now shows one point-to-point link instead of a branching demo (PRTG links are always point to point). 1.2.0: Map designer lines are now connectors — drag either end onto a frame, shape or PRTG object and it glues there (a highlight shows the drop target); glued ends follow that object when it is moved, resized or rotated, and come unglued automatically if the object is deleted. A Branch button on a glued line adds another end from the same start, for one-to-many connections. 1.1.1: Link style animation now runs on systems that ask for reduced motion (it was switched off there); a new option pauses it again if you want that. 1.1.0: new Link style object in the Object builder. Curve, S-curve, elbow, rounded elbow and arc lines; solid, dashed, dotted and dash-dot styles; dot and arrow markers; optional flowing dashes. The straight lines PRTG draws are hidden from the first moment, so they never flash. 1.0.0: items can be reordered on the canvas. Bring to front, send backward, send to back and a Layer control next to Width and Height in Selected; Up/Down buttons in the Layers tab. Items already on the chosen PRTG map now also show up in the Layers tab (read-only, sorted by their real layer), with a link back to Existing PRTG maps to change them there. v64: one Existing PRTG maps section at the bottom of the Add tab holds the map choice and everything from Already on this map; it can be minimized. v63: the map choice has its own Map section on the Add tab, with Already on this map (show and clear items) under it; Publish keeps Push to PRTG and Save and load layout, and shows which map it will push to. v62: the Button tool has the same groups of presets as the Label tool (Basic, Map buttons, Status buttons, and the eight table, gauge and frame looks). v61: the chart.svg picture is now requested with exactly the address PRTG put in the page (PRTG signs it with a URL hash, so any change gives 401). v60: Collect PRTG samples blanks out passhash, username, map id and URL hash in the saved file, and also saves the chart.svg picture of up to two graph items. v59: a Clear items from the canvas button removes the items shown by Show items already on this map (it asks twice if you have unapplied changes). v58: choosing a Build tile (Frame, Label, Button, Background, Shape) closes the Existing PRTG objects section, so the area below stays blank until the Existing PRTG objects tile is pressed. v57: copy, cut and paste are back on the Dashboard (Ctrl+C, Ctrl+X, Ctrl+V and the Copy and Paste buttons; a frame is copied with everything inside it). v56: a Refresh object list button in Existing PRTG objects reads PRTG\u2019s list of object files again without reconnecting. v55: the Dashboard tabs (Add, Selected, Layers, Publish) and the Build tiles (click then place, double-click, drag) are in the file; their tab names, grouping and timing are now in config. v54: the ready-made objects section is gone. v53: signing in with a username and passhash is required to connect, in a new login card. v52: previews of counting objects (status counts, donuts) read every sensor, not the first five. v50: Status counts object (tiles of sensors by status) and the Brand navy look. v49: authorship marks in the core. v48: after a push the map is read back; items PRTG did not keep are added again and any that still fail are named. v47: shape presets give each look its own color and thickness; push and edit results show over the Dashboard and a failed login opens the login panel. v46: status dots in the device tree; the object preview can be dragged onto the canvas. v45: graphs and icons are edited in the preview too. v44: gauges and donuts are edited in the preview like tables (drag the handles, double-click the title). v43: Look presets for frames, backgrounds and the new shapes (lines, arrows, flowing arrows). v42: notes became hover icons, undo/redo arrows over the canvas, a tidier Dashboard panel, a PRTG connection switch. v41: click, drag, resize, delete on the canvas. v40: edit, move, delete with Review and Undo. v39: existing items show the object they are bound to (name, type, place) and a summary of what they show. v38: shows the items already on a map. v37: Collect samples reads the map items. v36: frames edited in the Objects view. v35: no comments in generated files. v34: file list. v33: install script. v32: config, tabs.',
+  version:'1.3.0',
+  changelog:'1.3.0: A glued connector can now be pushed as a real, self-updating line on the map itself (“Push as a live link in PRTG” on a connector with both ends glued) — separate from PRTG’s own native connections, which this tool still cannot create (there is no API for that; PRTG only builds them from a hand drag in its own Map Designer). Once pushed, the line finds its two objects on the live page by itself and redraws its own path whenever either one moves, with no re-push needed; with Match Link style left on, it also recolors itself from each end’s live status, split two ways like PRTG’s own lines when the two differ. 1.2.1: A connector’s look now matches the shared Link style by default (the same curve/dash/color/markers/flow settings as the Link style object you push to PRTG), so the Map designer previews what the live map will actually show. Per-connector style is still there — untick Match Link style on a line to set its own thickness, line type, dash, markers and animation. Choosing a specific line format from the shape gallery now also switches that line off Match Link style automatically. The Link style preview in the Object builder also now shows one point-to-point link instead of a branching demo (PRTG links are always point to point). 1.2.0: Map designer lines are now connectors — drag either end onto a frame, shape or PRTG object and it glues there (a highlight shows the drop target); glued ends follow that object when it is moved, resized or rotated, and come unglued automatically if the object is deleted. A Branch button on a glued line adds another end from the same start, for one-to-many connections. 1.1.1: Link style animation now runs on systems that ask for reduced motion (it was switched off there); a new option pauses it again if you want that. 1.1.0: new Link style object in the Object builder. Curve, S-curve, elbow, rounded elbow and arc lines; solid, dashed, dotted and dash-dot styles; dot and arrow markers; optional flowing dashes. The straight lines PRTG draws are hidden from the first moment, so they never flash. 1.0.0: items can be reordered on the canvas. Bring to front, send backward, send to back and a Layer control next to Width and Height in Selected; Up/Down buttons in the Layers tab. Items already on the chosen PRTG map now also show up in the Layers tab (read-only, sorted by their real layer), with a link back to Existing PRTG maps to change them there. v64: one Existing PRTG maps section at the bottom of the Add tab holds the map choice and everything from Already on this map; it can be minimized. v63: the map choice has its own Map section on the Add tab, with Already on this map (show and clear items) under it; Publish keeps Push to PRTG and Save and load layout, and shows which map it will push to. v62: the Button tool has the same groups of presets as the Label tool (Basic, Map buttons, Status buttons, and the eight table, gauge and frame looks). v61: the chart.svg picture is now requested with exactly the address PRTG put in the page (PRTG signs it with a URL hash, so any change gives 401). v60: Collect PRTG samples blanks out passhash, username, map id and URL hash in the saved file, and also saves the chart.svg picture of up to two graph items. v59: a Clear items from the canvas button removes the items shown by Show items already on this map (it asks twice if you have unapplied changes). v58: choosing a Build tile (Frame, Label, Button, Background, Shape) closes the Existing PRTG objects section, so the area below stays blank until the Existing PRTG objects tile is pressed. v57: copy, cut and paste are back on the Dashboard (Ctrl+C, Ctrl+X, Ctrl+V and the Copy and Paste buttons; a frame is copied with everything inside it). v56: a Refresh object list button in Existing PRTG objects reads PRTG\u2019s list of object files again without reconnecting. v55: the Dashboard tabs (Add, Selected, Layers, Publish) and the Build tiles (click then place, double-click, drag) are in the file; their tab names, grouping and timing are now in config. v54: the ready-made objects section is gone. v53: signing in with a username and passhash is required to connect, in a new login card. v52: previews of counting objects (status counts, donuts) read every sensor, not the first five. v50: Status counts object (tiles of sensors by status) and the Brand navy look. v49: authorship marks in the core. v48: after a push the map is read back; items PRTG did not keep are added again and any that still fail are named. v47: shape presets give each look its own color and thickness; push and edit results show over the Dashboard and a failed login opens the login panel. v46: status dots in the device tree; the object preview can be dragged onto the canvas. v45: graphs and icons are edited in the preview too. v44: gauges and donuts are edited in the preview like tables (drag the handles, double-click the title). v43: Look presets for frames, backgrounds and the new shapes (lines, arrows, flowing arrows). v42: notes became hover icons, undo/redo arrows over the canvas, a tidier Dashboard panel, a PRTG connection switch. v41: click, drag, resize, delete on the canvas. v40: edit, move, delete with Review and Undo. v39: existing items show the object they are bound to (name, type, place) and a summary of what they show. v38: shows the items already on a map. v37: Collect samples reads the map items. v36: frames edited in the Objects view. v35: no comments in generated files. v34: file list. v33: install script. v32: config, tabs.',
   /* the Dashboard canvas when the page opens, and the size a new Frame starts at */
   canvas:{w:1920,h:1080,grid:10,zoom:'fit'},
   frame:{w:360,h:220},
@@ -95,7 +95,7 @@ var CFG={
     previewWith:'prtgMapTool.previewWith'   /* the PRTG server address is added after this name */
   }
 };
-CFG.version=(function(){try{return chrome.runtime.getManifest().version;}catch(e){return '1.2.1';}})();   /* the version is the extension's own, from manifest.json */
+CFG.version=(function(){try{return chrome.runtime.getManifest().version;}catch(e){return '1.3.0';}})();   /* the version is the extension's own, from manifest.json */
 document.title=CFG.name+' v'+CFG.version;
 document.getElementById('ver').textContent='v'+CFG.version;
 document.getElementById('dw').value=CFG.canvas.w;
@@ -2426,6 +2426,7 @@ try{
       var lo=lnOpts(p);
       function LP(k,g){return [function(){return lnOpts(p)[g||k];},function(x){p[k]=x;}];}
       var ml=[{l:'Match Link style',k:'chk',a:[function(){return p.matchLS!==false;},function(x){p.matchLS=!!x;}]}];
+      if(p.ga&&p.gb)ml.push({l:'Push as a live link in PRTG',k:'chk',a:[function(){return !!p.pushLive;},function(x){p.pushLive=!!x;}]});
       if(p.matchLS===false)
         return ml.concat([{l:'Thickness',k:'num',min:1,max:40,a:P('thick',6)},
           {l:'Line type',k:'sel',opts:[['straight','Straight'],['elbow','Elbow'],['curve','Curve']],a:LP('lt','type')},
@@ -4058,8 +4059,152 @@ try{
     DASHAPI.selected=function(){var it=byId(D.sel);return it?{id:it.id,type:it.type,p:it.p}:null;};
     DASHAPI.setTarget=function(id,tgt){var it=byId(id);if(!it||it.type!=='prtgobj')return false;it.p.target={id:parseInt(tgt.id,10)||0,name:tgt.name||''};it.p.targetDefault=false;refreshItem(it);buildForm();commit();return true;};
     DASHAPI.layoutText=function(){return snapModel();};
+    /* ---------- live link push: a connector can be pushed as its own real, self-updating object on the map,
+       instead of only shaping the canvas preview. It finds its two glued objects in the live page by themselves
+       (a PRTG object by the objectid PRTG already puts on the item, anything else by a hidden marker this tool
+       adds to that item's own pushed HTML), and redraws its own line -- position and, for "Match Link style"'s
+       status color, each end's live status color -- whenever either end changes. No server round trip, no PRTG
+       API for connections (there isn't one): it is a second, independent line drawn in #mapsvg alongside
+       whatever PRTG itself may or may not be showing there. ---------- */
+    function connTargetSel(gid,need){
+      var g=byId(gid);
+      if(!g)return null;
+      if(g.type==='prtgobj'&&g.p&&g.p.target&&g.p.target.id)return '.map_object[objectid="'+g.p.target.id+'"]';
+      need[gid]=true;
+      return '[data-msid="ms'+gid+'"]';
+    }
+    function connLiveCfg(it){
+      var p=it.p, matched=(p.matchLS!==false&&typeof LKDEF!=='undefined'), L=matched?LKDEF:null;
+      function end(v){return (v==='dot'||v==='arrow')?v:'none';}
+      if(matched){
+        return {type:(L.line==='elbow'||L.line==='relbow'||L.line==='scurve'||L.line==='arc'||L.line==='straight')?L.line:'curve',
+          dash:L.dash||'solid',width:lkNum(L.width,1,40,5),opacity:lkNum(L.opacity,10,100,100),glow:!!L.glow,round:!!L.round,
+          colorMode:L.colorMode==='custom'?'custom':'status',
+          color:(L.colorMode==='custom'&&/^#[0-9a-fA-F]{6}$/.test(String(L.color)))?L.color:'#2f80ed',
+          bend:lkNum(L.bend,4,60,22),radius:lkNum(L.radius,2,80,20),start:end(L.start),end:end(L.end),inset:lkNum(L.inset,0,150,28),
+          flow:!!L.flow,flowSec:lkNum(L.flowSec,0.4,20,1.4)};
+      }
+      return {type:(p.lt==='elbow')?'elbow':(p.lt==='curve'?'curve':'straight'),dash:p.dash||'solid',width:Math.max(1,parseFloat(p.thick)||6),
+        opacity:100,glow:false,round:true,colorMode:'custom',color:p.color||'#007DB8',bend:22,radius:20,start:end(p.ha),end:end(p.hb),
+        inset:28,flow:!!p.anim,flowSec:parseFloat(p.speed)||1.4};
+    }
+    /* self-contained: sent to the browser as text (via toString()) and run there, inside the live PRTG map page --
+       not called from here, so it cannot reach anything else in this file and must carry everything it needs in C. */
+    function connLiveRuntime(C){
+      var NS='http://www.w3.org/2000/svg', mo1=null, mo2=null, raf=null, gcls='msln-g-'+C.uid;
+      function f(n){return Math.round(n*10)/10;}
+      function el(n,at){var e=document.createElementNS(NS,n),k;for(k in at)e.setAttribute(k,at[k]);return e;}
+      function polyline(P,r){
+        var d='M'+f(P[0][0])+' '+f(P[0][1]), i,a,b,c,l1,l2,k1,k2,p,q;
+        for(i=1;i<P.length-1;i++){
+          a=P[i-1];b=P[i];c=P[i+1];
+          l1=Math.sqrt(Math.pow(b[0]-a[0],2)+Math.pow(b[1]-a[1],2));l2=Math.sqrt(Math.pow(c[0]-b[0],2)+Math.pow(c[1]-b[1],2));
+          k1=Math.min(r,l1/2);k2=Math.min(r,l2/2);
+          if(r<=0||l1<1||l2<1){d+='L'+f(b[0])+' '+f(b[1]);continue;}
+          p=[b[0]-(b[0]-a[0])/l1*k1,b[1]-(b[1]-a[1])/l1*k1];q=[b[0]+(c[0]-b[0])/l2*k2,b[1]+(c[1]-b[1])/l2*k2];
+          d+='L'+f(p[0])+' '+f(p[1])+'Q'+f(b[0])+' '+f(b[1])+' '+f(q[0])+' '+f(q[1]);
+        }
+        return d+'L'+f(P[P.length-1][0])+' '+f(P[P.length-1][1]);
+      }
+      function geo(t,x1,y1,x2,y2){
+        var dx=x2-x1,dy=y2-y1,len=Math.sqrt(dx*dx+dy*dy)||1,mx=(x1+x2)/2,my=(y1+y2)/2,k,cx,cy,P,R;
+        if(t==='curve'){k=len*(C.bend/100);if(x2<x1)k=-k;cx=mx+(dy/len)*k;cy=my-(dx/len)*k;return 'M'+f(x1)+' '+f(y1)+'Q'+f(cx)+' '+f(cy)+' '+f(x2)+' '+f(y2);}
+        if(t==='scurve'){if(Math.abs(dx)>=Math.abs(dy))return 'M'+f(x1)+' '+f(y1)+'C'+f(mx)+' '+f(y1)+' '+f(mx)+' '+f(y2)+' '+f(x2)+' '+f(y2);return 'M'+f(x1)+' '+f(y1)+'C'+f(x1)+' '+f(my)+' '+f(x2)+' '+f(my)+' '+f(x2)+' '+f(y2);}
+        if(t==='elbow'||t==='relbow'){P=(Math.abs(dx)>=Math.abs(dy))?[[x1,y1],[mx,y1],[mx,y2],[x2,y2]]:[[x1,y1],[x1,my],[x2,my],[x2,y2]];return polyline(P,t==='relbow'?C.radius:0);}
+        if(t==='arc'){R=len*0.8;return 'M'+f(x1)+' '+f(y1)+'A'+f(R)+' '+f(R)+' 0 0 '+((x2>=x1)?1:0)+' '+f(x2)+' '+f(y2);}
+        return 'M'+f(x1)+' '+f(y1)+'L'+f(x2)+' '+f(y2);
+      }
+      function dashOf(w){
+        if(C.dash==='dashed')return [w*2.6,w*1.8];
+        if(C.dash==='dotted')return [0.1,w*2.2];
+        if(C.dash==='dashdot')return [w*3,w*1.6,0.1,w*1.6];
+        return null;
+      }
+      function cap(g,kind,x,y,ang,w,paint){
+        var r,s,c,sn,h;
+        if(kind==='dot'){r=Math.max(w*0.9,3.5);g.appendChild(el('circle',{cx:f(x),cy:f(y),r:f(r),fill:paint}));}
+        else if(kind==='arrow'){s=Math.max(w*3,11);c=Math.cos(ang);sn=Math.sin(ang);h=s*0.5;g.appendChild(el('polygon',{points:f(x)+','+f(y)+' '+f(x-s*c-h*sn)+','+f(y-s*sn+h*c)+' '+f(x-s*c+h*sn)+','+f(y-s*sn-h*c),fill:paint}));}
+      }
+      function capOn(g,p,atEnd,kind,w,paint){
+        var L,d,s,a,b,ang;
+        if(kind!=='dot'&&kind!=='arrow')return;
+        L=p.getTotalLength();d=Math.min(C.inset,L*0.4);s=atEnd?L-d:d;
+        a=p.getPointAtLength(s);b=p.getPointAtLength(atEnd?s-1.5:s+1.5);ang=Math.atan2(a.y-b.y,a.x-b.x);
+        cap(g,kind,a.x,a.y,ang,w,paint);
+      }
+      function statusColor(elx){
+        if(!elx)return null;
+        try{var bg=getComputedStyle(elx).backgroundColor;if(bg&&bg!=='rgba(0, 0, 0, 0)'&&bg!=='transparent')return bg;}catch(e){}
+        return null;
+      }
+      function edgePoint(cx,cy,w,h,tx,ty){
+        var dx=tx-cx, dy=ty-cy;
+        if(Math.abs(dx)<0.01&&Math.abs(dy)<0.01)return [cx,cy];
+        var hw=w/2, hh=h/2, sx=hw>0?Math.abs(dx)/hw:1e9, sy=hh>0?Math.abs(dy)/hh:1e9, s=Math.max(sx,sy)||1;
+        return [cx+dx/s,cy+dy/s];
+      }
+      function find(){
+        var a,b;try{a=document.querySelector(C.selA);}catch(e){a=null;}try{b=document.querySelector(C.selB);}catch(e){b=null;}
+        return [a,b];
+      }
+      function draw(){
+        var svg=document.getElementById('mapsvg'), els=find(), elA=els[0], elB=els[1], old=svg&&svg.querySelector('g.'+gcls);
+        if(old)old.parentNode.removeChild(old);
+        if(!svg||!elA||!elB||!document.body.contains(elA)||!document.body.contains(elB))return;
+        var ctm=svg.getScreenCTM();
+        if(!ctm)return;
+        var pt=svg.createSVGPoint();
+        function toSvg(cx,cy){pt.x=cx;pt.y=cy;var p=pt.matrixTransform(ctm.inverse());return [p.x,p.y];}
+        var ra=elA.getBoundingClientRect(), rb=elB.getBoundingClientRect();
+        var caV=[ra.left+ra.width/2,ra.top+ra.height/2], cbV=[rb.left+rb.width/2,rb.top+rb.height/2];
+        var aV=edgePoint(caV[0],caV[1],ra.width,ra.height,cbV[0],cbV[1]), bV=edgePoint(cbV[0],cbV[1],rb.width,rb.height,caV[0],caV[1]);
+        var A=toSvg(aV[0],aV[1]), B=toSvg(bV[0],bV[1]);
+        var w=C.width, d=geo(C.type,A[0],A[1],B[0],B[1]), ds=dashOf(w), round=(C.round||C.dash==='dotted'||C.dash==='dashdot')?'round':'butt';
+        var colA=C.colorMode==='status'?(statusColor(elA)||C.color):C.color, colB=C.colorMode==='status'?(statusColor(elB)||C.color):C.color, paint=colA;
+        var g=el('g',{'class':gcls,opacity:C.opacity/100});
+        if(colA!==colB){
+          var gidc='msg_'+C.uid, defs=svg.querySelector('defs');
+          if(!defs){defs=el('defs',{});svg.insertBefore(defs,svg.firstChild);}
+          var old2=defs.querySelector('#'+gidc);if(old2)old2.parentNode.removeChild(old2);
+          var lg=el('linearGradient',{id:gidc,x1:f(A[0]),y1:f(A[1]),x2:f(B[0]),y2:f(B[1]),gradientUnits:'userSpaceOnUse'});
+          lg.appendChild(el('stop',{offset:'0%','stop-color':colA}));lg.appendChild(el('stop',{offset:'48%','stop-color':colA}));
+          lg.appendChild(el('stop',{offset:'52%','stop-color':colB}));lg.appendChild(el('stop',{offset:'100%','stop-color':colB}));
+          defs.appendChild(lg);paint='url(#'+gidc+')';
+        }
+        svg.appendChild(g);
+        if(C.glow)g.appendChild(el('path',{d:d,fill:'none',stroke:paint,'stroke-width':f(w*2.2),'stroke-linecap':'round',style:'opacity:.22;filter:blur(4px)'}));
+        var p2=el('path',{d:d,fill:'none',stroke:paint,'stroke-width':w,'stroke-linecap':round,'stroke-linejoin':'round'});
+        if(ds){
+          var sum=0,i;for(i=0;i<ds.length;i++)sum+=ds[i];
+          p2.setAttribute('stroke-dasharray',ds.map(f).join(' '));
+          if(C.flow){var sp=C.flowSec>=2.2?3:(C.flowSec<=1?0.8:1.6);p2.appendChild(el('animate',{attributeName:'stroke-dashoffset',from:f(sum),to:0,dur:(sum/(60*(1.6/sp))).toFixed(2)+'s',repeatCount:'indefinite'}));}
+        }
+        g.appendChild(p2);
+        capOn(g,p2,false,C.start,w,colA);capOn(g,p2,true,C.end,w,colB);
+      }
+      function schedule(){if(raf)return;raf=requestAnimationFrame(function(){raf=null;draw();});}
+      function obs(elx){if(!elx)return null;try{var o=new MutationObserver(schedule);o.observe(elx,{attributes:true,attributeFilter:['style','class']});return o;}catch(e){return null;}}
+      function start(){
+        var els=find();
+        if(mo1)mo1.disconnect();if(mo2)mo2.disconnect();
+        mo1=obs(els[0]);mo2=obs(els[1]);
+        draw();
+      }
+      start();
+      setInterval(start,3000);
+      window.addEventListener('resize',schedule);
+    }
+    function connLivePushHtml(it,need){
+      var selA=it.p.ga?connTargetSel(it.p.ga.id,need):null, selB=it.p.gb?connTargetSel(it.p.gb.id,need):null;
+      if(!selA||!selB)return null;
+      var C=connLiveCfg(it);C.selA=selA;C.selB=selB;C.uid='c'+it.id;
+      var src=String(connLiveRuntime).replace(/\/\*[\s\S]*?\*\//g,'').replace(/\n\s*/g,'\n'), o=[];
+      o.push('<div id="mslnhost'+it.id+'" style="position:absolute;left:0;top:0;width:1px;height:1px;opacity:0;pointer-events:none;"></div>');
+      o.push('<scr'+'ipt>');o.push('('+src+')('+JSON.stringify(C)+');');o.push('<\/script>');
+      return o.join('\n');
+    }
     DASHAPI.pushItems=function(){
-      var out=[], ord=order(), i, j;
+      var out=[], ord=order(), i, j, need={};
       for(i=0;i<ord.length;i++){
         var it=ord[i], h=itemInner(it), fam={}, f=fontsOf(it), links=[];
         for(j=0;j<f.length;j++){if(!f[j][0]||isLocalFont(f[j][0]))continue;(fam[f[j][0]]=fam[f[j][0]]||{})[f[j][1]]=1;}
@@ -4069,8 +4214,21 @@ try{
         });
         var rec={id:it.id,type:it.type,name:itemName(it),left:Math.round(it.x),top:Math.round(it.y),width:Math.round(it.w),height:Math.round(it.h),html:(it.type==='prtgobj'?'':h),fonts:links};
         if(it.type==='prtgobj')rec.object={cat:it.p.cat,name:it.p.name,value:it.p.value,targetDefault:!!it.p.targetDefault,target:{id:(it.p.target&&it.p.target.id)||0,name:(it.p.target&&it.p.target.name)||''}};
+        if(isLine(it)&&it.p.pushLive&&it.p.ga&&it.p.gb)rec._liveConn=true;
         out.push(rec);
       }
+      /* now that every item's id (and so every possible glue target) is known, build each live connector's real
+         pushed content, and mark any non-PRTG-object item it targets so that item's own HTML carries a hidden
+         handle the connector's script can find it by */
+      out.forEach(function(rec){
+        if(!rec._liveConn)return;
+        var it=byId(rec.id), html=connLivePushHtml(it,need);
+        if(html)rec.html=html;else delete rec._liveConn;
+      });
+      if(Object.keys(need).length)out.forEach(function(rec){
+        if(need[rec.id]&&rec.type!=='prtgobj')rec.html='<span data-msid="ms'+rec.id+'" style="display:none"></span>'+(rec.html||'');
+      });
+      out.forEach(function(rec){delete rec._liveConn;});
       return out;
     };   /* the Objects tab pastes the same frame code */
 
