@@ -181,6 +181,10 @@ body.dash #typegrid,body.editing #typegrid{display:none}
 .mstag{font:600 9px/1 inherit;background:#6d3bd4;color:#fff;border-radius:3px;padding:2.5px 4px;letter-spacing:.3px}
 /* one tile per object: PRTG's own drawing of it, four to a row */
 .ogrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:7px}
+.ocat[hidden]{display:none}
+.ocaption{font-size:10.5px;font-weight:600;color:#5b6a8a;padding:7px 8px 0}
+.ocaption[hidden]{display:none}
+.ocat+.ocat .ogrid{padding-top:4px}
 .otile{position:relative;border:1px solid #dfe3ec;border-radius:5px;padding:3px;background:#fff;cursor:grab;user-select:none;overflow:hidden;text-align:center}
 .otile:hover{border-color:#9aa4af;background:#f7fafd}
 .otile.on{border:2px solid var(--cyan);background:#eaf5fc;padding:2px}
