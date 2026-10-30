@@ -331,6 +331,8 @@ p.note:not(.pst){display:none!important}
 .lkcap{display:block;font-size:10px;line-height:1.2;color:#5b6070;margin-top:3px;text-align:center}
 #dcanvas .cpt{position:absolute;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:#fff;border:2px solid #2f80ed;pointer-events:none;z-index:5;box-sizing:border-box}
 #dcanvas .cpt.on{width:13px;height:13px;margin:-6.5px 0 0 -6.5px;background:#2f80ed}
+/* the Build tiles stay put at the top of the Design tab while the settings below them scroll */
+#dpane-add > .secfs:first-child{position:sticky;top:0;z-index:30;background:#fff;box-shadow:0 1px 0 var(--g20)}
 #dfbar .fb-looks{width:330px;max-height:380px;overflow:auto;display:block}
 #dfbar .fb-looks .shpgrid{grid-template-columns:repeat(3,1fr)}
 #dfbar .fb-looks .shpb,#dfbar .fb-lbl .shpb{line-height:normal;padding:5px 4px}
