@@ -166,8 +166,10 @@ body.dash #typegrid,body.editing #typegrid{display:none}
 .objlist:focus{border-color:#007db8;box-shadow:0 0 0 2px rgba(0,125,184,.18)}
 .objlist.off{opacity:.5;pointer-events:none}
 /* the category buttons: every category at once, one open at a time, and they stay put while the tiles scroll */
-.objchips{margin-top:8px;position:sticky;top:0;z-index:20;background:#fff;padding:4px 0 2px}
+/* the category buttons stay in view just under the header (--mbh) and the Design tools (--tbh), and under both in the stacking order */
+.objchips{margin-top:8px;position:sticky;top:calc(var(--mbh,0px) + var(--tbh,0px));z-index:18;background:#fff;padding:4px 0 2px}
 .objchips.off{opacity:.5;pointer-events:none}
+.objchips.nostick{position:static}
 .chiprow{display:flex;flex-wrap:wrap;gap:4px}
 .ochip{font:11.5px/1 inherit;padding:4px 8px;border-radius:999px;border:1px solid #c9ced9;background:#fff;color:#374151;cursor:pointer;display:inline-flex;align-items:center;gap:5px;max-width:100%}
 .ochip .cn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
