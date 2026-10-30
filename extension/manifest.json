@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "PRTG Map Studio",
-  "version": "1.5.21",
+  "version": "1.5.22",
   "description": "Build and push PRTG map objects/dashboards to any PRTG server you sign in to.",
   "icons": {
     "16": "icons/icon16.png",
