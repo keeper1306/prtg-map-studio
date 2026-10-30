@@ -412,6 +412,16 @@ p.note:not(.pst){display:none!important}
 #dlaypop .ly-t:hover{border-color:#9bd0e8}
 #dlaypop .ly-t.on{border-color:var(--cyan);background:#E6F3FA}
 #dlaypop .ly-t svg{width:100%;height:auto}
+/* the New map form's layout choice */
+.nml-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;max-height:232px;overflow-x:hidden;overflow-y:auto;padding:2px;margin-bottom:2px;box-sizing:border-box}
+.nml-t{min-width:0;box-sizing:border-box}
+.nml-t{position:relative;border:2px solid var(--g20);border-radius:8px;padding:2px;background:#f4f6f9;cursor:pointer;line-height:0}
+.nml-t:hover{border-color:#9bd0e8}
+.nml-t.on{border-color:var(--cyan);background:#E6F3FA}
+.nml-t svg{width:100%;height:auto}
+.nml-t.blank span{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);line-height:1;font-size:11px;font-weight:600;color:#6c7183;text-align:center}
+.nml-t.blank.on span{color:var(--cyan)}
+#newmaplayname{margin:4px 0 0}
 #dgridpop{position:absolute;right:0;top:calc(100% + 8px);z-index:300;width:300px;padding:12px;background:#fff;border:1px solid var(--g20);border-radius:12px;box-shadow:0 6px 24px rgba(15,23,42,.2);font-size:12px;display:flex;flex-direction:column;gap:8px}
 #dgridpop[hidden]{display:none}
 #dgridpop .gp-l{font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:#8b90a0;margin-top:2px}
@@ -1002,6 +1012,9 @@ body:not(.objs) #obar{display:none!important}
           <div><label for="newmapw">Width</label><input type="number" id="newmapw" min="100" max="8000" step="10" value="1920"></div>
           <div><label for="newmaph">Height</label><input type="number" id="newmaph" min="100" max="8000" step="10" value="1080"></div>
         </div>
+        <label>Layout</label>
+        <div id="newmaplayout" class="nml-grid" role="group" aria-label="Layout of the new map"></div>
+        <p class="note pst" id="newmaplayname"></p>
         <div class="row" style="margin-top:8px">
           <button class="btn" id="newmapgo" type="button">Create</button>
           <button class="btn ghost" id="newmapcancel" type="button">Cancel</button>
