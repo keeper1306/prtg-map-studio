@@ -355,7 +355,8 @@ p.note:not(.pst){display:none!important}
 #dcanvas .cpt{position:absolute;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:#fff;border:2px solid #2f80ed;pointer-events:none;z-index:5;box-sizing:border-box}
 #dcanvas .cpt.on{width:13px;height:13px;margin:-6.5px 0 0 -6.5px;background:#2f80ed}
 /* the Build tiles stay put at the top of the Design tab while the settings below them scroll */
-#dpane-add > .secfs:first-child{position:sticky;top:0;z-index:30;background:#fff;box-shadow:0 1px 0 var(--g20)}
+/* the tools stay put under the tabs, the connection row and the steps (#modebar, also sticky); only the settings below them scroll. --mbh is the header's height, kept up to date from app.js */
+#dpane-add > .secfs:first-child{position:sticky;top:var(--mbh,0px);z-index:19;background:#fff;box-shadow:0 1px 0 var(--g20)}
 #pushto{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin:0 0 12px;padding:9px 12px;border:1px solid #bfe3f4;border-radius:10px;background:#eaf7fd;color:#0b4f6c;font-size:13px}
 #pushto .pt-l{font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:#4b7a91}
 #pushto strong{font-weight:600;font-size:14px;color:#08354a;word-break:break-word}
@@ -675,7 +676,9 @@ body.dash #dtabs{display:grid;grid-template-columns:repeat(3,1fr)}
 #showexisting.on{color:var(--cyan);border-color:var(--cyan);background:#eaf5fc}
 #dashpanel .addgrid{grid-template-columns:repeat(3,1fr);gap:6px}
 #inlhost{margin-top:8px}body.inlobj #objpanel>fieldset:first-child{display:none}#inlhost #objpanel{display:block}#inlhost #legbox>.advbar,#inlhost #legbox>fieldset{margin-top:0}
-.bgnow{display:block;width:34px;height:14px;border-radius:4px;border:1px solid rgba(5,15,52,.25);background:#dad7d7}#mapbgbtn.on{border-color:var(--cyan);background:#e6f3fa;color:var(--cyan)}#bgpanel{margin-top:10px;padding:12px;border:1px solid var(--g10);border-radius:10px;background:#fff}.bgtitle{font-size:12px;font-weight:500;color:var(--g90);margin-bottom:2px}.bgcustom{display:flex;align-items:center;gap:8px;margin:10px 0 0;font-size:12px;color:var(--g90);cursor:pointer}.bgcustom input[type=color]{width:34px;height:24px;padding:0;border:1px solid var(--g20);border-radius:6px;background:none;cursor:pointer}.bgcustom input[type=color]:disabled{opacity:.45;cursor:not-allowed}
+.bgnow{display:block;width:34px;height:14px;border-radius:4px;border:1px solid rgba(5,15,52,.25);background:#dad7d7}#mapbgbtn.on{border-color:var(--cyan);background:#e6f3fa;color:var(--cyan)}#dashpanel .bghold{padding:0 20px}
+#dashpanel .bghold #bgpanel{margin:10px 0}
+#bgpanel{margin-top:10px;padding:12px;border:1px solid var(--g10);border-radius:10px;background:#fff}.bgtitle{font-size:12px;font-weight:500;color:var(--g90);margin-bottom:2px}.bgcustom{display:flex;align-items:center;gap:8px;margin:10px 0 0;font-size:12px;color:var(--g90);cursor:pointer}.bgcustom input[type=color]{width:34px;height:24px;padding:0;border:1px solid var(--g20);border-radius:6px;background:none;cursor:pointer}.bgcustom input[type=color]:disabled{opacity:.45;cursor:not-allowed}
 #dashpanel .bgpresets{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}.bgchip{width:24px;height:24px;border-radius:50%;border:1px solid rgba(5,15,52,.28);padding:0;cursor:pointer}.bgchip:hover{transform:scale(1.12)}.bgchip.on{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--cyan)}.bgchip:disabled{opacity:.4;cursor:not-allowed;transform:none}
 #dashpanel .addgrid .btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:9px 2px 7px;font-size:11px;font-weight:500;letter-spacing:.2px;text-transform:none;border-radius:6px;line-height:1.15;min-width:0}
 #dashpanel .addgrid .btn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
@@ -829,7 +832,15 @@ body:not(.dash):not(.objs) #panel > #preswrap:not([hidden]),body:not(.dash):not(
 #ocanvas.pxgrid{background-image:linear-gradient(rgba(0,125,184,.18) 1px,transparent 1px),linear-gradient(90deg,rgba(0,125,184,.18) 1px,transparent 1px);background-size:10px 10px}
 #ocanvas.dark.pxgrid{background-image:linear-gradient(rgba(255,255,255,.14) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.14) 1px,transparent 1px)}
 /* the options bar over the object in the preview, like the one over an item in the Map designer */
-#obar{position:absolute;z-index:40;display:flex;align-items:center;flex-wrap:wrap;gap:3px;padding:4px 6px;background:#fff;border:1px solid var(--g20);border-radius:10px;box-shadow:0 4px 16px rgba(15,23,42,.16);font-size:12px;width:max-content}
+/* whether the object's name is already used on the connected PRTG server */
+.nclash{display:block;margin:6px 0 0;padding:6px 9px;border-radius:7px;font-size:12px;font-weight:400;line-height:1.4}
+.nclash[hidden]{display:none}
+.nclash.nc-warn{background:#FEF3C7;color:#92400E;border:1px solid #FCD34D}
+.nclash.nc-ok{background:#ECFDF5;color:#065F46;border:1px solid #A7F3D0}
+.nclash.nc-off{background:transparent;color:#8b90a0;padding:0;border:0}
+h2 .nclash{font-size:12px;margin-top:6px}
+#ofname.nc-file{color:#B45309!important}
+#obar{position:fixed;z-index:100000;display:flex;align-items:center;flex-wrap:wrap;gap:3px;padding:4px 6px;background:#fff;border:1px solid var(--g20);border-radius:10px;box-shadow:0 4px 16px rgba(15,23,42,.16);font-size:12px;width:max-content}
 #obar[hidden]{display:none}
 #obar .fb-s{width:118px;height:28px;padding:0 4px;font-size:12px;border:1px solid var(--g20);border-radius:7px}
 #obar .fb-n{width:54px;height:28px;padding:0 4px;text-align:center;border:1px solid var(--g20);border-radius:7px;font-size:12px}
@@ -840,7 +851,10 @@ body:not(.dash):not(.objs) #panel > #preswrap:not([hidden]),body:not(.dash):not(
 #obar .fb-sep{width:1px;height:20px;background:var(--g20);margin:0 4px}
 
 /* nothing selected: the box, handles and bar go away so the object shows as it will look */
-#ocanvas.nosel .edov,#ocanvas.nosel #obar{display:none!important}
+#ocanvas.nosel .edov,#obar.nosel{display:none!important}
+/* the bar lives on the page, outside the preview, so the canvas edge never cuts it off; it shows only on the Object builder tab */
+body:not(.objs) #obar{display:none!important}
+#obar .fb-pop.up{top:auto;bottom:calc(100% + 6px)}
 #obar .fb-g{display:contents}
 #obar .fb-g[hidden]{display:none}
 #obar .fb-pop{position:absolute;left:0;top:calc(100% + 6px);z-index:60;min-width:230px;max-width:340px;max-height:340px;overflow:auto;padding:10px 12px;background:#fff;border:1px solid var(--g20);border-radius:10px;box-shadow:0 6px 24px rgba(15,23,42,.2);font-size:12px}
@@ -1402,7 +1416,7 @@ body:not(.dash):not(.objs) #panel > #preswrap:not([hidden]),body:not(.dash):not(
     </div>
     <div id="ocanvas"><div id="opreview"></div></div>
     <div class="stage-head" style="margin-top:26px">
-      <h2><span id="ofheadtext">File</span> <span id="ofname" style="font-weight:500;color:var(--cyan)"></span> <span id="ofnote" style="font-weight:300;color:#8b90a0;font-size:12px"></span></h2>
+      <h2><span id="ofheadtext">File</span> <span id="ofname" style="font-weight:500;color:var(--cyan)"></span> <span id="ofnote" style="font-weight:300;color:#8b90a0;font-size:12px"></span><span class="nclash" role="status" hidden></span></h2>
       <div style="display:flex;gap:10px"><button class="btn primary" id="oadd" type="button" title="Keeps this object in Your objects, ready to install">Add to this list</button><button class="btn ghost" id="oshowcode" type="button" aria-expanded="false">Show code</button></div>
     </div>
     <div id="ocodebox" hidden><div class="ocodebar"><button class="btn ghost sm" id="ocopy" type="button">Copy code</button><button class="btn ghost sm" id="odl" type="button">Download .htm</button></div><textarea id="ocode" readonly spellcheck="false"></textarea></div>

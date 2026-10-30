@@ -15,7 +15,7 @@
 var CFG={
   name:'PRTG Map Studio',
   version:'1.4.2',
-  changelog:'1.5.15: Every gauge Map Studio builds is filed under Gauges in PRTG\u2019s object list, whatever template it started from, PRTG classic face included. Before, a gauge started from one of PRTG\u2019s templates took that template\u2019s category (Status Icons or Device Tree Views). PRTG\u2019s own eight gauge files are not changed, and Category in the designer still sets another category for one gauge. Gauges saved before keep their category until they are saved again. 1.5.14: Gauges get faces. In the Object builder, a gauge is now made in three steps: a template (what it shows), a face (how it is drawn) and a look (background, colors and fonts). Five new faces: Threshold arc (a thick arc with the warning and error limits as a thin outer band), Gradient arc (colored from low to high), Segmented LED (blocks that light up, with a digital number), Solid arc (one bold arc and a big number) and Speedometer (ticks, scale numbers and a needle). Glow is a switch for them. PRTG classic is still there: it is PRTG\u2019s own dial, which PRTG draws, so a look can only recolor it. Every other face is drawn by Map Studio from the same data PRTG puts in the page, so the look now changes everything, and a PRTG template keeps its data (one sensor, all channels, or a device\u2019s sensors by priority) when you pick a face. All channels and device sensors show one gauge each, side by side. Measured on 100 gauges in one object: about 2 MB and under 100 ms to draw once, with no timers and no extra requests to PRTG. 1.5.13: The grid of preview tiles is gone, and with it the load it put on the machine. Every tile was PRTG\u2019s own drawing of an object, and each drawing is two nested documents that parse PRTG\u2019s whole stylesheet and run PRTG\u2019s own scripts \u2014 a category held tens of those open at once, and 1.5.12 kept them open for every category you had visited, which could bring Chrome and the machine it runs on to a stop. The category buttons, the counts, the MS mark, the Map Studio filter and the search all stay; under them is a plain list again, and PRTG draws only the one object you pick, in the single pane below. PRTG\u2019s built-in icons still show their own picture beside the name, which is one small static file and no drawing at all. | 1.5.12: Two things were making the object tiles crawl. The list sits in a section that starts closed, and the watcher deciding which tiles are on screen could not see them while it was, so a category could sit half-empty until something made the page re-measure \u2014 tiles now work that out directly, whenever the list is shown, scrolled or resized. And switching category threw away every drawing: the tiles were taken out of the page and put back, which makes the browser reload each preview frame from scratch. Each category now keeps its own tiles in the page and a switch only hides and shows them, so going back to a category you have already opened costs nothing at all. | 1.5.11: A new map made from the Map step starts at 1920 \u00D7 1080 instead of 1300 \u00D7 900. It now takes its size from the canvas you design on, so the map PRTG creates and the canvas you lay it out on cannot drift apart. | 1.5.10: The object tiles appear far sooner. PRTG lists its own built-in icon sets as plain picture files, so a tile now loads that picture itself instead of asking PRTG to draw the object \u2014 a set of ninety icons cost ninety drawings before and costs none now, and a tile falls back to the drawing if PRTG will not serve the picture. Every other tile also asks once instead of twice: it keeps the size it asked for, rather than asking again for the size the file declares, which the big preview below still does for the one object you pick. | 1.5.9: The PRTG Server Objects list shows every category as a button, each with how many objects it holds. The buttons stay in view while the objects scroll, and opening one closes the one before it, so only a single category is ever listed. Each object is now a tile showing PRTG\u2019s own drawing of it, four to a row; a tile asks PRTG for that drawing only when it scrolls into view, and the big preview underneath reuses the same answer. Objects built with Map Studio carry an MS mark, read from their file name, so PRTG\u2019s own category list is left exactly as it is, and a \u201CBuilt with Map Studio only\u201D tick narrows the list to them. | 1.5.8: A plain Connector line shows its flow again on the live map (moving dashes). The Chevron look moves its arrows from the start to the end again. Double-click the text on a Connector to type it right there (Enter keeps it, Esc cancels). The Text on the line button has a text icon. | 1.5.7: The Push step now says plainly which map it pushes to. A live Connector finds its two items by where they were pushed, so dropping a device-tree entity onto an item (which changes its PRTG object) no longer joins both ends to the same item; it keeps its line while PRTG redraws, and only one copy of it runs. The Chevron look flows again when Animate is on, in the designer and on the map. | 1.5.6: A Connector now follows a PRTG object when you change it between a box and an icon (it kept the old box edge before), and can be joined to an icon. On a live map the line anchors to the biggest picture of an icon, and to the whole box of a table or graph. In the Design tab the Build tiles stay in view while the settings scroll, and opening PRTG Server Objects hides the selected item\u2019s settings (clicking an item on the canvas brings them back). | 1.5.5: Nine line types for a Connector (straight, elbow, square elbow, two corners, two zig-zags, S-curve and bow), drawn the same on the canvas and on the live map. A Connector can now bind to the middle of an object as well as its four sides; a line bound to the middle goes behind the object, so it comes out from under it, and the object shows its five binding points while you drag an end. | 1.5.4: The floating bar and its menus are no longer cut off at the edge of the canvas; they can sit over the grey margin around it and stay inside the window. | 1.5.3: The floating bar\u2019s menus now open on the side away from the item, so they no longer cover it (upward when there is room, otherwise the bar drops under the item). Choosing Elbow or Curve on a flat, unglued line now moves a free end sideways so the shape shows right away. | 1.5.2: A Connector starts as one green end and one red end and takes its objects\u2019 real status colours once they report; the status color set you pick replaces those colours, on the canvas and on the live map. The text styles are presets next to the looks, and choosing one adds text editing (text, font, size, color) to the floating bar. Thickness, line type, start, end and animation are one picture-based option in the floating bar, and Kind, Line style and Color are gone from the left panel. 1.5.1: A Connector\u2019s presets are now its looks, shown as pictures, in the left panel and in the floating bar, and the separate Look picker is gone. A Connector is black until the objects it joins report a status, then takes their colours. 1.5.0: Connectors get eleven looks (soft glow, tube, beads, chevron, taper, rail, lifted, pulse, circuit, dash sweep, plain) and text on the line, with a pill, filled or text-only style. Both are chosen from pictures, in the left panel and in the floating bar, and both are drawn on the live PRTG map as well as in the designer. 1.4.9: A Connector now takes its colour from the \u201cName and status\u201d icons too. Those mark state with rollup flags (has red, has green and so on) rather than a single status class, which the preview did not read, so the line stayed one colour. The worst state present wins. 1.4.8: The Target panel now says what status the preview reported for the selected object, and lists the class names it found in the preview, so you can see why a Connector is or is not taking its colour. 1.4.7: An object dragged onto the canvas now starts on something of its own kind. Every object used to begin on the Local Probe unless it only took a sensor, so anything meant to read a device showed probe data until you picked a real target. The tool now reads what the object actually accepts — PRTG files declare probe, group, device or sensor, often several at once — and starts it on the most specific of those: a device where one will do, otherwise a group, otherwise the probe, and a sensor for the files that only take a sensor. The first device and group on the server are looked up alongside the default sensor, and “This object takes…” now offers all four kinds if you want to correct one. A default you have chosen yourself still wins. 1.4.6: The Map designer now draws a Connector in the colours the live map will actually show: each end takes the state of the object it is glued to, blending from one to the other when they differ. Until now the canvas painted every status-coloured link flat blue, so there was no way to see beforehand what the pushed version would look like. The state is read out of PRTG’s own drawing of each object, so this needs the live object previews switched on — with them off, or for an end whose object reports no state, the line simply keeps its plain colour instead of inventing one. 1.4.5: A Connector now really does take its colour from the two objects it joins, instead of staying one flat colour on the live map. Two separate things were stopping it. PRTG marks an ordinary device or sensor icon with a different status class than the link was looking for, so it found no status at all on exactly the icons people connect most — it now reads that form as well. And a Connector that did not follow the shared Link style was locked to a single colour permanently, because choosing any line style for it quietly turned status colouring off; such a Connector now shows status by default, and a new “Colour” setting goes back to one colour when that is what you want. Connectors already on a map keep their old look until they are pushed again. 1.4.4: The Map step has a new “Clear the canvas” option under the list of loaded items. It takes the map you loaded back off the canvas without sending anything to PRTG, so the map itself is untouched — useful when the wrong map was loaded, or when you simply want an empty canvas to work on. If edits or deletion marks are waiting on those items it asks for a second click first, so none of that work is thrown away by accident. 1.4.3: Connectors pushed to a map were still coming out invisible, with no line and no status colour, and the reason was found on the live server itself: PRTG rewrites the quotes around an HTML attribute when it saves an object, which cut the connector’s own drawing code short after thirty-seven characters, so there was never anything left to run. That code now travels in an encoded form that contains no quotes at all, so saving cannot break it apart. A connector also no longer confuses one icon with another when several icons are still bound to the same PRTG object: each end now picks the icon standing where that end was glued, so the line joins the right two icons and each end shows its own status colour. 1.4.2: A pushed connector was coming out empty on the live map, with no colored status and no visible line. The cause: PRTG strips <script> tags out of a map object’s HTML when it is saved, so the connector’s own live-drawing code was being thrown away before it ever reached the page. It now starts itself a different way (through an image element’s error handler, which survives PRTG’s save), so the line draws and updates again. While tracking that down: a connector glued to a PRTG probe or other object with many children now reads its live status correctly too — those use a different set of status flags than a single sensor or device does, worst status wins when several apply. A connector also now notices a status change on a nested part of its target, not only the target element itself, and lines up against the actual icon picture rather than the wider clickable box around it, so the endpoint lands on the icon instead of beside it. 1.4.1: Connector fixes. Dragging a Connector from Build onto the canvas works now (it silently did nothing before); drop it on top of an object and it glues itself to the nearest side right away. Gluing anywhere — Connector or a Shapes line — now only offers the four side centers, not a free slide along the edge. A connector reads live status from the state PRTG itself put on the object (the same class PRTG and our own Icon objects use), not just a plain background color, so Icon-object endpoints now color correctly too. The Selected panel (title, shape gallery, and the inline Shape section when editing in place) calls a Connector a Connector and only offers Line, Arrow and Flowing arrow for it, never a flowchart box or callout. 1.4.0: A new Connector tool, next to Shape in Build — adds a line already set up to glue to two objects and push to PRTG as a real, self-updating link (Push as a live link in PRTG starts switched on). Shapes keeps its own plain Lines and arrows, unchanged and never pushed live unless you ask. 1.3.1: PRTG’s own built-in icon sets (Default Icons A/B, Icons A/B/C and their static variants, Static Images — whatever this server’s list has) now show up alongside the object files in Existing PRTG objects. Pick one, bind it to a device, sensor or group like any other object, and it recolors itself with that target’s live status once pushed, the same as PRTG’s own icons. 1.3.0: A glued connector can now be pushed as a real, self-updating line on the map itself (“Push as a live link in PRTG” on a connector with both ends glued) — separate from PRTG’s own native connections, which this tool still cannot create (there is no API for that; PRTG only builds them from a hand drag in its own Map Designer). Once pushed, the line finds its two objects on the live page by itself and redraws its own path whenever either one moves, with no re-push needed; with Match Link style left on, it also recolors itself from each end’s live status, split two ways like PRTG’s own lines when the two differ. 1.2.1: A connector’s look now matches the shared Link style by default (the same curve/dash/color/markers/flow settings as the Link style object you push to PRTG), so the Map designer previews what the live map will actually show. Per-connector style is still there — untick Match Link style on a line to set its own thickness, line type, dash, markers and animation. Choosing a specific line format from the shape gallery now also switches that line off Match Link style automatically. The Link style preview in the Object builder also now shows one point-to-point link instead of a branching demo (PRTG links are always point to point). 1.2.0: Map designer lines are now connectors — drag either end onto a frame, shape or PRTG object and it glues there (a highlight shows the drop target); glued ends follow that object when it is moved, resized or rotated, and come unglued automatically if the object is deleted. A Branch button on a glued line adds another end from the same start, for one-to-many connections. 1.1.1: Link style animation now runs on systems that ask for reduced motion (it was switched off there); a new option pauses it again if you want that. 1.1.0: new Link style object in the Object builder. Curve, S-curve, elbow, rounded elbow and arc lines; solid, dashed, dotted and dash-dot styles; dot and arrow markers; optional flowing dashes. The straight lines PRTG draws are hidden from the first moment, so they never flash. 1.0.0: items can be reordered on the canvas. Bring to front, send backward, send to back and a Layer control next to Width and Height in Selected; Up/Down buttons in the Layers tab. Items already on the chosen PRTG map now also show up in the Layers tab (read-only, sorted by their real layer), with a link back to Existing PRTG maps to change them there. v64: one Existing PRTG maps section at the bottom of the Add tab holds the map choice and everything from Already on this map; it can be minimized. v63: the map choice has its own Map section on the Add tab, with Already on this map (show and clear items) under it; Publish keeps Push to PRTG and Save and load layout, and shows which map it will push to. v62: the Button tool has the same groups of presets as the Label tool (Basic, Map buttons, Status buttons, and the eight table, gauge and frame looks). v61: the chart.svg picture is now requested with exactly the address PRTG put in the page (PRTG signs it with a URL hash, so any change gives 401). v60: Collect PRTG samples blanks out passhash, username, map id and URL hash in the saved file, and also saves the chart.svg picture of up to two graph items. v59: a Clear items from the canvas button removes the items shown by Show items already on this map (it asks twice if you have unapplied changes). v58: choosing a Build tile (Frame, Label, Button, Background, Shape) closes the Existing PRTG objects section, so the area below stays blank until the Existing PRTG objects tile is pressed. v57: copy, cut and paste are back on the Dashboard (Ctrl+C, Ctrl+X, Ctrl+V and the Copy and Paste buttons; a frame is copied with everything inside it). v56: a Refresh object list button in Existing PRTG objects reads PRTG\u2019s list of object files again without reconnecting. v55: the Dashboard tabs (Add, Selected, Layers, Publish) and the Build tiles (click then place, double-click, drag) are in the file; their tab names, grouping and timing are now in config. v54: the ready-made objects section is gone. v53: signing in with a username and passhash is required to connect, in a new login card. v52: previews of counting objects (status counts, donuts) read every sensor, not the first five. v50: Status counts object (tiles of sensors by status) and the Brand navy look. v49: authorship marks in the core. v48: after a push the map is read back; items PRTG did not keep are added again and any that still fail are named. v47: shape presets give each look its own color and thickness; push and edit results show over the Dashboard and a failed login opens the login panel. v46: status dots in the device tree; the object preview can be dragged onto the canvas. v45: graphs and icons are edited in the preview too. v44: gauges and donuts are edited in the preview like tables (drag the handles, double-click the title). v43: Look presets for frames, backgrounds and the new shapes (lines, arrows, flowing arrows). v42: notes became hover icons, undo/redo arrows over the canvas, a tidier Dashboard panel, a PRTG connection switch. v41: click, drag, resize, delete on the canvas. v40: edit, move, delete with Review and Undo. v39: existing items show the object they are bound to (name, type, place) and a summary of what they show. v38: shows the items already on a map. v37: Collect samples reads the map items. v36: frames edited in the Objects view. v35: no comments in generated files. v34: file list. v33: install script. v32: config, tabs.',
+  changelog:'1.5.16: The status color set PRTG\u2019s own is now called PRTG UI. Floating bars: in both tabs a menu now opens on the side of the bar away from the object, on whichever side has more room, and scrolls inside itself when it is taller than that room, so it never covers the object and never runs off the window. In the Object builder the bar now sits on the page instead of inside the preview, so the canvas and preview edges no longer cut it off. Labels and buttons in the Map designer had no floating bar at all: building it stopped on an error (a label has no shape settings); they have one again. Map designer, Design step: the tools now stay under the tabs, the connection row and the steps, and only the settings below scroll; before, the tools covered the header when you scrolled. The map background settings scroll with the other settings. Object builder: under the file name and in Name and title, Map Studio now says whether the connected PRTG server already has a file with that name (saving would replace it) or an object with the same name in the same category. 1.5.15: Every gauge Map Studio builds is filed under Gauges in PRTG\u2019s object list, whatever template it started from, PRTG classic face included. Before, a gauge started from one of PRTG\u2019s templates took that template\u2019s category (Status Icons or Device Tree Views). PRTG\u2019s own eight gauge files are not changed, and Category in the designer still sets another category for one gauge. Gauges saved before keep their category until they are saved again. 1.5.14: Gauges get faces. In the Object builder, a gauge is now made in three steps: a template (what it shows), a face (how it is drawn) and a look (background, colors and fonts). Five new faces: Threshold arc (a thick arc with the warning and error limits as a thin outer band), Gradient arc (colored from low to high), Segmented LED (blocks that light up, with a digital number), Solid arc (one bold arc and a big number) and Speedometer (ticks, scale numbers and a needle). Glow is a switch for them. PRTG classic is still there: it is PRTG\u2019s own dial, which PRTG draws, so a look can only recolor it. Every other face is drawn by Map Studio from the same data PRTG puts in the page, so the look now changes everything, and a PRTG template keeps its data (one sensor, all channels, or a device\u2019s sensors by priority) when you pick a face. All channels and device sensors show one gauge each, side by side. Measured on 100 gauges in one object: about 2 MB and under 100 ms to draw once, with no timers and no extra requests to PRTG. 1.5.13: The grid of preview tiles is gone, and with it the load it put on the machine. Every tile was PRTG\u2019s own drawing of an object, and each drawing is two nested documents that parse PRTG\u2019s whole stylesheet and run PRTG\u2019s own scripts \u2014 a category held tens of those open at once, and 1.5.12 kept them open for every category you had visited, which could bring Chrome and the machine it runs on to a stop. The category buttons, the counts, the MS mark, the Map Studio filter and the search all stay; under them is a plain list again, and PRTG draws only the one object you pick, in the single pane below. PRTG\u2019s built-in icons still show their own picture beside the name, which is one small static file and no drawing at all. | 1.5.12: Two things were making the object tiles crawl. The list sits in a section that starts closed, and the watcher deciding which tiles are on screen could not see them while it was, so a category could sit half-empty until something made the page re-measure \u2014 tiles now work that out directly, whenever the list is shown, scrolled or resized. And switching category threw away every drawing: the tiles were taken out of the page and put back, which makes the browser reload each preview frame from scratch. Each category now keeps its own tiles in the page and a switch only hides and shows them, so going back to a category you have already opened costs nothing at all. | 1.5.11: A new map made from the Map step starts at 1920 \u00D7 1080 instead of 1300 \u00D7 900. It now takes its size from the canvas you design on, so the map PRTG creates and the canvas you lay it out on cannot drift apart. | 1.5.10: The object tiles appear far sooner. PRTG lists its own built-in icon sets as plain picture files, so a tile now loads that picture itself instead of asking PRTG to draw the object \u2014 a set of ninety icons cost ninety drawings before and costs none now, and a tile falls back to the drawing if PRTG will not serve the picture. Every other tile also asks once instead of twice: it keeps the size it asked for, rather than asking again for the size the file declares, which the big preview below still does for the one object you pick. | 1.5.9: The PRTG Server Objects list shows every category as a button, each with how many objects it holds. The buttons stay in view while the objects scroll, and opening one closes the one before it, so only a single category is ever listed. Each object is now a tile showing PRTG\u2019s own drawing of it, four to a row; a tile asks PRTG for that drawing only when it scrolls into view, and the big preview underneath reuses the same answer. Objects built with Map Studio carry an MS mark, read from their file name, so PRTG\u2019s own category list is left exactly as it is, and a \u201CBuilt with Map Studio only\u201D tick narrows the list to them. | 1.5.8: A plain Connector line shows its flow again on the live map (moving dashes). The Chevron look moves its arrows from the start to the end again. Double-click the text on a Connector to type it right there (Enter keeps it, Esc cancels). The Text on the line button has a text icon. | 1.5.7: The Push step now says plainly which map it pushes to. A live Connector finds its two items by where they were pushed, so dropping a device-tree entity onto an item (which changes its PRTG object) no longer joins both ends to the same item; it keeps its line while PRTG redraws, and only one copy of it runs. The Chevron look flows again when Animate is on, in the designer and on the map. | 1.5.6: A Connector now follows a PRTG object when you change it between a box and an icon (it kept the old box edge before), and can be joined to an icon. On a live map the line anchors to the biggest picture of an icon, and to the whole box of a table or graph. In the Design tab the Build tiles stay in view while the settings scroll, and opening PRTG Server Objects hides the selected item\u2019s settings (clicking an item on the canvas brings them back). | 1.5.5: Nine line types for a Connector (straight, elbow, square elbow, two corners, two zig-zags, S-curve and bow), drawn the same on the canvas and on the live map. A Connector can now bind to the middle of an object as well as its four sides; a line bound to the middle goes behind the object, so it comes out from under it, and the object shows its five binding points while you drag an end. | 1.5.4: The floating bar and its menus are no longer cut off at the edge of the canvas; they can sit over the grey margin around it and stay inside the window. | 1.5.3: The floating bar\u2019s menus now open on the side away from the item, so they no longer cover it (upward when there is room, otherwise the bar drops under the item). Choosing Elbow or Curve on a flat, unglued line now moves a free end sideways so the shape shows right away. | 1.5.2: A Connector starts as one green end and one red end and takes its objects\u2019 real status colours once they report; the status color set you pick replaces those colours, on the canvas and on the live map. The text styles are presets next to the looks, and choosing one adds text editing (text, font, size, color) to the floating bar. Thickness, line type, start, end and animation are one picture-based option in the floating bar, and Kind, Line style and Color are gone from the left panel. 1.5.1: A Connector\u2019s presets are now its looks, shown as pictures, in the left panel and in the floating bar, and the separate Look picker is gone. A Connector is black until the objects it joins report a status, then takes their colours. 1.5.0: Connectors get eleven looks (soft glow, tube, beads, chevron, taper, rail, lifted, pulse, circuit, dash sweep, plain) and text on the line, with a pill, filled or text-only style. Both are chosen from pictures, in the left panel and in the floating bar, and both are drawn on the live PRTG map as well as in the designer. 1.4.9: A Connector now takes its colour from the \u201cName and status\u201d icons too. Those mark state with rollup flags (has red, has green and so on) rather than a single status class, which the preview did not read, so the line stayed one colour. The worst state present wins. 1.4.8: The Target panel now says what status the preview reported for the selected object, and lists the class names it found in the preview, so you can see why a Connector is or is not taking its colour. 1.4.7: An object dragged onto the canvas now starts on something of its own kind. Every object used to begin on the Local Probe unless it only took a sensor, so anything meant to read a device showed probe data until you picked a real target. The tool now reads what the object actually accepts — PRTG files declare probe, group, device or sensor, often several at once — and starts it on the most specific of those: a device where one will do, otherwise a group, otherwise the probe, and a sensor for the files that only take a sensor. The first device and group on the server are looked up alongside the default sensor, and “This object takes…” now offers all four kinds if you want to correct one. A default you have chosen yourself still wins. 1.4.6: The Map designer now draws a Connector in the colours the live map will actually show: each end takes the state of the object it is glued to, blending from one to the other when they differ. Until now the canvas painted every status-coloured link flat blue, so there was no way to see beforehand what the pushed version would look like. The state is read out of PRTG’s own drawing of each object, so this needs the live object previews switched on — with them off, or for an end whose object reports no state, the line simply keeps its plain colour instead of inventing one. 1.4.5: A Connector now really does take its colour from the two objects it joins, instead of staying one flat colour on the live map. Two separate things were stopping it. PRTG marks an ordinary device or sensor icon with a different status class than the link was looking for, so it found no status at all on exactly the icons people connect most — it now reads that form as well. And a Connector that did not follow the shared Link style was locked to a single colour permanently, because choosing any line style for it quietly turned status colouring off; such a Connector now shows status by default, and a new “Colour” setting goes back to one colour when that is what you want. Connectors already on a map keep their old look until they are pushed again. 1.4.4: The Map step has a new “Clear the canvas” option under the list of loaded items. It takes the map you loaded back off the canvas without sending anything to PRTG, so the map itself is untouched — useful when the wrong map was loaded, or when you simply want an empty canvas to work on. If edits or deletion marks are waiting on those items it asks for a second click first, so none of that work is thrown away by accident. 1.4.3: Connectors pushed to a map were still coming out invisible, with no line and no status colour, and the reason was found on the live server itself: PRTG rewrites the quotes around an HTML attribute when it saves an object, which cut the connector’s own drawing code short after thirty-seven characters, so there was never anything left to run. That code now travels in an encoded form that contains no quotes at all, so saving cannot break it apart. A connector also no longer confuses one icon with another when several icons are still bound to the same PRTG object: each end now picks the icon standing where that end was glued, so the line joins the right two icons and each end shows its own status colour. 1.4.2: A pushed connector was coming out empty on the live map, with no colored status and no visible line. The cause: PRTG strips <script> tags out of a map object’s HTML when it is saved, so the connector’s own live-drawing code was being thrown away before it ever reached the page. It now starts itself a different way (through an image element’s error handler, which survives PRTG’s save), so the line draws and updates again. While tracking that down: a connector glued to a PRTG probe or other object with many children now reads its live status correctly too — those use a different set of status flags than a single sensor or device does, worst status wins when several apply. A connector also now notices a status change on a nested part of its target, not only the target element itself, and lines up against the actual icon picture rather than the wider clickable box around it, so the endpoint lands on the icon instead of beside it. 1.4.1: Connector fixes. Dragging a Connector from Build onto the canvas works now (it silently did nothing before); drop it on top of an object and it glues itself to the nearest side right away. Gluing anywhere — Connector or a Shapes line — now only offers the four side centers, not a free slide along the edge. A connector reads live status from the state PRTG itself put on the object (the same class PRTG and our own Icon objects use), not just a plain background color, so Icon-object endpoints now color correctly too. The Selected panel (title, shape gallery, and the inline Shape section when editing in place) calls a Connector a Connector and only offers Line, Arrow and Flowing arrow for it, never a flowchart box or callout. 1.4.0: A new Connector tool, next to Shape in Build — adds a line already set up to glue to two objects and push to PRTG as a real, self-updating link (Push as a live link in PRTG starts switched on). Shapes keeps its own plain Lines and arrows, unchanged and never pushed live unless you ask. 1.3.1: PRTG’s own built-in icon sets (Default Icons A/B, Icons A/B/C and their static variants, Static Images — whatever this server’s list has) now show up alongside the object files in Existing PRTG objects. Pick one, bind it to a device, sensor or group like any other object, and it recolors itself with that target’s live status once pushed, the same as PRTG’s own icons. 1.3.0: A glued connector can now be pushed as a real, self-updating line on the map itself (“Push as a live link in PRTG” on a connector with both ends glued) — separate from PRTG’s own native connections, which this tool still cannot create (there is no API for that; PRTG only builds them from a hand drag in its own Map Designer). Once pushed, the line finds its two objects on the live page by itself and redraws its own path whenever either one moves, with no re-push needed; with Match Link style left on, it also recolors itself from each end’s live status, split two ways like PRTG’s own lines when the two differ. 1.2.1: A connector’s look now matches the shared Link style by default (the same curve/dash/color/markers/flow settings as the Link style object you push to PRTG), so the Map designer previews what the live map will actually show. Per-connector style is still there — untick Match Link style on a line to set its own thickness, line type, dash, markers and animation. Choosing a specific line format from the shape gallery now also switches that line off Match Link style automatically. The Link style preview in the Object builder also now shows one point-to-point link instead of a branching demo (PRTG links are always point to point). 1.2.0: Map designer lines are now connectors — drag either end onto a frame, shape or PRTG object and it glues there (a highlight shows the drop target); glued ends follow that object when it is moved, resized or rotated, and come unglued automatically if the object is deleted. A Branch button on a glued line adds another end from the same start, for one-to-many connections. 1.1.1: Link style animation now runs on systems that ask for reduced motion (it was switched off there); a new option pauses it again if you want that. 1.1.0: new Link style object in the Object builder. Curve, S-curve, elbow, rounded elbow and arc lines; solid, dashed, dotted and dash-dot styles; dot and arrow markers; optional flowing dashes. The straight lines PRTG draws are hidden from the first moment, so they never flash. 1.0.0: items can be reordered on the canvas. Bring to front, send backward, send to back and a Layer control next to Width and Height in Selected; Up/Down buttons in the Layers tab. Items already on the chosen PRTG map now also show up in the Layers tab (read-only, sorted by their real layer), with a link back to Existing PRTG maps to change them there. v64: one Existing PRTG maps section at the bottom of the Add tab holds the map choice and everything from Already on this map; it can be minimized. v63: the map choice has its own Map section on the Add tab, with Already on this map (show and clear items) under it; Publish keeps Push to PRTG and Save and load layout, and shows which map it will push to. v62: the Button tool has the same groups of presets as the Label tool (Basic, Map buttons, Status buttons, and the eight table, gauge and frame looks). v61: the chart.svg picture is now requested with exactly the address PRTG put in the page (PRTG signs it with a URL hash, so any change gives 401). v60: Collect PRTG samples blanks out passhash, username, map id and URL hash in the saved file, and also saves the chart.svg picture of up to two graph items. v59: a Clear items from the canvas button removes the items shown by Show items already on this map (it asks twice if you have unapplied changes). v58: choosing a Build tile (Frame, Label, Button, Background, Shape) closes the Existing PRTG objects section, so the area below stays blank until the Existing PRTG objects tile is pressed. v57: copy, cut and paste are back on the Dashboard (Ctrl+C, Ctrl+X, Ctrl+V and the Copy and Paste buttons; a frame is copied with everything inside it). v56: a Refresh object list button in Existing PRTG objects reads PRTG\u2019s list of object files again without reconnecting. v55: the Dashboard tabs (Add, Selected, Layers, Publish) and the Build tiles (click then place, double-click, drag) are in the file; their tab names, grouping and timing are now in config. v54: the ready-made objects section is gone. v53: signing in with a username and passhash is required to connect, in a new login card. v52: previews of counting objects (status counts, donuts) read every sensor, not the first five. v50: Status counts object (tiles of sensors by status) and the Brand navy look. v49: authorship marks in the core. v48: after a push the map is read back; items PRTG did not keep are added again and any that still fail are named. v47: shape presets give each look its own color and thickness; push and edit results show over the Dashboard and a failed login opens the login panel. v46: status dots in the device tree; the object preview can be dragged onto the canvas. v45: graphs and icons are edited in the preview too. v44: gauges and donuts are edited in the preview like tables (drag the handles, double-click the title). v43: Look presets for frames, backgrounds and the new shapes (lines, arrows, flowing arrows). v42: notes became hover icons, undo/redo arrows over the canvas, a tidier Dashboard panel, a PRTG connection switch. v41: click, drag, resize, delete on the canvas. v40: edit, move, delete with Review and Undo. v39: existing items show the object they are bound to (name, type, place) and a summary of what they show. v38: shows the items already on a map. v37: Collect samples reads the map items. v36: frames edited in the Objects view. v35: no comments in generated files. v34: file list. v33: install script. v32: config, tabs.',
   /* the Dashboard canvas when the page opens, and the size a new Frame starts at */
   canvas:{w:1920,h:1080,grid:10,zoom:'fit'},
   frame:{w:360,h:220},
@@ -95,7 +95,7 @@ var CFG={
     previewWith:'prtgMapTool.previewWith'   /* the PRTG server address is added after this name */
   }
 };
-CFG.version=(function(){try{return chrome.runtime.getManifest().version;}catch(e){return '1.5.15';}})();   /* the version is the extension's own, from manifest.json */
+CFG.version=(function(){try{return chrome.runtime.getManifest().version;}catch(e){return '1.5.16';}})();   /* the version is the extension's own, from manifest.json */
 document.title=CFG.name+' v'+CFG.version;
 document.getElementById('ver').textContent='v'+CFG.version;
 document.getElementById('dw').value=CFG.canvas.w;
@@ -1869,7 +1869,7 @@ try{
   };
   /* sets of status colors, shared by the Object builder and the Map designer */
   window.PMSSETS={cur:'',over:{},sets:[
-    ['prtg','PRTG\u2019s own',{up:'#B8C419',warning:'#F5C500',down:'#E30613',unusual:'#F59C00',paused:'#477EC0',unknown:'#878787'}],
+    ['prtg','PRTG UI',{up:'#B8C419',warning:'#F5C500',down:'#E30613',unusual:'#F59C00',paused:'#477EC0',unknown:'#878787'}],
     ['fresh','Fresh green',{up:'#2FA84F',warning:'#F0AD22',down:'#D8402F',unusual:'#F08A22',paused:'#8B93A3',unknown:'#9AA0AD'}],
     ['vivid','Vivid',{up:'#22C55E',warning:'#FACC15',down:'#EF4444',unusual:'#F97316',paused:'#3B82F6',unknown:'#94A3B8'}],
     ['safe','Color-blind safe',{up:'#009E73',warning:'#F0E442',down:'#D55E00',unusual:'#CC79A7',paused:'#56B4E9',unknown:'#999999'}],
@@ -2733,21 +2733,33 @@ try{
     }
     draw();
   }
-  var fbFlip=false;
-  function fbCloseAll(){if(!fbar)return;if(fbFlip){fbFlip=false;var si=byId(D.sel);if(si)setTimeout(function(){fbarPlace(si);},0);}[].forEach.call(fbar.querySelectorAll('.fb-pop'),function(p){p.hidden=true;});[].forEach.call(fbar.querySelectorAll('.fb.open'),function(b){b.classList.remove('open');});}
+  var fbFlip=false, fbForceAbove=false;
+  function fbCloseAll(){if(!fbar)return;if(fbFlip||fbForceAbove){fbFlip=false;fbForceAbove=false;var si=byId(D.sel);if(si)setTimeout(function(){fbarPlace(si);},0);}[].forEach.call(fbar.querySelectorAll('.fb-pop'),function(p){p.hidden=true;});[].forEach.call(fbar.querySelectorAll('.fb.open'),function(b){b.classList.remove('open');});}
   function fbRePlace(){if(fbar&&!fbar.hidden){var si=byId(D.sel);if(si)fbarPlace(si);}}
   window.addEventListener('scroll',fbRePlace,true);window.addEventListener('resize',fbRePlace);
   function fbToggle(pop,btn){
     var open=pop.hidden;fbCloseAll();pop.hidden=!open;if(btn)btn.classList.toggle('open',open);
-    /* a menu opens on the side away from the item, so it never covers what you are editing: upward when the bar sits above the item, downward when it sits below */
+    /* a menu opens on the side of the bar away from the item, so it never covers what you are editing.
+       It takes the side with more room: upward from a bar above the item, or downward from a bar moved under it; a menu taller than the room scrolls */
     pop.classList.remove('up');pop.style.maxHeight='';
-    if(open&&fbar&&fbar.getAttribute('data-pos')==='above'){
-      var kk=(fbar.offsetHeight?fbar.getBoundingClientRect().height/fbar.offsetHeight:1)||1;
-      if((pop.offsetHeight+8)*kk<=fbar.getBoundingClientRect().top)pop.classList.add('up');
-      else{fbFlip=true;/* no room above: the bar drops under the item and the menu opens below it */var si2=byId(D.sel);if(si2)fbarPlace(si2);}
-    }
-    if(open)fbFit(pop);
+    if(!open||!fbar)return;
+    var kk=(fbar.offsetHeight?fbar.getBoundingClientRect().height/fbar.offsetHeight:1)||1, need=(pop.offsetHeight+8)*kk, si=byId(D.sel);
+    var wasAbove=fbar.getAttribute('data-pos')==='above', fr=fbar.getBoundingClientRect(), bh=fr.height;
+    var wh=window.innerHeight;
+    var upRoom, downRoom;
+    if(wasAbove){upRoom=fr.top-8;downRoom=wh-(itemBottomPx(si)+10+bh)-8;}
+    else{downRoom=wh-fr.bottom-8;upRoom=itemTopPx(si)-10-bh-8;}
+    var up=(need<=upRoom)||(need>downRoom&&upRoom>=downRoom);
+    if(upRoom<=0&&downRoom<=0)up=wasAbove;   /* no room either way: the bar stays where it is */
+    if(up&&!wasAbove&&upRoom>0){fbFlip=false;fbForceAbove=true;if(si)fbarPlace(si);}
+    else if(!up&&wasAbove){fbFlip=true;if(si)fbarPlace(si);}
+    if(up&&fbar.getAttribute('data-pos')==='above')pop.classList.add('up');
+    var r2=fbar.getBoundingClientRect(), room=(pop.classList.contains('up')?r2.top-8:wh-r2.bottom-8)/kk-8;
+    if(pop.offsetHeight>room){pop.style.maxHeight=Math.max(80,Math.floor(room))+'px';pop.style.overflowY='auto';}
   }
+  /* the selected item's top and bottom edge in the window, turn handle included (as fbarPlace measures it) */
+  function itemTopPx(it){if(!it)return 0;var wr=wrap.getBoundingClientRect(),bb=itemBox(it);return wr.top+bb.y*scale;}
+  function itemBottomPx(it){if(!it)return window.innerHeight;var wr=wrap.getBoundingClientRect(),bb=itemBox(it);return wr.top+(bb.y+bb.h)*scale;}
   function fbFit(pop){   /* a menu that opens downward never runs off the bottom of the window */
     if(pop.hidden||pop.classList.contains('up'))return;
     var av=window.innerHeight-pop.getBoundingClientRect().top-8;
@@ -2861,7 +2873,7 @@ try{
     }
     var BX0=fbBox(it), FD=null;
     if(BX0)BX0.forEach(function(d){if(d.l==='Fill'&&d.k==='color')FD=d;});
-    if(A.color&&!it.p.isConnector){
+    if(A.color&&!(it.p&&it.p.isConnector)){   /* labels and buttons have no p: reading it.p.isConnector threw and left them without a bar */
       sep();
       var cname=FD?'Text color':(it.type==='frame'&&it.p.shape?'Shape color':'Color');
       var cl=el_('label','fb fb-c');cl.setAttribute('data-tip',cname);cl.setAttribute('aria-label',cname);
@@ -3121,7 +3133,7 @@ try{
       topC=Math.min(topC,hy-8/scale);botC=Math.max(botC,hy+8/scale);
     }
     x=Math.max(2,Math.min(wr.left+bb.x*scale,ww-w-2));
-    y=wr.top+topC*scale-h-10;below=(y<2)||fbFlip;
+    y=wr.top+topC*scale-h-10;below=fbForceAbove?false:((y<2)||fbFlip);
     if(below)y=wr.top+botC*scale+10;
     cx=Math.max(14,Math.min(w-14,wr.left+(bb.x+bb.w/2)*scale-x));
     fbar.style.setProperty('--cx',(cx/k)+'px');fbar.setAttribute('data-pos',below?'below':'above');
@@ -5174,7 +5186,7 @@ try{
       }).then(function(t){
         if(gen!==CONN.gen)throw CONNCANCEL;
         var catj=parseJson(t,'The list of object files');
-        S.objFile=findCustomHtml(catj);S.catalog=parseCatalog(catj);S.tgt={};
+        S.objFile=findCustomHtml(catj);S.catalog=parseCatalog(catj);pubObjs();S.tgt={};
         openApp();
         rememberConnection();
         if(!S.maps.length)say('Connected, but there are no maps. Create an empty map in PRTG first.','err');
@@ -5370,7 +5382,7 @@ try{
     b.disabled=true;$('objnote').textContent='Reading PRTG\u2019s list of object files\u2026';
     http('GET','/api/mapobject.json').then(function(t){
       var catj=parseJson(t,'The list of object files'), now;
-      S.objFile=findCustomHtml(catj)||S.objFile;S.catalog=parseCatalog(catj);
+      S.objFile=findCustomHtml(catj)||S.objFile;S.catalog=parseCatalog(catj);pubObjs();
       PV.cache={};PV.pending={};PV.inflight={};PV.queue=[];PV.applied={};
       renderObjList();pickerSync();pvSync();
       now=S.catalog.length;
@@ -6470,6 +6482,13 @@ try{
   $('exbardisc').addEventListener('click',function(){XE.stage={};if(XE.sel&&XE.cur[XE.sel])xePopulate();xeStaged();});
   /* ---- the PRTG switch at the top of the Dashboard tab ---- */
   function hostOf(u){try{return new URL(u).host;}catch(e){return String(u);}}
+  /* the object files on the connected server, for the Object builder's name check: window.PRTGOBJS [{cat,name,file}] */
+  function pubObjs(){
+    var on=!!(S&&S.maps&&S.objFile&&S.catalog);
+    window.PRTGOBJS=on?S.catalog.filter(function(c){return !c.icon;}).map(function(c){return {cat:c.cat,name:c.name,file:String(c.value).split(/[\\\/]/).pop()};}):[];
+    window.PRTGOBJHOST=on?hostOf(base()||pageOrigin()||'PRTG'):'';
+    try{document.dispatchEvent(new CustomEvent('prtgobjs'));}catch(e){}
+  }
   function swSync(){
     var connected=!!(S&&S.maps&&S.objFile), busy=!!$('pushconnect').disabled&&!connected, err=S&&S.lastErr;
     $('prtgdot').className='pdot '+(connected?'ok':(busy?'busy':(err?'err':'off')));
@@ -6478,6 +6497,7 @@ try{
     $('prtgswitch').hidden=!connected;$('prtgrefresh').hidden=!connected;$('prtgdisconnect').hidden=!connected;$('prtgcog').hidden=connected;
     if(connected&&CSSX&&CSSX.origin!==(base()||pageOrigin()||''))try{prtgCss();}catch(e){}
     window.PRTGSTATE={connected:connected,map:connected&&!!$('pushmap').value};
+    if(!connected||!window.PRTGOBJS||!window.PRTGOBJS.length)pubObjs();
     window.PRTGMAPS=connected?(S.maps||[]).map(function(m){return {id:String(m.objid),name:String(m.name||'')};}):[];
     $('next2').disabled=!window.PRTGSTATE.map;
     $('mapbgcolor').disabled=!window.PRTGSTATE.map;try{bgPreSync();}catch(e){}$('mapbgbtn').disabled=!window.PRTGSTATE.map;$('mapbgbtn').dataset.tip=window.PRTGSTATE.map?'Change the map\u2019s background color':'Connect and choose a map first';
@@ -6536,7 +6556,7 @@ try{
       return http('GET','/api/mapobject.json');
     }).then(function(t){
       var catj=parseJson(t,'The list of object files'), had=S.catalog?S.catalog.length:0;
-      S.objFile=findCustomHtml(catj)||S.objFile;S.catalog=parseCatalog(catj);
+      S.objFile=findCustomHtml(catj)||S.objFile;S.catalog=parseCatalog(catj);pubObjs();
       PV.cache={};PV.pending={};PV.inflight={};PV.queue=[];PV.applied={};
       renderObjList();pickerSync();pvSync();
       say('Refreshed. '+S.maps.length+(S.maps.length===1?' map':' maps')+', '+S.catalog.length+(S.catalog.length===1?' object file':' object files')+(S.catalog.length!==had?' ('+(S.catalog.length>had?'+':'')+(S.catalog.length-had)+').':'.'),'ok');
@@ -8036,6 +8056,33 @@ try{
     return j.join('\n');
   }
   function classOf(T){return 'ptbl_'+slugOf(T.name);}
+  /* is this object's file name, or its name in its category, already on the connected PRTG server? */
+  function nameClash(m){
+    var list=window.PRTGOBJS||[], f=fileNameOf(m).toLowerCase(), cat=String(m.cat||'').trim().toLowerCase(), nm=String(m.name||'').trim().toLowerCase(), r={file:null,name:null};
+    list.forEach(function(o){
+      if(!r.file&&String(o.file).toLowerCase()===f)r.file=o;
+      else if(!r.name&&String(o.cat).trim().toLowerCase()===cat&&String(o.name).trim().toLowerCase()===nm)r.name=o;
+    });
+    return r;
+  }
+  function nameCheckText(m){
+    var host=window.PRTGOBJHOST, on=!!(window.PRTGSTATE&&window.PRTGSTATE.connected&&host);
+    if(!on)return {k:'off',t:'Connect to PRTG to check whether this name is already used on the server.'};
+    var c=nameClash(m), f=fileNameOf(m);
+    if(c.file)return {k:'warn',t:host+' already has a file named '+f+' ('+c.file.cat+': '+c.file.name+'). Saving this one to mapobjects replaces it. Change the file name to keep both.'};
+    if(c.name)return {k:'warn',t:host+' already lists \u201C'+c.name.cat+': '+c.name.name+'\u201D (file '+c.name.file+'). Two objects with the same name in one category are hard to tell apart in PRTG\u2019s list. Change the object name to keep them apart.'};
+    return {k:'ok',t:'No file or object with this name on '+host+'.'};
+  }
+  function nameCheckShow(){
+    var nf=(TYPE&&!isLegacy(TYPE)&&!isPaste()), r=nf?nameCheckText(M()):null;
+    [].forEach.call(document.querySelectorAll('.nclash'),function(el){
+      el.hidden=!r;if(!r)return;
+      el.className='nclash nc-'+r.k;el.textContent=(r.k==='warn'?'\u26A0 ':(r.k==='ok'?'\u2713 ':''))+r.t;
+    });
+    var fn=document.getElementById('ofname');if(fn)fn.classList.toggle('nc-file',!!(r&&r.k==='warn'));
+  }
+  document.addEventListener('prtgobjs',function(){try{nameCheckShow();}catch(e){}});
+  document.addEventListener('prtgstate',function(){try{nameCheckShow();}catch(e){}});
   function fileNameOf(T){
     var f=String(T.fname||'').replace(/[^A-Za-z0-9 _.\-]/g,'').trim();
     if(!f)f=slugOf(T.name).replace(/_/g,'-');
@@ -11202,6 +11249,7 @@ try{
   /* menus in the bar: a button that opens a small panel under it */
   function obCloseMenus(){
     if(!OB.el)return;
+    if(OB.flip!=null&&OB.flip!==undefined){OB.flip=null;setTimeout(obPlaceIf,0);}
     [].forEach.call(OB.el.querySelectorAll('.fb-pop'),function(q){q.hidden=true;});
     [].forEach.call(OB.el.querySelectorAll('.fb-m > .fb-t'),function(q){q.classList.remove('on');});
   }
@@ -11210,10 +11258,27 @@ try{
     btn.type='button';btn.title=title;pop.hidden=true;
     btn.addEventListener('click',function(e){
       e.stopPropagation();var open=pop.hidden;obCloseMenus();
-      if(open){if(onOpen)onOpen(pop);pop.hidden=false;btn.classList.add('on');}
+      if(open){if(onOpen)onOpen(pop);pop.hidden=false;btn.classList.add('on');obOpenAway(pop);}
     });
     pop.addEventListener('pointerdown',function(e){e.stopPropagation();});
     fill(pop);w.appendChild(btn);w.appendChild(pop);return w;
+  }
+  /* a menu opens on the side of the bar away from the object, so it never covers what you are changing:
+     upward when the bar is above the object; when there is no room above, the bar moves under the object and the menu opens downward */
+  function obOpenAway(pop){
+    var b=OB.el, cv=document.getElementById('ocanvas'), root=obRoot(), wh=window.innerHeight, ww=document.documentElement.clientWidth;
+    pop.classList.remove('up');pop.style.maxHeight='';pop.style.left='';
+    var need=pop.offsetHeight, bh=b.offsetHeight, rr=root?root.getBoundingClientRect():b.getBoundingClientRect();
+    /* room for the menu above a bar that sits above the object, and below a bar that sits under it */
+    var upRoom=rr.top-10-bh-6-8, downRoom=wh-(rr.bottom+10+bh+6)-8;
+    var up=(need<=upRoom)||(need>downRoom&&upRoom>=downRoom);
+    if(upRoom<=0&&downRoom<=0)up=(b.getAttribute('data-pos')==='above');   /* no room either way: the bar stays where it is */
+    if(up!==(b.getAttribute('data-pos')==='above')){OB.flip=!up;obPlace();}
+    if(up)pop.classList.add('up');
+    var room=up?(b.getBoundingClientRect().top-6-8):(wh-b.getBoundingClientRect().bottom-6-8);
+    if(need>room)pop.style.maxHeight=Math.max(80,Math.floor(room))+'px';
+    var r=pop.getBoundingClientRect();
+    if(r.right>ww-8)pop.style.left=Math.round(Math.max(8-b.getBoundingClientRect().left,(pop.offsetLeft||0)-(r.right-(ww-8))))+'px';
   }
   function obDo(fn){fn();refreshUI();render();}
   function pfSel(pop,label,get,set,opts){
@@ -11334,7 +11399,7 @@ try{
   function obBuild(){
     if(TYPE==='geomap')return obBuildGeo();
     var b=OB.el, m=M(), L=function(){return M().look;};
-    if(!b){b=h('div');b.id='obar';b.setAttribute('role','toolbar');b.setAttribute('aria-label','Options for this object');document.getElementById('ocanvas').appendChild(b);OB.el=b;}
+    if(!b){b=h('div');b.id='obar';b.setAttribute('role','toolbar');b.setAttribute('aria-label','Options for this object');document.body.appendChild(b);OB.el=b;}
     b.innerHTML='';OB.syncs=[];
     var sty=h('span','fb-g');OB.sty=sty;
     var fs=h('select','fb-s');fs.title='Font';fs.setAttribute('aria-label','Font');
@@ -11354,7 +11419,7 @@ try{
       });
       OB.syncs.push(function(){[].forEach.call(g.children,function(q){q.classList.toggle('on',L().name===q.getAttribute('data-look'));});});
     }));
-    b.appendChild(obMenu('Colors','Status colors: PRTG’s own or other sets',function(pop){
+    b.appendChild(obMenu('Colors','Status colors: PRTG UI or other sets',function(pop){
       pop.appendChild(h('div','pf-h','Status colors for up, warning, down, unusual, paused, unknown'));
       var g=h('div','pf-sets');pop.appendChild(g);
       CSETS.forEach(function(x){
@@ -11511,7 +11576,7 @@ try{
   }
   function obBuildGeo(){
     var b=OB.el;
-    if(!b){b=h('div');b.id='obar';b.setAttribute('role','toolbar');b.setAttribute('aria-label','Options for this object');document.getElementById('ocanvas').appendChild(b);OB.el=b;}
+    if(!b){b=h('div');b.id='obar';b.setAttribute('role','toolbar');b.setAttribute('aria-label','Options for this object');document.body.appendChild(b);OB.el=b;}
     b.innerHTML='';OB.syncs=[];OB.sty=null;
     var shp=h('span','fb-shapes');
     GMSHAPES.forEach(function(x){
@@ -11558,19 +11623,28 @@ try{
     OB.key=obKey();
   }
   function obKey(){return TYPE+(TYPE==='icon'?IC.engine:(TYPE==='gauge'?G.engine:(TYPE==='donut'?DN.engine:(TYPE==='graph'?GR.draw+GR.kind+(GR.kind==='bars'?GR.bsrc:''):''))));}
+  /* the bar sits on the page (position:fixed), above the object, or under it when there is no room above or a menu needs the room.
+     It is kept inside the window, never inside the canvas, so neither the canvas nor the preview edge covers it. */
   function obPlace(){
-    var b=OB.el, cv=document.getElementById('ocanvas'), root, cr, rr, bh, left, top;
+    var b=OB.el, cv=document.getElementById('ocanvas'), root, cr, rr, bh, bw, left, top, ww, wh, below;
     if(!b)return;
     root=obRoot();
-    if(!obOk()||!root){b.hidden=true;return;}
-    b.hidden=false;
-    cr=cv.getBoundingClientRect();rr=root.getBoundingClientRect();
-    b.style.maxWidth=Math.max(260,cv.clientWidth-16)+'px';
-    bh=b.offsetHeight;left=rr.left-cr.left+cv.scrollLeft;top=rr.top-cr.top+cv.scrollTop-bh-12;
-    if(top<cv.scrollTop+4)top=rr.bottom-cr.top+cv.scrollTop+14;
-    left=Math.max(8,Math.min(left,cv.clientWidth+cv.scrollLeft-b.offsetWidth-8));
+    if(!obOk()||!root||!cv.getClientRects().length){b.hidden=true;return;}
+    b.hidden=false;b.classList.toggle('nosel',!OB.sel);
+    cr=cv.getBoundingClientRect();rr=root.getBoundingClientRect();ww=document.documentElement.clientWidth;wh=window.innerHeight;
+    /* the object scrolled out of the preview: no bar for it */
+    if(rr.bottom<cr.top||rr.top>cr.bottom||rr.right<cr.left||rr.left>cr.right){b.style.visibility='hidden';return;}
+    b.style.visibility='';
+    b.style.maxWidth=Math.max(260,Math.min(ww-16,Math.max(cv.clientWidth,rr.width)+40))+'px';
+    bh=b.offsetHeight;bw=b.offsetWidth;
+    top=rr.top-bh-10;below=(OB.flip===false)?false:((top<4)||OB.flip);
+    if(below)top=Math.min(rr.bottom+10,wh-bh-4);
+    left=Math.max(8,Math.min(rr.left,ww-bw-8));
+    b.setAttribute('data-pos',below?'below':'above');
     b.style.left=Math.round(left)+'px';b.style.top=Math.round(top)+'px';
   }
+  function obPlaceIf(){if(OB.el&&!OB.el.hidden)obPlace();}
+  window.addEventListener('scroll',obPlaceIf,true);window.addEventListener('resize',obPlaceIf);
   function obRefresh(){
     var cv=document.getElementById('ocanvas');
     if(!obOk()){if(OB.el)OB.el.hidden=true;cv.classList.remove('nosel');return;}
@@ -11589,7 +11663,7 @@ try{
       if(t.closest&&(t.closest('#obar')||t.closest('.edh')))return;
       var onObj=!!(root&&(root===t||root.contains(t)));
       if(onObj&&!OB.sel){OB.sel=true;cv.classList.remove('nosel');obPlace();}
-      else if(!onObj&&OB.sel){OB.sel=false;obCloseMenus();cv.classList.add('nosel');}
+      else if(!onObj&&OB.sel){OB.sel=false;obCloseMenus();cv.classList.add('nosel');if(OB.el)OB.el.classList.add('nosel');}
     },true);
     document.addEventListener('pointerdown',function(ev){if(OB.el&&!(ev.target.closest&&ev.target.closest('#obar')))obCloseMenus();});
   }
@@ -12169,6 +12243,7 @@ try{
     var text=(TYPE==='gauge')?buildGauge(G):(isPaste()?buildPaste(FRc()):(TYPE==='graph'?buildGraph(GR):(TYPE==='donut'?buildDonut(DN):(TYPE==='tile'?buildTile(TL):(TYPE==='status'?buildStatus(SC):(TYPE==='icon'?buildIcon(IC):(TYPE==='geomap'?buildGeoMap(GM):(TYPE==='links'?buildLinks(LK):buildTable(T)))))))));
     codeEl.value=text;
     document.getElementById('ofname').textContent=fileNameOf(M());
+    nameCheckShow();
     document.getElementById('ofnote').textContent=text.length+' characters';
     var inst=document.getElementById('oinstall');
     if(inst){
@@ -12361,6 +12436,7 @@ try{
     s2.appendChild(inText('Category in the designer',function(){return M().cat;},function(v){M().cat=v;},'Data Tables'));
     s2.appendChild(inText('Object name',function(){return M().name;},function(v){M().name=v;M().nameUser=(String(v).trim()!=='');}));
     s2.appendChild(inText('File name',function(){return M().fname;},function(v){M().fname=v;},'automatic'));
+    var ncp=h('p','nclash');ncp.setAttribute('role','status');s2.appendChild(ncp);
     var dz=h('div');
     dz.appendChild(pair(inNum('Size when dropped: width',function(){return M().initW;},function(v){M().initW=v;},0,4000),inNum('Height',function(){return M().initH;},function(v){M().initH=v;},0,4000)));
     dz.appendChild(h('p','note','PRTG drops every new object at 200 \u00D7 200. These numbers go in the file so it arrives at a useful size. Set either to 0 to keep PRTG\u2019s default.'));
@@ -12567,7 +12643,7 @@ try{
     var ic1=section('Status icon');secIf(ic1,isIcon);
     var icn=h('p','note','This is one of PRTG\u2019s own icon files, written exactly as PRTG ships it. Only its name and category can change. To design an icon of your own, start from \u201cBlank status icon\u201d.');showIf(icn,icStock);ic1.appendChild(icn);
     var icg=h('div');icGalEl=h('div','icgal');icg.appendChild(icGalEl);
-    icg.appendChild(inSel('Colors',function(){return IC.palette;},function(v){IC.palette=v;},[['look','The look\u2019s status colors'],['prtg','PRTG\u2019s own status colors']]));
+    icg.appendChild(inSel('Colors',function(){return IC.palette;},function(v){IC.palette=v;},[['look','The look\u2019s status colors'],['prtg','PRTG UI status colors']]));
     icg.appendChild(inSel('Text next to the icon',function(){return IC.text;},function(v){IC.text=v;},[['none','Icon only'],['name','Icon and object name'],['word','Icon and status word'],['both','Icon, name and status word']]));
     icg.appendChild(h('p','note','For text, make the object wider. The status pill always shows its word.'));
     icg.appendChild(inSel('Tooltip',function(){return IC.tip;},function(v){IC.tip=v;},[['name','Object name'],['parent','Parent device'],['both','Parent device / object name'],['none','None']]));
@@ -12596,7 +12672,7 @@ try{
       gmG.appendChild(b);
     });
     gmS.appendChild(h('label',null,'Symbol'));gmS.appendChild(gmG);showIf(gmS,function(){return TYPE==='geomap'&&GM.icon==='symbol';});gm1.appendChild(gmS);
-    gm1.appendChild(inSel('Colors',function(){return GM.palette;},function(v){GM.palette=v;PS.cur='';PS.over={};refreshUI();},[['prtg','PRTG’s own state colors'],['custom','My own colors']]));
+    gm1.appendChild(inSel('Colors',function(){return GM.palette;},function(v){GM.palette=v;PS.cur='';PS.over={};refreshUI();},[['prtg','PRTG UI status colors'],['custom','My own colors']]));
     var gmC=h('div');
     GMSTATES.forEach(function(st){gmC.appendChild(inColor(st.label,function(){return gmColor(GM,st.id);},function(v){GM.cols=GM.cols||{};GM.cols[st.id]=v;PS.over[st.id]=v;}));});
     showIf(gmC,function(){return TYPE==='geomap'&&GM.palette==='custom';});gm1.appendChild(gmC);
@@ -12978,6 +13054,14 @@ try{
     MAP[t[0]].forEach(function(title){var fs=bars[title];if(!fs)return;if(!FOLD[title]&&!FOLDOPEN[title])fs.classList.add('flat');d.appendChild(fs);if(FOLDOPEN[title]){var ob=fs.querySelector(':scope > .advbar');if(ob&&ob.getAttribute('aria-expanded')!=='true')ob.click();}});
     dp.appendChild(d);panes[t[0]]=d;
   });
+  /* the Design step's tools sit under the header: keep their sticky offset equal to the header's height, and keep the map
+     background settings (opened from the Background tool) out of that fixed block, with the settings that scroll */
+  (function(){
+    var setH=function(){document.documentElement.style.setProperty('--mbh',(mb.offsetHeight||0)+'px');};
+    setH();try{new ResizeObserver(setH).observe(mb);}catch(e){window.addEventListener('resize',setH);}
+    var bgp=document.getElementById('bgpanel'), bfs=bgp&&bgp.closest('fieldset');
+    if(bgp&&bfs&&bfs.parentNode){var hold=document.createElement('div');hold.className='bghold';hold.appendChild(bgp);bfs.parentNode.insertBefore(hold,bfs.nextSibling);}
+  })();
   var row=document.createElement('div');row.id='dtabs';row.setAttribute('role','tablist');
   DTABS.forEach(function(t){
     var b=document.createElement('button');b.type='button';b.setAttribute('role','tab');
