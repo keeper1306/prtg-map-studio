@@ -162,18 +162,39 @@ body.dash #typegrid,body.editing #typegrid{display:none}
 .ditem.pvok{outline:1px dashed transparent}
 .ditem.pvok:hover{outline-color:#7b8cc4}
 #dprev{position:static}
-.objlist{border:1px solid #c9ced9;border-radius:4px;max-height:250px;overflow:auto;background:#fff;font-size:12px;margin-top:8px;outline:none}
+.objlist{border:1px solid #c9ced9;border-radius:4px;max-height:300px;overflow:auto;background:#fff;font-size:12px;margin-top:6px;outline:none}
 .objlist:focus{border-color:#007db8;box-shadow:0 0 0 2px rgba(0,125,184,.18)}
 .objlist.off{opacity:.5;pointer-events:none}
-.objgrp{display:flex;align-items:center;gap:6px;padding:6px 8px;background:#eef1f6;border-bottom:1px solid #dfe3ec;cursor:pointer;font-weight:600;position:sticky;top:0;z-index:1;user-select:none}
-.objgrp .arr{display:inline-block;width:10px;color:#5b6a8a;font-size:10px}
-.objgrp .cnt{margin-left:auto;font-weight:400;color:#6b7280}
-.objitem{padding:5px 10px 5px 24px;cursor:grab;border-bottom:1px solid #f1f3f7;user-select:none}
-.objitem:hover{background:#f5f8fc}
-.objitem.on{background:#d6e8fa}
-.objitem.mine .nm{font-weight:600}
-.objitem[hidden]{display:none}
+/* the category buttons: every category at once, one open at a time, and they stay put while the tiles scroll */
+.objchips{margin-top:8px;position:sticky;top:0;z-index:20;background:#fff;padding:4px 0 2px}
+.objchips.off{opacity:.5;pointer-events:none}
+.chiprow{display:flex;flex-wrap:wrap;gap:4px}
+.ochip{font:11.5px/1 inherit;padding:4px 8px;border-radius:999px;border:1px solid #c9ced9;background:#fff;color:#374151;cursor:pointer;display:inline-flex;align-items:center;gap:5px;max-width:100%}
+.ochip .cn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ochip b{font-weight:600;color:#8b90a0;font-size:10px}
+.ochip:hover{border-color:#9aa4af}
+.ochip.on{background:var(--cyan);border-color:var(--cyan);color:#fff}
+.ochip.on b{color:#cdeeff}
+.msonly{display:flex;align-items:center;gap:6px;margin-top:7px;font-size:11.5px;color:#374151;cursor:pointer}
+.msonly input{margin:0}
+.msonly b{color:#6d3bd4}
+.mstag{font:600 9px/1 inherit;background:#6d3bd4;color:#fff;border-radius:3px;padding:2.5px 4px;letter-spacing:.3px}
+/* one tile per object: PRTG's own drawing of it, four to a row */
+.ogrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:7px}
+.otile{position:relative;border:1px solid #dfe3ec;border-radius:5px;padding:3px;background:#fff;cursor:grab;user-select:none;overflow:hidden;text-align:center}
+.otile:hover{border-color:#9aa4af;background:#f7fafd}
+.otile.on{border:2px solid var(--cyan);background:#eaf5fc;padding:2px}
+.otile .tpv{position:relative;height:54px;overflow:hidden;border-radius:3px;background:#f6f7f9}
+.otile .tpv iframe{position:absolute;left:50%;top:50%;border:0;transform:translate(-50%,-50%) scale(.04);transform-origin:50% 50%}
+.otile .tn{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;font-size:9px;line-height:1.2;color:#4b5563;margin-top:3px;height:33px;overflow:hidden;word-break:break-word}
+.otile.mine .tn{font-weight:600}
+.otile .tms{position:absolute;top:0;right:0;font:700 7.5px/1 inherit;background:#6d3bd4;color:#fff;padding:2.5px 3.5px;border-radius:0 0 0 5px;letter-spacing:.2px}
+.otile .tpv:after{content:"";position:absolute;left:50%;top:50%;width:14px;height:2px;margin:-1px 0 0 -7px;background:#d4d8e0;border-radius:1px}
+.otile.loaded .tpv:after,.otile.bad .tpv:after,.otile.noprev .tpv:after{display:none}
+.otile.bad .tpv,.otile.noprev .tpv{background:repeating-linear-gradient(45deg,#f6f7f9,#f6f7f9 4px,#eef0f4 4px,#eef0f4 8px)}
+.otile[hidden]{display:none}
 .objnone{padding:10px;color:#6b7280}
+.ohint{margin:0 7px 7px;font-size:11px}
 #objpv{margin-top:8px}
 .pvcap{font-size:12px;font-weight:600;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #objpvbox{position:relative;height:190px;border:1px solid #dfe3ec;border-radius:4px;overflow:hidden;background:#f4f5f8}
@@ -1037,6 +1058,10 @@ body:not(.dash):not(.objs) #panel > #preswrap:not([hidden]),body:not(.dash):not(
       <p class="note pst" id="defmsg" hidden></p>
     </div>
     <input type="text" id="objsearch" placeholder="Search by category or name" spellcheck="false" disabled>
+    <div id="objchips" class="objchips off">
+      <div class="chiprow" id="chiprow" role="tablist" aria-label="Object categories"></div>
+      <label class="msonly" id="msonly" hidden><input type="checkbox" id="objmsonly"><span>Built with <b>Map&nbsp;Studio</b> only</span><span class="mstag">MS</span></label>
+    </div>
     <div id="objlist" class="objlist off" tabindex="0" role="listbox" aria-label="PRTG object files" aria-disabled="true"></div>
     <div id="objpv" hidden>
       <div id="objpvcap" class="pvcap"></div>
