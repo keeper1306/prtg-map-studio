@@ -15,7 +15,7 @@
 var CFG={
   name:'PRTG Map Studio',
   version:'1.4.2',
-  changelog:'1.5.4: The floating bar and its menus are no longer cut off at the edge of the canvas; they can sit over the grey margin around it and stay inside the window. | 1.5.3: The floating bar\u2019s menus now open on the side away from the item, so they no longer cover it (upward when there is room, otherwise the bar drops under the item). Choosing Elbow or Curve on a flat, unglued line now moves a free end sideways so the shape shows right away. | 1.5.2: A Connector starts as one green end and one red end and takes its objects\u2019 real status colours once they report; the status color set you pick replaces those colours, on the canvas and on the live map. The text styles are presets next to the looks, and choosing one adds text editing (text, font, size, color) to the floating bar. Thickness, line type, start, end and animation are one picture-based option in the floating bar, and Kind, Line style and Color are gone from the left panel. 1.5.1: A Connector\u2019s presets are now its looks, shown as pictures, in the left panel and in the floating bar, and the separate Look picker is gone. A Connector is black until the objects it joins report a status, then takes their colours. 1.5.0: Connectors get eleven looks (soft glow, tube, beads, chevron, taper, rail, lifted, pulse, circuit, dash sweep, plain) and text on the line, with a pill, filled or text-only style. Both are chosen from pictures, in the left panel and in the floating bar, and both are drawn on the live PRTG map as well as in the designer. 1.4.9: A Connector now takes its colour from the \u201cName and status\u201d icons too. Those mark state with rollup flags (has red, has green and so on) rather than a single status class, which the preview did not read, so the line stayed one colour. The worst state present wins. 1.4.8: The Target panel now says what status the preview reported for the selected object, and lists the class names it found in the preview, so you can see why a Connector is or is not taking its colour. 1.4.7: An object dragged onto the canvas now starts on something of its own kind. Every object used to begin on the Local Probe unless it only took a sensor, so anything meant to read a device showed probe data until you picked a real target. The tool now reads what the object actually accepts — PRTG files declare probe, group, device or sensor, often several at once — and starts it on the most specific of those: a device where one will do, otherwise a group, otherwise the probe, and a sensor for the files that only take a sensor. The first device and group on the server are looked up alongside the default sensor, and “This object takes…” now offers all four kinds if you want to correct one. A default you have chosen yourself still wins. 1.4.6: The Map designer now draws a Connector in the colours the live map will actually show: each end takes the state of the object it is glued to, blending from one to the other when they differ. Until now the canvas painted every status-coloured link flat blue, so there was no way to see beforehand what the pushed version would look like. The state is read out of PRTG’s own drawing of each object, so this needs the live object previews switched on — with them off, or for an end whose object reports no state, the line simply keeps its plain colour instead of inventing one. 1.4.5: A Connector now really does take its colour from the two objects it joins, instead of staying one flat colour on the live map. Two separate things were stopping it. PRTG marks an ordinary device or sensor icon with a different status class than the link was looking for, so it found no status at all on exactly the icons people connect most — it now reads that form as well. And a Connector that did not follow the shared Link style was locked to a single colour permanently, because choosing any line style for it quietly turned status colouring off; such a Connector now shows status by default, and a new “Colour” setting goes back to one colour when that is what you want. Connectors already on a map keep their old look until they are pushed again. 1.4.4: The Map step has a new “Clear the canvas” option under the list of loaded items. It takes the map you loaded back off the canvas without sending anything to PRTG, so the map itself is untouched — useful when the wrong map was loaded, or when you simply want an empty canvas to work on. If edits or deletion marks are waiting on those items it asks for a second click first, so none of that work is thrown away by accident. 1.4.3: Connectors pushed to a map were still coming out invisible, with no line and no status colour, and the reason was found on the live server itself: PRTG rewrites the quotes around an HTML attribute when it saves an object, which cut the connector’s own drawing code short after thirty-seven characters, so there was never anything left to run. That code now travels in an encoded form that contains no quotes at all, so saving cannot break it apart. A connector also no longer confuses one icon with another when several icons are still bound to the same PRTG object: each end now picks the icon standing where that end was glued, so the line joins the right two icons and each end shows its own status colour. 1.4.2: A pushed connector was coming out empty on the live map, with no colored status and no visible line. The cause: PRTG strips <script> tags out of a map object’s HTML when it is saved, so the connector’s own live-drawing code was being thrown away before it ever reached the page. It now starts itself a different way (through an image element’s error handler, which survives PRTG’s save), so the line draws and updates again. While tracking that down: a connector glued to a PRTG probe or other object with many children now reads its live status correctly too — those use a different set of status flags than a single sensor or device does, worst status wins when several apply. A connector also now notices a status change on a nested part of its target, not only the target element itself, and lines up against the actual icon picture rather than the wider clickable box around it, so the endpoint lands on the icon instead of beside it. 1.4.1: Connector fixes. Dragging a Connector from Build onto the canvas works now (it silently did nothing before); drop it on top of an object and it glues itself to the nearest side right away. Gluing anywhere — Connector or a Shapes line — now only offers the four side centers, not a free slide along the edge. A connector reads live status from the state PRTG itself put on the object (the same class PRTG and our own Icon objects use), not just a plain background color, so Icon-object endpoints now color correctly too. The Selected panel (title, shape gallery, and the inline Shape section when editing in place) calls a Connector a Connector and only offers Line, Arrow and Flowing arrow for it, never a flowchart box or callout. 1.4.0: A new Connector tool, next to Shape in Build — adds a line already set up to glue to two objects and push to PRTG as a real, self-updating link (Push as a live link in PRTG starts switched on). Shapes keeps its own plain Lines and arrows, unchanged and never pushed live unless you ask. 1.3.1: PRTG’s own built-in icon sets (Default Icons A/B, Icons A/B/C and their static variants, Static Images — whatever this server’s list has) now show up alongside the object files in Existing PRTG objects. Pick one, bind it to a device, sensor or group like any other object, and it recolors itself with that target’s live status once pushed, the same as PRTG’s own icons. 1.3.0: A glued connector can now be pushed as a real, self-updating line on the map itself (“Push as a live link in PRTG” on a connector with both ends glued) — separate from PRTG’s own native connections, which this tool still cannot create (there is no API for that; PRTG only builds them from a hand drag in its own Map Designer). Once pushed, the line finds its two objects on the live page by itself and redraws its own path whenever either one moves, with no re-push needed; with Match Link style left on, it also recolors itself from each end’s live status, split two ways like PRTG’s own lines when the two differ. 1.2.1: A connector’s look now matches the shared Link style by default (the same curve/dash/color/markers/flow settings as the Link style object you push to PRTG), so the Map designer previews what the live map will actually show. Per-connector style is still there — untick Match Link style on a line to set its own thickness, line type, dash, markers and animation. Choosing a specific line format from the shape gallery now also switches that line off Match Link style automatically. The Link style preview in the Object builder also now shows one point-to-point link instead of a branching demo (PRTG links are always point to point). 1.2.0: Map designer lines are now connectors — drag either end onto a frame, shape or PRTG object and it glues there (a highlight shows the drop target); glued ends follow that object when it is moved, resized or rotated, and come unglued automatically if the object is deleted. A Branch button on a glued line adds another end from the same start, for one-to-many connections. 1.1.1: Link style animation now runs on systems that ask for reduced motion (it was switched off there); a new option pauses it again if you want that. 1.1.0: new Link style object in the Object builder. Curve, S-curve, elbow, rounded elbow and arc lines; solid, dashed, dotted and dash-dot styles; dot and arrow markers; optional flowing dashes. The straight lines PRTG draws are hidden from the first moment, so they never flash. 1.0.0: items can be reordered on the canvas. Bring to front, send backward, send to back and a Layer control next to Width and Height in Selected; Up/Down buttons in the Layers tab. Items already on the chosen PRTG map now also show up in the Layers tab (read-only, sorted by their real layer), with a link back to Existing PRTG maps to change them there. v64: one Existing PRTG maps section at the bottom of the Add tab holds the map choice and everything from Already on this map; it can be minimized. v63: the map choice has its own Map section on the Add tab, with Already on this map (show and clear items) under it; Publish keeps Push to PRTG and Save and load layout, and shows which map it will push to. v62: the Button tool has the same groups of presets as the Label tool (Basic, Map buttons, Status buttons, and the eight table, gauge and frame looks). v61: the chart.svg picture is now requested with exactly the address PRTG put in the page (PRTG signs it with a URL hash, so any change gives 401). v60: Collect PRTG samples blanks out passhash, username, map id and URL hash in the saved file, and also saves the chart.svg picture of up to two graph items. v59: a Clear items from the canvas button removes the items shown by Show items already on this map (it asks twice if you have unapplied changes). v58: choosing a Build tile (Frame, Label, Button, Background, Shape) closes the Existing PRTG objects section, so the area below stays blank until the Existing PRTG objects tile is pressed. v57: copy, cut and paste are back on the Dashboard (Ctrl+C, Ctrl+X, Ctrl+V and the Copy and Paste buttons; a frame is copied with everything inside it). v56: a Refresh object list button in Existing PRTG objects reads PRTG\u2019s list of object files again without reconnecting. v55: the Dashboard tabs (Add, Selected, Layers, Publish) and the Build tiles (click then place, double-click, drag) are in the file; their tab names, grouping and timing are now in config. v54: the ready-made objects section is gone. v53: signing in with a username and passhash is required to connect, in a new login card. v52: previews of counting objects (status counts, donuts) read every sensor, not the first five. v50: Status counts object (tiles of sensors by status) and the Brand navy look. v49: authorship marks in the core. v48: after a push the map is read back; items PRTG did not keep are added again and any that still fail are named. v47: shape presets give each look its own color and thickness; push and edit results show over the Dashboard and a failed login opens the login panel. v46: status dots in the device tree; the object preview can be dragged onto the canvas. v45: graphs and icons are edited in the preview too. v44: gauges and donuts are edited in the preview like tables (drag the handles, double-click the title). v43: Look presets for frames, backgrounds and the new shapes (lines, arrows, flowing arrows). v42: notes became hover icons, undo/redo arrows over the canvas, a tidier Dashboard panel, a PRTG connection switch. v41: click, drag, resize, delete on the canvas. v40: edit, move, delete with Review and Undo. v39: existing items show the object they are bound to (name, type, place) and a summary of what they show. v38: shows the items already on a map. v37: Collect samples reads the map items. v36: frames edited in the Objects view. v35: no comments in generated files. v34: file list. v33: install script. v32: config, tabs.',
+  changelog:'1.5.5: Nine line types for a Connector (straight, elbow, square elbow, two corners, two zig-zags, S-curve and bow), drawn the same on the canvas and on the live map. A Connector can now bind to the middle of an object as well as its four sides; a line bound to the middle goes behind the object, so it comes out from under it, and the object shows its five binding points while you drag an end. | 1.5.4: The floating bar and its menus are no longer cut off at the edge of the canvas; they can sit over the grey margin around it and stay inside the window. | 1.5.3: The floating bar\u2019s menus now open on the side away from the item, so they no longer cover it (upward when there is room, otherwise the bar drops under the item). Choosing Elbow or Curve on a flat, unglued line now moves a free end sideways so the shape shows right away. | 1.5.2: A Connector starts as one green end and one red end and takes its objects\u2019 real status colours once they report; the status color set you pick replaces those colours, on the canvas and on the live map. The text styles are presets next to the looks, and choosing one adds text editing (text, font, size, color) to the floating bar. Thickness, line type, start, end and animation are one picture-based option in the floating bar, and Kind, Line style and Color are gone from the left panel. 1.5.1: A Connector\u2019s presets are now its looks, shown as pictures, in the left panel and in the floating bar, and the separate Look picker is gone. A Connector is black until the objects it joins report a status, then takes their colours. 1.5.0: Connectors get eleven looks (soft glow, tube, beads, chevron, taper, rail, lifted, pulse, circuit, dash sweep, plain) and text on the line, with a pill, filled or text-only style. Both are chosen from pictures, in the left panel and in the floating bar, and both are drawn on the live PRTG map as well as in the designer. 1.4.9: A Connector now takes its colour from the \u201cName and status\u201d icons too. Those mark state with rollup flags (has red, has green and so on) rather than a single status class, which the preview did not read, so the line stayed one colour. The worst state present wins. 1.4.8: The Target panel now says what status the preview reported for the selected object, and lists the class names it found in the preview, so you can see why a Connector is or is not taking its colour. 1.4.7: An object dragged onto the canvas now starts on something of its own kind. Every object used to begin on the Local Probe unless it only took a sensor, so anything meant to read a device showed probe data until you picked a real target. The tool now reads what the object actually accepts — PRTG files declare probe, group, device or sensor, often several at once — and starts it on the most specific of those: a device where one will do, otherwise a group, otherwise the probe, and a sensor for the files that only take a sensor. The first device and group on the server are looked up alongside the default sensor, and “This object takes…” now offers all four kinds if you want to correct one. A default you have chosen yourself still wins. 1.4.6: The Map designer now draws a Connector in the colours the live map will actually show: each end takes the state of the object it is glued to, blending from one to the other when they differ. Until now the canvas painted every status-coloured link flat blue, so there was no way to see beforehand what the pushed version would look like. The state is read out of PRTG’s own drawing of each object, so this needs the live object previews switched on — with them off, or for an end whose object reports no state, the line simply keeps its plain colour instead of inventing one. 1.4.5: A Connector now really does take its colour from the two objects it joins, instead of staying one flat colour on the live map. Two separate things were stopping it. PRTG marks an ordinary device or sensor icon with a different status class than the link was looking for, so it found no status at all on exactly the icons people connect most — it now reads that form as well. And a Connector that did not follow the shared Link style was locked to a single colour permanently, because choosing any line style for it quietly turned status colouring off; such a Connector now shows status by default, and a new “Colour” setting goes back to one colour when that is what you want. Connectors already on a map keep their old look until they are pushed again. 1.4.4: The Map step has a new “Clear the canvas” option under the list of loaded items. It takes the map you loaded back off the canvas without sending anything to PRTG, so the map itself is untouched — useful when the wrong map was loaded, or when you simply want an empty canvas to work on. If edits or deletion marks are waiting on those items it asks for a second click first, so none of that work is thrown away by accident. 1.4.3: Connectors pushed to a map were still coming out invisible, with no line and no status colour, and the reason was found on the live server itself: PRTG rewrites the quotes around an HTML attribute when it saves an object, which cut the connector’s own drawing code short after thirty-seven characters, so there was never anything left to run. That code now travels in an encoded form that contains no quotes at all, so saving cannot break it apart. A connector also no longer confuses one icon with another when several icons are still bound to the same PRTG object: each end now picks the icon standing where that end was glued, so the line joins the right two icons and each end shows its own status colour. 1.4.2: A pushed connector was coming out empty on the live map, with no colored status and no visible line. The cause: PRTG strips <script> tags out of a map object’s HTML when it is saved, so the connector’s own live-drawing code was being thrown away before it ever reached the page. It now starts itself a different way (through an image element’s error handler, which survives PRTG’s save), so the line draws and updates again. While tracking that down: a connector glued to a PRTG probe or other object with many children now reads its live status correctly too — those use a different set of status flags than a single sensor or device does, worst status wins when several apply. A connector also now notices a status change on a nested part of its target, not only the target element itself, and lines up against the actual icon picture rather than the wider clickable box around it, so the endpoint lands on the icon instead of beside it. 1.4.1: Connector fixes. Dragging a Connector from Build onto the canvas works now (it silently did nothing before); drop it on top of an object and it glues itself to the nearest side right away. Gluing anywhere — Connector or a Shapes line — now only offers the four side centers, not a free slide along the edge. A connector reads live status from the state PRTG itself put on the object (the same class PRTG and our own Icon objects use), not just a plain background color, so Icon-object endpoints now color correctly too. The Selected panel (title, shape gallery, and the inline Shape section when editing in place) calls a Connector a Connector and only offers Line, Arrow and Flowing arrow for it, never a flowchart box or callout. 1.4.0: A new Connector tool, next to Shape in Build — adds a line already set up to glue to two objects and push to PRTG as a real, self-updating link (Push as a live link in PRTG starts switched on). Shapes keeps its own plain Lines and arrows, unchanged and never pushed live unless you ask. 1.3.1: PRTG’s own built-in icon sets (Default Icons A/B, Icons A/B/C and their static variants, Static Images — whatever this server’s list has) now show up alongside the object files in Existing PRTG objects. Pick one, bind it to a device, sensor or group like any other object, and it recolors itself with that target’s live status once pushed, the same as PRTG’s own icons. 1.3.0: A glued connector can now be pushed as a real, self-updating line on the map itself (“Push as a live link in PRTG” on a connector with both ends glued) — separate from PRTG’s own native connections, which this tool still cannot create (there is no API for that; PRTG only builds them from a hand drag in its own Map Designer). Once pushed, the line finds its two objects on the live page by itself and redraws its own path whenever either one moves, with no re-push needed; with Match Link style left on, it also recolors itself from each end’s live status, split two ways like PRTG’s own lines when the two differ. 1.2.1: A connector’s look now matches the shared Link style by default (the same curve/dash/color/markers/flow settings as the Link style object you push to PRTG), so the Map designer previews what the live map will actually show. Per-connector style is still there — untick Match Link style on a line to set its own thickness, line type, dash, markers and animation. Choosing a specific line format from the shape gallery now also switches that line off Match Link style automatically. The Link style preview in the Object builder also now shows one point-to-point link instead of a branching demo (PRTG links are always point to point). 1.2.0: Map designer lines are now connectors — drag either end onto a frame, shape or PRTG object and it glues there (a highlight shows the drop target); glued ends follow that object when it is moved, resized or rotated, and come unglued automatically if the object is deleted. A Branch button on a glued line adds another end from the same start, for one-to-many connections. 1.1.1: Link style animation now runs on systems that ask for reduced motion (it was switched off there); a new option pauses it again if you want that. 1.1.0: new Link style object in the Object builder. Curve, S-curve, elbow, rounded elbow and arc lines; solid, dashed, dotted and dash-dot styles; dot and arrow markers; optional flowing dashes. The straight lines PRTG draws are hidden from the first moment, so they never flash. 1.0.0: items can be reordered on the canvas. Bring to front, send backward, send to back and a Layer control next to Width and Height in Selected; Up/Down buttons in the Layers tab. Items already on the chosen PRTG map now also show up in the Layers tab (read-only, sorted by their real layer), with a link back to Existing PRTG maps to change them there. v64: one Existing PRTG maps section at the bottom of the Add tab holds the map choice and everything from Already on this map; it can be minimized. v63: the map choice has its own Map section on the Add tab, with Already on this map (show and clear items) under it; Publish keeps Push to PRTG and Save and load layout, and shows which map it will push to. v62: the Button tool has the same groups of presets as the Label tool (Basic, Map buttons, Status buttons, and the eight table, gauge and frame looks). v61: the chart.svg picture is now requested with exactly the address PRTG put in the page (PRTG signs it with a URL hash, so any change gives 401). v60: Collect PRTG samples blanks out passhash, username, map id and URL hash in the saved file, and also saves the chart.svg picture of up to two graph items. v59: a Clear items from the canvas button removes the items shown by Show items already on this map (it asks twice if you have unapplied changes). v58: choosing a Build tile (Frame, Label, Button, Background, Shape) closes the Existing PRTG objects section, so the area below stays blank until the Existing PRTG objects tile is pressed. v57: copy, cut and paste are back on the Dashboard (Ctrl+C, Ctrl+X, Ctrl+V and the Copy and Paste buttons; a frame is copied with everything inside it). v56: a Refresh object list button in Existing PRTG objects reads PRTG\u2019s list of object files again without reconnecting. v55: the Dashboard tabs (Add, Selected, Layers, Publish) and the Build tiles (click then place, double-click, drag) are in the file; their tab names, grouping and timing are now in config. v54: the ready-made objects section is gone. v53: signing in with a username and passhash is required to connect, in a new login card. v52: previews of counting objects (status counts, donuts) read every sensor, not the first five. v50: Status counts object (tiles of sensors by status) and the Brand navy look. v49: authorship marks in the core. v48: after a push the map is read back; items PRTG did not keep are added again and any that still fail are named. v47: shape presets give each look its own color and thickness; push and edit results show over the Dashboard and a failed login opens the login panel. v46: status dots in the device tree; the object preview can be dragged onto the canvas. v45: graphs and icons are edited in the preview too. v44: gauges and donuts are edited in the preview like tables (drag the handles, double-click the title). v43: Look presets for frames, backgrounds and the new shapes (lines, arrows, flowing arrows). v42: notes became hover icons, undo/redo arrows over the canvas, a tidier Dashboard panel, a PRTG connection switch. v41: click, drag, resize, delete on the canvas. v40: edit, move, delete with Review and Undo. v39: existing items show the object they are bound to (name, type, place) and a summary of what they show. v38: shows the items already on a map. v37: Collect samples reads the map items. v36: frames edited in the Objects view. v35: no comments in generated files. v34: file list. v33: install script. v32: config, tabs.',
   /* the Dashboard canvas when the page opens, and the size a new Frame starts at */
   canvas:{w:1920,h:1080,grid:10,zoom:'fit'},
   frame:{w:360,h:220},
@@ -95,7 +95,7 @@ var CFG={
     previewWith:'prtgMapTool.previewWith'   /* the PRTG server address is added after this name */
   }
 };
-CFG.version=(function(){try{return chrome.runtime.getManifest().version;}catch(e){return '1.5.4';}})();   /* the version is the extension's own, from manifest.json */
+CFG.version=(function(){try{return chrome.runtime.getManifest().version;}catch(e){return '1.5.5';}})();   /* the version is the extension's own, from manifest.json */
 document.title=CFG.name+' v'+CFG.version;
 document.getElementById('ver').textContent='v'+CFG.version;
 document.getElementById('dw').value=CFG.canvas.w;
@@ -167,6 +167,7 @@ function connNorm(p){
   if(p.label&&!p.labelStyle)p.labelStyle='pill';
   return p;
 }
+var LNTYPES=[['straight','Straight'],['elbow','Elbow'],['sharp','Square elbow'],['corner','Corner, across first'],['cornerv','Corner, down first'],['zig','Zig-zag across'],['zigv','Zig-zag down'],['curve','S-curve'],['bow','Bow']];
 var LNLOOKS=[['plain','Plain'],['glow','Soft glow'],['tube','Tube'],['beads','Beads'],['chevron','Chevron'],['taper','Taper'],['rail','Rail'],['lifted','Lifted'],['pulse','Pulse'],['circuit','Circuit'],['sweep','Dash sweep']];
 function mkLook(S){
   var NS='http://www.w3.org/2000/svg', w=S.w, u=String(S.uid).replace(/[^\w-]/g,''), look=S.look||'plain', d=S.d, paint=S.paint, c1=S.c1, c2=S.c2||S.c1, defs='', body='', over='', m=null, L=0, run=!!S.anim&&!S.thumb, sp=S.sp||1.6;
@@ -2031,13 +2032,14 @@ try{
     it.p.ln=true;
   }
   /* ---------- connectors: glue a line's end to a box so it follows that box ---------- */
-  /* a glue is {id, s:'l'|'r'|'t'|'b', t:0..1}: which side of the target, and how far along it */
+  /* a glue is {id, s:'l'|'r'|'t'|'b'|'c', t:0..1}: which side of the target, and how far along it */
   function connAnchorAbs(g){
     var it=byId(g.id);if(!it)return null;
     var hw=it.w/2, hh=it.h/2, lx, ly;
     if(g.s==='l'){lx=-hw;ly=-hh+2*hh*g.t;}
     else if(g.s==='r'){lx=hw;ly=-hh+2*hh*g.t;}
     else if(g.s==='t'){ly=-hh;lx=-hw+2*hw*g.t;}
+    else if(g.s==='c'){lx=0;ly=0;}   /* the middle: the line runs in behind the object */
     else{ly=hh;lx=-hw+2*hw*g.t;}
     var rot=(+it.rot||0)*Math.PI/180, co=Math.cos(rot), si=Math.sin(rot), cx=it.x+hw, cy=it.y+hh;
     return [cx+lx*co-ly*si,cy+lx*si+ly*co];
@@ -2058,12 +2060,28 @@ try{
       if((li.p.ga&&ids[li.p.ga.id])||(li.p.gb&&ids[li.p.gb.id])){connSyncOne(li);refreshItem(li);}
     });
   }
-  var CONN_HOV=null;
-  function connHilite(id){
-    if(CONN_HOV===id)return;
-    if(CONN_HOV!=null){var o=nodeOf(CONN_HOV);if(o){o.style.outline='';o.style.outlineOffset='';}}
-    CONN_HOV=id;
-    if(id!=null){var n=nodeOf(id);if(n){n.style.outline='2px solid #2f80ed';n.style.outlineOffset='2px';}}
+  var CONN_HOV=null, CONN_HID=null;
+  /* the five binding points of the object under a dragged line end: four sides and the middle (which sends the line behind it) */
+  function connHilite(id,side){
+    var key=(id==null)?null:id+'|'+(side||'');
+    if(CONN_HOV===key)return;
+    if(CONN_HID!=null){var o=nodeOf(CONN_HID);if(o){o.style.outline='';o.style.outlineOffset='';[].forEach.call(o.querySelectorAll('.cpt'),function(d){d.parentNode.removeChild(d);});}}
+    CONN_HOV=key;CONN_HID=id;
+    if(id!=null){
+      var n=nodeOf(id);
+      if(n){
+        n.style.outline='2px solid #2f80ed';n.style.outlineOffset='2px';
+        [['l',0,50],['r',100,50],['t',50,0],['b',50,100],['c',50,50]].forEach(function(q){
+          var d=document.createElement('i');d.className='cpt'+(q[0]===side?' on':'');d.style.left=q[1]+'%';d.style.top=q[2]+'%';d.title=q[0]==='c'?'Middle: the line goes behind the object':'';n.appendChild(d);
+        });
+      }
+    }
+  }
+  /* a line glued to an object's middle goes behind that object, so it seems to come out from under it */
+  function connBack(li){
+    var m=null;
+    ['ga','gb'].forEach(function(k){var g=li.p[k],t=g&&g.s==='c'?byId(g.id):null;if(t){var o=ordOf(t);if(m===null||o<m)m=o;}});
+    if(m!==null&&ordOf(li)>=m)li.ord=m-0.5;
   }
   /* what the pointer is over, for gluing a dragged line end: the topmost box item, and the nearest point on its edge */
   function connHit(pt,excludeId){
@@ -2079,6 +2097,7 @@ try{
     if(!best)return null;
     var hw=best.w/2, hh=best.h/2, dl=Math.abs(lx+hw), dr=Math.abs(lx-hw), dt=Math.abs(ly+hh), db=Math.abs(ly-hh), m=Math.min(dl,dr,dt,db), s;
     if(m===dl)s='l';else if(m===dr)s='r';else if(m===dt)s='t';else s='b';
+    if(Math.abs(lx)<=Math.max(12,hw*0.3)&&Math.abs(ly)<=Math.max(12,hh*0.3))s='c';   /* right in the middle */
     return {id:best.id,s:s,t:0.5};   /* always the center of that side: four fixed points per object, not a free slide along the edge */
   }
   /* "Branch": a second (or third...) end from the same start, so one source fans out to several targets */
@@ -2094,14 +2113,26 @@ try{
   function lnSvg(o,A,B,w,h,thumb){
     var t=o.t, c=o.c, dx=B[0]-A[0], dy=B[1]-A[1], hz=Math.abs(dx)>=Math.abs(dy), sg=function(v){return v<0?-1:1;}, R=function(n){return Math.round(n*100)/100;},
         L=Math.max(8,t*2.6), HW=Math.max(5,t*1.5), dist=Math.sqrt(dx*dx+dy*dy), tr, pts, i, d, dash='', cap='round', P=0, out='', s, a2=A.slice(), b2=B.slice(), C1, C2;
-    if(o.type==='elbow'||o.type==='curve')tr=hz?[sg(dx),0]:[0,sg(dy)];
-    else tr=dist<0.01?[1,0]:[dx/dist,dy/dist];
+    var ty=o.type, ts, te, bowC=null, hx=[sg(dx),0], vy=[0,sg(dy)];
+    if(ty==='bow'){var bk=dist*0.22*(B[0]<A[0]?-1:1);bowC=[(A[0]+B[0])/2+(dy/(dist||1))*bk,(A[1]+B[1])/2-(dx/(dist||1))*bk];
+      var u1=[bowC[0]-A[0],bowC[1]-A[1]], u2=[B[0]-bowC[0],B[1]-bowC[1]], n1=Math.sqrt(u1[0]*u1[0]+u1[1]*u1[1])||1, n2=Math.sqrt(u2[0]*u2[0]+u2[1]*u2[1])||1;ts=[u1[0]/n1,u1[1]/n1];te=[u2[0]/n2,u2[1]/n2];}
+    else if(ty==='corner'){ts=hx;te=vy;}
+    else if(ty==='cornerv'){ts=vy;te=hx;}
+    else if(ty==='zig'){ts=te=hx;}
+    else if(ty==='zigv'){ts=te=vy;}
+    else if(ty==='elbow'||ty==='sharp'||ty==='curve'){ts=te=hz?hx:vy;}
+    else{ts=te=dist<0.01?[1,0]:[dx/dist,dy/dist];}
+    tr=te;
     s=Math.min(L*0.9,dist*0.45);
-    if(o.ha==='arrow'){a2[0]=A[0]+tr[0]*s;a2[1]=A[1]+tr[1]*s;}
-    if(o.hb==='arrow'){b2[0]=B[0]-tr[0]*s;b2[1]=B[1]-tr[1]*s;}
-    if(o.type==='elbow'){
-      pts=hz?[a2,[(A[0]+B[0])/2,A[1]],[(A[0]+B[0])/2,B[1]],b2]:[a2,[A[0],(A[1]+B[1])/2],[B[0],(A[1]+B[1])/2],b2];
-      var q=[pts[0]], rr=Math.min(14,Math.max(0,Math.min(Math.abs(dx),Math.abs(dy))/2));
+    if(o.ha==='arrow'){a2[0]=A[0]+ts[0]*s;a2[1]=A[1]+ts[1]*s;}
+    if(o.hb==='arrow'){b2[0]=B[0]-te[0]*s;b2[1]=B[1]-te[1]*s;}
+    if(ty==='elbow'||ty==='sharp'||ty==='corner'||ty==='cornerv'||ty==='zig'||ty==='zigv'){
+      if(ty==='corner')pts=[a2,[B[0],A[1]],b2];
+      else if(ty==='cornerv')pts=[a2,[A[0],B[1]],b2];
+      else if(ty==='zig')pts=[a2,[A[0]+dx*0.3,A[1]],[A[0]+dx*0.7,B[1]],b2];
+      else if(ty==='zigv')pts=[a2,[A[0],A[1]+dy*0.3],[B[0],A[1]+dy*0.7],b2];
+      else pts=hz?[a2,[(A[0]+B[0])/2,A[1]],[(A[0]+B[0])/2,B[1]],b2]:[a2,[A[0],(A[1]+B[1])/2],[B[0],(A[1]+B[1])/2],b2];
+      var q=[pts[0]], rr=(ty==='elbow'||ty==='corner'||ty==='cornerv')?Math.min(14,Math.max(0,Math.min(Math.abs(dx),Math.abs(dy))/2)):0;
       for(i=1;i<pts.length;i++)if(Math.abs(pts[i][0]-q[q.length-1][0])+Math.abs(pts[i][1]-q[q.length-1][1])>0.01)q.push(pts[i]);
       d='M'+R(q[0][0])+' '+R(q[0][1]);
       for(i=1;i<q.length;i++){
@@ -2110,7 +2141,9 @@ try{
           d+='L'+R(p1[0]-(p1[0]-p0[0])/l1*r1)+' '+R(p1[1]-(p1[1]-p0[1])/l1*r1)+'Q'+R(p1[0])+' '+R(p1[1])+' '+R(p1[0]+(p2[0]-p1[0])/l2*r1)+' '+R(p1[1]+(p2[1]-p1[1])/l2*r1);
         }else d+='L'+R(q[i][0])+' '+R(q[i][1]);
       }
-    }else if(o.type==='curve'){
+    }else if(ty==='bow'){
+      d='M'+R(a2[0])+' '+R(a2[1])+'Q'+R(bowC[0])+' '+R(bowC[1])+' '+R(b2[0])+' '+R(b2[1]);
+    }else if(ty==='curve'){
       C1=hz?[A[0]+dx/2,A[1]]:[A[0],A[1]+dy/2];C2=hz?[A[0]+dx/2,B[1]]:[B[0],A[1]+dy/2];
       d='M'+R(a2[0])+' '+R(a2[1])+'C'+R(C1[0])+' '+R(C1[1])+' '+R(C2[0])+' '+R(C2[1])+' '+R(b2[0])+' '+R(b2[1]);
     }else d='M'+R(a2[0])+' '+R(a2[1])+'L'+R(b2[0])+' '+R(b2[1]);
@@ -2145,7 +2178,7 @@ try{
       if(kind==='dot')return '<circle cx="'+R(Pt[0])+'" cy="'+R(Pt[1])+'" r="'+R(Math.max(t*1.2,4))+'" fill="'+hc+'"/>';
       return '';
     }
-    out+=head(o.ha,A,[-tr[0],-tr[1]],c)+head(o.hb,B,tr,c2)+(lk?lk.over:'')+'</svg>';
+    out+=head(o.ha,A,[-ts[0],-ts[1]],c)+head(o.hb,B,te,c2)+(lk?lk.over:'')+'</svg>';
     return out;
   }
   /* Is this line meant to take its colour from what it joins? Matched connectors follow the shared Link
@@ -2587,7 +2620,7 @@ try{
         if(p.isConnector)ml.push({l:'Colour',k:'sel',opts:[['status','From each end’s status'],['custom','One colour']],
           a:[function(){return p.colorMode==='custom'?'custom':'status';},function(x){p.colorMode=x;}]});
         return ml.concat([{l:'Thickness',k:'num',min:1,max:40,a:P('thick',6)},
-          {l:'Line type',k:'sel',opts:[['straight','Straight'],['elbow','Elbow'],['curve','Curve']],a:LP('lt','type')},
+          {l:'Line type',k:'sel',opts:LNTYPES,a:LP('lt','type')},
           {l:'Line style',k:'sel',opts:[['solid','Solid'],['dashed','Dashed'],['dotted','Dotted'],['dashdot','Dash and dot']],a:LP('dash')},
           {l:'Start',k:'sel',opts:LNHEADS,a:LP('ha')},{l:'End',k:'sel',opts:LNHEADS,a:LP('hb')},
           {l:'Animate flow',k:'chk',a:[function(){return lnOpts(p).anim;},function(x){p.anim=!!x;}]},
@@ -2910,6 +2943,7 @@ try{
       var lnPick=function(title,items,get,set,thumb){
         lsp.appendChild(el_('div','pgroup',title));
         var grid=el_('div','shpgrid'), btns=[];
+        if(items.length>4&&items.length%3===0)grid.style.gridTemplateColumns='repeat(3,1fr)';
         items.forEach(function(x){
           var b=el_('button','shpb'+(get()===x[0]?' on':''));b.type='button';b.title=x[1];b.setAttribute('aria-label',x[1]);
           b.innerHTML=thumb(x[0]);
@@ -2922,7 +2956,7 @@ try{
       var thi=el_('input');thi.type='number';thi.min='1';thi.max='40';thi.value=it.p.thick||5;fbStop(thi);
       thi.addEventListener('input',function(){var n=parseFloat(thi.value);if(n>=1&&n<=40)soft(function(){it.p.thick=n;});});
       thk.appendChild(thi);lsp.appendChild(thk);
-      lnPick('Line type',[['straight','Straight'],['elbow','Elbow'],['curve','Curve']],function(){return lnOpts(it.p).type;},function(v){it.p.lt=v;lnShowType(it,v);},function(v){return lnThumb({lt:v,hb:'none'});});
+      lnPick('Line type',LNTYPES,function(){return lnOpts(it.p).type;},function(v){it.p.lt=v;lnShowType(it,v);},function(v){return lnThumb({lt:v,hb:'none'});});
       lnPick('Start',LNHEADS,function(){return lnOpts(it.p).ha;},function(v){it.p.ha=v;},function(v){return lnThumb({lt:'straight',ha:v,hb:'none',flat:1});});
       lnPick('End',LNHEADS,function(){return lnOpts(it.p).hb;},function(v){it.p.hb=v;},function(v){return lnThumb({lt:'straight',ha:'none',hb:v,flat:1});});
       var anr=el_('label','fb-row');anr.appendChild(el_('span',null,'Animate the flow'));
@@ -3887,9 +3921,9 @@ try{
       if(type==='connector'&&extra&&extra.at){   /* dropped (or placed) on top of an object: glue the start end to the nearest side right away */
         var hit=connHit([extra.at.x,extra.at.y],it.id);
         if(hit){
-          var A=connAnchorAbs(hit), away={l:[-170,0],r:[170,0],t:[0,-170],b:[0,170]}[hit.s];
+          var A=connAnchorAbs(hit), away={l:[-170,0],r:[170,0],t:[0,-170],b:[0,170],c:[170,0]}[hit.s];
           lnSetAbs(it,A,[A[0]+away[0],A[1]+away[1]]);
-          it.p.ga={id:hit.id,s:hit.s,t:hit.t};
+          it.p.ga={id:hit.id,s:hit.s,t:hit.t};connBack(it);
         }
       }
     }
@@ -4175,7 +4209,7 @@ try{
         if(Math.abs(P[1]-other[1])<4/scale)P[1]=other[1];   /* close to level or upright: make it so */
         if(Math.abs(P[0]-other[0])<4/scale)P[0]=other[0];
       }
-      drag.hit=hit;connHilite(hit?hit.id:null);
+      drag.hit=hit;connHilite(hit?hit.id:null,hit?hit.s:null);
       if(drag.w==='a')lnSetAbs(drag.it,P,other);else lnSetAbs(drag.it,other,P);
       refreshItem(drag.it);
     }else if(drag.mode==='rot'){
@@ -4232,7 +4266,8 @@ try{
       if(d.mode==='ln'){
         var gk=(d.w==='a')?'ga':'gb';
         if(d.hit)d.it.p[gk]=clone(d.hit);else delete d.it.p[gk];
-        connHilite(null);connSyncOne(d.it);refreshItem(d.it);
+        connHilite(null);connSyncOne(d.it);
+        if(d.hit&&d.hit.s==='c'){connBack(d.it);renderAll();}else refreshItem(d.it);
       }
       if(d.mode==='rot')renderAll();buildForm();buildList();commit();
     }
@@ -4376,9 +4411,9 @@ try{
          so picking any line style for it -- which is what clears matchLS -- silently made live status
          colouring impossible for good. A live connector exists to show the state of what it joins, so
          status is the default here now; "One colour" under Colour opts back out. */
-      return {type:(p.lt==='elbow')?'elbow':(p.lt==='curve'?'curve':'straight'),dash:p.dash||'solid',width:Math.max(1,parseFloat(p.thick)||6),
+      return {type:({elbow:'relbow',sharp:'elbow',curve:'scurve',bow:'curve',corner:'corner',cornerv:'cornerv',zig:'zig',zigv:'zigv'})[p.lt]||'straight',dash:p.dash||'solid',width:Math.max(1,parseFloat(p.thick)||6),
         opacity:100,glow:false,round:true,colorMode:'status',pal:lnPal(p),
-        color:lnPal(p).unknown,bend:22,radius:20,start:end(p.ha),end:end(p.hb),
+        color:lnPal(p).unknown,bend:22,radius:14,start:end(p.ha),end:end(p.hb),
         inset:28,flow:!!p.anim,flowSec:parseFloat(p.speed)||1.4,
         look:p.look||'plain',label:p.labelStyle?String(p.label||'').slice(0,60):'',labelSize:parseFloat(p.labelSize)||14,labelStyle:p.labelStyle||'',labelColor:p.labelColor||'',labelFont:p.labelFont||''};
     }
@@ -4404,6 +4439,10 @@ try{
         var dx=x2-x1,dy=y2-y1,len=Math.sqrt(dx*dx+dy*dy)||1,mx=(x1+x2)/2,my=(y1+y2)/2,k,cx,cy,P,R;
         if(t==='curve'){k=len*(C.bend/100);if(x2<x1)k=-k;cx=mx+(dy/len)*k;cy=my-(dx/len)*k;return 'M'+f(x1)+' '+f(y1)+'Q'+f(cx)+' '+f(cy)+' '+f(x2)+' '+f(y2);}
         if(t==='scurve'){if(Math.abs(dx)>=Math.abs(dy))return 'M'+f(x1)+' '+f(y1)+'C'+f(mx)+' '+f(y1)+' '+f(mx)+' '+f(y2)+' '+f(x2)+' '+f(y2);return 'M'+f(x1)+' '+f(y1)+'C'+f(x1)+' '+f(my)+' '+f(x2)+' '+f(my)+' '+f(x2)+' '+f(y2);}
+        if(t==='corner')return polyline([[x1,y1],[x2,y1],[x2,y2]],C.radius);
+        if(t==='cornerv')return polyline([[x1,y1],[x1,y2],[x2,y2]],C.radius);
+        if(t==='zig')return polyline([[x1,y1],[x1+dx*0.3,y1],[x1+dx*0.7,y2],[x2,y2]],0);
+        if(t==='zigv')return polyline([[x1,y1],[x1,y1+dy*0.3],[x2,y1+dy*0.7],[x2,y2]],0);
         if(t==='elbow'||t==='relbow'){P=(Math.abs(dx)>=Math.abs(dy))?[[x1,y1],[mx,y1],[mx,y2],[x2,y2]]:[[x1,y1],[x1,my],[x2,my],[x2,y2]];return polyline(P,t==='relbow'?C.radius:0);}
         if(t==='arc'){R=len*0.8;return 'M'+f(x1)+' '+f(y1)+'A'+f(R)+' '+f(R)+' 0 0 '+((x2>=x1)?1:0)+' '+f(x2)+' '+f(y2);}
         return 'M'+f(x1)+' '+f(y1)+'L'+f(x2)+' '+f(y2);
@@ -12055,7 +12094,7 @@ try{
     shD.appendChild(inSel('Direction',function(){return FRPs().dir;},function(v){var p=FRPs(), fr=FRc(), was=(p.dir==='right'||p.dir==='left'), now=(v==='right'||v==='left'), t;if(was!==now){t=fr.w;fr.w=fr.h;fr.h=t;}p.dir=v;refreshUI();},[['right','Right'],['left','Left'],['down','Down'],['up','Up']]));   /* turning the arrow a quarter turn turns its box too */
     shL.appendChild(pair(inNum('Thickness',function(){return FRPs().thick;},function(v){FRPs().thick=v;},1,80),inColor('Color',function(){return FRPs().color;},function(v){FRPs().color=v;})));
     var LNO=function(){return FRAMEAPI.lnOpts(FRPs());}, LNH=[['none','None'],['arrow','Arrow'],['open','Open arrow'],['dot','Dot']];
-    shL.appendChild(pair(inSel('Line type',function(){return LNO().type;},function(v){FRPs().lt=v;},[['straight','Straight'],['elbow','Elbow'],['curve','Curve']]),inSel('Line style',function(){return LNO().dash;},function(v){FRPs().dash=v;},[['solid','Solid'],['dashed','Dashed'],['dotted','Dotted'],['dashdot','Dash and dot']])));
+    shL.appendChild(pair(inSel('Line type',function(){return LNO().type;},function(v){FRPs().lt=v;},LNTYPES),inSel('Line style',function(){return LNO().dash;},function(v){FRPs().dash=v;},[['solid','Solid'],['dashed','Dashed'],['dotted','Dotted'],['dashdot','Dash and dot']])));
     shL.appendChild(pair(inSel('Start',function(){return LNO().ha;},function(v){FRPs().ha=v;},LNH),inSel('End',function(){return LNO().hb;},function(v){FRPs().hb=v;},LNH)));
     shL.appendChild(inChk('Animate the flow',function(){return LNO().anim;},function(v){FRPs().anim=!!v;},function(){refreshUI();}));
     var shF=h('div');showIf(shF,function(){return LNO().anim;});
