@@ -422,6 +422,7 @@ p.note:not(.pst){display:none!important}
 .nml-t.blank span{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);line-height:1;font-size:11px;font-weight:600;color:#6c7183;text-align:center}
 .nml-t.blank.on span{color:var(--cyan)}
 #newmaplayname{margin:4px 0 0}
+#dres,#newmapres{display:block;width:100%;max-width:100%;box-sizing:border-box;margin:0 0 6px}
 #dgridpop{position:absolute;right:0;top:calc(100% + 8px);z-index:300;width:300px;padding:12px;background:#fff;border:1px solid var(--g20);border-radius:12px;box-shadow:0 6px 24px rgba(15,23,42,.2);font-size:12px;display:flex;flex-direction:column;gap:8px}
 #dgridpop[hidden]{display:none}
 #dgridpop .gp-l{font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:#8b90a0;margin-top:2px}
@@ -1008,6 +1009,8 @@ body:not(.objs) #obar{display:none!important}
       <div id="newmapForm" hidden>
         <label for="newmapname">Name</label>
         <input type="text" id="newmapname" placeholder="e.g. Customer Overview" spellcheck="false">
+        <label for="newmapres">Resolution</label>
+        <select id="newmapres" aria-label="Common screen resolutions"></select>
         <div class="row">
           <div><label for="newmapw">Width</label><input type="number" id="newmapw" min="100" max="8000" step="10" value="1920"></div>
           <div><label for="newmaph">Height</label><input type="number" id="newmaph" min="100" max="8000" step="10" value="1080"></div>
@@ -1153,6 +1156,8 @@ body:not(.objs) #obar{display:none!important}
       </details>
       <details class="subsec">
         <summary>Canvas size and grid</summary>
+      <label for="dres">Resolution</label>
+      <select id="dres" aria-label="Common screen resolutions"></select>
       <div class="row">
         <div><label for="dw">Width</label><input type="number" id="dw" min="320" max="8000" step="10"></div>
         <div><label for="dh">Height</label><input type="number" id="dh" min="240" max="8000" step="10"></div>
