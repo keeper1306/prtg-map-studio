@@ -459,6 +459,8 @@ p.note:not(.pst){display:none!important}
 #dfbar .fb-pop select,#dfbar .fb-pop input[type=text]{width:100%;font-size:12px;padding:5px 6px;box-sizing:border-box}
 #dfbar .fb-chk{display:flex;align-items:center;gap:6px;font-size:12px}
 #dfbar .fb-aa{font-size:11px;font-weight:700;letter-spacing:.3px}
+#dfbar .fb-lrow{display:flex;flex-wrap:wrap;align-items:center;gap:2px}
+#dfbar .fb-lrow .fb.on{background:#E6F3FA;color:var(--cyan)}
 #dfbar .fb-pop.up{top:auto;bottom:calc(100% + 6px)}
 #dfbar .fb.open{background:#eaf7fd;color:var(--cyan)}
 #dfbar .fb-box{width:270px}#dfbar .fb-row{display:grid;grid-template-columns:1fr 112px;align-items:center;gap:8px;font-size:12px;color:var(--ink)}#dfbar .fb-row input[type=color]{width:100%;height:26px;padding:0;border:1px solid var(--g20);border-radius:6px;background:#fff}#dfbar .fb-row input[type=number],#dfbar .fb-row select{width:100%;font-size:12px;padding:4px 6px;box-sizing:border-box}#dfbar .fb-row input[type=checkbox]{justify-self:start}
@@ -888,6 +890,7 @@ body:not(.objs) #obar{display:none!important}
 #obar .fb-shapes{display:inline-flex;gap:2px}
 #obar .fb-sh{width:34px;height:34px;padding:3px;display:inline-flex;align-items:center;justify-content:center;border:1px solid transparent}
 #obar .fb-i{width:30px;padding:0;display:inline-flex;align-items:center;justify-content:center}
+#obar .fb-aa{font-size:11px;font-weight:700;letter-spacing:.3px}
 #obar .fb-i svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
 #obar .fb-al{display:inline-flex;gap:1px}
 #obar .pf-syms{display:grid;grid-template-columns:repeat(6,1fr);gap:5px}
@@ -1271,6 +1274,7 @@ body:not(.objs) #obar{display:none!important}
     <div class="inline"><input type="checkbox" id="italic"><label for="italic">Italic</label></div>
     <div class="inline"><input type="checkbox" id="upper"><label for="upper">Uppercase</label></div>
     <div class="inline"><input type="checkbox" id="underline"><label for="underline">Underline</label></div>
+    <div class="row"><div><label for="talign">Align</label><select id="talign"><option value="">Default</option><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select></div></div>
   </fieldset>
 
   <fieldset id="fsLabelColor">
