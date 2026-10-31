@@ -913,6 +913,16 @@ body:not(.objs) #obar{display:none!important}
 #obar .pf input[type=text]{width:100%;padding:5px 6px;font-size:12px;box-sizing:border-box}
 .tgt.na{opacity:.42}
 .tgt.na:hover{opacity:.8}
+.mcbar .mcfiles{display:flex;gap:14px;flex-wrap:wrap;margin:4px 0 2px}
+.mcbar label.linkbtn{cursor:pointer}
+.mcbox{border:1px solid var(--line,#d6dbe6);border-radius:8px;padding:8px;margin-top:6px}
+.mclist{display:flex;flex-direction:column;gap:6px;max-height:340px;overflow:auto;margin:6px 0}
+.mcrow{display:grid;grid-template-columns:1fr;gap:3px;padding:6px 8px;border-radius:6px;background:var(--panel2,#f4f6fa)}
+.mcrow .mcn{font-weight:600;font-size:12.5px;word-break:break-word}
+.mcrow .mcw{font-size:11.5px;opacity:.75;word-break:break-word}
+.mcrow select{width:100%;font-size:12px}
+.mcrow .mck{display:inline-block;font-size:10.5px;font-weight:700;padding:0 6px;border-radius:9px;margin-right:6px;vertical-align:1px;background:#e3e8f4;color:#2a3358}
+.mcrow.ok .mck{background:#dcf5e3;color:#14532d}.mcrow.warn .mck{background:#fdf0d5;color:#7a4b00}.mcrow.skip{opacity:.55}
 #obar .fb-aa{font-size:11px;font-weight:700;letter-spacing:.3px}
 #obar .fb-i svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
 #obar .fb-al{display:inline-flex;gap:1px}
@@ -1011,6 +1021,17 @@ body:not(.objs) #obar{display:none!important}
       <div id="mapopen">
         <select id="pushmap" disabled></select>
         <div class="row" style="margin-top:8px"><button type="button" class="btn ghost" id="exload" disabled>Load</button></div>
+        <div id="mcbar" class="mcbar">
+          <div class="row" style="margin-top:6px"><button type="button" class="btn ghost" id="excopy" disabled data-tip="Copy the loaded map&rsquo;s items, to paste them on another map, on this server or another">Copy this map</button><button type="button" class="btn ghost" id="mcpaste" hidden>Paste copied map</button></div>
+          <p class="note pst" id="mcstat" hidden></p>
+          <div class="mcfiles"><button type="button" class="linkbtn" id="mcsave" hidden>Save the copy as a file</button><label class="linkbtn" for="mcfile" id="mcopenl">Open a copy file</label><input type="file" id="mcfile" accept=".json,application/json" hidden></div>
+          <div id="mcbox" class="mcbox" hidden>
+            <p class="note pst" id="mcmsg"></p>
+            <div id="mclist" class="mclist" role="list"></div>
+            <div class="inline" id="mcsizerow" hidden><input type="checkbox" id="mcsize"><label for="mcsize" id="mcsizel"></label></div>
+            <div class="row" style="margin-top:8px"><button class="btn" id="mcplace" type="button">Put on the canvas</button><button class="btn ghost" id="mcclose" type="button">Close</button></div>
+          </div>
+        </div>
         <button type="button" class="linkbtn dellink" id="deleteMapBtn" disabled>Delete this map</button>
       </div>
       <p class="note pst" id="deleteMapMsg" hidden></p>
