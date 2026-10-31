@@ -15,7 +15,7 @@
 var CFG={
   name:'PRTG Map Studio',
   version:'1.4.2',
-  changelog:'1.5.28: Six modern styles for PRTG\u2019s own gauge dial, in the Gauge faces next to PRTG classic: Neon glass, Flat minimalist, Cyber tech, Glass & metallic, Ambient glow and Clean. PRTG still draws the dial, so its shape and zone colours stay (and Colors still sets them); Map Studio adds glow, glass, a chrome rim, segments, ticks and scale, a hub and the value with the channel name, and the needle turns around the middle of the cut-out. Each style has a Dark and a Light background (Gauge menu and Gauge style, Background). On a dark background a very dark zone colour keeps its colour and gets a thin light rim. PRTG redraws its gauges on every refresh; a watcher in the object decorates each new dial once (about 1 ms per refresh, measured with PRTG\u2019s own gauge code). The small dials of All channels get the colours, a centred needle and a hub. 1.5.27: Copy a map and paste it on another map, on this server or another one. Map step: after Load, Copy this map reads every item: the object file it uses (from the Category: Name PRTG writes before each item), where it sits, its size and layer, its own HTML before and after and its link, and what it showed. Connect to the other server (or stay), choose or create a map and press Paste copied map. Each item is listed with what the connected server has: the same object, Custom HTML copied as it is, a Map Studio file to install from the copy (when it was made in this browser), or the closest objects here (same category and similar name); any choice can be changed, or the item left out. Put on the canvas places them at the same place, size and order. On the same server each item keeps its target; on another server targets are chosen on the canvas, and the target note says what the item showed on the copied map. Pushed items now carry their own HTML after and link as well. The copy is kept in the browser and can be saved as a file and opened elsewhere. PRTG\u2019s own connection lines are not copied. 1.5.26: Object builder floating bar: it now starts with Group, Device, Sensor and All. Choosing one shows only what works on that kind of object: the templates, the Gauge and Graph Shows lists and the Bars show list are narrowed, object types that do not fit are dimmed in the type list, and a type that does not fit says what it works on. A choice that no longer fits is switched to one that does (for example, Bars on a group show the sensors by value, and on a sensor the channels). All shows everything. The bar runs Templates, then the type\u2019s own menu (Graph, Gauge and so on), then Looks and Colors, and the geomap ends with Colors too. Colors overrides everything: the status colors, a PRTG look and a graph\u2019s series and bar colors, and it stays when another template or look is picked. When bars show sensors or channels, the Graph menu in the bar now has Bar colors, Most bars shown and Only names containing. 1.5.25: Common screen resolutions for the canvas and for a new map. Canvas, Canvas size and grid, and the Map step\u2019s New form each have a Resolution list (16:9, 16:10, ultrawide, 4:3 and 5:4, portrait). Choosing one sets the width and height together, so the selected PRTG map is changed once. A size that is not on the list shows as Custom size. 1.5.24: The canvas follows the selected PRTG map. When you connect or choose a map, the canvas takes that map\u2019s size, read from the map itself. A size typed for the canvas is sent to the selected map in PRTG: Map Studio reads the map settings, changes the width and height only if they hold the map\u2019s current size, saves them and reads them back to make sure PRTG kept them. Typing a number is sent once, when you stop. If PRTG\u2019s settings do not have width and height fields Map Studio recognises, nothing is changed and a message says so. 1.5.23: A new map gets a layout as it is made. The Map step\u2019s New form now has a Layout choice: Blank (the default; choose a layout later from Canvas, Layouts) or any of the 26 layouts, drawn in the shape of the width and height typed. After Create, the canvas takes the new map\u2019s size and shows the chosen layout\u2019s cells; items already on the canvas stay where they are, and Canvas, Layouts, Fill cells puts them in. 1.5.22: Seven more graph styles: Stepped line (holds each value), Sparkline with value (the current value large, its change and a small trend), Bars + line (the first channel as bars on the left axis, the others as lines on the right), Heatmap: hour by day (each cell an hourly average over the last 7 days, or 30 with that period), Min / max band (the average with the lowest and highest values of each step around it), Dots (one per value, coloured by the channel\u2019s limits) and 24-hour ring (the last day around a clock in 15-minute steps). In the sparkline, heatmap and ring, a click in the legend chooses which channel is shown. Fixed: the graph\u2019s hover dots could show a hidden channel, or sit in the wrong place in the Mirrored style. 1.5.21: The chart style pictures in the floating bar\u2019s Graph menu are now drawn by the graph itself, with sample data and the graph\u2019s own look, colors, line width and fill, so each one shows what choosing it gives, on a dark look too. They are redrawn only when one of those settings changes (about 35 ms for all ten) and leave nothing running. 1.5.20: Five new graph styles, for a sensor graph and for Graphs of every sensor: Overlapping areas (every channel filled and see-through), Stacked area (the top edge is the total; the tooltip shows each channel\u2019s own value), Mirrored (first channel above the line, second below, as in traffic in and out), Threshold colors (the line turns yellow and red past the channel\u2019s own warning and error limits, drawn as dashed lines) and Glow gradient (a fading fill and a glowing line, for dark looks). On every style a click on a channel in the legend hides or shows it; the last one shown stays. The Name this object window now says, as you type, whether the connected PRTG server already has a file or an object with that name, and the warning goes once the name is free. 1.5.19: Map designer, PRTG Server Objects: the category buttons covered the Design tools and part of the header. Since 1.5.16 the tools stay under the header, but the buttons were still pinned as if the tools were at the very top of the panel. They now sit just under the tools, and when they would leave less than 40% of the panel for the list (many categories, or a small window) they scroll with the list instead of staying pinned. 1.5.18: The install script can be saved as a file. Next to Copy install script there is Download .ps1: copy the file to the PRTG server, right-click it and choose Run with PowerShell. Run from a file, the script asks Windows for administrator rights itself (a new window opens after the prompt) and waits for Enter before closing, so the result can be read. Pasted into PowerShell it works as before. 1.5.17: Text options in every floating bar. Object builder: next to the font and size there are now Bold, Italic, Underline and UPPERCASE, for every object type (table, gauge, graph, donut, status counts, icon, tile), in the preview and in the file; icons get the align buttons too. Map designer: labels and buttons get the align button (with an Align choice in their settings), and the text on a connector gets Bold, Italic, Underline, UPPERCASE and where it sits along the line (start, middle or end). The connector text options reach a live map once the connector is pushed again. 1.5.16: The status color set PRTG\u2019s own is now called PRTG UI. Floating bars: in both tabs a menu now opens on the side of the bar away from the object, on whichever side has more room, and scrolls inside itself when it is taller than that room, so it never covers the object and never runs off the window. In the Object builder the bar now sits on the page instead of inside the preview, so the canvas and preview edges no longer cut it off. Labels and buttons in the Map designer had no floating bar at all: building it stopped on an error (a label has no shape settings); they have one again. Map designer, Design step: the tools now stay under the tabs, the connection row and the steps, and only the settings below scroll; before, the tools covered the header when you scrolled. The map background settings scroll with the other settings. Object builder: under the file name and in Name and title, Map Studio now says whether the connected PRTG server already has a file with that name (saving would replace it) or an object with the same name in the same category. 1.5.15: Every gauge Map Studio builds is filed under Gauges in PRTG\u2019s object list, whatever template it started from, PRTG classic face included. Before, a gauge started from one of PRTG\u2019s templates took that template\u2019s category (Status Icons or Device Tree Views). PRTG\u2019s own eight gauge files are not changed, and Category in the designer still sets another category for one gauge. Gauges saved before keep their category until they are saved again. 1.5.14: Gauges get faces. In the Object builder, a gauge is now made in three steps: a template (what it shows), a face (how it is drawn) and a look (background, colors and fonts). Five new faces: Threshold arc (a thick arc with the warning and error limits as a thin outer band), Gradient arc (colored from low to high), Segmented LED (blocks that light up, with a digital number), Solid arc (one bold arc and a big number) and Speedometer (ticks, scale numbers and a needle). Glow is a switch for them. PRTG classic is still there: it is PRTG\u2019s own dial, which PRTG draws, so a look can only recolor it. Every other face is drawn by Map Studio from the same data PRTG puts in the page, so the look now changes everything, and a PRTG template keeps its data (one sensor, all channels, or a device\u2019s sensors by priority) when you pick a face. All channels and device sensors show one gauge each, side by side. Measured on 100 gauges in one object: about 2 MB and under 100 ms to draw once, with no timers and no extra requests to PRTG. 1.5.13: The grid of preview tiles is gone, and with it the load it put on the machine. Every tile was PRTG\u2019s own drawing of an object, and each drawing is two nested documents that parse PRTG\u2019s whole stylesheet and run PRTG\u2019s own scripts \u2014 a category held tens of those open at once, and 1.5.12 kept them open for every category you had visited, which could bring Chrome and the machine it runs on to a stop. The category buttons, the counts, the MS mark, the Map Studio filter and the search all stay; under them is a plain list again, and PRTG draws only the one object you pick, in the single pane below. PRTG\u2019s built-in icons still show their own picture beside the name, which is one small static file and no drawing at all. | 1.5.12: Two things were making the object tiles crawl. The list sits in a section that starts closed, and the watcher deciding which tiles are on screen could not see them while it was, so a category could sit half-empty until something made the page re-measure \u2014 tiles now work that out directly, whenever the list is shown, scrolled or resized. And switching category threw away every drawing: the tiles were taken out of the page and put back, which makes the browser reload each preview frame from scratch. Each category now keeps its own tiles in the page and a switch only hides and shows them, so going back to a category you have already opened costs nothing at all. | 1.5.11: A new map made from the Map step starts at 1920 \u00D7 1080 instead of 1300 \u00D7 900. It now takes its size from the canvas you design on, so the map PRTG creates and the canvas you lay it out on cannot drift apart. | 1.5.10: The object tiles appear far sooner. PRTG lists its own built-in icon sets as plain picture files, so a tile now loads that picture itself instead of asking PRTG to draw the object \u2014 a set of ninety icons cost ninety drawings before and costs none now, and a tile falls back to the drawing if PRTG will not serve the picture. Every other tile also asks once instead of twice: it keeps the size it asked for, rather than asking again for the size the file declares, which the big preview below still does for the one object you pick. | 1.5.9: The PRTG Server Objects list shows every category as a button, each with how many objects it holds. The buttons stay in view while the objects scroll, and opening one closes the one before it, so only a single category is ever listed. Each object is now a tile showing PRTG\u2019s own drawing of it, four to a row; a tile asks PRTG for that drawing only when it scrolls into view, and the big preview underneath reuses the same answer. Objects built with Map Studio carry an MS mark, read from their file name, so PRTG\u2019s own category list is left exactly as it is, and a \u201CBuilt with Map Studio only\u201D tick narrows the list to them. | 1.5.8: A plain Connector line shows its flow again on the live map (moving dashes). The Chevron look moves its arrows from the start to the end again. Double-click the text on a Connector to type it right there (Enter keeps it, Esc cancels). The Text on the line button has a text icon. | 1.5.7: The Push step now says plainly which map it pushes to. A live Connector finds its two items by where they were pushed, so dropping a device-tree entity onto an item (which changes its PRTG object) no longer joins both ends to the same item; it keeps its line while PRTG redraws, and only one copy of it runs. The Chevron look flows again when Animate is on, in the designer and on the map. | 1.5.6: A Connector now follows a PRTG object when you change it between a box and an icon (it kept the old box edge before), and can be joined to an icon. On a live map the line anchors to the biggest picture of an icon, and to the whole box of a table or graph. In the Design tab the Build tiles stay in view while the settings scroll, and opening PRTG Server Objects hides the selected item\u2019s settings (clicking an item on the canvas brings them back). | 1.5.5: Nine line types for a Connector (straight, elbow, square elbow, two corners, two zig-zags, S-curve and bow), drawn the same on the canvas and on the live map. A Connector can now bind to the middle of an object as well as its four sides; a line bound to the middle goes behind the object, so it comes out from under it, and the object shows its five binding points while you drag an end. | 1.5.4: The floating bar and its menus are no longer cut off at the edge of the canvas; they can sit over the grey margin around it and stay inside the window. | 1.5.3: The floating bar\u2019s menus now open on the side away from the item, so they no longer cover it (upward when there is room, otherwise the bar drops under the item). Choosing Elbow or Curve on a flat, unglued line now moves a free end sideways so the shape shows right away. | 1.5.2: A Connector starts as one green end and one red end and takes its objects\u2019 real status colours once they report; the status color set you pick replaces those colours, on the canvas and on the live map. The text styles are presets next to the looks, and choosing one adds text editing (text, font, size, color) to the floating bar. Thickness, line type, start, end and animation are one picture-based option in the floating bar, and Kind, Line style and Color are gone from the left panel. 1.5.1: A Connector\u2019s presets are now its looks, shown as pictures, in the left panel and in the floating bar, and the separate Look picker is gone. A Connector is black until the objects it joins report a status, then takes their colours. 1.5.0: Connectors get eleven looks (soft glow, tube, beads, chevron, taper, rail, lifted, pulse, circuit, dash sweep, plain) and text on the line, with a pill, filled or text-only style. Both are chosen from pictures, in the left panel and in the floating bar, and both are drawn on the live PRTG map as well as in the designer. 1.4.9: A Connector now takes its colour from the \u201cName and status\u201d icons too. Those mark state with rollup flags (has red, has green and so on) rather than a single status class, which the preview did not read, so the line stayed one colour. The worst state present wins. 1.4.8: The Target panel now says what status the preview reported for the selected object, and lists the class names it found in the preview, so you can see why a Connector is or is not taking its colour. 1.4.7: An object dragged onto the canvas now starts on something of its own kind. Every object used to begin on the Local Probe unless it only took a sensor, so anything meant to read a device showed probe data until you picked a real target. The tool now reads what the object actually accepts — PRTG files declare probe, group, device or sensor, often several at once — and starts it on the most specific of those: a device where one will do, otherwise a group, otherwise the probe, and a sensor for the files that only take a sensor. The first device and group on the server are looked up alongside the default sensor, and “This object takes…” now offers all four kinds if you want to correct one. A default you have chosen yourself still wins. 1.4.6: The Map designer now draws a Connector in the colours the live map will actually show: each end takes the state of the object it is glued to, blending from one to the other when they differ. Until now the canvas painted every status-coloured link flat blue, so there was no way to see beforehand what the pushed version would look like. The state is read out of PRTG’s own drawing of each object, so this needs the live object previews switched on — with them off, or for an end whose object reports no state, the line simply keeps its plain colour instead of inventing one. 1.4.5: A Connector now really does take its colour from the two objects it joins, instead of staying one flat colour on the live map. Two separate things were stopping it. PRTG marks an ordinary device or sensor icon with a different status class than the link was looking for, so it found no status at all on exactly the icons people connect most — it now reads that form as well. And a Connector that did not follow the shared Link style was locked to a single colour permanently, because choosing any line style for it quietly turned status colouring off; such a Connector now shows status by default, and a new “Colour” setting goes back to one colour when that is what you want. Connectors already on a map keep their old look until they are pushed again. 1.4.4: The Map step has a new “Clear the canvas” option under the list of loaded items. It takes the map you loaded back off the canvas without sending anything to PRTG, so the map itself is untouched — useful when the wrong map was loaded, or when you simply want an empty canvas to work on. If edits or deletion marks are waiting on those items it asks for a second click first, so none of that work is thrown away by accident. 1.4.3: Connectors pushed to a map were still coming out invisible, with no line and no status colour, and the reason was found on the live server itself: PRTG rewrites the quotes around an HTML attribute when it saves an object, which cut the connector’s own drawing code short after thirty-seven characters, so there was never anything left to run. That code now travels in an encoded form that contains no quotes at all, so saving cannot break it apart. A connector also no longer confuses one icon with another when several icons are still bound to the same PRTG object: each end now picks the icon standing where that end was glued, so the line joins the right two icons and each end shows its own status colour. 1.4.2: A pushed connector was coming out empty on the live map, with no colored status and no visible line. The cause: PRTG strips <script> tags out of a map object’s HTML when it is saved, so the connector’s own live-drawing code was being thrown away before it ever reached the page. It now starts itself a different way (through an image element’s error handler, which survives PRTG’s save), so the line draws and updates again. While tracking that down: a connector glued to a PRTG probe or other object with many children now reads its live status correctly too — those use a different set of status flags than a single sensor or device does, worst status wins when several apply. A connector also now notices a status change on a nested part of its target, not only the target element itself, and lines up against the actual icon picture rather than the wider clickable box around it, so the endpoint lands on the icon instead of beside it. 1.4.1: Connector fixes. Dragging a Connector from Build onto the canvas works now (it silently did nothing before); drop it on top of an object and it glues itself to the nearest side right away. Gluing anywhere — Connector or a Shapes line — now only offers the four side centers, not a free slide along the edge. A connector reads live status from the state PRTG itself put on the object (the same class PRTG and our own Icon objects use), not just a plain background color, so Icon-object endpoints now color correctly too. The Selected panel (title, shape gallery, and the inline Shape section when editing in place) calls a Connector a Connector and only offers Line, Arrow and Flowing arrow for it, never a flowchart box or callout. 1.4.0: A new Connector tool, next to Shape in Build — adds a line already set up to glue to two objects and push to PRTG as a real, self-updating link (Push as a live link in PRTG starts switched on). Shapes keeps its own plain Lines and arrows, unchanged and never pushed live unless you ask. 1.3.1: PRTG’s own built-in icon sets (Default Icons A/B, Icons A/B/C and their static variants, Static Images — whatever this server’s list has) now show up alongside the object files in Existing PRTG objects. Pick one, bind it to a device, sensor or group like any other object, and it recolors itself with that target’s live status once pushed, the same as PRTG’s own icons. 1.3.0: A glued connector can now be pushed as a real, self-updating line on the map itself (“Push as a live link in PRTG” on a connector with both ends glued) — separate from PRTG’s own native connections, which this tool still cannot create (there is no API for that; PRTG only builds them from a hand drag in its own Map Designer). Once pushed, the line finds its two objects on the live page by itself and redraws its own path whenever either one moves, with no re-push needed; with Match Link style left on, it also recolors itself from each end’s live status, split two ways like PRTG’s own lines when the two differ. 1.2.1: A connector’s look now matches the shared Link style by default (the same curve/dash/color/markers/flow settings as the Link style object you push to PRTG), so the Map designer previews what the live map will actually show. Per-connector style is still there — untick Match Link style on a line to set its own thickness, line type, dash, markers and animation. Choosing a specific line format from the shape gallery now also switches that line off Match Link style automatically. The Link style preview in the Object builder also now shows one point-to-point link instead of a branching demo (PRTG links are always point to point). 1.2.0: Map designer lines are now connectors — drag either end onto a frame, shape or PRTG object and it glues there (a highlight shows the drop target); glued ends follow that object when it is moved, resized or rotated, and come unglued automatically if the object is deleted. A Branch button on a glued line adds another end from the same start, for one-to-many connections. 1.1.1: Link style animation now runs on systems that ask for reduced motion (it was switched off there); a new option pauses it again if you want that. 1.1.0: new Link style object in the Object builder. Curve, S-curve, elbow, rounded elbow and arc lines; solid, dashed, dotted and dash-dot styles; dot and arrow markers; optional flowing dashes. The straight lines PRTG draws are hidden from the first moment, so they never flash. 1.0.0: items can be reordered on the canvas. Bring to front, send backward, send to back and a Layer control next to Width and Height in Selected; Up/Down buttons in the Layers tab. Items already on the chosen PRTG map now also show up in the Layers tab (read-only, sorted by their real layer), with a link back to Existing PRTG maps to change them there. v64: one Existing PRTG maps section at the bottom of the Add tab holds the map choice and everything from Already on this map; it can be minimized. v63: the map choice has its own Map section on the Add tab, with Already on this map (show and clear items) under it; Publish keeps Push to PRTG and Save and load layout, and shows which map it will push to. v62: the Button tool has the same groups of presets as the Label tool (Basic, Map buttons, Status buttons, and the eight table, gauge and frame looks). v61: the chart.svg picture is now requested with exactly the address PRTG put in the page (PRTG signs it with a URL hash, so any change gives 401). v60: Collect PRTG samples blanks out passhash, username, map id and URL hash in the saved file, and also saves the chart.svg picture of up to two graph items. v59: a Clear items from the canvas button removes the items shown by Show items already on this map (it asks twice if you have unapplied changes). v58: choosing a Build tile (Frame, Label, Button, Background, Shape) closes the Existing PRTG objects section, so the area below stays blank until the Existing PRTG objects tile is pressed. v57: copy, cut and paste are back on the Dashboard (Ctrl+C, Ctrl+X, Ctrl+V and the Copy and Paste buttons; a frame is copied with everything inside it). v56: a Refresh object list button in Existing PRTG objects reads PRTG\u2019s list of object files again without reconnecting. v55: the Dashboard tabs (Add, Selected, Layers, Publish) and the Build tiles (click then place, double-click, drag) are in the file; their tab names, grouping and timing are now in config. v54: the ready-made objects section is gone. v53: signing in with a username and passhash is required to connect, in a new login card. v52: previews of counting objects (status counts, donuts) read every sensor, not the first five. v50: Status counts object (tiles of sensors by status) and the Brand navy look. v49: authorship marks in the core. v48: after a push the map is read back; items PRTG did not keep are added again and any that still fail are named. v47: shape presets give each look its own color and thickness; push and edit results show over the Dashboard and a failed login opens the login panel. v46: status dots in the device tree; the object preview can be dragged onto the canvas. v45: graphs and icons are edited in the preview too. v44: gauges and donuts are edited in the preview like tables (drag the handles, double-click the title). v43: Look presets for frames, backgrounds and the new shapes (lines, arrows, flowing arrows). v42: notes became hover icons, undo/redo arrows over the canvas, a tidier Dashboard panel, a PRTG connection switch. v41: click, drag, resize, delete on the canvas. v40: edit, move, delete with Review and Undo. v39: existing items show the object they are bound to (name, type, place) and a summary of what they show. v38: shows the items already on a map. v37: Collect samples reads the map items. v36: frames edited in the Objects view. v35: no comments in generated files. v34: file list. v33: install script. v32: config, tabs.',
+  changelog:'1.5.29: A Sunburst object in the Object builder: a group\u2019s or probe\u2019s device tree as rings. Templates are PRTG\u2019s five sunburst files (plain, sized by sensors, by priority, by both, hide paused devices). PRTG classic is PRTG\u2019s own sunburst, restyled by a look and by Colors (slice colours by status, the lines between slices, the names); Solid, Separated, Glow and Soft pastel are drawn by Map Studio from the same PRTG data, with the object in the middle, groups and devices in rings outwards, names on the slices, links to PRTG, the number of sensors or percent up in the middle, a legend, the hole and the number of rings. Looks, Colors, text options and the Group scope work as for the other objects. Map designer: a Clean canvas button over the canvas removes every item after a second click (Undo brings them back). Canvas, Layouts: Add a frame in each cell puts a real frame item in every cell, with a Frame look; the frames follow the gap and margin, keep their style when the layout changes, and items filled into a cell sit inside its frame. The name check now also looks at the names in PRTG\u2019s object list in any category and at Your objects, and when a name or file name is taken it suggests the first free number, with a button that uses it (under the file name and in the Name this object window). 1.5.28: Six modern styles for PRTG\u2019s own gauge dial, in the Gauge faces next to PRTG classic: Neon glass, Flat minimalist, Cyber tech, Glass & metallic, Ambient glow and Clean. PRTG still draws the dial, so its shape and zone colours stay (and Colors still sets them); Map Studio adds glow, glass, a chrome rim, segments, ticks and scale, a hub and the value with the channel name, and the needle turns around the middle of the cut-out. Each style has a Dark and a Light background (Gauge menu and Gauge style, Background). On a dark background a very dark zone colour keeps its colour and gets a thin light rim. PRTG redraws its gauges on every refresh; a watcher in the object decorates each new dial once (about 1 ms per refresh, measured with PRTG\u2019s own gauge code). The small dials of All channels get the colours, a centred needle and a hub. 1.5.27: Copy a map and paste it on another map, on this server or another one. Map step: after Load, Copy this map reads every item: the object file it uses (from the Category: Name PRTG writes before each item), where it sits, its size and layer, its own HTML before and after and its link, and what it showed. Connect to the other server (or stay), choose or create a map and press Paste copied map. Each item is listed with what the connected server has: the same object, Custom HTML copied as it is, a Map Studio file to install from the copy (when it was made in this browser), or the closest objects here (same category and similar name); any choice can be changed, or the item left out. Put on the canvas places them at the same place, size and order. On the same server each item keeps its target; on another server targets are chosen on the canvas, and the target note says what the item showed on the copied map. Pushed items now carry their own HTML after and link as well. The copy is kept in the browser and can be saved as a file and opened elsewhere. PRTG\u2019s own connection lines are not copied. 1.5.26: Object builder floating bar: it now starts with Group, Device, Sensor and All. Choosing one shows only what works on that kind of object: the templates, the Gauge and Graph Shows lists and the Bars show list are narrowed, object types that do not fit are dimmed in the type list, and a type that does not fit says what it works on. A choice that no longer fits is switched to one that does (for example, Bars on a group show the sensors by value, and on a sensor the channels). All shows everything. The bar runs Templates, then the type\u2019s own menu (Graph, Gauge and so on), then Looks and Colors, and the geomap ends with Colors too. Colors overrides everything: the status colors, a PRTG look and a graph\u2019s series and bar colors, and it stays when another template or look is picked. When bars show sensors or channels, the Graph menu in the bar now has Bar colors, Most bars shown and Only names containing. 1.5.25: Common screen resolutions for the canvas and for a new map. Canvas, Canvas size and grid, and the Map step\u2019s New form each have a Resolution list (16:9, 16:10, ultrawide, 4:3 and 5:4, portrait). Choosing one sets the width and height together, so the selected PRTG map is changed once. A size that is not on the list shows as Custom size. 1.5.24: The canvas follows the selected PRTG map. When you connect or choose a map, the canvas takes that map\u2019s size, read from the map itself. A size typed for the canvas is sent to the selected map in PRTG: Map Studio reads the map settings, changes the width and height only if they hold the map\u2019s current size, saves them and reads them back to make sure PRTG kept them. Typing a number is sent once, when you stop. If PRTG\u2019s settings do not have width and height fields Map Studio recognises, nothing is changed and a message says so. 1.5.23: A new map gets a layout as it is made. The Map step\u2019s New form now has a Layout choice: Blank (the default; choose a layout later from Canvas, Layouts) or any of the 26 layouts, drawn in the shape of the width and height typed. After Create, the canvas takes the new map\u2019s size and shows the chosen layout\u2019s cells; items already on the canvas stay where they are, and Canvas, Layouts, Fill cells puts them in. 1.5.22: Seven more graph styles: Stepped line (holds each value), Sparkline with value (the current value large, its change and a small trend), Bars + line (the first channel as bars on the left axis, the others as lines on the right), Heatmap: hour by day (each cell an hourly average over the last 7 days, or 30 with that period), Min / max band (the average with the lowest and highest values of each step around it), Dots (one per value, coloured by the channel\u2019s limits) and 24-hour ring (the last day around a clock in 15-minute steps). In the sparkline, heatmap and ring, a click in the legend chooses which channel is shown. Fixed: the graph\u2019s hover dots could show a hidden channel, or sit in the wrong place in the Mirrored style. 1.5.21: The chart style pictures in the floating bar\u2019s Graph menu are now drawn by the graph itself, with sample data and the graph\u2019s own look, colors, line width and fill, so each one shows what choosing it gives, on a dark look too. They are redrawn only when one of those settings changes (about 35 ms for all ten) and leave nothing running. 1.5.20: Five new graph styles, for a sensor graph and for Graphs of every sensor: Overlapping areas (every channel filled and see-through), Stacked area (the top edge is the total; the tooltip shows each channel\u2019s own value), Mirrored (first channel above the line, second below, as in traffic in and out), Threshold colors (the line turns yellow and red past the channel\u2019s own warning and error limits, drawn as dashed lines) and Glow gradient (a fading fill and a glowing line, for dark looks). On every style a click on a channel in the legend hides or shows it; the last one shown stays. The Name this object window now says, as you type, whether the connected PRTG server already has a file or an object with that name, and the warning goes once the name is free. 1.5.19: Map designer, PRTG Server Objects: the category buttons covered the Design tools and part of the header. Since 1.5.16 the tools stay under the header, but the buttons were still pinned as if the tools were at the very top of the panel. They now sit just under the tools, and when they would leave less than 40% of the panel for the list (many categories, or a small window) they scroll with the list instead of staying pinned. 1.5.18: The install script can be saved as a file. Next to Copy install script there is Download .ps1: copy the file to the PRTG server, right-click it and choose Run with PowerShell. Run from a file, the script asks Windows for administrator rights itself (a new window opens after the prompt) and waits for Enter before closing, so the result can be read. Pasted into PowerShell it works as before. 1.5.17: Text options in every floating bar. Object builder: next to the font and size there are now Bold, Italic, Underline and UPPERCASE, for every object type (table, gauge, graph, donut, status counts, icon, tile), in the preview and in the file; icons get the align buttons too. Map designer: labels and buttons get the align button (with an Align choice in their settings), and the text on a connector gets Bold, Italic, Underline, UPPERCASE and where it sits along the line (start, middle or end). The connector text options reach a live map once the connector is pushed again. 1.5.16: The status color set PRTG\u2019s own is now called PRTG UI. Floating bars: in both tabs a menu now opens on the side of the bar away from the object, on whichever side has more room, and scrolls inside itself when it is taller than that room, so it never covers the object and never runs off the window. In the Object builder the bar now sits on the page instead of inside the preview, so the canvas and preview edges no longer cut it off. Labels and buttons in the Map designer had no floating bar at all: building it stopped on an error (a label has no shape settings); they have one again. Map designer, Design step: the tools now stay under the tabs, the connection row and the steps, and only the settings below scroll; before, the tools covered the header when you scrolled. The map background settings scroll with the other settings. Object builder: under the file name and in Name and title, Map Studio now says whether the connected PRTG server already has a file with that name (saving would replace it) or an object with the same name in the same category. 1.5.15: Every gauge Map Studio builds is filed under Gauges in PRTG\u2019s object list, whatever template it started from, PRTG classic face included. Before, a gauge started from one of PRTG\u2019s templates took that template\u2019s category (Status Icons or Device Tree Views). PRTG\u2019s own eight gauge files are not changed, and Category in the designer still sets another category for one gauge. Gauges saved before keep their category until they are saved again. 1.5.14: Gauges get faces. In the Object builder, a gauge is now made in three steps: a template (what it shows), a face (how it is drawn) and a look (background, colors and fonts). Five new faces: Threshold arc (a thick arc with the warning and error limits as a thin outer band), Gradient arc (colored from low to high), Segmented LED (blocks that light up, with a digital number), Solid arc (one bold arc and a big number) and Speedometer (ticks, scale numbers and a needle). Glow is a switch for them. PRTG classic is still there: it is PRTG\u2019s own dial, which PRTG draws, so a look can only recolor it. Every other face is drawn by Map Studio from the same data PRTG puts in the page, so the look now changes everything, and a PRTG template keeps its data (one sensor, all channels, or a device\u2019s sensors by priority) when you pick a face. All channels and device sensors show one gauge each, side by side. Measured on 100 gauges in one object: about 2 MB and under 100 ms to draw once, with no timers and no extra requests to PRTG. 1.5.13: The grid of preview tiles is gone, and with it the load it put on the machine. Every tile was PRTG\u2019s own drawing of an object, and each drawing is two nested documents that parse PRTG\u2019s whole stylesheet and run PRTG\u2019s own scripts \u2014 a category held tens of those open at once, and 1.5.12 kept them open for every category you had visited, which could bring Chrome and the machine it runs on to a stop. The category buttons, the counts, the MS mark, the Map Studio filter and the search all stay; under them is a plain list again, and PRTG draws only the one object you pick, in the single pane below. PRTG\u2019s built-in icons still show their own picture beside the name, which is one small static file and no drawing at all. | 1.5.12: Two things were making the object tiles crawl. The list sits in a section that starts closed, and the watcher deciding which tiles are on screen could not see them while it was, so a category could sit half-empty until something made the page re-measure \u2014 tiles now work that out directly, whenever the list is shown, scrolled or resized. And switching category threw away every drawing: the tiles were taken out of the page and put back, which makes the browser reload each preview frame from scratch. Each category now keeps its own tiles in the page and a switch only hides and shows them, so going back to a category you have already opened costs nothing at all. | 1.5.11: A new map made from the Map step starts at 1920 \u00D7 1080 instead of 1300 \u00D7 900. It now takes its size from the canvas you design on, so the map PRTG creates and the canvas you lay it out on cannot drift apart. | 1.5.10: The object tiles appear far sooner. PRTG lists its own built-in icon sets as plain picture files, so a tile now loads that picture itself instead of asking PRTG to draw the object \u2014 a set of ninety icons cost ninety drawings before and costs none now, and a tile falls back to the drawing if PRTG will not serve the picture. Every other tile also asks once instead of twice: it keeps the size it asked for, rather than asking again for the size the file declares, which the big preview below still does for the one object you pick. | 1.5.9: The PRTG Server Objects list shows every category as a button, each with how many objects it holds. The buttons stay in view while the objects scroll, and opening one closes the one before it, so only a single category is ever listed. Each object is now a tile showing PRTG\u2019s own drawing of it, four to a row; a tile asks PRTG for that drawing only when it scrolls into view, and the big preview underneath reuses the same answer. Objects built with Map Studio carry an MS mark, read from their file name, so PRTG\u2019s own category list is left exactly as it is, and a \u201CBuilt with Map Studio only\u201D tick narrows the list to them. | 1.5.8: A plain Connector line shows its flow again on the live map (moving dashes). The Chevron look moves its arrows from the start to the end again. Double-click the text on a Connector to type it right there (Enter keeps it, Esc cancels). The Text on the line button has a text icon. | 1.5.7: The Push step now says plainly which map it pushes to. A live Connector finds its two items by where they were pushed, so dropping a device-tree entity onto an item (which changes its PRTG object) no longer joins both ends to the same item; it keeps its line while PRTG redraws, and only one copy of it runs. The Chevron look flows again when Animate is on, in the designer and on the map. | 1.5.6: A Connector now follows a PRTG object when you change it between a box and an icon (it kept the old box edge before), and can be joined to an icon. On a live map the line anchors to the biggest picture of an icon, and to the whole box of a table or graph. In the Design tab the Build tiles stay in view while the settings scroll, and opening PRTG Server Objects hides the selected item\u2019s settings (clicking an item on the canvas brings them back). | 1.5.5: Nine line types for a Connector (straight, elbow, square elbow, two corners, two zig-zags, S-curve and bow), drawn the same on the canvas and on the live map. A Connector can now bind to the middle of an object as well as its four sides; a line bound to the middle goes behind the object, so it comes out from under it, and the object shows its five binding points while you drag an end. | 1.5.4: The floating bar and its menus are no longer cut off at the edge of the canvas; they can sit over the grey margin around it and stay inside the window. | 1.5.3: The floating bar\u2019s menus now open on the side away from the item, so they no longer cover it (upward when there is room, otherwise the bar drops under the item). Choosing Elbow or Curve on a flat, unglued line now moves a free end sideways so the shape shows right away. | 1.5.2: A Connector starts as one green end and one red end and takes its objects\u2019 real status colours once they report; the status color set you pick replaces those colours, on the canvas and on the live map. The text styles are presets next to the looks, and choosing one adds text editing (text, font, size, color) to the floating bar. Thickness, line type, start, end and animation are one picture-based option in the floating bar, and Kind, Line style and Color are gone from the left panel. 1.5.1: A Connector\u2019s presets are now its looks, shown as pictures, in the left panel and in the floating bar, and the separate Look picker is gone. A Connector is black until the objects it joins report a status, then takes their colours. 1.5.0: Connectors get eleven looks (soft glow, tube, beads, chevron, taper, rail, lifted, pulse, circuit, dash sweep, plain) and text on the line, with a pill, filled or text-only style. Both are chosen from pictures, in the left panel and in the floating bar, and both are drawn on the live PRTG map as well as in the designer. 1.4.9: A Connector now takes its colour from the \u201cName and status\u201d icons too. Those mark state with rollup flags (has red, has green and so on) rather than a single status class, which the preview did not read, so the line stayed one colour. The worst state present wins. 1.4.8: The Target panel now says what status the preview reported for the selected object, and lists the class names it found in the preview, so you can see why a Connector is or is not taking its colour. 1.4.7: An object dragged onto the canvas now starts on something of its own kind. Every object used to begin on the Local Probe unless it only took a sensor, so anything meant to read a device showed probe data until you picked a real target. The tool now reads what the object actually accepts — PRTG files declare probe, group, device or sensor, often several at once — and starts it on the most specific of those: a device where one will do, otherwise a group, otherwise the probe, and a sensor for the files that only take a sensor. The first device and group on the server are looked up alongside the default sensor, and “This object takes…” now offers all four kinds if you want to correct one. A default you have chosen yourself still wins. 1.4.6: The Map designer now draws a Connector in the colours the live map will actually show: each end takes the state of the object it is glued to, blending from one to the other when they differ. Until now the canvas painted every status-coloured link flat blue, so there was no way to see beforehand what the pushed version would look like. The state is read out of PRTG’s own drawing of each object, so this needs the live object previews switched on — with them off, or for an end whose object reports no state, the line simply keeps its plain colour instead of inventing one. 1.4.5: A Connector now really does take its colour from the two objects it joins, instead of staying one flat colour on the live map. Two separate things were stopping it. PRTG marks an ordinary device or sensor icon with a different status class than the link was looking for, so it found no status at all on exactly the icons people connect most — it now reads that form as well. And a Connector that did not follow the shared Link style was locked to a single colour permanently, because choosing any line style for it quietly turned status colouring off; such a Connector now shows status by default, and a new “Colour” setting goes back to one colour when that is what you want. Connectors already on a map keep their old look until they are pushed again. 1.4.4: The Map step has a new “Clear the canvas” option under the list of loaded items. It takes the map you loaded back off the canvas without sending anything to PRTG, so the map itself is untouched — useful when the wrong map was loaded, or when you simply want an empty canvas to work on. If edits or deletion marks are waiting on those items it asks for a second click first, so none of that work is thrown away by accident. 1.4.3: Connectors pushed to a map were still coming out invisible, with no line and no status colour, and the reason was found on the live server itself: PRTG rewrites the quotes around an HTML attribute when it saves an object, which cut the connector’s own drawing code short after thirty-seven characters, so there was never anything left to run. That code now travels in an encoded form that contains no quotes at all, so saving cannot break it apart. A connector also no longer confuses one icon with another when several icons are still bound to the same PRTG object: each end now picks the icon standing where that end was glued, so the line joins the right two icons and each end shows its own status colour. 1.4.2: A pushed connector was coming out empty on the live map, with no colored status and no visible line. The cause: PRTG strips <script> tags out of a map object’s HTML when it is saved, so the connector’s own live-drawing code was being thrown away before it ever reached the page. It now starts itself a different way (through an image element’s error handler, which survives PRTG’s save), so the line draws and updates again. While tracking that down: a connector glued to a PRTG probe or other object with many children now reads its live status correctly too — those use a different set of status flags than a single sensor or device does, worst status wins when several apply. A connector also now notices a status change on a nested part of its target, not only the target element itself, and lines up against the actual icon picture rather than the wider clickable box around it, so the endpoint lands on the icon instead of beside it. 1.4.1: Connector fixes. Dragging a Connector from Build onto the canvas works now (it silently did nothing before); drop it on top of an object and it glues itself to the nearest side right away. Gluing anywhere — Connector or a Shapes line — now only offers the four side centers, not a free slide along the edge. A connector reads live status from the state PRTG itself put on the object (the same class PRTG and our own Icon objects use), not just a plain background color, so Icon-object endpoints now color correctly too. The Selected panel (title, shape gallery, and the inline Shape section when editing in place) calls a Connector a Connector and only offers Line, Arrow and Flowing arrow for it, never a flowchart box or callout. 1.4.0: A new Connector tool, next to Shape in Build — adds a line already set up to glue to two objects and push to PRTG as a real, self-updating link (Push as a live link in PRTG starts switched on). Shapes keeps its own plain Lines and arrows, unchanged and never pushed live unless you ask. 1.3.1: PRTG’s own built-in icon sets (Default Icons A/B, Icons A/B/C and their static variants, Static Images — whatever this server’s list has) now show up alongside the object files in Existing PRTG objects. Pick one, bind it to a device, sensor or group like any other object, and it recolors itself with that target’s live status once pushed, the same as PRTG’s own icons. 1.3.0: A glued connector can now be pushed as a real, self-updating line on the map itself (“Push as a live link in PRTG” on a connector with both ends glued) — separate from PRTG’s own native connections, which this tool still cannot create (there is no API for that; PRTG only builds them from a hand drag in its own Map Designer). Once pushed, the line finds its two objects on the live page by itself and redraws its own path whenever either one moves, with no re-push needed; with Match Link style left on, it also recolors itself from each end’s live status, split two ways like PRTG’s own lines when the two differ. 1.2.1: A connector’s look now matches the shared Link style by default (the same curve/dash/color/markers/flow settings as the Link style object you push to PRTG), so the Map designer previews what the live map will actually show. Per-connector style is still there — untick Match Link style on a line to set its own thickness, line type, dash, markers and animation. Choosing a specific line format from the shape gallery now also switches that line off Match Link style automatically. The Link style preview in the Object builder also now shows one point-to-point link instead of a branching demo (PRTG links are always point to point). 1.2.0: Map designer lines are now connectors — drag either end onto a frame, shape or PRTG object and it glues there (a highlight shows the drop target); glued ends follow that object when it is moved, resized or rotated, and come unglued automatically if the object is deleted. A Branch button on a glued line adds another end from the same start, for one-to-many connections. 1.1.1: Link style animation now runs on systems that ask for reduced motion (it was switched off there); a new option pauses it again if you want that. 1.1.0: new Link style object in the Object builder. Curve, S-curve, elbow, rounded elbow and arc lines; solid, dashed, dotted and dash-dot styles; dot and arrow markers; optional flowing dashes. The straight lines PRTG draws are hidden from the first moment, so they never flash. 1.0.0: items can be reordered on the canvas. Bring to front, send backward, send to back and a Layer control next to Width and Height in Selected; Up/Down buttons in the Layers tab. Items already on the chosen PRTG map now also show up in the Layers tab (read-only, sorted by their real layer), with a link back to Existing PRTG maps to change them there. v64: one Existing PRTG maps section at the bottom of the Add tab holds the map choice and everything from Already on this map; it can be minimized. v63: the map choice has its own Map section on the Add tab, with Already on this map (show and clear items) under it; Publish keeps Push to PRTG and Save and load layout, and shows which map it will push to. v62: the Button tool has the same groups of presets as the Label tool (Basic, Map buttons, Status buttons, and the eight table, gauge and frame looks). v61: the chart.svg picture is now requested with exactly the address PRTG put in the page (PRTG signs it with a URL hash, so any change gives 401). v60: Collect PRTG samples blanks out passhash, username, map id and URL hash in the saved file, and also saves the chart.svg picture of up to two graph items. v59: a Clear items from the canvas button removes the items shown by Show items already on this map (it asks twice if you have unapplied changes). v58: choosing a Build tile (Frame, Label, Button, Background, Shape) closes the Existing PRTG objects section, so the area below stays blank until the Existing PRTG objects tile is pressed. v57: copy, cut and paste are back on the Dashboard (Ctrl+C, Ctrl+X, Ctrl+V and the Copy and Paste buttons; a frame is copied with everything inside it). v56: a Refresh object list button in Existing PRTG objects reads PRTG\u2019s list of object files again without reconnecting. v55: the Dashboard tabs (Add, Selected, Layers, Publish) and the Build tiles (click then place, double-click, drag) are in the file; their tab names, grouping and timing are now in config. v54: the ready-made objects section is gone. v53: signing in with a username and passhash is required to connect, in a new login card. v52: previews of counting objects (status counts, donuts) read every sensor, not the first five. v50: Status counts object (tiles of sensors by status) and the Brand navy look. v49: authorship marks in the core. v48: after a push the map is read back; items PRTG did not keep are added again and any that still fail are named. v47: shape presets give each look its own color and thickness; push and edit results show over the Dashboard and a failed login opens the login panel. v46: status dots in the device tree; the object preview can be dragged onto the canvas. v45: graphs and icons are edited in the preview too. v44: gauges and donuts are edited in the preview like tables (drag the handles, double-click the title). v43: Look presets for frames, backgrounds and the new shapes (lines, arrows, flowing arrows). v42: notes became hover icons, undo/redo arrows over the canvas, a tidier Dashboard panel, a PRTG connection switch. v41: click, drag, resize, delete on the canvas. v40: edit, move, delete with Review and Undo. v39: existing items show the object they are bound to (name, type, place) and a summary of what they show. v38: shows the items already on a map. v37: Collect samples reads the map items. v36: frames edited in the Objects view. v35: no comments in generated files. v34: file list. v33: install script. v32: config, tabs.',
   /* the Dashboard canvas when the page opens, and the size a new Frame starts at */
   canvas:{w:1920,h:1080,grid:10,zoom:'fit'},
   frame:{w:360,h:220},
@@ -95,7 +95,7 @@ var CFG={
     previewWith:'prtgMapTool.previewWith'   /* the PRTG server address is added after this name */
   }
 };
-CFG.version=(function(){try{return chrome.runtime.getManifest().version;}catch(e){return '1.5.28';}})();   /* the version is the extension's own, from manifest.json */
+CFG.version=(function(){try{return chrome.runtime.getManifest().version;}catch(e){return '1.5.29';}})();   /* the version is the extension's own, from manifest.json */
 document.title=CFG.name+' v'+CFG.version;
 document.getElementById('ver').textContent='v'+CFG.version;
 document.getElementById('dw').value=CFG.canvas.w;
@@ -3331,7 +3331,7 @@ try{
     ['Five columns',5,1,[[0,0,1,1],[1,0,1,1],[2,0,1,1],[3,0,1,1],[4,0,1,1]]],
     ['Four rows',1,4,[[0,0,1,1],[0,1,1,1],[0,2,1,1],[0,3,1,1]]]
   ];
-  D.layout=null;D.layShow=true;
+  D.layout=null;D.layShow=true;D.layFrames=false;D.layFrameLook='Light card';
   var layOv=document.createElement('div');layOv.id='dlayov';wrap.appendChild(layOv);
   function layCells(){
     var L=D.layout, T, m, g, W, H, out=[];
@@ -3344,7 +3344,27 @@ try{
     });
     return out;
   }
-  function layItems(){return D.items.filter(function(x){return x.parent==null&&!(x.type==='frame'&&x.p.group===false&&!x.p.shape);});}
+  function layItems(){return D.items.filter(function(x){return x.parent==null&&!(x.p&&x.p.cellFrame)&&!(x.type==='frame'&&x.p.group===false&&!x.p.shape);});}
+  /* a frame in each cell: real frame items (styled, moved and pushed like any frame) that follow the layout's cells */
+  function layCellFrames(){return D.items.filter(function(x){return x.type==='frame'&&x.p&&x.p.cellFrame;});}
+  function layFrameIn(k){var f=null;layCellFrames().forEach(function(x){if(x.p.cell===k)f=x;});return f;}
+  function layInner(c,k){var f=(k>=0)?layFrameIn(k):null, t;if(!f)return c;t=f.p.title?Math.round((f.p.tsize||18)*1.6+(f.p.pady||16)):(f.p.pady||16);return {x:c.x+(f.p.padx||20),y:c.y+t,w:Math.max(20,c.w-2*(f.p.padx||20)),h:Math.max(20,c.h-t-(f.p.pady||16))};}
+  function layFramesSync(){
+    var cells=layCells(), have=layCellFrames(), keep={}, proto=null;
+    have.forEach(function(f){if(!proto)proto=f.p;if(f.p.cell<cells.length&&!keep[f.p.cell]){keep[f.p.cell]=f;}});
+    have.forEach(function(f){if(keep[f.p.cell]!==f&&!D.items.some(function(c){return c.parent===f.id;}))D.items=D.items.filter(function(x){return x!==f;});});   /* frames of cells that are gone go, unless something sits inside them */
+    cells.forEach(function(c,k){
+      var f=keep[k], dx, dy;
+      if(!f){
+        f={id:D.nextId++,type:'frame',parent:null,x:c.x,y:c.y,w:c.w,h:c.h,state:null,p:proto?JSON.parse(JSON.stringify(proto)):newFrameP(D.layFrameLook||'Light card')};
+        if(!proto)f.p.title='';
+        f.p.cellFrame=true;f.p.cell=k;f.ord=layerOf(f)*100000+(++D.ordSeq);D.items.push(f);return;
+      }
+      dx=c.x-f.x;dy=c.y-f.y;if(dx||dy)msMove(f,dx,dy,{});f.w=c.w;f.h=c.h;
+    });
+  }
+  function layFramesRestyle(look){layCellFrames().forEach(function(f){var t=f.p.title, cell=f.p.cell;f.p=newFrameP(look);f.p.title=t;f.p.cellFrame=true;f.p.cell=cell;});}
+  function layFramesOff(){var gone=0;layCellFrames().forEach(function(f){if(!D.items.some(function(c){return c.parent===f.id;})){D.items=D.items.filter(function(x){return x!==f;});gone++;}else{delete f.p.cellFrame;delete f.p.cell;}});return gone;}
   function laySize(it){
     var n;
     if(isBox(it))return {w:it.w,h:it.h};
@@ -3352,8 +3372,10 @@ try{
     return n?{w:n.offsetWidth,h:n.offsetHeight}:{w:it.w,h:it.h};
   }
   function layFits(it,c){var s=laySize(it);return isBox(it)?(c.w>=40&&c.h>=40):(s.w<=c.w&&s.h<=c.h);}   /* boxes stretch to any cell that is not tiny; labels, buttons and chips keep their size and must fit */
-  function layPut(it,c){
+  function layPut(it,c,k){
     var s;
+    if(k==null){var cs=layCells(), i;for(i=0;i<cs.length;i++)if(cs[i].x===c.x&&cs[i].y===c.y&&cs[i].w===c.w&&cs[i].h===c.h){k=i;break;}}
+    c=layInner(c,k==null?-1:k);
     if(isBox(it)){msMove(it,c.x-it.x,c.y-it.y,{});it.w=c.w;it.h=c.h;}
     else{s=laySize(it);msMove(it,c.x+Math.round((c.w-s.w)/2)-it.x,c.y+Math.round((c.h-s.h)/2)-it.y,{});}
   }
@@ -3378,7 +3400,7 @@ try{
     rows.forEach(function(r){r.items.sort(function(a,b){return a.x-b.x;});flat=flat.concat(r.items);});
     flat.forEach(function(it){
       var k;for(k=0;k<cells.length;k++)if(!used[k]&&layFits(it,cells[k]))break;
-      if(k<cells.length){used[k]=1;layPut(it,cells[k]);put++;}else skip++;
+      if(k<cells.length){used[k]=1;layPut(it,cells[k],k);put++;}else skip++;
     });
     renderAll();buildForm();commit();
     toastDash(put?('Put '+put+(put===1?' item':' items')+' in the cells'+(skip?(', '+skip+' did not fit'):'')):(skip?'Nothing fits the cells. Try a bigger layout or smaller items':'Add some items first, then drop them on the cells'));
@@ -3386,12 +3408,14 @@ try{
   function layApply(id){
     var old=D.layout;
     D.layout={id:id,gap:old?old.gap:20,margin:old?old.margin:20};
+    if(D.layFrames)layFramesSync();
     layFill();
   }
   function laySpacing(gap,margin){
     var before=layCells(), map=[], after;
     layItems().forEach(function(x){var k=layCellOf(before,x);if(k>=0)map.push([x,k]);});
     D.layout.gap=gap;D.layout.margin=margin;
+    if(D.layFrames)layFramesSync();
     after=layCells();
     map.forEach(function(p){if(after[p[1]]&&layFits(p[0],after[p[1]]))layPut(p[0],after[p[1]]);});
     renderAll();buildForm();commit();
@@ -3410,7 +3434,7 @@ try{
       if(k0>=0&&k0!==k&&layFits(occ,cells[k0]))layPut(occ,cells[k0]);
       else{msMove(it,d.ox-it.x,d.oy-it.y,{});toastDash('That cell already has an item');return;}
     }
-    layPut(it,cells[k]);
+    layPut(it,cells[k],k);
   }
   var _raLay=renderAll;renderAll=function(){_raLay.apply(this,arguments);layPaint();};
   var layPop=null, layBtn=document.getElementById('dlaybtn');
@@ -3444,6 +3468,20 @@ try{
       row.appendChild(a);row.appendChild(b2);pop.appendChild(row);
       sh=document.createElement('label');sh.className='gp-chk';ck=document.createElement('input');ck.type='checkbox';ck.checked=!!D.layShow;
       ck.addEventListener('change',function(){D.layShow=ck.checked;layPaint();});sh.appendChild(ck);sh.appendChild(document.createTextNode(' Show the cells on the canvas'));pop.appendChild(sh);
+      var fr=document.createElement('label');fr.className='gp-chk';var fk=document.createElement('input');fk.type='checkbox';fk.checked=!!D.layFrames;fk.id='dlayframes';
+      fk.addEventListener('change',function(){
+        D.layFrames=fk.checked;
+        if(fk.checked){layFramesSync();renderAll();buildForm();commit();toastDash('A frame in each of the '+layCells().length+' cells');}
+        else{var g=layFramesOff();renderAll();buildForm();commit();toastDash(g?('Removed '+g+(g===1?' empty frame':' empty frames')):'Frames with items in them stay as ordinary frames');}
+        layPopBuild();
+      });
+      fr.appendChild(fk);fr.appendChild(document.createTextNode(' Add a frame in each cell'));pop.appendChild(fr);
+      if(D.layFrames){
+        var lr=document.createElement('div');lr.className='gp-row';var ll=document.createElement('label');ll.textContent='Frame look';var ls=document.createElement('select');ls.id='dlayflook';
+        Object.keys(FSTYLES).forEach(function(k){var o=document.createElement('option');o.value=k;o.textContent=k;ls.appendChild(o);});ls.value=D.layFrameLook||'Light card';
+        ls.addEventListener('change',function(){D.layFrameLook=ls.value;layFramesRestyle(ls.value);renderAll();buildForm();commit();});
+        ll.appendChild(ls);lr.appendChild(ll);pop.appendChild(lr);
+      }
       bw=document.createElement('div');bw.className='gp-btns';
       ba=document.createElement('button');ba.type='button';ba.className='btn ghost';ba.textContent='Fill cells with my items';ba.addEventListener('click',function(){layFill();});
       bb=document.createElement('button');bb.type='button';bb.className='btn ghost';bb.textContent='Remove layout';bb.addEventListener('click',function(){layRemove();layPopBuild();});
@@ -4394,6 +4432,20 @@ try{
     b.addEventListener('click',function(){addItem(b.getAttribute('data-add'));});
   });
   document.getElementById('dundo').addEventListener('click',doUndo);
+  /* Clean the canvas: every item goes in one step, after a second click; Undo brings them back. Items already pushed stay on the PRTG map until a push is told to remove them. */
+  (function(){
+    var b=document.getElementById('dclean'), armed=null;
+    function disarm(){clearTimeout(armed);armed=null;b.classList.remove('armed');b.setAttribute('data-tip','Clean the canvas: remove every item (Undo brings them back)');}
+    b.addEventListener('click',function(){
+      var n=D.items.length;
+      if(!n){disarm();toast('The canvas is already empty');return;}
+      if(!armed){armed=setTimeout(disarm,3500);b.classList.add('armed');b.setAttribute('data-tip','Click again to remove all '+n+(n===1?' item':' items'));toast('Click again to remove all '+n+(n===1?' item':' items')+' from the canvas');return;}
+      disarm();
+      D.items=[];D.sel=null;if(typeof editing!=='undefined'&&editing!==null){try{finishEdit(false);}catch(e){}}
+      renderAll();buildForm();commit();
+      toast('Removed '+n+(n===1?' item':' items')+'. Undo brings them back.');
+    });
+  })();
   document.getElementById('dredo').addEventListener('click',doRedo);
   document.getElementById('dgrid').addEventListener('change',function(){
     var v=parseInt(this.value,10)||0;
@@ -7814,6 +7866,7 @@ try{
     var ks=Object.keys(o).sort(function(a,b){return (o[b].at||0)-(o[a].at||0);}), n={};
     ks.slice(0,CFG.library.max).forEach(function(k){n[k]=o[k];});
     try{localStorage.setItem(KEY,JSON.stringify(n));}catch(e){}
+    setTimeout(function(){try{document.dispatchEvent(new Event('pmlibchanged'));}catch(e){}},0);   /* the name check follows the list */
   }
   /* the first line of every object file is <!--Category: Name-->, which is how PRTG lists it */
   function parseHead(code){var m=/^\s*<!--\s*([^:]+?)\s*:\s*(.+?)\s*-->/.exec(code);return m?{cat:m[1],name:m[2]}:null;}
@@ -8395,30 +8448,51 @@ try{
   }
   function classOf(T){return 'ptbl_'+slugOf(T.name);}
   /* is this object's file name, or its name in its category, already on the connected PRTG server? */
+  /* is this name taken? On the connected PRTG server (its files, and the names in its object list, in any category)
+     and in Your objects (the files this browser keeps for the install script). When it is, the first free number is suggested. */
+  function libObjs(){var o={};try{o=JSON.parse(localStorage.getItem(CFG.keys.library)||'{}')||{};}catch(e){}return Object.keys(o).map(function(f){return {file:f,cat:o[f].cat||'',name:o[f].name||''};});}
+  function lc(x){return String(x||'').trim().toLowerCase();}
   function nameClash(m){
-    var list=window.PRTGOBJS||[], f=fileNameOf(m).toLowerCase(), cat=String(m.cat||'').trim().toLowerCase(), nm=String(m.name||'').trim().toLowerCase(), r={file:null,name:null};
+    var list=window.PRTGOBJS||[], lib=libObjs(), f=lc(fileNameOf(m)), cat=lc(m.cat), nm=lc(m.name), r={file:null,name:null,sameCat:false,libFile:null,libName:null};
     list.forEach(function(o){
-      if(!r.file&&String(o.file).toLowerCase()===f)r.file=o;
-      else if(!r.name&&String(o.cat).trim().toLowerCase()===cat&&String(o.name).trim().toLowerCase()===nm)r.name=o;
+      if(!r.file&&lc(o.file)===f)r.file=o;
+      else if(lc(o.name)===nm&&(!r.name||(!r.sameCat&&lc(o.cat)===cat))){r.name=o;r.sameCat=(lc(o.cat)===cat);}
     });
+    lib.forEach(function(o){if(!r.libFile&&lc(o.file)===f)r.libFile=o;else if(!r.libName&&lc(o.name)===nm)r.libName=o;});
     return r;
+  }
+  function nameSuggest(m){
+    var list=(window.PRTGOBJS||[]).concat(libObjs()), files={}, names={};
+    list.forEach(function(o){files[lc(o.file)]=1;names[lc(o.name)]=1;});
+    var nb=String(m.name||'Object').trim().replace(/\s*\d+$/,'')||'Object', fb=fileNameOf(m).replace(/\.htm$/i,'').replace(/[\s_-]*\d+$/,'')||'object', sep=/[ ]/.test(fb)?' ':'-', n;
+    for(n=2;n<1000;n++){var nn=nb+' '+n, ff=fb+sep+n;if(!names[lc(nn)]&&!files[lc(ff+'.htm')])return {name:nn,fname:ff};}
+    return null;
   }
   function nameCheckText(m){
     var host=window.PRTGOBJHOST, on=!!(window.PRTGSTATE&&window.PRTGSTATE.connected&&host);
-    if(!on)return {k:'off',t:'Connect to PRTG to check whether this name is already used on the server.'};
-    var c=nameClash(m), f=fileNameOf(m);
-    if(c.file)return {k:'warn',t:host+' already has a file named '+f+' ('+c.file.cat+': '+c.file.name+'). Saving this one to mapobjects replaces it. Change the file name to keep both.'};
-    if(c.name)return {k:'warn',t:host+' already lists \u201C'+c.name.cat+': '+c.name.name+'\u201D (file '+c.name.file+'). Two objects with the same name in one category are hard to tell apart in PRTG\u2019s list. Change the object name to keep them apart.'};
-    return {k:'ok',t:'No file or object with this name on '+host+'.'};
+    var c=nameClash(m), f=fileNameOf(m), msgs=[];
+    if(on&&c.file)msgs.push(host+' already has a file named '+f+' ('+c.file.cat+': '+c.file.name+'). Saving this one to mapobjects replaces it.');
+    if(c.libFile&&!(on&&c.file))msgs.push('Your objects already has a file named '+f+' ('+c.libFile.cat+': '+c.libFile.name+'). Adding this one replaces it in the list.');
+    if(on&&c.name)msgs.push(host+' already lists an object named \u201C'+c.name.name+'\u201D'+(c.sameCat?' in '+c.name.cat:' (in '+c.name.cat+')')+', file '+c.name.file+'. Two objects with one name are hard to tell apart in PRTG\u2019s list.');
+    else if(c.libName)msgs.push('Your objects already has an object named \u201C'+c.libName.name+'\u201D (file '+c.libName.file+').');
+    if(msgs.length){var sg=nameSuggest(m);return {k:'warn',t:msgs.join(' ')+(sg?' Suggested: \u201C'+sg.name+'\u201D, file '+sg.fname+'.htm.':''),sug:sg,fileHit:!!(c.file||c.libFile)};}
+    if(!on)return {k:'off',t:'Not in Your objects. Connect to PRTG to check the names on the server too.'};
+    return {k:'ok',t:'No file or object with this name on '+host+' or in Your objects.'};
+  }
+  /* writes the result into a .nclash line, with a button that takes the suggested numbered name */
+  function nameCheckPaint(el,r,use){
+    el.className='nclash nc-'+r.k;el.textContent=(r.k==='warn'?'\u26A0 ':(r.k==='ok'?'\u2713 ':''))+r.t;
+    if(r.sug&&use){var b=h('button','ncuse','Use \u201C'+r.sug.name+'\u201D');b.type='button';b.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();use(r.sug);});el.appendChild(document.createTextNode(' '));el.appendChild(b);}
   }
   function nameCheckShow(){
     var nf=(TYPE&&!isLegacy(TYPE)&&!isPaste()), r=nf?nameCheckText(M()):null;
     [].forEach.call(document.querySelectorAll('.nclash:not([data-own])'),function(el){
       el.hidden=!r;if(!r)return;
-      el.className='nclash nc-'+r.k;el.textContent=(r.k==='warn'?'\u26A0 ':(r.k==='ok'?'\u2713 ':''))+r.t;
+      nameCheckPaint(el,r,function(sg){var m=M();m.name=sg.name;m.nameUser=true;m.fname=sg.fname;refreshUI();render();});
     });
-    var fn=document.getElementById('ofname');if(fn)fn.classList.toggle('nc-file',!!(r&&r.k==='warn'));
+    var fn=document.getElementById('ofname');if(fn)fn.classList.toggle('nc-file',!!(r&&r.k==='warn'&&r.fileHit));
   }
+  document.addEventListener('pmlibchanged',function(){try{nameCheckShow();}catch(e){}});
   document.addEventListener('prtgobjs',function(){try{nameCheckShow();}catch(e){}});
   document.addEventListener('prtgstate',function(){try{nameCheckShow();}catch(e){}});
   function fileNameOf(T){
@@ -10239,6 +10313,271 @@ try{
     return o.join('\n')+'\n';
   }
 
+  /* ====================== sunburst: a group's or probe's device tree as rings ====================== */
+  /* PRTG's own five sunburst files differ only in their sizing flags and in hiding paused devices */
+  var SBPRESETS=[
+    {id:'devices sunburst',cat:'Device Tree Views',name:'Sunburst',sizeSensors:false,sizePriority:false,hidePaused:false},
+    {id:'devices sunburst sensors',cat:'Device Tree Views',name:'Sunburst (sized by sensors)',sizeSensors:true,sizePriority:false,hidePaused:false},
+    {id:'devices sunburst priority',cat:'Device Tree Views',name:'Sunburst (sized by priority)',sizeSensors:false,sizePriority:true,hidePaused:false},
+    {id:'devices sunburst sensors priority',cat:'Device Tree Views',name:'Sunburst (sized by sensors and priority)',sizeSensors:true,sizePriority:true,hidePaused:false},
+    {id:'devices sunburst no paused',cat:'Device Tree Views',name:'Sunburst (hide paused devices)',sizeSensors:false,sizePriority:false,hidePaused:true}
+  ];
+  /* how it is drawn: PRTG's own sunburst (restyled), or drawn by Map Studio from the same PRTG data */
+  var SBFACES=[['prtg','PRTG classic'],['solid','Solid'],['gaps','Separated'],['glow','Glow'],['pastel','Soft pastel']];
+  var SBCENTERS=[['total','Number of sensors'],['pctup','Percent of sensors up'],['name','The object’s name'],['none','Nothing']];
+  var SBKEYS=['down','partialdown','downack','warn','unusual','up','paused','undefined'];   /* PRTG's own order (_Prtg.Core sensorTypes): a slice takes the first state it has sensors in */
+  var SBCOLS='objid,name,probegroupdevice=treejson,basetype,priority,status=textraw,totalsens=textraw,upsens=textraw,downsens=textraw,partialdownsens=textraw,warnsens=textraw,pausedsens=textraw,unusualsens=textraw,undefinedsens=textraw,downacksens=textraw';
+  var SBSTOCKCOLS='objid,name,access=treejson,probegroupdevice=treejson,basetype,icon=treejson,favorite,fold,devicenum=textraw,groupnum=textraw,totalsens=textraw,upsens=textraw,downsens=textraw,partialdownsens=textraw,warnsens=textraw,pausedsens=textraw,unusualsens=textraw,undefinedsens=textraw,downacksens=textraw,condition,status=textraw,message,info,priority';
+  function blankSB(){
+    return {type:'sunburst',engine:'ring',face:'gaps',cat:'Device Tree Views',name:'Device tree sunburst',fname:'',titleMode:'object',title:'',
+      sizeSensors:true,sizePriority:false,hidePaused:false,labels:true,center:'total',hole:26,depth:0,legend:'below',links:true,mapTags:true,
+      initW:420,initH:440,look:lookOf('Light card')};
+  }
+  function sbFromPreset(p){
+    var S=blankSB();
+    S.engine='prtg';S.face='prtg';S.cat=p.cat;S.name=p.name+' custom';S.sizeSensors=!!p.sizeSensors;S.sizePriority=!!p.sizePriority;S.hidePaused=!!p.hidePaused;
+    S.initW=0;S.initH=0;S.look=lookOf('PRTG default');
+    return S;
+  }
+  function sbFace(){return SB.engine==='prtg'?'prtg':(SB.face||'gaps');}
+  function sbSetFace(k){
+    if(k==='prtg'){SB.engine='prtg';return;}
+    SB.engine='ring';SB.face=k;
+    if(!(parseInt(SB.initW,10)>0&&parseInt(SB.initH,10)>0)){SB.initW=420;SB.initH=440;}
+    if(SB.look.mode==='prtg')SB.look=lookOf('Light card');
+  }
+  function sbEffLook(S){var L=S.look;if(L.mode==='prtg'&&S.engine==='ring'){var m=lookOf('Minimal');m.name='PRTG default';return m;}return L;}
+  function sbClassOf(S){return 'psb_'+slugOf(S.name);}
+  function sbPalette(L){
+    var c=L.c;
+    return {down:c.down,partialdown:blend(c.down,'#FFFFFF',0.3),downack:blend(c.down,'#FFFFFF',0.5),warn:c.warning,unusual:(c.unusual&&c.unusual!==c.warning)?c.unusual:blend(c.warning,c.down,0.5),up:c.up,paused:c.paused,undefined:c.unknown,none:blend(c.unknown,'#FFFFFF',0.5)};
+  }
+  function sunburstCss(S,cls){
+    var L=sbEffLook(S), r='.'+cls, bar=(L.titleStyle==='bar'), muted=(L.muted||L.headColor), P=sbPalette(L), c;
+    var fillA=(L.cardA==null?100:L.cardA), cardFill=(L.card)?((fillA<100)?tint(L.cardBg,fillA/100):L.cardBg):'#FFFFFF';
+    if(S.engine==='prtg'){
+      if(L.mode==='prtg')return '';
+      c=gFrameCss({engine:'ring'},cls,L);
+      c.push(r+' .sensorTree{flex:1 1 auto;min-height:0;position:relative;'+(bar?'margin:10px 14px;':'')+'}');
+      SBKEYS.forEach(function(k){c.push(r+' .sensorTree g.'+k+' path.arc{fill:'+P[k]+';}');});
+      c.push(r+' .sensorTree path.arc{stroke:'+cardFill+';}');
+      c.push(r+' .sensorTree svg text{fill:'+L.text+';font-family:'+familyStack(L.font)+';}');
+      return c.join('\n');
+    }
+    c=gFrameCss({engine:'ring'},cls,L);
+    c.push(r+' .sbbody{flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;gap:14px;'+(bar?'margin:10px 14px;':'')+'}');
+    c.push(r+' .sbbody.lg-below{flex-direction:column;gap:8px;}');
+    c.push(r+' .sbbody.lg-none .sblegend{display:none;}');
+    c.push(r+' .sbwrap{flex:1 1 0;min-width:0;min-height:0;align-self:stretch;position:relative;}');
+    c.push(r+' .sbbody.lg-below .sbwrap{width:100%;}');
+    c.push(r+' .sbsvg{position:absolute;left:0;top:0;width:100%;height:100%;display:block;overflow:visible;}');
+    c.push(r+' .sbsvg text{font-family:'+familyStack(L.font)+';}');
+    c.push(r+' .sbsvg .sbv{fill:'+L.text+';font-weight:600;}');
+    c.push(r+' .sbsvg .sbl{fill:'+muted+';}');
+    c.push(r+' .sbsvg .sbt{fill:'+L.text+';pointer-events:none;}');
+    c.push(r+' .sblegend{flex:0 0 auto;display:flex;flex-wrap:wrap;justify-content:center;gap:5px 14px;max-width:100%;}');
+    c.push(r+' .sbbody.lg-right .sblegend{flex-direction:column;flex-wrap:nowrap;max-width:46%;}');
+    c.push(r+' .sbli{display:flex;align-items:center;gap:7px;white-space:nowrap;color:'+muted+';}');
+    c.push(r+' .sbli i{display:block;width:10px;height:10px;border-radius:50%;flex:0 0 auto;}');
+    c.push(r+' .sbli b{font-weight:600;color:'+L.text+';margin-left:4px;}');
+    c.push(r+' .sbnone{color:'+muted+';}');
+    return c.join('\n');
+  }
+  function sbConfig(S){
+    var L=sbEffLook(S), fillA=(L.cardA==null?100:L.cardA), cardFill=(L.card)?((fillA<100)?tint(L.cardBg,fillA/100):L.cardBg):'#FFFFFF';
+    return {face:S.engine==='prtg'?'prtg':(S.face||'gaps'),sizeSensors:!!S.sizeSensors,sizePriority:!!S.sizePriority,hidePaused:!!S.hidePaused,labels:!!S.labels,
+      center:(['total','pctup','name','none'].indexOf(S.center)>-1)?S.center:'total',hole:Math.max(0,Math.min(70,Number(S.hole)||0)),depth:Math.max(0,Math.min(8,parseInt(S.depth,10)||0)),
+      links:!!S.links,colors:sbPalette(L),card:(String(cardFill).charAt(0)==='#'?cardFill:'#FFFFFF'),text:L.text,muted:(L.muted||L.headColor||L.text)};
+  }
+  /* the sunburst's drawing code: shipped inside the generated file as its own source text. It reads the device tree PRTG puts in the page
+     (the same sensorxref table PRTG's own sunburst reads) and rebuilds the tree the way PRTG does: rows come in tree order, each with its path */
+  function sbRuntime(root,C){
+    var NS='http://www.w3.org/2000/svg', svg=root.querySelector('.sbsvg'), legend=root.querySelector('.sblegend');
+    if(!svg)return;
+    var KEYS=['down','partialdown','downack','warn','unusual','up','paused','undefined'];
+    var LABEL={down:'Down',partialdown:'Partial down',downack:'Down (ack.)',warn:'Warning',unusual:'Unusual',up:'Up',paused:'Paused',undefined:'Unknown'};
+    function el(tag,a,par){var e=document.createElementNS(NS,tag),k;for(k in a){if(a[k]!==undefined&&a[k]!==null)e.setAttribute(k,a[k]);}if(par)par.appendChild(e);return e;}
+    function clear(n){while(n&&n.firstChild)n.removeChild(n.firstChild);}
+    function say(t){clear(svg);clear(legend);svg.setAttribute('viewBox','0 0 200 200');el('text',{x:100,y:104,'text-anchor':'middle','class':'sbl','font-size':11},svg).textContent=t;root.setAttribute('data-sunburst','message');}
+    function num(v){var n=parseFloat(String(v==null?'':v).replace(/[^\d.\-]/g,''));return isNaN(n)?0:n;}
+    function hx(c){c=String(c||'').replace('#','');if(c.length===3)c=c.charAt(0)+c.charAt(0)+c.charAt(1)+c.charAt(1)+c.charAt(2)+c.charAt(2);return c.length===6?c:'888888';}
+    function mix(a,b,t){var x=hx(a),y=hx(b),o='#',i,v;for(i=0;i<6;i+=2){v=Math.round(parseInt(x.substr(i,2),16)*(1-t)+parseInt(y.substr(i,2),16)*t);o+=(v<16?'0':'')+v.toString(16);}return o;}
+    function findJson(){var found=null;(function walk(node){for(var c=node.firstChild;c&&!found;c=c.nextSibling){if(c.nodeType===8){var t=(c.nodeValue||'').replace(/^\s+|\s+$/g,'');if(t.charAt(0)==='{'){found=t;return;}}else if(c.nodeType===1)walk(c);}})(root);return found;}
+    function pathOf(r){var p=r.probegroupdevice;if(typeof p==='string'){try{p=JSON.parse(p);}catch(e){p=null;}}return (p&&typeof p.length==='number')?p:null;}
+    function stateOf(n){var i;for(i=0;i<KEYS.length;i++){if(n.c[KEYS[i]]>0)return KEYS[i];}return 'none';}
+    try{
+      var raw=findJson();if(!raw){say('No device tree data');return;}
+      var data=JSON.parse(raw), box=(data&&data.objects)?data.objects:data, rows=null, k;
+      if(box&&box.sensorxref)rows=box.sensorxref;else for(k in box){if(box[k]&&typeof box[k].length==='number'&&typeof box[k]!=='string'){rows=box[k];break;}}
+      if(!rows||!rows.length){say('No devices');return;}
+      /* the tree, the way PRTG builds it: each row's level is the length of its path; a deeper row is a child of the row before it */
+      var stack=[], tops=[], nodes=[];
+      rows.forEach(function(r,i){
+        var p=pathOf(r), lev=p?p.length:({probe:1,probenode:1,group:2,device:3}[r.basetype]||3), n={id:r.objid,name:String(r.name||'').replace(/<[^>]*>/g,''),type:r.basetype||'',prio:num(r.priority)||3,status:num(r.status),lev:lev,kids:[],c:{}};
+        KEYS.forEach(function(k2){n.c[k2]=num(r[k2+'sens']);});n.total=num(r.totalsens);
+        while(stack.length&&stack[stack.length-1].lev>=lev)stack.pop();
+        if(stack.length)stack[stack.length-1].kids.push(n);else tops.push(n);
+        stack.push(n);nodes.push(n);
+      });
+      var top=(tops.length===1)?tops[0]:{name:'',type:'root',kids:tops,c:{},total:0,lev:0};
+      if(tops.length!==1){KEYS.forEach(function(k2){top.c[k2]=0;tops.forEach(function(t){top.c[k2]+=t.c[k2];});});tops.forEach(function(t){top.total+=t.total;});}
+      function paused(n){return n.type==='device'&&((n.status>=7&&n.status<=9)||n.status===11||n.status===12||(n.total>0&&n.c.paused>=n.total));}
+      /* sizes: PRTG's own formula for a device; a group is the sum of what is in it, or 1 when it is empty */
+      function size(n){
+        n.kids=n.kids.filter(function(x){return !(C.hidePaused&&paused(x));});
+        if(n.type==='device'||!n.kids.length){n.v=(n.type==='device')?Math.pow(Math.log(C.sizeSensors?n.total+2:4)/Math.LN2,C.sizePriority?n.prio:1):1;n.kids.forEach(size);return n.v;}
+        n.v=0;n.kids.forEach(function(x){n.v+=size(x);});return n.v;
+      }
+      size(top);
+      var maxD=0;(function depth(n,d){if(d>maxD)maxD=d;n.kids.forEach(function(x){depth(x,d+1);});})(top,0);
+      if(C.depth>0)maxD=Math.min(maxD,C.depth);
+      clear(svg);svg.setAttribute('viewBox','0 0 200 200');svg.setAttribute('role','img');
+      var R=96, r0=(C.face==='prtg')?R*0.18:R*C.hole/100, ring=maxD>0?(R-r0)/maxD:R, ANG=Math.PI*2, gap=(C.face==='gaps')?0.012:(C.face==='glow'?0.008:0);
+      var defs=el('defs',{},svg);
+      function pt(a,r){return [(100+r*Math.sin(a)).toFixed(2),(100-r*Math.cos(a)).toFixed(2)];}
+      function arcD(a0,a1,ri,ro){
+        if(a1-a0>=ANG-1e-6){return 'M100,'+(100-ro)+'A'+ro+','+ro+' 0 1,1 99.99,'+(100-ro)+'Z'+(ri>0?'M100,'+(100-ri)+'A'+ri+','+ri+' 0 1,0 100.01,'+(100-ri)+'Z':'');}
+        var L=(a1-a0>Math.PI)?1:0, p0=pt(a0,ro), p1=pt(a1,ro), p2=pt(a1,ri), p3=pt(a0,ri);
+        return 'M'+p0+'A'+ro+','+ro+' 0 '+L+',1 '+p1+'L'+p2+(ri>0?'A'+ri+','+ri+' 0 '+L+',0 '+p3:'')+'Z';
+      }
+      var CARD=C.card||'#ffffff', worst={down:1,partialdown:1,downack:1,warn:1,unusual:1};
+      function fillOf(st){var c=C.colors[st]||C.colors.none;if(C.face==='pastel'&&!worst[st])c=mix(c,CARD,0.55);return c;}
+      if(C.face==='glow'){var f=el('filter',{id:'sbg'+Math.floor(Math.random()*1e6),x:'-20%',y:'-20%',width:'140%',height:'140%'},defs);el('feGaussianBlur',{'in':'SourceGraphic',stdDeviation:2.2,result:'b'},f);var mg=el('feMerge',{},f);el('feMergeNode',{'in':'b'},mg);el('feMergeNode',{'in':'SourceGraphic'},mg);C._glow=f.getAttribute('id');}
+      var gAll=el('g',{},svg), labels=[];
+      function lay(n,a0,a1,d){
+        var whole=a1-a0;
+        n.kids.slice().sort(function(a,b){return a.name>b.name?1:(a.name<b.name?-1:0);}).forEach(function(x){
+          var span=(n.v>0)?whole*x.v/n.v:0, b0=a0, b1=a0+span, st=stateOf(x), ri=r0+(d)*ring, ro=r0+(d+1)*ring;
+          a0=b1;
+          if(d>=maxD||span<=0)return;
+          var g=el('g',{'class':x.type+' '+st},gAll), hold=g;
+          if(C.links&&x.id&&(x.type==='device'||x.type==='group'||x.type==='probe'||x.type==='probenode')){hold=el('a',{href:'/'+(x.type==='device'?'device':(x.type==='group'?'group':'probenode'))+'.htm?id='+x.id,target:'_top'},g);}
+          var g0=b0+(span>gap*3?gap:0), g1=b1-(span>gap*3?gap:0);
+          var pth=el('path',{d:arcD(g0,g1,ri+(gap?0.8:0),ro-(gap?0.8:0)),'class':'arc',fill:fillOf(st),stroke:(C.face==='prtg'||C.face==='solid')?CARD:'none','stroke-width':(C.face==='prtg'?0.8:(C.face==='solid'?1.2:0)),'stroke-linejoin':'round'},hold);
+          if(C.face==='glow'&&worst[st])pth.setAttribute('filter','url(#'+C._glow+')');
+          var t='';KEYS.forEach(function(k2){if(x.c[k2]>0)t+=', '+x.c[k2]+' '+LABEL[k2].toLowerCase();});
+          el('title',{},pth).textContent=x.name+(x.total?(' – '+x.total+' sensors'+t):'');
+          if(C.labels&&x.name){var mid=(b0+b1)/2, rm=(ri+ro)/2, len=span*rm, fs=Math.min(9,ring*0.42);if(len>fs*2.2&&ring>9)labels.push({a:mid,r:rm,len:len,fs:fs,name:x.name,st:st,ring:ring});}
+          lay(x,b0,b1,d+1);
+        });
+      }
+      lay(top,0,ANG,0);
+      /* names along each slice where they fit; the text turns so it is never upside down */
+      labels.forEach(function(l){
+        var deg=l.a*180/Math.PI, p=pt(l.a,l.r), radial=(l.len<l.ring*1.4), rot=radial?(deg-90):deg, maxc=Math.floor((radial?l.ring*0.92:l.len*0.92)/(l.fs*0.56)), s=l.name;
+        if(radial){if(deg>180)rot+=180;}else if(deg>90&&deg<270)rot+=180;
+        if(maxc<3)return;if(s.length>maxc)s=s.slice(0,maxc-1)+'…';
+        var dark=(l.st==='down'||l.st==='paused'||l.st==='downack'||C.face==='glow'), tx=el('text',{x:p[0],y:p[1],'text-anchor':'middle','dominant-baseline':'central','class':'sbt','font-size':l.fs.toFixed(2),transform:'rotate('+rot.toFixed(1)+' '+p[0]+' '+p[1]+')'},gAll);
+        if(C.face==='prtg'||C.face==='solid'||C.face==='gaps')tx.setAttribute('style','fill:'+(dark?'#ffffff':'#1d2433'));
+        tx.textContent=s;
+      });
+      /* the middle: the object itself */
+      var tot=top.total||0, up=top.c.up||0, val=null, cap='';
+      if(C.center==='total'){val=String(tot);cap='sensors';}
+      else if(C.center==='pctup'){val=tot?Math.round(100*up/tot)+'%':'–';cap='up';}
+      else if(C.center==='name'){val=null;cap=top.name;}
+      if(r0>14&&(val!==null||cap)){
+        var fsv=Math.min(r0*0.62,r0*1.5/Math.max(2,(val||'').length)), fsc=Math.max(5,Math.min(r0*0.24,9));
+        if(val!==null){el('text',{x:100,y:(100+fsv*0.3-(cap?fsc*0.6:0)).toFixed(2),'text-anchor':'middle','class':'sbv','font-size':fsv.toFixed(2)},svg).textContent=val;}
+        if(cap){var cs=cap.length>18?cap.slice(0,17)+'…':cap;el('text',{x:100,y:(val!==null?(100+fsv*0.3+fsc*1.1):100+fsc*0.35).toFixed(2),'text-anchor':'middle','class':val!==null?'sbl':'sbv','font-size':(val!==null?fsc:Math.min(fsc*1.4,r0*1.7/Math.max(4,cs.length)*1.6)).toFixed(2)},svg).textContent=cs;}
+      }
+      /* the legend: how many sensors are in each state */
+      clear(legend);var any=false;
+      KEYS.forEach(function(k2){if(!(top.c[k2]>0))return;any=true;var row=document.createElement('div');row.className='sbli';var dot=document.createElement('i');dot.style.background=fillOf(k2);row.appendChild(dot);row.appendChild(document.createTextNode(LABEL[k2]));var b=document.createElement('b');b.textContent=String(top.c[k2]);row.appendChild(b);legend.appendChild(row);});
+      if(!any){var none=document.createElement('div');none.className='sbnone';none.textContent='No sensors';legend.appendChild(none);}
+      root.setAttribute('data-sunburst','ok');root.setAttribute('data-nodes',String(nodes.length));
+    }catch(err){say('Could not read the device tree');}
+  }
+  function sbScript(S){
+    if(S.engine!=='ring')return '';
+    return '(function(){\n  var root=document.getElementById("<@itemid>");\n  if(!root)return;\n  var CFG='+JSON.stringify(sbConfig(S))+';\n  ('+sbRuntime.toString()+')(root,CFG);\n})();';
+  }
+  function sbInit(S){var w=parseInt(S.initW,10), h=parseInt(S.initH,10);return (w>0&&h>0)?' initialwidth="'+Math.min(w,4000)+'" initialheight="'+Math.min(h,4000)+'"':'';}
+  function buildSunburst(S){
+    var cls=sbClassOf(S), css=sunburstCss(S,cls), L=sbEffLook(S), ring=(S.engine==='ring'), styled=!!css, o=[], tm=S.titleMode||'object';
+    var titleInner=(tm==='custom')?clean(S.title):'<#objectproperty name="Name" id="<@objectid>">';
+    o.push('<!'+'--'+clean(S.cat||'Device Tree Views')+': '+clean(S.name||'Sunburst')+'-->');
+    o.push('');
+    o.push('<div class="map_object map_table'+(styled?' '+cls:'')+' <#sensor type="colorclassofstate" prefix="map_objectstate_" id="<@objectid>">" id="<@itemid>" objectid="<@objectid>" subid="<@subid>"'+sbInit(S)+(ring?' data-sunburst="loading"':'')+' style="overflow:hidden;<#mapobject type="coordinates" subid="<@subid>" mode="<@editmode>">">');
+    o.push('\t<#mapobject type="objectgrip" mode="<@editmode>">');
+    o.push('\t<#mapobject type="htmlbefore" subid="<@subid>">');
+    o.push('\t<#checkobjecttype objecttype="probenode,group" nicemessage="true" id="<@objectid>">');
+    if(styled){if(needsFontLink(L))o.push(fontLinkOf(L));o.push('<style>');o.push(css);o.push('</style>');o.push('  <div class="gbox">');if(tm!=='none')o.push('    <div class="gtitle"><b>'+titleInner+'</b></div>');}
+    var tbl=function(cols){
+      var j=['    <!'+'--','      {','       "objects":<#table',"        id='<@objectid>'","        output='json'","        count='*'","        content='sensorxref'","        noraw='1'","        subcheck='1'","        filter_basetype='probe'","        filter_basetype='group'","        filter_basetype='device'"];
+      if(S.mapTags!==false)j.push('        filter_tags="@tag(<@tagfilterstring>)"');
+      j.push("        sortby='probegroupdevice'");j.push("        columns='"+cols+"'>");j.push('      }');j.push('    -->');return j;
+    };
+    if(!ring){
+      var opts={sunburstSizePriority:!!S.sizePriority,sunburstSizeSensors:!!S.sizeSensors,treeMapSizePriority:false,treeMapSizeSensors:false,hideControls:true};
+      if(S.hidePaused)opts.filter=['paused'];
+      o.push('\t<div id ="Plugin_<@itemid>"');
+      o.push('\t\tclass="sensorTree prtg-plugin"');
+      o.push('\t\tdata-layout="none"');
+      o.push('\t\tdata-no-full-size="false"');
+      o.push('\t\tdata-plugin="sunburst"');
+      o.push('\t\tdata-root-id="<#objectid>"');
+      o.push('\t\tdata-objectid="<#objectid>"');
+      o.push('\t\tdata-view-type="sunburst"');
+      o.push('\t\tdata-display-mode="<#displaymode>"');
+      o.push('\t\tdata-show-top-panel="false"');
+      o.push('\t\tdata-border-bottom-width="0"');
+      o.push("\t\tdata-options='"+JSON.stringify(opts)+"'>");
+      tbl(SBSTOCKCOLS).forEach(function(l){o.push(l);});
+      o.push('\t\t<div id="viewport"></div>');
+      o.push('\t</div>');
+    }else{
+      var lg=(['right','below','none'].indexOf(S.legend)>-1)?S.legend:'below';
+      o.push('    <div class="sbbody lg-'+lg+'">');
+      o.push('      <div class="sbwrap"><svg class="sbsvg" preserveAspectRatio="xMidYMid meet"></svg></div>');
+      o.push('      <div class="sblegend"></div>');
+      tbl(SBCOLS).forEach(function(l){o.push(l);});
+      o.push('    </div>');
+    }
+    if(styled)o.push('  </div>');
+    o.push('\t<#mapobject type="htmlafter" subid="<@subid>">');
+    o.push('</div>');
+    var js=sbScript(S);
+    if(js){o.push('');o.push('<scr'+'ipt>');o.push(js);o.push('<\/script>');}
+    return o.join('\n')+'\n';
+  }
+  /* a sample device tree in the shape PRTG sends it, for the preview */
+  function sbSample(){
+    var rows=[], id=2000;
+    function row(path,name,type,c,prio,status){var o={objid:path[path.length-1],name:name,probegroupdevice:path,basetype:type,priority:prio||3,status:status||3,totalsens:0};SBKEYS.forEach(function(k){o[k+'sens']=c[k]||0;o.totalsens+=c[k]||0;});rows.push(o);return o;}
+    function sum(list){var t={};list.forEach(function(x){SBKEYS.forEach(function(k){t[k]=(t[k]||0)+(x[k+'sens']||0);});});return t;}
+    var tree=[['Core network',[['Core switch',{up:42,warn:2}],['Edge router',{up:18,down:1}],['Firewall',{up:24}],['WAN link',{up:6,unusual:1}]]],
+      ['Servers',[['DC01',{up:31}],['DC02',{up:29,warn:1}],['SQL01',{up:22,down:2,warn:1}],['File server',{up:16}],['Backup',{paused:9}]]],
+      ['Branch offices',[['Branch A',{up:12}],['Branch B',{up:9,warn:3}],['Branch C',{up:7,downack:1}]]],
+      ['Wireless',[['AP floor 1',{up:5}],['AP floor 2',{up:5}],['Controller',{up:11,undefined:1}]]]];
+    var gr=[], dv;
+    tree.forEach(function(g,i){var gid=1100+i, devs=g[1].map(function(d,j){return {path:[0,1,gid,id+i*10+j],name:d[0],c:d[1]};});gr.push({gid:gid,name:g[0],devs:devs});});
+    var all=[];gr.forEach(function(g){g.devs.forEach(function(d){var o={};SBKEYS.forEach(function(k){o[k+'sens']=d.c[k]||0;});all.push(o);});});
+    row([0,1],'Local probe','probe',sum(all));
+    gr.forEach(function(g){var ss=g.devs.map(function(d){var o={};SBKEYS.forEach(function(k){o[k+'sens']=d.c[k]||0;});return o;});row([0,1,g.gid],g.name,'group',sum(ss));g.devs.forEach(function(d){row(d.path,d.name,'device',d.c,d.name==='Core switch'?5:3,d.c.paused?7:3);});});
+    return rows;
+  }
+  function sbFaceSvg(k){
+    var G1='#B8C419',Y='#F5C500',R='#E30613',P='#477EC0',N='#CBD2DC',o='', i;
+    var seg=[[0,1.6,G1],[1.6,2.4,Y],[2.4,3.3,G1],[3.3,4.1,R],[4.1,5.2,G1],[5.2,6.283,P]];
+    function a(a0,a1,ri,ro){var p=function(t,r){return (32+r*Math.sin(t)).toFixed(1)+' '+(22-r*Math.cos(t)).toFixed(1);};return 'M'+p(a0,ro)+'A'+ro+' '+ro+' 0 '+((a1-a0)>Math.PI?1:0)+' 1 '+p(a1,ro)+'L'+p(a1,ri)+'A'+ri+' '+ri+' 0 '+((a1-a0)>Math.PI?1:0)+' 0 '+p(a0,ri)+'Z';}
+    var gap=(k==='gaps')?0.07:(k==='glow'?0.05:0), st=(k==='prtg'||k==='solid')?' stroke="#fff" stroke-width="0.8"':'';
+    for(i=0;i<seg.length;i++){var c=seg[i][2];if(k==='pastel'&&c!==R&&c!==Y)c=c===G1?'#E3EDB6':'#D1DDF0';o+='<path d="'+a(seg[i][0]+gap,seg[i][1]-gap,(k==='prtg'?4:7)+0.5,13)+'" fill="'+c+'"'+st+(k==='glow'&&c===R?' style="filter:drop-shadow(0 0 2px '+R+')"':'')+'/>';
+      var m=(seg[i][0]+seg[i][1])/2, w=(seg[i][1]-seg[i][0])/2;o+='<path d="'+a(m-w+gap,m+gap*0.1,13.5,19)+'" fill="'+c+'" opacity=".85"'+st+'/><path d="'+a(m+gap,m+w-gap,13.5,19)+'" fill="'+c+'" opacity=".7"'+st+'/>';}
+    if(k==='prtg')o+='<circle cx="32" cy="22" r="4" fill="#fff"/>';
+    return '<svg viewBox="0 0 64 44" width="64" height="44" aria-hidden="true">'+(k==='glow'?'<rect x="1" y="1" width="62" height="42" rx="7" fill="#141a26"/>':'')+o+'</svg>';
+  }
+  function sbFaceGrid(after){
+    var g=h('div','presetgrid');
+    SBFACES.forEach(function(x){
+      var q=h('button','lookchip');q.type='button';q.setAttribute('data-sbface',x[0]);q.title=x[1];
+      q.innerHTML=sbFaceSvg(x[0])+'<span class="pname">'+x[1]+'</span>';
+      q.addEventListener('click',function(){sbSetFace(x[0]);if(after)after();refreshUI();render();});g.appendChild(q);
+    });
+    g.syncFace=function(){var f=sbFace();[].forEach.call(g.children,function(q){q.classList.toggle('on',q.getAttribute('data-sbface')===f);});};
+    return g;
+  }
+
   /* the same counting the ring donut does, drawn as tiles; PRTG's table tag puts the sensors into a comment and this reads it */
   function statusRuntime(root,C){
     var body=root.querySelector('.sbody');
@@ -11275,8 +11614,8 @@ try{
   }
 
   var FRAMEAPI=DASHAPI.frame||null, FRM={frame:null,bg:null,shape:null};
-  var T=blankT(), G=blankG(), GR=blankGR(), DN=blankD(), IC=blankI(), SC=blankSC(), TL=blankTL(), GM=blankGM(), LK=Object.assign(blankLK(),LKDEF), TYPE='label', syncs=[], vis=[], hostEl=document.getElementById('objpanel');
-  function M(){return TYPE==='gauge'?G:((TYPE==='frame'||TYPE==='bg'||TYPE==='shape')?FRc():(TYPE==='graph'?GR:(TYPE==='donut'?DN:(TYPE==='icon'?IC:(TYPE==='status'?SC:(TYPE==='tile'?TL:(TYPE==='geomap'?GM:(TYPE==='links'?LK:T))))))));}
+  var T=blankT(), G=blankG(), GR=blankGR(), DN=blankD(), SB=blankSB(), IC=blankI(), SC=blankSC(), TL=blankTL(), GM=blankGM(), LK=Object.assign(blankLK(),LKDEF), TYPE='label', syncs=[], vis=[], hostEl=document.getElementById('objpanel');
+  function M(){return TYPE==='gauge'?G:((TYPE==='frame'||TYPE==='bg'||TYPE==='shape')?FRc():(TYPE==='graph'?GR:(TYPE==='donut'?DN:(TYPE==='sunburst'?SB:(TYPE==='icon'?IC:(TYPE==='status'?SC:(TYPE==='tile'?TL:(TYPE==='geomap'?GM:(TYPE==='links'?LK:T)))))))));}
   /* Frame and Background are the Dashboard's own frame, pasted into a Custom HTML item. The Dashboard hands over its generator, so the code is the same. */
   function blankFR(kind){
     var p=(kind==='shape')?FRAMEAPI.newShapeP('b_arrow','right'):FRAMEAPI.newFrameP(kind==='bg'?'Background dark':'Light card');
@@ -11368,8 +11707,8 @@ try{
     var gb=document.getElementById('ogauge');if(gb)gb.hidden=(TYPE==='table'||isPaste()||(TYPE==='icon'&&IC.engine==='stock'));
     var sb=document.getElementById('osamplebox');if(sb)sb.hidden=(TYPE!=='gauge');
     var wl=document.getElementById('owlabel');if(wl)wl.textContent=(TYPE==='table')?'Width, blank = fit':'Width';
-    var wi=document.getElementById('owidth');if(wi)wi.placeholder=(TYPE==='status')?'420':(TYPE==='tile')?'300':(TYPE==='gauge')?'320':(TYPE==='graph'?(GR.kind==='sensors'?'760':(GR.kind==='toplist'?'240':'520')):(TYPE==='donut'?(DN.engine==='ring'?'340':'auto'):(TYPE==='icon'?String(iStyle(IC.style).w):'fit')));
-    var hi=document.getElementById('oheight');if(hi)hi.placeholder=(TYPE==='status')?'200':(TYPE==='tile')?'150':(TYPE==='graph'?(GR.kind==='sensors'?'420':(GR.kind==='toplist'?'240':'300')):(TYPE==='donut'?(DN.engine==='ring'?'220':'auto'):(TYPE==='icon'?String(iStyle(IC.style).h):'280')));
+    var wi=document.getElementById('owidth');if(wi)wi.placeholder=(TYPE==='sunburst')?(SB.engine==='ring'?'420':'auto'):(TYPE==='status')?'420':(TYPE==='tile')?'300':(TYPE==='gauge')?'320':(TYPE==='graph'?(GR.kind==='sensors'?'760':(GR.kind==='toplist'?'240':'520')):(TYPE==='donut'?(DN.engine==='ring'?'340':'auto'):(TYPE==='icon'?String(iStyle(IC.style).w):'fit')));
+    var hi=document.getElementById('oheight');if(hi)hi.placeholder=(TYPE==='sunburst')?(SB.engine==='ring'?'440':'auto'):(TYPE==='status')?'200':(TYPE==='tile')?'150':(TYPE==='graph'?(GR.kind==='sensors'?'420':(GR.kind==='toplist'?'240':'300')):(TYPE==='donut'?(DN.engine==='ring'?'220':'auto'):(TYPE==='icon'?String(iStyle(IC.style).h):'280')));
     var pasteMode=isPaste();
     var csb=document.getElementById('ocsetw');if(csb){csb.style.display=pasteMode?'none':'';if(window.PMSHDR)window.PMSHDR.sync();}
     [['odl'],['ofname']].forEach(function(x){var e=document.getElementById(x[0]);if(e)e.style.display=pasteMode?'none':'';});   /* style, not the hidden attribute: a label has its own display rule */
@@ -11474,7 +11813,7 @@ try{
     if(!galleryEl)return;
     galleryEl.innerHTML='';
     LOOKORDER.forEach(function(name){
-      if(name==='PRTG default'&&(TYPE==='icon'||TYPE==='status'||TYPE==='tile'||(TYPE==='gauge'&&G.engine==='ring')||(TYPE==='donut'&&DN.engine==='ring')))return;
+      if(name==='PRTG default'&&(TYPE==='icon'||TYPE==='status'||TYPE==='tile'||(TYPE==='gauge'&&G.engine==='ring')||(TYPE==='donut'&&DN.engine==='ring')||(TYPE==='sunburst'&&SB.engine==='ring')))return;
       var L=lookOf(name);
       var b=h('button','lookchip'+((M().look&&M().look.name===name)?' on':''));b.type='button';
       b.innerHTML=thumbHTML(L,TYPE)+'<span class="pname">'+name+'</span>';
@@ -11696,8 +12035,8 @@ try{
 
   /* ---------- hands-on editing for the other object types: a frame with handles on the preview sets the size the file starts at, and a double-click on the title types a new one ---------- */
   var EO={ov:null,inp:null};
-  function eoModel(){return TYPE==='gauge'?G:(TYPE==='donut'?DN:(TYPE==='graph'?GR:(TYPE==='icon'?IC:(TYPE==='status'?SC:(TYPE==='tile'?TL:null)))));}
-  function eoText(){return TYPE==='gauge'?buildGauge(G):(TYPE==='donut'?buildDonut(DN):(TYPE==='tile'?buildTile(TL):(TYPE==='status'?buildStatus(SC):(TYPE==='graph'?buildGraph(GR):buildIcon(IC)))));}
+  function eoModel(){return TYPE==='gauge'?G:(TYPE==='sunburst'?SB:(TYPE==='donut'?DN:(TYPE==='graph'?GR:(TYPE==='icon'?IC:(TYPE==='status'?SC:(TYPE==='tile'?TL:null))))));}
+  function eoText(){return TYPE==='gauge'?buildGauge(G):(TYPE==='sunburst'?buildSunburst(SB):(TYPE==='donut'?buildDonut(DN):(TYPE==='tile'?buildTile(TL):(TYPE==='status'?buildStatus(SC):(TYPE==='graph'?buildGraph(GR):buildIcon(IC))))));}
   function eoOk(){return CFG.edit.types.indexOf(TYPE)>-1&&!!eoModel()&&!(TYPE==='icon'&&IC.engine==='stock');}
   function eoSz(m,w,h_){var a=parseInt(m.initW,10), b=parseInt(m.initH,10);return [a>0?a:w,b>0?b:h_];}
   function eoBox(){
@@ -11790,6 +12129,9 @@ try{
     }else if(t==='graph'){
       if(m.draw==='pic')return null;
       x=(m.kind==='bars')?('Bars - '+({status:'sensor states',channels:'channels',sensors:'sensors'}[m.bsrc||'status'])+', '+(m.bdir==='col'?'vertical':'horizontal')):('Graph - '+({sensor:'sensor',sensors:'sensor list',toplist:'toplist'}[m.kind]||m.kind)+', '+String(amLab(GPERIODS,m.period)).toLowerCase()+((m.kind==='sensor'&&m.draw!=='pic'&&m.cstyle&&m.cstyle!=='area')?', '+m.cstyle:''));
+    }else if(t==='sunburst'){
+      if(m.engine!=='ring')return null;
+      x='Sunburst - '+String(amLab(SBFACES,m.face||'gaps')).toLowerCase()+(m.sizeSensors?', by sensors':'')+(m.sizePriority?', by priority':'');
     }else if(t==='donut'){
       if(m.engine!=='ring')return null;
       x='Donut - '+(m.mode==='alarms'?'alarms only':'all states')+(m.legend==='none'?', no legend':', legend '+m.legend);
@@ -11830,9 +12172,9 @@ try{
     var nc=h('p','nclash');nc.setAttribute('data-own','1');nc.setAttribute('role','status');nc.setAttribute('aria-live','polite');box.appendChild(nc);
     function ncSync(){
       var t={cat:m.cat,name:clean(i1.value).trim()||m.name,fname:i2.value.replace(/[^A-Za-z0-9 _.\-]/g,'').trim()};
-      var r=nameCheckText(t);
-      nc.className='nclash nc-'+r.k;nc.textContent=(r.k==='warn'?'\u26A0 ':(r.k==='ok'?'\u2713 ':''))+r.t;
-      i2.classList.toggle('nc-bad',r.k==='warn'&&!!nameClash(t).file);i1.classList.toggle('nc-bad',r.k==='warn'&&!nameClash(t).file);
+      var r=nameCheckText(t), c=nameClash(t);
+      nameCheckPaint(nc,r,function(sg){i1.value=sg.name;i2.value=sg.fname;ncSync();});
+      i2.classList.toggle('nc-bad',r.k==='warn'&&!!(c.file||c.libFile));i1.classList.toggle('nc-bad',r.k==='warn'&&!!(c.name||c.libName));
     }
     i1.addEventListener('input',ncSync);i2.addEventListener('input',ncSync);ncSync();
     var ncEv=function(){if(ov.parentNode)ncSync();};document.addEventListener('prtgobjs',ncEv);
@@ -11946,7 +12288,7 @@ try{
     return c.length?'\n'+c.join('\n'):'';
   }
   function txtWrap(fn,icon){return function(m,cls,x){var css=fn.apply(this,arguments), L=(x&&x.c)?x:(m&&m.look);return css?css+txtCss(L,cls,icon):css;};}
-  tableCss=txtWrap(tableCss);gaugeCss=txtWrap(gaugeCss);graphCss=txtWrap(graphCss);donutCss=txtWrap(donutCss);statusCss=txtWrap(statusCss);tileCss=txtWrap(tileCss);iconCss=txtWrap(iconCss,true);
+  tableCss=txtWrap(tableCss);gaugeCss=txtWrap(gaugeCss);graphCss=txtWrap(graphCss);donutCss=txtWrap(donutCss);sunburstCss=txtWrap(sunburstCss);statusCss=txtWrap(statusCss);tileCss=txtWrap(tileCss);iconCss=txtWrap(iconCss,true);
   function pfSel(pop,label,get,set,opts){
     var w=h('div','pf'), sl=h('select');w.appendChild(h('label',null,label));
     opts.forEach(function(o){var op=h('option');op.value=o[0];op.textContent=o[1];sl.appendChild(op);});
@@ -12008,7 +12350,7 @@ try{
   }
   /* small pictures of what each ready-made object looks like, for the Presets menu in the bar */
   function presetObj(v){
-    var src=(TYPE==='tile')?TLPRESETS:(TYPE==='status')?SPRESETS:(TYPE==='gauge')?GPRESETS:(TYPE==='graph')?GRPRESETS:(TYPE==='donut')?DPRESETS:(TYPE==='icon')?ICPRESETS:PRESETS, r=null;
+    var src=(TYPE==='tile')?TLPRESETS:(TYPE==='status')?SPRESETS:(TYPE==='gauge')?GPRESETS:(TYPE==='graph')?GRPRESETS:(TYPE==='donut')?DPRESETS:(TYPE==='sunburst')?SBPRESETS:(TYPE==='icon')?ICPRESETS:PRESETS, r=null;
     src.forEach(function(x){if(x.id===v)r=x;});return r;
   }
   function pvThumb(type,p){
@@ -12053,7 +12395,7 @@ try{
   var SCOPE='all';try{SCOPE=localStorage.getItem('pmScope')||'all';}catch(e){}
   if(!SCOPES.some(function(x){return x[0]===SCOPE;}))SCOPE='all';
   var GD=['group','device'], SN=['sensor'], AL=['group','device','sensor'];
-  function typeScopes(t){return ({table:GD,donut:GD,status:GD,geomap:GD,tile:SN,icon:AL})[t]||AL;}
+  function typeScopes(t){return ({table:GD,donut:GD,status:GD,geomap:GD,tile:SN,icon:AL,sunburst:['group']})[t]||AL;}
   function gaugeKindScopes(k){return k==='device'?GD:SN;}
   function graphScopes(kind,bsrc){if(kind==='sensor'||kind==='toplist')return SN;if(kind==='sensors')return GD;if(kind==='bars')return bsrc==='channels'?SN:GD;return AL;}
   function fitsScope(list){return SCOPE==='all'||list.indexOf(SCOPE)>-1;}
@@ -12070,7 +12412,7 @@ try{
       else setGrKind(sen?'sensor':'sensors');
     }
   }
-  function scopeWord(list){return list.length===3?'a group, device or sensor':(list===SN?'a sensor':'a group or device');}
+  function scopeWord(list){return list.length===3?'a group, device or sensor':(list===SN?'a sensor':((list.length===1&&list[0]==='group')?'a group or probe':'a group or device'));}
   function setScope(v){
     SCOPE=v;try{localStorage.setItem('pmScope',v);}catch(e){}
     scopeFix();OB.key='';scopeGrid();refreshUI();render();
@@ -12127,12 +12469,12 @@ try{
     OB.syncs.push(function(){fs.value=L().font;});
     /* presets and looks first: they change the most */
     obScope(b);
-    b.appendChild(obMenu('Templates','Start from a ready-made '+({table:'table',gauge:'gauge',graph:'graph',donut:'donut',status:'status counts',icon:'icon',tile:'tile'}[TYPE]||'object'),function(pop){pop.className+=' fb-wide';},function(pop){obPresetGrid(pop);}));
+    b.appendChild(obMenu('Templates','Start from a ready-made '+({table:'table',gauge:'gauge',graph:'graph',donut:'donut',sunburst:'sunburst',status:'status counts',icon:'icon',tile:'tile'}[TYPE]||'object'),function(pop){pop.className+=' fb-wide';},function(pop){obPresetGrid(pop);}));
     var mLooks=(obMenu('Looks','Change the whole look',function(pop){
       pop.className+=' fb-wide';
       var g=h('div','presetgrid');pop.appendChild(g);
       LOOKORDER.forEach(function(name){
-        if(name==='PRTG default'&&(TYPE==='icon'||TYPE==='status'||TYPE==='tile'||(TYPE==='gauge'&&G.engine==='ring')||(TYPE==='donut'&&DN.engine==='ring')))return;
+        if(name==='PRTG default'&&(TYPE==='icon'||TYPE==='status'||TYPE==='tile'||(TYPE==='gauge'&&G.engine==='ring')||(TYPE==='donut'&&DN.engine==='ring')||(TYPE==='sunburst'&&SB.engine==='ring')))return;
         var q=h('button','lookchip');q.type='button';q.setAttribute('data-look',name);
         q.innerHTML=thumbHTML(lookOf(name),TYPE)+'<span class="pname">'+name+'</span>';
         q.addEventListener('click',function(){obDo(function(){M().look=lookOf(name);if(PS.cur&&!isPaste())csetPaint(PS.cur);});});g.appendChild(q);
@@ -12209,6 +12551,23 @@ try{
           pfChk(pop,'Legend',function(){return GR.legend;},function(v){GR.legend=v;});
           pfChk(pop,'Axis',function(){return GR.axis;},function(v){GR.axis=v;});
           pfChk(pop,'Tooltips',function(){return GR.tooltips;},function(v){GR.tooltips=v;});
+        }
+      }));
+    }else if(TYPE==='sunburst'){
+      b.appendChild(obMenu('Sunburst','Style, sizes and what is shown',function(pop){
+        pop.className+=' fb-wide';
+        pop.appendChild(h('div','pf-h','Style'));
+        var sfg=sbFaceGrid();pop.appendChild(sfg);OB.syncs.push(function(){sfg.syncFace();});
+        pfChk(pop,'Size by number of sensors',function(){return SB.sizeSensors;},function(v){SB.sizeSensors=v;});
+        pfChk(pop,'Size by priority',function(){return SB.sizePriority;},function(v){SB.sizePriority=v;});
+        pfChk(pop,'Hide paused devices',function(){return SB.hidePaused;},function(v){SB.hidePaused=v;});
+        if(SB.engine==='ring'){
+          pfSel(pop,'In the middle',function(){return SB.center;},function(v){SB.center=v;},SBCENTERS);
+          pfSel(pop,'Legend',function(){return SB.legend;},function(v){SB.legend=v;},DLEGENDS);
+          pfNum(pop,'Hole in the middle %',function(){return SB.hole;},function(v){SB.hole=v;},0,70);
+          pfNum(pop,'Rings shown (0 = all)',function(){return SB.depth;},function(v){SB.depth=v;},0,8);
+          pfChk(pop,'Names on the slices',function(){return SB.labels;},function(v){SB.labels=v;});
+          pfChk(pop,'Slices are links to PRTG',function(){return SB.links;},function(v){SB.links=v;});
         }
       }));
     }else if(TYPE==='donut'&&DN.engine==='ring'){
@@ -12363,7 +12722,7 @@ try{
     b.appendChild(obBtn('Card','A card around the map: fill, border, rounded corners and shadow (details under Appearance)',function(){return GM.look.card;},function(v){GM.look.card=v;refreshUI();render();}));
     OB.key=obKey();
   }
-  function obKey(){return SCOPE+TYPE+(TYPE==='icon'?IC.engine:(TYPE==='gauge'?G.engine+(G.nstyle?'n':''):(TYPE==='donut'?DN.engine:(TYPE==='graph'?GR.draw+GR.kind+(GR.kind==='bars'?GR.bsrc:''):''))));}
+  function obKey(){return SCOPE+TYPE+(TYPE==='icon'?IC.engine:(TYPE==='gauge'?G.engine+(G.nstyle?'n':''):(TYPE==='donut'?DN.engine:TYPE==='sunburst'?SB.engine+SB.face:(TYPE==='graph'?GR.draw+GR.kind+(GR.kind==='bars'?GR.bsrc:''):''))));}
   /* the bar sits on the page (position:fixed), above the object, or under it when there is no room above or a menu needs the room.
      It is kept inside the window, never inside the canvas, so neither the canvas nor the preview edge covers it. */
   function obPlace(){
@@ -12444,7 +12803,7 @@ try{
   function resetCurrent(){
     var k=TYPE;
     if(isLegacy(k))return;
-    if(k==='table')T=blankT();else if(k==='gauge')G=blankG();else if(k==='graph')GR=blankGR();else if(k==='donut')DN=blankD();else if(k==='icon')IC=blankI();else if(k==='status')SC=blankSC();else if(k==='tile')TL=blankTL();else if(k==='geomap')GM=blankGM();else if(k==='links')LK=Object.assign(blankLK(),LKDEF);else FRM[k]=blankFR(k);
+    if(k==='table')T=blankT();else if(k==='gauge')G=blankG();else if(k==='graph')GR=blankGR();else if(k==='donut')DN=blankD();else if(k==='sunburst')SB=blankSB();else if(k==='icon')IC=blankI();else if(k==='status')SC=blankSC();else if(k==='tile')TL=blankTL();else if(k==='geomap')GM=blankGM();else if(k==='links')LK=Object.assign(blankLK(),LKDEF);else FRM[k]=blankFR(k);
     ED.sel=null;buildPresetOptions();refreshUI();render();
     toast('Reset. Ctrl+Z brings it back.');
   }
@@ -12857,6 +13216,23 @@ try{
     applyBg(L);
   }
 
+  function drawSunburstPreview(){
+    var L=sbEffLook(SB), cls=sbClassOf(SB), css=sunburstCss(SB,cls), ring=(SB.engine==='ring'), styled=!!css;
+    setStyle(css);applyFont(L);
+    var w=parseInt(document.getElementById('owidth').value,10)||420, hh=parseInt(document.getElementById('oheight').value,10)||440;
+    var zs=eoSz(SB,w,hh);w=zs[0];hh=zs[1];
+    var tm=SB.titleMode||'object', title=(tm==='none')?'':(tm==='custom'?clean(SB.title):'Local probe');
+    var titleHtml=(styled&&title)?'<div class="gtitle"><b>'+esc(title)+'</b></div>':'';
+    var lg=ring?((['right','below','none'].indexOf(SB.legend)>-1)?SB.legend:'below'):'none';
+    var body='<div class="sbbody lg-'+lg+'"'+(ring?'':' style="position:absolute;inset:0;display:flex"')+'><div class="sbwrap"'+(ring?'':' style="position:relative;flex:1"')+'><svg class="sbsvg" preserveAspectRatio="xMidYMid meet"'+(ring?'':' style="position:absolute;left:0;top:0;width:100%;height:100%"')+'></svg></div><div class="sblegend"'+(ring?'':' style="display:none"')+'></div></div>';
+    var inner=ring?body:'<div class="sensorTree prtg-plugin" style="position:relative;'+(styled?'':'height:100%;')+'">'+body+'</div>';
+    prevEl.className='';
+    prevEl.innerHTML='<div id="mapshow" class="map-body"><div class="map_object map_table'+(styled?' '+cls:'')+'" id="ptprev_sb" style="position:relative;overflow:hidden;width:'+w+'px;height:'+hh+'px;background:'+(styled?'':'#fff')+'">'+(styled?'<div class="gbox">'+titleHtml+inner+'</div>':inner)+'</div></div>';
+    var host=prevEl.querySelector('.sbbody');
+    host.appendChild(document.createComment('\n{"objects":{"prtg-version":"26.3","treesize":19,"sensorxref":'+JSON.stringify(sbSample())+'}}\n'));
+    try{sbRuntime(prevEl.querySelector('.map_object'),JSON.parse(JSON.stringify(sbConfig(SB))));}catch(err){if(window.console)console.error('sunburst preview',err);}
+    applyBg(L);
+  }
   function drawStatusPreview(){
     var L=sEffLook(SC), cls=sClassOf(SC), css=statusCss(SC,cls,L), tm=SC.titleMode||'object', title=(tm==='none')?'':(tm==='custom'?clean(SC.title):'Core switch'), sub=clean(SC.sub), root, gb;
     setStyle(css);applyFont(L);
@@ -12971,7 +13347,7 @@ try{
     applyBg(lookOf('Minimal'));
   }
   function drawPreview(){
-    if(TYPE!=='table')prevEl.style.minHeight='';if(TYPE==='gauge')drawGaugePreview();else if(isPaste())drawPastePreview();else if(TYPE==='graph')drawGraphPreview();else if(TYPE==='donut')drawDonutPreview();else if(TYPE==='tile')drawTilePreview();else if(TYPE==='status')drawStatusPreview();else if(TYPE==='icon')drawIconPreview();else if(TYPE==='geomap')drawGeoPreview();else if(TYPE==='links')drawLinksPreview();else drawTablePreview();
+    if(TYPE!=='table')prevEl.style.minHeight='';if(TYPE==='gauge')drawGaugePreview();else if(isPaste())drawPastePreview();else if(TYPE==='graph')drawGraphPreview();else if(TYPE==='donut')drawDonutPreview();else if(TYPE==='sunburst')drawSunburstPreview();else if(TYPE==='tile')drawTilePreview();else if(TYPE==='status')drawStatusPreview();else if(TYPE==='icon')drawIconPreview();else if(TYPE==='geomap')drawGeoPreview();else if(TYPE==='links')drawLinksPreview();else drawTablePreview();
     if(TYPE!=='links'&&window.__mls&&window.__mls.stop)window.__mls.stop();   /* the Link style preview runs the same script as the map; stop it when another type is shown */
     obZoom();eoAttach();obRefresh();}
 
@@ -12982,7 +13358,7 @@ try{
     if(TYPE==='table'){T.tOffX=0;T.tOffY=0;}
     if(TYPE==='links')lkDefSync(LK);   /* the Link style object IS the shared map link style; Map designer connectors read it live */
     obAutoName();
-    var text=(TYPE==='gauge')?buildGauge(G):(isPaste()?buildPaste(FRc()):(TYPE==='graph'?buildGraph(GR):(TYPE==='donut'?buildDonut(DN):(TYPE==='tile'?buildTile(TL):(TYPE==='status'?buildStatus(SC):(TYPE==='icon'?buildIcon(IC):(TYPE==='geomap'?buildGeoMap(GM):(TYPE==='links'?buildLinks(LK):buildTable(T)))))))));
+    var text=(TYPE==='gauge')?buildGauge(G):(isPaste()?buildPaste(FRc()):(TYPE==='graph'?buildGraph(GR):(TYPE==='donut'?buildDonut(DN):(TYPE==='sunburst'?buildSunburst(SB):(TYPE==='tile'?buildTile(TL):(TYPE==='status'?buildStatus(SC):(TYPE==='icon'?buildIcon(IC):(TYPE==='geomap'?buildGeoMap(GM):(TYPE==='links'?buildLinks(LK):buildTable(T))))))))));
     codeEl.value=text;
     document.getElementById('ofname').textContent=fileNameOf(M());
     nameCheckShow();
@@ -13002,7 +13378,7 @@ try{
   var typeSel=null, engineSel=null, legSel=null;
   /* Text label and Button are the page's basic tools. Choosing one shows that tool, unchanged, under the Objects tab. */
   var TYPES=[
-    ['Files for \\webroot\\mapobjects',[['table','Data table (list of sensors)'],['gauge','Gauge'],['graph','Graph'],['donut','Donut'],['status','Status counts'],['icon','Status icon'],['tile','Tile'],['geomap','Geo map'],['links','Link style']]],
+    ['Files for \\webroot\\mapobjects',[['table','Data table (list of sensors)'],['gauge','Gauge'],['graph','Graph'],['donut','Donut'],['sunburst','Sunburst'],['status','Status counts'],['icon','Status icon'],['tile','Tile'],['geomap','Geo map'],['links','Link style']]],
     ['Pasted into a Custom HTML item',[['label','Text label'],['button','Button']].concat(FRAMEAPI?[['frame','Frame'],['bg','Background'],['shape','Shape']]:[])]
   ];
   function isLegacy(t){return t==='label'||t==='button';}
@@ -13021,6 +13397,7 @@ try{
     gauge:sv('<path d="M4 17a8 8 0 1 1 16 0"/><path d="M12 17l4-5"/><circle cx="12" cy="17" r="1"/>'),
     graph:sv('<path d="M4 4v16h16"/><path d="M8 15l4-4 3 3 5-6"/>'),
     donut:sv('<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/>'),
+    sunburst:sv('<circle cx="12" cy="12" r="3"/><path d="M12 6a6 6 0 0 1 6 6M18 12a6 6 0 0 1-6 6M12 18a6 6 0 0 1-6-6M6 12a6 6 0 0 1 6-6"/><path d="M12 2.5a9.5 9.5 0 0 1 8.2 4.7M21.5 12a9.5 9.5 0 0 1-4.7 8.2M12 21.5a9.5 9.5 0 0 1-8.2-4.7M2.5 12a9.5 9.5 0 0 1 4.7-8.2"/>'),
     icon:sv('<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3" fill="currentColor"/>'),
     label:sv('<path d="M5 6h14M12 6v13M9 19h6"/>'),
     button:sv('<rect x="3" y="8" width="18" height="9" rx="4.5"/><path d="M8 12.5h8"/>'),
@@ -13032,8 +13409,8 @@ try{
     status:sv('<rect x="3" y="6" width="8" height="12" rx="1.5"/><rect x="13" y="6" width="8" height="12" rx="1.5"/><path d="M5.5 11h3M15.5 11h3"/>'),
     links:sv('<circle cx="5" cy="18" r="2"/><circle cx="19" cy="6" r="2"/><path d="M7 18c8 0 2-12 10-12"/>')
   };
-  var TYPESHORT={table:'Table',gauge:'Gauge',graph:'Graph',donut:'Donut',icon:'Icon',tile:'Tile',label:'Label',button:'Button',frame:'Frame',bg:'Background',shape:'Shape',status:'Status',geomap:'Geo map',links:'Links'};
-  var TYPETIP={table:'Data table (list of sensors)',gauge:'Gauge',graph:'Graph',donut:'Donut',icon:'Status icon',tile:'Tile (stat, string, bar, interface, channel chips)',label:'Text label',button:'Button',frame:'Frame',bg:'Background',status:'Status counts (tiles of sensors by status)',geomap:'Geo map (restyle the markers on PRTG\u2019s map)',links:'Link style (curved, elbow and dashed lines between the items on a map)'};
+  var TYPESHORT={table:'Table',gauge:'Gauge',graph:'Graph',donut:'Donut',sunburst:'Sunburst',icon:'Icon',tile:'Tile',label:'Label',button:'Button',frame:'Frame',bg:'Background',shape:'Shape',status:'Status',geomap:'Geo map',links:'Links'};
+  var TYPETIP={table:'Data table (list of sensors)',gauge:'Gauge',graph:'Graph',donut:'Donut',sunburst:'Sunburst (a group\u2019s or probe\u2019s device tree as rings)',icon:'Status icon',tile:'Tile (stat, string, bar, interface, channel chips)',label:'Text label',button:'Button',frame:'Frame',bg:'Background',status:'Status counts (tiles of sensors by status)',geomap:'Geo map (restyle the markers on PRTG\u2019s map)',links:'Link style (curved, elbow and dashed lines between the items on a map)'};
   var GRIDHEAD=[['Save as file','A file you save in \\webroot\\mapobjects',sv('<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/>')],['Paste into Custom HTML','Code you paste into the HTML Before of a Custom HTML item',sv('<rect x="6" y="5" width="12" height="16" rx="2"/><path d="M9 5V3h6v2"/>')]];
   var gridTiles=[];
   function buildTypeGrid(){
@@ -13075,7 +13452,7 @@ try{
       setMode(v);
     }else{
       if(lk&&!isPaste()&&TYPE!=='links')M().look=lk;
-      if(!isPaste()&&(TYPE==='icon'||TYPE==='status'||TYPE==='tile'||(TYPE==='gauge'&&G.engine==='ring')||(TYPE==='donut'&&DN.engine==='ring'))&&M().look.mode==='prtg')M().look=lookOf(TYPE==='icon'?'Minimal':'Light card');
+      if(!isPaste()&&(TYPE==='icon'||TYPE==='status'||TYPE==='tile'||(TYPE==='gauge'&&G.engine==='ring')||(TYPE==='donut'&&DN.engine==='ring')||(TYPE==='sunburst'&&SB.engine==='ring'))&&M().look.mode==='prtg')M().look=lookOf(TYPE==='icon'?'Minimal':'Light card');
       document.body.classList.add('objs');
       buildPresetOptions();refreshUI();render();
     }
@@ -13084,8 +13461,8 @@ try{
   function buildPresetOptions(){
     if(!presetSel)return;
     presetSel.innerHTML='';
-    var blank=h('option');blank.value='__blank';blank.textContent=(TYPE==='gauge')?'Blank gauge':(TYPE==='frame'?'Blank frame':(TYPE==='graph'?'Blank graph':(TYPE==='tile'?'Blank tile':(TYPE==='status'?'Blank status card':(TYPE==='donut'?'Blank donut':(TYPE==='icon'?'Blank status icon':'Blank table'))))));presetSel.appendChild(blank);
-    var src=(TYPE==='tile')?TLPRESETS:(TYPE==='status')?SPRESETS.map(function(x){return {id:x.id,name:x.name,cat:'Built in'};}):((TYPE==='gauge')?GPRESETS:(TYPE==='graph'?GRPRESETS:(TYPE==='donut'?DPRESETS:(TYPE==='icon'?ICPRESETS:PRESETS)))), cats={},order=[];
+    var blank=h('option');blank.value='__blank';blank.textContent=(TYPE==='gauge')?'Blank gauge':(TYPE==='frame'?'Blank frame':(TYPE==='graph'?'Blank graph':(TYPE==='tile'?'Blank tile':(TYPE==='status'?'Blank status card':(TYPE==='sunburst'?'Blank sunburst':(TYPE==='donut'?'Blank donut':(TYPE==='icon'?'Blank status icon':'Blank table')))))));presetSel.appendChild(blank);
+    var src=(TYPE==='tile')?TLPRESETS:(TYPE==='status')?SPRESETS.map(function(x){return {id:x.id,name:x.name,cat:'Built in'};}):((TYPE==='gauge')?GPRESETS:(TYPE==='graph'?GRPRESETS:(TYPE==='donut'?DPRESETS:(TYPE==='sunburst'?SBPRESETS:(TYPE==='icon'?ICPRESETS:PRESETS))))), cats={},order=[];
     src.forEach(function(p){if(!cats[p.cat]){cats[p.cat]=h('optgroup');cats[p.cat].label=p.cat+((TYPE==='status'||TYPE==='tile')?'':' (PRTG stock)');order.push(p.cat);}
       var op=h('option');op.value=p.id;op.textContent=p.name;cats[p.cat].appendChild(op);});
     order.forEach(function(c){presetSel.appendChild(cats[c]);});
@@ -13149,6 +13526,10 @@ try{
         var ilk=IC.look;
         if(v==='__blank'){IC=blankI();IC.look=(ilk.mode==='prtg')?lookOf('Minimal'):ilk;}
         else{var ip_=null;ICPRESETS.forEach(function(x){if(x.id===v)ip_=x;});IC=iconFromPreset(ip_);IC.look=(ilk.mode==='prtg')?lookOf('Minimal'):ilk;}
+      }else if(TYPE==='sunburst'){
+        var slk=SB.look;
+        if(v==='__blank'){SB=blankSB();SB.look=(slk.mode==='prtg')?lookOf('Light card'):slk;}
+        else{var sp_=null;SBPRESETS.forEach(function(x){if(x.id===v)sp_=x;});SB=sbFromPreset(sp_);}
       }else if(TYPE==='donut'){
         var dlk=DN.look;
         if(v==='__blank'){DN=blankD();DN.look=dlk;}
@@ -13459,6 +13840,23 @@ try{
     dpz.appendChild(h('p','note','PRTG draws this donut from its own include file, so the slice colors, ring thickness and legend text are PRTG\u2019s. Choosing a look restyles the card, title, centre number and legend colors around it.'));
     dpz.appendChild(h('p','note','PRTG\u2019s own CSS gives the ring a minimum height of 180 px. With a title and padding added, the object needs about 270 px of height or the ring is clipped. Leave the size on \u201cauto\u201d to let PRTG size it.'));
     showIf(dpz,dPrtg);dn1.appendChild(dpz);
+    /* ---- sunburst ---- */
+    var isSb=function(){return TYPE==='sunburst';}, sbRing=function(){return TYPE==='sunburst'&&SB.engine==='ring';}, sbPrtg=function(){return TYPE==='sunburst'&&SB.engine==='prtg';};
+    var sb1=section('Sunburst');secIf(sb1,isSb);
+    var sbg=sbFaceGrid();sb1.appendChild(sbg);syncs.push(function(){sbg.syncFace();});
+    sb1.appendChild(pair(inChk('Size by number of sensors',function(){return SB.sizeSensors;},function(v){SB.sizeSensors=v;}),inChk('Size by priority',function(){return SB.sizePriority;},function(v){SB.sizePriority=v;})));
+    sb1.appendChild(inChk('Hide paused devices',function(){return SB.hidePaused;},function(v){SB.hidePaused=v;}));
+    var sbr=h('div');
+    sbr.appendChild(pair(inSel('In the middle',function(){return SB.center;},function(v){SB.center=v;},SBCENTERS),inSel('Legend',function(){return SB.legend;},function(v){SB.legend=v;},DLEGENDS)));
+    sbr.appendChild(pair(inNum('Hole in the middle %',function(){return SB.hole;},function(v){SB.hole=v;},0,70),inNum('Rings shown (0 = all)',function(){return SB.depth;},function(v){SB.depth=v;},0,8)));
+    sbr.appendChild(pair(inChk('Names on the slices',function(){return SB.labels;},function(v){SB.labels=v;}),inChk('Slices are links to PRTG',function(){return SB.links;},function(v){SB.links=v;})));
+    sbr.appendChild(inChk('Use the map\u2019s tag filter',function(){return SB.mapTags!==false;},function(v){SB.mapTags=v;}));
+    sbr.appendChild(h('p','note','Drawn by Map Studio from the device tree PRTG puts in the page (the same data PRTG\u2019s own sunburst reads): the object in the middle, its groups and devices in rings outwards, each slice in the colour of the worst state it has sensors in. The look, the Colors and the text options change everything.'));
+    showIf(sbr,sbRing);sb1.appendChild(sbr);
+    var sbp=h('div');
+    sbp.appendChild(inChk('Use the map\u2019s tag filter',function(){return SB.mapTags!==false;},function(v){SB.mapTags=v;}));
+    sbp.appendChild(h('p','note','PRTG classic is PRTG\u2019s own sunburst: PRTG draws it, so the sizes and hiding paused devices are PRTG\u2019s options. A look adds a card and a title around it and restyles the slice colours (from Colors), the lines between slices and the names.'));
+    showIf(sbp,sbPrtg);sb1.appendChild(sbp);
     /* ---- graph ---- */
     var gr1=section('Graph');secIf(gr1,isGraph);
     gr1.appendChild(inSel('Shows',function(){return GR.kind;},function(v){
