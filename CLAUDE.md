@@ -17,7 +17,7 @@ when they need to do something themselves.
 - The tool always runs as a chrome-extension page (`background.js` opens `app.html`, which is the
   only thing that loads the scripts). The comment at the top of `js/01-config.js` about being
   "loaded into a PRTG tab" is outdated.
-- PRTG install folder (read only, for reference): `C:\Program Files (x86)\PRTG Network Monitor`
+- PRTG install folder (Claude may add object files to `webroot\mapobjects`, see rule 8): `C:\Program Files (x86)\PRTG Network Monitor`
   (`webroot`, `themes`, `frontend`, `Custom Sensors`, `lookups`, ...).
 
 ## Code layout (app.js was split at 1.5.44 to 1.5.53)
@@ -116,7 +116,10 @@ How it was done, stage by stage:
    Add a `Claude-Session: <link>` line only when the session has a claude.ai/code link.
 6. Measure cost, not only speed.
 7. Report what wasn't verified on the real PRTG.
-8. Never write to PRTG's install folder. It's read only.
+8. Claude may write files straight into PRTG's install folder (the owner changed this rule on 2026-11-03),
+   normally only `webroot\mapobjects` for object files. Never delete or replace anything PRTG itself put
+   there. Before replacing a file Map Studio made, keep a copy of the old one. Check every file written by
+   reading it back and comparing it byte for byte.
 
 Line endings: every text file in the repo is LF and there is no `.gitattributes`. Git on the VM
 was installed with "Checkout as-is, commit as-is" (`core.autocrlf=false`). Keep it that way, or the
@@ -181,7 +184,8 @@ A full run takes about 5 seconds (16 seconds the very first time).
 - PRTG's map refresh (every 30 s) replaces the items, so the file's script runs again each time.
 - A Chrome window behind others gets about 1 frame per second, so resizes there apply late; not a bug.
 - External Link works in the new UI too: clicking the item on map 2197 opened `/maps/2126/overview`.
-- Not yet: real Flexible files installed in `mapobjects` (only the owner installs files).
+- 2026-11-03: Claude wrote nine 1.5.65 test files straight into `mapobjects` (Flexible table, gauge, graph, donut,
+  tile, status counts; icons hexagon, beacon, status bar), all checked byte-identical.
 
 ## Flexible or Fixed for every object with a box (1.5.63)
 
