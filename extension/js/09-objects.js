@@ -2191,7 +2191,8 @@ try{
   }
   function donutFromPreset(p){
     var D=blankD();
-    D.engine='prtg';D.cat=p.cat;D.name=p.name+' custom';D.mode=p.alarms?'alarms':'all';D.light=!!p.light;D.withName=!!p.withName;D.noInitH=!!p.noInitH;   /* PRTG's own donut_alarms_font-light.htm has no initialheight; kept as shipped */
+    D.engine='prtg';D.cat='Donuts';   /* 1.5.65: every donut Map Studio builds goes under Donuts (PRTG files its own under Status Donuts) */
+    D.name=p.name+' custom';D.mode=p.alarms?'alarms':'all';D.light=!!p.light;D.withName=!!p.withName;D.noInitH=!!p.noInitH;   /* PRTG's own donut_alarms_font-light.htm has no initialheight; kept as shipped */
     D.initW=0;D.initH=0;D.fit=false;D.look=dnLook('PRTG default');
     return D;
   }
@@ -5649,8 +5650,8 @@ try{
     status:sv('<rect x="3" y="6" width="8" height="12" rx="1.5"/><rect x="13" y="6" width="8" height="12" rx="1.5"/><path d="M5.5 11h3M15.5 11h3"/>'),
     links:sv('<circle cx="5" cy="18" r="2"/><circle cx="19" cy="6" r="2"/><path d="M7 18c8 0 2-12 10-12"/>')
   };
-  var TYPESHORT={table:'Table',gauge:'Gauge',graph:'Graph',donut:'Donut',sunburst:'Sunburst',icon:'Icon',tile:'Tile',label:'Label',button:'Button',frame:'Frame',bg:'Background',shape:'Shape',status:'Status',geomap:'Geo map',links:'Links'};
-  var TYPETIP={table:'Data table (list of sensors)',gauge:'Gauge',graph:'Graph',donut:'Donut',sunburst:'Sunburst (a group\u2019s or probe\u2019s device tree as rings)',icon:'Status icon',tile:'Tile (stat, string, bar, interface, channel chips)',label:'Text label',button:'Button',frame:'Frame',bg:'Background',status:'Status counts (tiles of sensors by status)',geomap:'Geo map (restyle the markers on PRTG\u2019s map)',links:'Link style (curved, elbow and dashed lines between the items on a map)'};
+  var TYPESHORT={table:'Table',gauge:'Gauge',graph:'Graph',donut:'Donut',sunburst:'Sunburst',icon:'Icon',tile:'Tile',label:'Label',button:'Button',frame:'Frame',bg:'Background',shape:'Shape',status:'Status counts',geomap:'Geo map',links:'Links'};
+  var TYPETIP={table:'Data table (list of sensors)',gauge:'Gauge',graph:'Graph',donut:'Donut',sunburst:'Sunburst (a group\u2019s or probe\u2019s device tree as rings)',icon:'Status icon',tile:'Tile (stat, string, bar, interface, channel chips)',label:'Text label',button:'Button',frame:'Frame',bg:'Background',status:'Status counts (how many sensors of a group or device are in each status)',geomap:'Geo map (restyle the markers on PRTG\u2019s map)',links:'Link style (curved, elbow and dashed lines between the items on a map)'};
   var GRIDHEAD=[['Save as file','A file you save in \\webroot\\mapobjects',sv('<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/>')],['Paste into Custom HTML','Code you paste into the HTML Before of a Custom HTML item',sv('<rect x="6" y="5" width="12" height="16" rx="2"/><path d="M9 5V3h6v2"/>')]];
   var gridTiles=[];
   function buildTypeGrid(){

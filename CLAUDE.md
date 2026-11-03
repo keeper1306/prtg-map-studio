@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.64.
+Last updated at version 1.5.65.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -158,6 +158,17 @@ A full run takes about 5 seconds (16 seconds the very first time).
   bar is HTML like the pill and always shows its word; Beacon's rays blink on alarm states when
   Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
   tile, badge, LED).
+
+## Status counts name and donut category (1.5.65)
+
+- The owner chose to keep Status counts its own object (not a Tile kind): a tile follows one sensor, Status counts
+  a group or device. Only the type button's short name changed (`TYPESHORT.status`, 'Status' -> 'Status counts'),
+  plus its tooltip (`TYPETIP.status`). It fits the grid button (checked in the builder preview).
+- The owner chose one category for donuts: `donutFromPreset()` now sets `D.cat='Donuts'` (was the preset's
+  'Status Donuts'), as sunbursts got 'Sunbursts' at 1.5.60. `DPRESETS` still say 'Status Donuts', which only groups
+  the template list. Donuts saved before keep their saved category (the field is editable under Name and title).
+  Checked: a donut from `donut_alarms_font-dark` now starts `<!--Donuts: ...-->`; a blank donut is unchanged.
+- Not verified on the real PRTG.
 
 ## Checked on the real PRTG (1.5.64)
 
