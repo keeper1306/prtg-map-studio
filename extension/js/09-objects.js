@@ -2940,6 +2940,46 @@ try{
     root.setAttribute('data-status','ok');
   }
   var TKINDS=[['stat','Stat tile'],['string','String tile'],['bar','Bar gauge'],['interface','Interface traffic tile'],['chips','Channel chips'],['chipsfit','Channel chips (fit the box)']];
+  /* a small picture of each tile kind, for the Kind pictures */
+  function tKindSvg(k){
+    var G1='#B8C419',Y='#F5C500',R='#E30613',N='#E3E6EC',D='#1d2433',M='#9aa0ad',B='#1f6fe5',o='<rect x="1" y="1" width="62" height="42" rx="5" fill="#fff" stroke="#dfe3ea"/>';
+    o+='<rect x="6" y="6" width="22" height="3.4" rx="1.2" fill="'+D+'"/>';
+    function t(x,y,sz,c,txt,a){return '<text x="'+x+'" y="'+y+'" font-size="'+sz+'" font-weight="600" fill="'+c+'" font-family="Inter,Segoe UI,Arial,sans-serif"'+(a?' text-anchor="'+a+'"':'')+'>'+txt+'</text>';}
+    function chip(x,y,w,hh,c,big){return '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+hh+'" rx="1.2" fill="#f1f2f4"/><rect x="'+x+'" y="'+y+'" width="1.4" height="'+hh+'" fill="'+c+'"/><rect x="'+(x+3)+'" y="'+(y+2.2)+'" width="'+(w*0.5).toFixed(1)+'" height="1.6" rx=".6" fill="'+M+'"/><rect x="'+(x+3)+'" y="'+(y+(big?5.6:5))+'" width="'+(w*(big?0.38:0.3)).toFixed(1)+'" height="'+(big?3.6:2.6)+'" rx=".8" fill="'+c+'"/>';}
+    if(k==='stat')o+=t(6,32,19,G1,'23')+t(29,32,8,G1,'%')+'<circle cx="7.5" cy="37.5" r="1.6" fill="'+G1+'"/><rect x="11" y="36.6" width="16" height="1.8" rx=".8" fill="'+M+'"/>';
+    else if(k==='string')o+=t(6,28,12.5,G1,'Running');
+    else if(k==='bar')o+='<circle cx="7.5" cy="17.5" r="1.6" fill="'+Y+'"/><rect x="11" y="16.6" width="14" height="1.8" rx=".8" fill="'+M+'"/>'+t(58,21,9,Y,'72','end')
+      +'<rect x="6" y="25" width="52" height="4.5" rx="1.5" fill="'+N+'"/><rect x="6" y="25" width="37" height="4.5" rx="1.5" fill="'+Y+'"/><rect x="48" y="23.2" width="1.3" height="8" fill="'+R+'"/>'
+      +'<rect x="6" y="34" width="3" height="1.6" fill="'+M+'"/><rect x="53" y="34" width="5" height="1.6" fill="'+M+'"/>';
+    else if(k==='interface'){
+      o+='<path d="M8 15.5v5.5M5.8 18.8L8 21l2.2-2.2" fill="none" stroke="'+G1+'" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>';
+      o+='<rect x="13" y="17.4" width="28" height="2.2" rx="1" fill="'+N+'"/><rect x="13" y="17.4" width="12" height="2.2" rx="1" fill="'+G1+'"/><rect x="45" y="16.4" width="13" height="4" rx="1" fill="'+D+'"/>';
+      o+='<path d="M8 32.5V27M5.8 29.2L8 27l2.2 2.2" fill="none" stroke="'+B+'" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>';
+      o+='<rect x="13" y="28.4" width="28" height="2.2" rx="1" fill="'+N+'"/><rect x="13" y="28.4" width="4" height="2.2" rx="1" fill="'+B+'"/><rect x="47" y="27.4" width="11" height="4" rx="1" fill="'+D+'"/>';
+      o+='<rect x="6" y="37" width="16" height="1.6" rx=".6" fill="'+M+'"/>';
+    }
+    else if(k==='chips'){var cc=[G1,G1,Y,G1,R],i;for(i=0;i<5;i++)o+=chip(6+(i%3)*14,13+Math.floor(i/3)*10,12.5,8.5,cc[i]);}
+    else if(k==='chipsfit'){var cf=[G1,G1,Y,G1,R],j;for(j=0;j<5;j++)o+=chip(5+(j%3)*18.2,12+Math.floor(j/3)*15,17,13.5,cf[j],true);}
+    return '<svg viewBox="0 0 64 44" width="64" height="44" aria-hidden="true">'+o+'</svg>';
+  }
+  /* changing the kind: the name and the size follow when they were still the old kind's */
+  function setTileKind(v){
+    var old=null,nu=null;
+    TLPRESETS.forEach(function(x){if(x.kind===TL.kind)old=x;if(x.kind===v)nu=x;});
+    if(old&&nu){if(TL.name===old.name)TL.name=nu.name;if(+TL.initW===old.w&&+TL.initH===old.h){TL.initW=nu.w;TL.initH=nu.h;}}
+    TL.kind=v;
+  }
+  /* a grid of kind pictures; one click changes the kind */
+  function tKindGrid(){
+    var g=h('div','presetgrid tkindgrid');
+    TKINDS.forEach(function(x){
+      var q=h('button','lookchip');q.type='button';q.setAttribute('data-kind',x[0]);q.title=x[1];
+      q.innerHTML=tKindSvg(x[0])+'<span class="pname">'+x[1]+'</span>';
+      q.addEventListener('click',function(){setTileKind(x[0]);refreshUI();render();});g.appendChild(q);
+    });
+    g.syncKind=function(){[].forEach.call(g.children,function(q){q.classList.toggle('on',q.getAttribute('data-kind')===TL.kind);});};
+    return g;
+  }
   var TLPRESETS=[
     {id:'stat',cat:'Built in',name:'Stat tile',kind:'stat',w:260,h:170,sub:''},
     {id:'string',cat:'Built in',name:'String tile',kind:'string',w:300,h:120,sub:''},
@@ -4656,12 +4696,8 @@ try{
       }));
     }else if(TYPE==='tile'){
       b.appendChild(obMenu('Tile','What kind of tile this is',function(pop){
-        pfSel(pop,'Kind',function(){return TL.kind;},function(v){
-          var old=null,nu=null;
-          TLPRESETS.forEach(function(x){if(x.kind===TL.kind)old=x;if(x.kind===v)nu=x;});
-          if(old&&nu){if(+TL.initW===old.w&&+TL.initH===old.h){TL.initW=nu.w;TL.initH=nu.h;}}
-          TL.kind=v;
-        },TKINDS);
+        pop.appendChild(h('div','pf-h','Kind'));
+        var kg=tKindGrid();pop.appendChild(kg);OB.syncs.push(function(){kg.syncKind();});
       }));
     }else if(TYPE==='icon'&&IC.engine==='custom'){
       b.appendChild(obMenu('Icon','The icon style and the text next to it',function(pop){
@@ -5687,12 +5723,7 @@ try{
     tlT.appendChild(inText('Subtitle',function(){return TL.sub;},function(v){TL.sub=v;},'for example: Uplink to the data center'));
     showIf(tlT,isTile);s2.appendChild(tlT);
     var tl1=section('Tile');secIf(tl1,isTile);
-    tl1.appendChild(inSel('Kind',function(){return TL.kind;},function(v){
-      var old=null,nu=null;
-      TLPRESETS.forEach(function(x){if(x.kind===TL.kind)old=x;if(x.kind===v)nu=x;});
-      if(old&&nu){if(TL.name===old.name)TL.name=nu.name;if(+TL.initW===old.w&&+TL.initH===old.h){TL.initW=nu.w;TL.initH=nu.h;}}
-      TL.kind=v;refreshUI();
-    },TKINDS));
+    var tkg=tKindGrid();tl1.appendChild(tkg);syncs.push(function(){tkg.syncKind();});
     tl1.appendChild(h('p','note','A tile is bound to one sensor and shows what that sensor reports, in the colour of its state. It follows the Look you choose, like the other objects.'));
     var tlc=h('div');
     tlc.appendChild(inText('Channel',function(){return TL.channel;},function(v){TL.channel=v;},'blank = the sensor\u2019s main channel'));
