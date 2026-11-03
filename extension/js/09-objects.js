@@ -3113,6 +3113,7 @@ try{
     {id:'pill',  name:'Status pill',    group:'More',    w:160,h:32, vb:null,        gl:null}
   ];
   function iStyle(id){var r=ISTYLES[1];ISTYLES.forEach(function(s){if(s.id===id)r=s;});return r;}
+  function iHasBg(I){return I.style==='tile'||I.style==='traffic'||!!I.card;}   /* a background of its own (the tile, the traffic light's housing) or the card behind it */
   function blankI(){
     return {type:'icon',engine:'custom',cat:'Status Icons',name:'Status dot',fname:'',style:'dot',palette:'look',text:'none',tip:'name',link:'auto',animate:true,card:false,
       labels:{},initW:40,initH:40,look:lookOf('Minimal'),raw:''};
@@ -4236,7 +4237,7 @@ try{
   /* sets of status colors: PRTG's own, and others with a clearer green or friendlier to color blindness */
   var PS=window.PMSSETS, CSETS=PS.sets;   /* the color sets are shared with the Map designer's bar; PS.cur is the one chosen */
   function obOk(){return !isLegacy(TYPE)&&!isPaste()&&TYPE!=='links'&&!(TYPE==='icon'&&IC.engine==='stock')&&!!M()&&!!M().look;}
-  function obRoot(){return TYPE==='table'?document.getElementById('edwrap'):(TYPE==='geomap'?prevEl.querySelector('.icstrip'):prevEl.querySelector('.map_object'));}
+  function obRoot(){return TYPE==='table'?document.getElementById('edwrap'):((TYPE==='geomap'||TYPE==='icon')?(prevEl.querySelector('.icstrip')||prevEl.querySelector('.map_object')):prevEl.querySelector('.map_object'));}   /* the icon preview shows one icon per state: any of them opens the bar */
   function obSet(fn){var m=M(), l=m.look;if(l.mode==='prtg')l.mode='custom';fn(l,m);refreshUI();render();}
   function obBtn(label,title,get,set){
     var b=h('button','fb-t',label);b.type='button';b.title=title;
@@ -4613,12 +4614,16 @@ try{
       }));
     }else if(TYPE==='icon'&&IC.engine==='custom'){
       b.appendChild(obMenu('Icon','The icon style and the text next to it',function(pop){
-        var sl=pfSel(pop,'Style',function(){return IC.style;},function(v){var st=iStyle(v);IC.style=v;IC.initW=st.w;IC.initH=st.h;},ISTYLES.map(function(x){return [x.id,x.group+': '+x.name];}));
+        pop.classList.add('fb-icpop');
+        var gw=h('div','pf');gw.appendChild(h('label',null,'Style'));
+        var gal=h('div','icgal fb-icgal');gw.appendChild(gal);pop.appendChild(gw);
+        OB.icGal=gal;   /* filled each time the menu opens, so the pictures use the current colours */
         pfSel(pop,'Text next to it',function(){return IC.text;},function(v){IC.text=v;},[['none','Icon only'],['name','Icon and object name'],['word','Icon and status word'],['both','Icon, name and status word']]);
         pfChk(pop,'Animate',function(){return IC.animate;},function(v){IC.animate=v;});
-      }));
+      },function(){if(OB.icGal)fillStyleGallery(OB.icGal,'obg');}));
     }
-    b.appendChild(mLooks);b.appendChild(mColors);
+    if(!(TYPE==='icon'&&!iHasBg(IC)))b.appendChild(mLooks);   /* on an icon without a background a look would only change the status colours, which Colors does */
+    b.appendChild(mColors);
     b.appendChild(obSep());
     /* fonts, colours and corners */
     sty.appendChild(fs);
@@ -4739,7 +4744,7 @@ try{
     b.appendChild(obBtn('Card','A card around the map: fill, border, rounded corners and shadow (details under Appearance)',function(){return GM.look.card;},function(v){GM.look.card=v;refreshUI();render();}));
     OB.key=obKey();
   }
-  function obKey(){return SCOPE+TYPE+(TYPE==='icon'?IC.engine:(TYPE==='gauge'?G.engine+(G.nstyle?'n':''):(TYPE==='donut'?DN.engine:TYPE==='sunburst'?SB.engine+SB.face:(TYPE==='graph'?GR.draw+GR.kind+(GR.kind==='bars'?GR.bsrc:''):''))));}
+  function obKey(){return SCOPE+TYPE+(TYPE==='icon'?IC.engine+(iHasBg(IC)?'b':''):(TYPE==='gauge'?G.engine+(G.nstyle?'n':''):(TYPE==='donut'?DN.engine:TYPE==='sunburst'?SB.engine+SB.face:(TYPE==='graph'?GR.draw+GR.kind+(GR.kind==='bars'?GR.bsrc:''):''))));}
   /* the bar sits on the page (position:fixed), above the object, or under it when there is no room above or a menu needs the room.
      It is kept inside the window, never inside the canvas, so neither the canvas nor the preview edge covers it. */
   function obPlace(){
@@ -5324,8 +5329,9 @@ try{
     mlsRuntime(lkCfg(LK));
   }
   var icGalEl=null, icGalStyle=null;
-  function refreshStyleGallery(){
-    if(!icGalEl||TYPE!=='icon'||IC.engine!=='custom')return;
+  /* the icon styles as small pictures (each in the up, warning and down colours), filled into el; a click picks that style */
+  function fillStyleGallery(el,pfx){   /* pfx keeps the pictures' gradient ids apart when two galleries are on the page */
+    pfx=pfx||'g';
     if(!icGalStyle){icGalStyle=document.createElement('style');icGalStyle.id='opicgal';document.head.appendChild(icGalStyle);}
     var css=[], html='';
     ['Circles','Icons','More'].forEach(function(g){
@@ -5335,21 +5341,26 @@ try{
         css.push(iconCss(Ig,cls));
         var hh=(s.id==='traffic')?44:28, ww=Math.max(14,Math.min(70,Math.round(hh*s.w/s.h)));
         var cells='';
-        ['sensg','sensy','sensr'].forEach(function(k,i){cells+='<span class="map_object pst_obj '+cls+' map_objectstate_'+k+'" style="position:relative;display:block;width:'+ww+'px;height:'+hh+'px;">'+iconBodyLines(Ig,'g'+s.id+i).join('')+'</span>';});
+        ['sensg','sensy','sensr'].forEach(function(k,i){cells+='<span class="map_object pst_obj '+cls+' map_objectstate_'+k+'" style="position:relative;display:block;width:'+ww+'px;height:'+hh+'px;">'+iconBodyLines(Ig,pfx+s.id+i).join('')+'</span>';});
         html+='<button type="button" class="stylechip'+(IC.style===s.id?' on':'')+((s.w/s.h>1.8)?' wide':'')+'" data-style="'+s.id+'"><span class="stylerow">'+cells+'</span><span class="pname">'+s.name+'</span></button>';
       });
       html+='</div>';
     });
     icGalStyle.textContent=css.join('\\n');
-    icGalEl.innerHTML=html;
-    Array.prototype.forEach.call(icGalEl.querySelectorAll('.stylechip'),function(btn){
+    el.innerHTML=html;
+    Array.prototype.forEach.call(el.querySelectorAll('.stylechip'),function(btn){
       btn.addEventListener('click',function(){
         var s=iStyle(btn.getAttribute('data-style')), old=iStyle(IC.style);
         if(IC.name==='Status '+old.name.toLowerCase())IC.name='Status '+s.name.toLowerCase();
         IC.style=s.id;IC.initW=s.w;IC.initH=s.h;
         refreshUI();render();
+        [].forEach.call(el.querySelectorAll('.stylechip'),function(b2){b2.classList.toggle('on',b2===btn);});   /* the menu may stay open: show the new choice */
       });
     });
+  }
+  function refreshStyleGallery(){
+    if(!icGalEl||TYPE!=='icon'||IC.engine!=='custom')return;
+    fillStyleGallery(icGalEl);
   }
 
   var INSTALL_HTML=(document.getElementById('oinstall')||{}).innerHTML||'';

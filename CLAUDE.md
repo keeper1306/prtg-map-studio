@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.55.
+Last updated at version 1.5.56.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -140,6 +140,15 @@ A full run takes about 5 seconds (16 seconds the very first time).
   makes Map Studio treat them as two servers: Review shows already-pushed items as new, and Undo
   is not offered. Confirmed on the real PRTG at 1.5.43. Workaround: always use the same address.
   The owner chose to leave this until after `app.js` is split (the split is now done, at 1.5.53).
+
+## Status icon toolbar (1.5.56)
+
+- The bar's Icon menu shows the styles as pictures (`fillStyleGallery(el,pfx)`, shared with the
+  side panel's gallery; the menu uses prefix `obg` so its gradient ids don't clash with the side
+  panel's, which made LED and Soft orb draw blank).
+- `obRoot()` for icons is the whole preview strip, so a click on any state's icon opens the bar.
+- Looks is shown only when `iHasBg(IC)`: Tile, Traffic light, or the card switched on. The
+  traffic light's housing is a fixed colour (`#161C28`), so a look only changes its lamps.
 
 ## Gauges on PRTG's dial and lookup channels (1.5.55)
 
