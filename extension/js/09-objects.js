@@ -3108,12 +3108,28 @@ try{
     {id:'glyph', name:'Line icon',      group:'Icons',   w:44, h:44, vb:'0 0 48 48', gl:'icon'},
     {id:'tile',  name:'Tile',           group:'Icons',   w:52, h:52, vb:'0 0 48 48', gl:'icon'},
     {id:'shield',name:'Shield',         group:'Icons',   w:44, h:48, vb:'0 0 48 48', gl:'icon'},
+    {id:'square', name:'Square',        group:'Shapes',  w:40, h:40, vb:'0 0 48 48', gl:null},
+    {id:'diamond',name:'Diamond',       group:'Shapes',  w:44, h:44, vb:'0 0 48 48', gl:null},
+    {id:'hexagon',name:'Hexagon',       group:'Shapes',  w:44, h:44, vb:'0 0 48 48', gl:null},
+    {id:'corner', name:'Corner tab',    group:'Shapes',  w:44, h:44, vb:'0 0 48 48', gl:null},
+    {id:'rbar',   name:'Rounded bar',   group:'Shapes',  w:96, h:34, vb:'0 0 96 34', gl:'icon'},
+    {id:'sign',   name:'Warning sign',  group:'Icons',   w:44, h:44, vb:'0 0 48 48', gl:'icon'},
+    {id:'bars',   name:'Signal bars',   group:'Icons',   w:44, h:44, vb:'0 0 48 48', gl:null},
+    {id:'server', name:'Server',        group:'Icons',   w:44, h:44, vb:'0 0 48 48', gl:null},
+    {id:'beacon', name:'Beacon',        group:'Icons',   w:44, h:44, vb:'0 0 48 48', gl:null},
+    {id:'flag',   name:'Flag',          group:'Icons',   w:44, h:44, vb:'0 0 48 48', gl:null},
     {id:'traffic',name:'Traffic light', group:'More',    w:44, h:110,vb:'0 0 40 100',gl:null},
+    {id:'tlout',  name:'Outlined traffic light', group:'More', w:44, h:110, vb:'0 0 40 100', gl:null},
+    {id:'tlh',    name:'Horizontal traffic light', group:'More', w:110, h:44, vb:'0 0 100 40', gl:null},
+    {id:'ledstrip',name:'LED strip',    group:'More',    w:96, h:34, vb:'0 0 96 34', gl:null},
+    {id:'sbar',   name:'Status bar',    group:'More',    w:160,h:32, vb:null,        gl:null},
     {id:'heart', name:'Heartbeat',      group:'More',    w:96, h:44, vb:'0 0 96 48', gl:'hb'},
     {id:'pill',  name:'Status pill',    group:'More',    w:160,h:32, vb:null,        gl:null}
   ];
   function iStyle(id){var r=ISTYLES[1];ISTYLES.forEach(function(s){if(s.id===id)r=s;});return r;}
-  function iHasBg(I){return !!I.card;}   /* Looks is offered only for an icon with its card on: the look then sets the card behind it */
+  function iHasBg(I){return !!I.card;}
+  var ITL={traffic:1,tlout:1,tlh:1,ledstrip:1};   /* the styles with three lamps, one lit by the state */
+  var IBARS={up:3,warning:2,unusual:2,ack:1,down:1,paused:0,unknown:0};   /* Signal bars: how many are lit in each state */   /* Looks is offered only for an icon with its card on: the look then sets the card behind it */
   function blankI(){
     return {type:'icon',engine:'custom',cat:'Status Icons',name:'Status dot',fname:'',style:'dot',palette:'look',text:'none',tip:'name',link:'auto',animate:true,card:false,
       labels:{},initW:40,initH:40,look:lookOf('Minimal'),raw:''};
@@ -3187,14 +3203,28 @@ try{
     if(st.gl==='icon'){
       c.push(r+' .gl{display:none;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}');
       c.push(r+' .gl-unknown{display:block;}');
-      if(st.id==='badge'||st.id==='shield')c.push(r+' .gl{stroke:var(--fg);}');
+      if(st.id==='badge'||st.id==='shield'||st.id==='sign'||st.id==='rbar')c.push(r+' .gl{stroke:var(--fg);}');
       if(st.id==='glyph')c.push(r+' .gl{stroke:var(--c);}');
       if(st.id==='tile'){c.push(r+' .gl{stroke:var(--ci);}');c.push(r+' .ic-tile{fill:var(--t);stroke:var(--tb);stroke-width:1.5;}');}
     }
-    var tlHouse='#161C28', tlOff=blend(tlHouse,'#FFFFFF',0.14);
-    if(st.id==='traffic'){
-      c.push(r+' .tl-body{fill:'+tlHouse+';stroke:'+blend(tlHouse,'#FFFFFF',0.24)+';stroke-width:1.5;}');
-      c.push(r+' .lamp{fill:'+tlOff+';}');
+    var tlHouse='#161C28', tlOff=blend(tlHouse,'#FFFFFF',0.14), ink=L.text||'#1d2433', soft=blend(ink,'#FFFFFF',0.55);
+    if(st.id==='tlout'){tlOff='#FFFFFF';}   /* the outlined light: a white housing and empty lamps, drawn in the text colour */
+    if(ITL[st.id]){
+      if(st.id==='tlout')c.push(r+' .tl-body{fill:#FFFFFF;stroke:'+ink+';stroke-width:3;}');
+      else c.push(r+' .tl-body{fill:'+tlHouse+';stroke:'+blend(tlHouse,'#FFFFFF',0.24)+';stroke-width:1.5;}');
+      c.push(r+' .lamp{fill:'+tlOff+';'+(st.id==='tlout'?'stroke:'+ink+';stroke-width:2.2;':'')+'}');
+    }
+    if(st.id==='diamond'||st.id==='hexagon'||st.id==='sign')c.push(r+' .ic-round{stroke:var(--c);stroke-width:3;stroke-linejoin:round;}');
+    if(st.id==='corner')c.push(r+' .ct-card{fill:'+(cf&&String(cf).charAt(0)==='#'?cf:'#FFFFFF')+';stroke:'+soft+';stroke-width:1.5;}');
+    if(st.id==='bars')c.push(r+' .sb{fill:'+blend(soft,'#FFFFFF',0.45)+';}');
+    if(st.id==='server'){c.push(r+' .sv-box{fill:'+(cf&&String(cf).charAt(0)==='#'?cf:'#FFFFFF')+';stroke:'+soft+';stroke-width:2;}');c.push(r+' .sv-line{fill:none;stroke:'+soft+';stroke-width:2.2;stroke-linecap:round;}');}
+    if(st.id==='beacon'){c.push(r+' .bc-base{fill:'+blend(ink,'#FFFFFF',0.25)+';}');c.push(r+' .bc-ray{fill:none;stroke:var(--c);stroke-width:3;stroke-linecap:round;}');
+      if(I.animate)c.push('@keyframes pstblink_'+cls+'{0%,100%{opacity:1;}50%{opacity:.15;}}');}
+    if(st.id==='flag')c.push(r+' .fl-pole{fill:none;stroke:'+soft+';stroke-width:3;stroke-linecap:round;}');
+    if(st.id==='sbar'){
+      c.push(r+' .pst-sbar{display:inline-flex;align-items:center;gap:.5em;height:100%;max-height:100%;box-sizing:border-box;padding:0 1em 0 .8em;border:1px solid '+blend(soft,'#FFFFFF',0.4)+';border-left:6px solid var(--c);border-radius:4px;background:'+(cf&&String(cf).charAt(0)==='#'?cf:'#FFFFFF')+';color:'+ink+';font-weight:600;white-space:nowrap;overflow:hidden;}');
+      c.push(r+' .pst-sbar .pst-n,'+r+' .pst-sbar .pst-w{color:inherit;font-size:1em;}');
+      c.push(r+' .pst-sbar .pst-n{font-weight:400;}');
     }
     if(st.gl==='hb'){
       c.push(r+' .gl{display:none;fill:none;stroke:var(--c);stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round;}');
@@ -3215,16 +3245,22 @@ try{
       c.push(sel(' .pst-w::after')+'{content:"'+iLabel(I,s)+'";}');
       if(st.gl==='icon'){c.push(sel(' .gl')+'{display:none;}');c.push(sel(' .gl-'+s.id)+'{display:block;}');}
       if(st.gl==='hb'){c.push(sel(' .gl')+'{display:none;}');c.push(sel(' .gl-'+HBFOR[s.id])+'{display:block;}');}
-      if(st.id==='traffic'){
+      if(ITL[st.id]){
         var lamp=(s.id==='down'||s.id==='ack')?'r':((s.id==='warning'||s.id==='unusual')?'y':(s.id==='up'?'g':''));
-        c.push(sel(' .lamp')+'{fill:'+tlOff+';filter:none;}');
-        if(lamp)c.push(sel(' .lamp-'+lamp)+'{fill:var(--c);filter:drop-shadow(0 0 4px var(--g));}');
+        c.push(sel(' .lamp')+'{fill:'+tlOff+';filter:none;'+(st.id==='tlout'?'stroke:'+ink+';':'')+'}');
+        if(lamp)c.push(sel(' .lamp-'+lamp)+'{fill:var(--c);'+(st.id==='tlout'?'stroke:var(--c);filter:none;':'filter:drop-shadow(0 0 4px var(--g));')+'}');
+      }
+      if(st.id==='bars'){var nb=IBARS[s.id]||0;c.push(sel(' .sb')+'{fill:'+blend(soft,'#FFFFFF',0.45)+';}');for(var bi=1;bi<=nb;bi++)c.push(sel(' .sb'+bi)+'{fill:var(--c);}');}
+      if(st.id==='beacon'){
+        if(IALARM[s.id]&&I.animate)c.push(sel(' .bc-ray')+'{animation:pstblink_'+cls+' 1s ease-in-out infinite;}');
+        else c.push(sel(' .bc-ray')+'{animation:none;}');
       }
       if(st.id==='pulse'&&IALARM[s.id]){
         if(I.animate)c.push(sel(' .halo')+'{animation:pstpulse_'+cls+' 1.8s ease-out infinite;}');
         else c.push(sel(' .halo')+'{opacity:.28;transform:scale(1.5);}');
       }
     });
+    if(st.id==='beacon'&&I.animate)c.push('@media (prefers-reduced-motion:reduce){'+r+' .bc-ray{animation:none !important;}}');
     if(st.id==='pulse'&&I.animate){
       c.push('@media (prefers-reduced-motion:reduce){');
       ISTATES.forEach(function(s){if(IALARM[s.id])c.push('  '+sSel(r,s,' .halo')+'{animation:none;opacity:.28;transform:scale(1.5);}');});
@@ -3248,6 +3284,19 @@ try{
       case 'tile': return wrap('<rect class="ic-tile" x="3" y="3" width="42" height="42" rx="11"/>'+glyphs('translate(9 9) scale(1.25)'));
       case 'shield': return wrap('<path class="ic-fill" d="M24 3.5L39.5 9.5V23C39.5 33 33 40.5 24 44.5C15 40.5 8.5 33 8.5 23V9.5Z"/>'+glyphs('translate(12 10)'));
       case 'traffic': return wrap('<rect class="tl-body" x="2" y="2" width="36" height="96" rx="12"/><circle class="lamp lamp-r" cx="20" cy="22" r="11"/><circle class="lamp lamp-y" cx="20" cy="50" r="11"/><circle class="lamp lamp-g" cx="20" cy="78" r="11"/>');
+      case 'tlout': return wrap('<rect class="tl-body" x="2.5" y="2.5" width="35" height="95" rx="12"/><circle class="lamp lamp-r" cx="20" cy="22" r="10.5"/><circle class="lamp lamp-y" cx="20" cy="50" r="10.5"/><circle class="lamp lamp-g" cx="20" cy="78" r="10.5"/>');
+      case 'tlh': return wrap('<rect class="tl-body" x="2" y="2" width="96" height="36" rx="12"/><circle class="lamp lamp-g" cx="22" cy="20" r="11"/><circle class="lamp lamp-y" cx="50" cy="20" r="11"/><circle class="lamp lamp-r" cx="78" cy="20" r="11"/>');
+      case 'ledstrip': return wrap('<rect class="tl-body" x="1" y="1" width="94" height="32" rx="6"/><rect class="lamp lamp-g" x="7" y="6" width="24" height="22" rx="3"/><rect class="lamp lamp-y" x="36" y="6" width="24" height="22" rx="3"/><rect class="lamp lamp-r" x="65" y="6" width="24" height="22" rx="3"/>');
+      case 'square': return wrap('<rect class="ic-fill" x="4" y="4" width="40" height="40" rx="7"/>');
+      case 'diamond': return wrap('<path class="ic-fill ic-round" d="M24 3L45 24L24 45L3 24Z"/>');
+      case 'hexagon': return wrap('<path class="ic-fill ic-round" d="M24 3L42.2 13.5V34.5L24 45L5.8 34.5V13.5Z"/>');
+      case 'corner': return wrap('<rect class="ct-card" x="4" y="4" width="40" height="40" rx="6"/><path class="ic-fill" d="M26 4H38A6 6 0 0 1 44 10V22Z"/>');
+      case 'rbar': return wrap('<rect class="ic-fill" x="1" y="1" width="94" height="32" rx="9"/>'+glyphs('translate(36 5)'));
+      case 'sign': return wrap('<path class="ic-fill ic-round" d="M24 5L44 41H4Z"/>'+glyphs('translate(13 16.5) scale(0.92)'));
+      case 'bars': return wrap('<rect class="sb sb1" x="6" y="30" width="9" height="14" rx="2"/><rect class="sb sb2" x="19.5" y="19" width="9" height="25" rx="2"/><rect class="sb sb3" x="33" y="7" width="9" height="37" rx="2"/>');
+      case 'server': return wrap('<rect class="sv-box" x="5" y="7" width="38" height="15" rx="3"/><rect class="sv-box" x="5" y="26" width="38" height="15" rx="3"/><path class="sv-line" d="M10 14.5H24M10 33.5H24"/><circle class="ic-fill" cx="36" cy="14.5" r="3.4"/><circle class="ic-fill" cx="36" cy="33.5" r="3.4"/>');
+      case 'beacon': return wrap('<path class="bc-ray" d="M24 3V9M9.5 9L13.5 13M38.5 9L34.5 13"/><path class="ic-fill" d="M12 34A12 12 0 0 1 36 34Z"/><rect class="bc-base" x="8" y="34" width="32" height="9" rx="2.5"/>');
+      case 'flag': return wrap('<path class="fl-pole" d="M12 5V44"/><path class="ic-fill" d="M13.5 7H40L33 16.5L40 26H13.5Z"/>');
       case 'heart': return wrap(['ok','warn','wave','flat','ack','dash','dot'].map(function(k){return '<path class="gl gl-'+k+'" d="'+HBPATH[k]+'"/>';}).join(''));
     }
     return '';
@@ -3261,7 +3310,7 @@ try{
     if(I.link==='auto')href=' href="/<#if value="@nodename" is="sensor" then="sensor" else="device" varexpand="value">.htm?id=<@objectid>"';
     else if(I.link==='sensor')href=' href="/sensor.htm?id=<@objectid>"';
     else if(I.link==='device')href=' href="/device.htm?id=<@objectid>"';
-    return {tag:href?'a':'span',open:'<'+(href?'a':'span')+' class="pst'+(I.text!=='none'&&I.style!=='pill'?' pst-t':'')+'"'+href+t+'>'};
+    return {tag:href?'a':'span',open:'<'+(href?'a':'span')+' class="pst'+(I.text!=='none'&&I.style!=='pill'&&I.style!=='sbar'?' pst-t':'')+'"'+href+t+'>'};
   }
   /* the clickable part of the icon: used by the file and by the preview, so both show the same markup */
   function iconBodyLines(I,id){
@@ -3271,6 +3320,8 @@ try{
     o.push('  '+op.open);
     if(st.id==='pill'){
       o.push('    <span class="pst-pill"><i></i>'+(showN?nameEl:'')+wordEl+'</span>');
+    }else if(st.id==='sbar'){
+      o.push('    <span class="pst-sbar">'+(showN?nameEl:'')+wordEl+'</span>');
     }else{
       o.push('    '+iconSvg(I,id));
       if(showN||showW)o.push('    <span class="pst-b">'+(showN?nameEl:'')+(showW?wordEl:'')+'</span>');
@@ -3290,7 +3341,7 @@ try{
     o.push('  <#mapobject type="htmlbefore" subid="<@subid>">');
     o.push('  <#checkobjecttype objecttype="sensor,device,group,probenode" nicemessage="true" id="<@objectid>">');
     if(I.link==='auto')o.push('  <#objectproperty type="nodename" id="<@objectid>" var="nodename">');
-    if((showN||showW||st.id==='pill')&&needsFontLink(L))o.push(fontLinkOf(L));
+    if((showN||showW||st.id==='pill'||st.id==='sbar')&&needsFontLink(L))o.push(fontLinkOf(L));
     o.push('<style>');o.push(css);o.push('</style>');
     iconBodyLines(I,'<@itemid>').forEach(function(l){o.push(l);});
     o.push('  <#mapobject type="htmlafter" subid="<@subid>">');
@@ -5334,12 +5385,12 @@ try{
     pfx=pfx||'g';
     if(!icGalStyle){icGalStyle=document.createElement('style');icGalStyle.id='opicgal';document.head.appendChild(icGalStyle);}
     var css=[], html='';
-    ['Circles','Icons','More'].forEach(function(g){
+    ['Circles','Shapes','Icons','More'].forEach(function(g){
       html+='<div class="icgroup">'+g+'</div><div class="icgrid">';
       ISTYLES.filter(function(s){return s.group===g;}).forEach(function(s){
         var Ig=Object.assign({},IC,{style:s.id,link:'none',tip:'none',text:'none',card:false,name:'gal '+s.id,initW:s.w,initH:s.h}), cls='pgal_'+s.id;
         css.push(iconCss(Ig,cls));
-        var hh=(s.id==='traffic')?44:28, ww=Math.max(14,Math.min(70,Math.round(hh*s.w/s.h)));
+        var hh=(s.id==='traffic'||s.id==='tlout')?44:28, ww=Math.max(14,Math.min(70,Math.round(hh*s.w/s.h)));
         var cells='';
         ['sensg','sensy','sensr'].forEach(function(k,i){cells+='<span class="map_object pst_obj '+cls+' map_objectstate_'+k+'" style="position:relative;display:block;width:'+ww+'px;height:'+hh+'px;">'+iconBodyLines(Ig,pfx+s.id+i).join('')+'</span>';});
         html+='<button type="button" class="stylechip'+(IC.style===s.id?' on':'')+((s.w/s.h>1.8)?' wide':'')+'" data-style="'+s.id+'"><span class="stylerow">'+cells+'</span><span class="pname">'+s.name+'</span></button>';

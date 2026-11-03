@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.57.
+Last updated at version 1.5.58.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -151,6 +151,13 @@ A full run takes about 5 seconds (16 seconds the very first time).
   ("Card behind the icon, from the look", `IC.card`) is on. The owner asked to remove Looks from
   the Tile and the Traffic light too. A tried change (tile on the look's card colour, traffic-light
   housing in the look's title colour) was shown as a mockup and rejected; don't redo it unasked.
+
+- 1.5.58 added 14 styles to `ISTYLES` (new gallery group "Shapes"): square, diamond, hexagon,
+  corner, rbar; sign, bars, server, beacon, flag; tlout, tlh, ledstrip, sbar. The three-lamp
+  styles share the traffic light's lamp rules through `ITL`; Signal bars use `IBARS`; Status
+  bar is HTML like the pill and always shows its word; Beacon's rays blink on alarm states when
+  Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
+  tile, badge, LED).
 
 ## Gauges on PRTG's dial and lookup channels (1.5.55)
 
