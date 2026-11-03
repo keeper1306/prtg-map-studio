@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.43.
+Last updated at version 1.5.44.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -12,7 +12,29 @@ when they need to do something themselves.
   `main` to it with `git push origin connectors:main`. Never merge into an old local `main`.
 - Repo on the VM: `C:\Users\Administrator\Documents\prtg-map-studio`.
 - Extension folder the browser runs: `C:\Users\Administrator\Desktop\PRTG Map Studio\extension`.
-  It is not a git repo. Normally only `app.js` and `manifest.json` change there.
+  It is not a git repo. Normally `app.html`, `app.js`, `manifest.json` and the files in `js\`
+  change there.
+- The tool always runs as a chrome-extension page (`background.js` opens `app.html`, which is the
+  only thing that loads the scripts). The comment at the top of `js/01-config.js` about being
+  "loaded into a PRTG tab" is outdated.
+
+## Splitting app.js (in progress)
+
+`app.js` is being split into plain script files in `extension/js/`, one region per version,
+loaded by `app.html` in the same order with `defer` (no modules, no build step). Each region is
+moved without changing a character. The full plan (region map, order, checks) was agreed with the
+owner; stages so far:
+
+- Stage 1 (1.5.44): timer stopper + `config` → `js/01-config.js`. Done; waiting for the owner's test.
+- Still in `app.js`: tabs, link style, page, info, dashboard, push, library, objects, dashtabs, start.
+- Next stages, in order: tabs (front, `02-tabs.js`), dashtabs + the last two lines (back,
+  `10-dashtabs.js` + `11-start.js`), link style (`03-linkstyle.js`, add a `@region: linkstyle`
+  marker), page (`04-page.js`), info (`05-info.js`), objects (`09-objects.js`), library
+  (`08-library.js`), push (`07-push.js`), then what is left of `app.js` becomes `06-dashboard.js`.
+  Only take a region from the front or the back of what is left, so the order never changes.
+- Checks at every stage: (1) join the files in `app.html`'s order and compare with the previous
+  `app.js`: only the new changelog entry may differ; (2) `tests/run-tests.js`; (3) the list of
+  window names the page creates (102 at 1.5.43) and `CFG` must be unchanged.
 - PRTG install folder (read only, for reference): `C:\Program Files (x86)\PRTG Network Monitor`
   (`webroot`, `themes`, `frontend`, `Custom Sensors`, `lookups`, ...).
 
@@ -23,17 +45,34 @@ when they need to do something themselves.
 3. Never type the owner's PRTG username, passhash or password.
 4. After every change, update both GitHub and the VM extension folder:
    - Bump `"version"` in `extension/manifest.json`.
-   - Add a changelog entry at the start of `CFG.changelog` in `extension/app.js`. It is one
+   - Add a changelog entry at the start of `CFG.changelog` in `extension/js/01-config.js`
+     (it moved there from `app.js` at 1.5.44). It is one
      string, newest first, in the form `'1.5.41: What changed. 1.5.40: ...'`. Write apostrophes
      as `\u2019`, like the existing entries do. (`CFG.version` in the config says `1.4.2`, but
-     line ~98 of `app.js` replaces it with the manifest's version at startup, so only the
+     line ~98 of `js/01-config.js` replaces it with the manifest's version at startup, so only the
      manifest needs bumping.)
    - Commit, push `connectors`, then push `connectors:main`. The owner wants this done directly,
      without pull requests or asking first. GitHub prints "Bypassed rule violations ... Changes
      must be made through a pull request" for `main`; that is expected.
-   - Copy `app.js` and `manifest.json` into the extension folder.
-   - Confirm the copies are byte-identical by hash, for example:
-     `Get-FileHash extension\app.js, "C:\Users\Administrator\Desktop\PRTG Map Studio\extension\app.js"`
+   - Copy `manifest.json`, `app.html`, `app.js` (while it exists) and the `js` folder into the
+     extension folder, and confirm every copy is byte-identical by hash. This does both and prints
+     SAME or DIFFERENT for each file (every line must say SAME):
+     ```powershell
+     $src = "C:\Users\Administrator\Documents\prtg-map-studio\extension"
+     $dst = "C:\Users\Administrator\Desktop\PRTG Map Studio\extension"
+     New-Item -ItemType Directory -Force "$dst\js" | Out-Null
+     Copy-Item "$src\manifest.json", "$src\app.html" $dst
+     if (Test-Path "$src\app.js") { Copy-Item "$src\app.js" $dst }
+     Copy-Item "$src\js\*.js" "$dst\js\"
+     Get-ChildItem $src -Recurse -File -Include *.js, *.html, *.json | ForEach-Object {
+       $rel = $_.FullName.Substring($src.Length)
+       $a = (Get-FileHash $_.FullName).Hash
+       $b = (Get-FileHash ($dst + $rel) -ErrorAction SilentlyContinue).Hash
+       "{0}  {1}" -f $(if ($a -eq $b) { 'SAME     ' } else { 'DIFFERENT' }), $rel
+     }
+     ```
+     When the split is finished and `app.js` is gone from the repo, show the owner the old
+     `app.js` in the VM folder and ask before deleting it.
 5. Commit as keeper1306 (`keeper1306@users.noreply.github.com`). End every commit message with:
    `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` (use the model actually running).
    Add a `Claude-Session: <link>` line only when the session has a claude.ai/code link.
@@ -50,6 +89,11 @@ hashes against GitHub won't match.
 `tests/` has a stand-in PRTG server and automated push and Undo checks (see `tests/README.md`).
 Run them after any change to push, Undo or storage code, and after each stage of splitting
 `app.js`. They need Node.js, Python and Playwright's Chromium; they are not part of the extension.
+Installed on the VM (2026-11-03, owner approved): Node.js 26.13.0 LTS and Python 3.15.2 (for all
+users, on PATH), Playwright 1.63.0 in `tests\node_modules`, its Chromium in
+`%LOCALAPPDATA%\ms-playwright`. A shell opened before that install may need Node's folder
+(`C:\Program Files\nodejs`) added to PATH. Ask before installing anything else.
+A full run takes about 5 seconds (16 seconds the very first time).
 
 ## Known issues (not bugs to fix while doing other work)
 
