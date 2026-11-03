@@ -3113,7 +3113,7 @@ try{
   }
   function iconFromPreset(p){
     var I=blankI();
-    I.engine='stock';I.cat=p.cat;I.name=p.name+' custom';I.raw=p.raw;I.initW=0;I.initH=0;
+    I.engine='stock';I.cat=p.cat;I.name=p.name+' custom';I.pname=p.name;I.raw=p.raw;I.initW=0;I.initH=0;
     return I;
   }
   function iClassOf(I){return 'pst_'+slugOf(I.name);}
@@ -4124,6 +4124,7 @@ try{
 
   /* ---------- names: every object starts with "Map Studio" and says what is in it, until you type your own ---------- */
   function amLab(list,v){var r=v;list.forEach(function(o){if(o[0]===v)r=o[1];});return r;}
+  function amLow(v){return String(v).toLowerCase().replace(/\bprtg\b/g,'PRTG');}   /* lower case, but PRTG stays PRTG */
   function amName(m){
     var t=TYPE, p='Map Studio ', x='', n;
     if(t==='table'){
@@ -4131,24 +4132,23 @@ try{
       if(m.status&&m.status.length)x+=' - '+m.status.join(' + ')+' only';
       if(parseInt(m.count,10)>0)x+=' - top '+parseInt(m.count,10);
     }else if(t==='gauge'){
-      if(m.engine!=='ring')return null;
-      x='Gauge - '+String(amLab(GFACES,m.style||'progress')).toLowerCase()+', '+(m.shape==='half'?'half ring':'ring')+', '+({'sensor-primary':'main channel','sensor-all':'all channels',device:'device sensors'}[m.kind]||m.kind);
+      var gk=(m.engine==='prtg')?(m.nstyle?'n-'+m.nstyle:'classic'):(m.style||'progress');   /* PRTG's own dial (classic or a modern style) has no ring shape */
+      x='Gauge - '+amLow(amLab(GFACES.concat([['n-glass','Glass & metallic']]),gk))+(m.engine==='prtg'?(m.small?', small':''):', '+(m.shape==='half'?'half ring':'ring'))+', '+({'sensor-primary':'main channel','sensor-all':'all channels',device:'device sensors'}[m.kind]||m.kind);
+      if(m.engine==='prtg'&&m.kind==='device')x+=', '+({4:'5 stars only',3:'4 and 5 stars',2:'3 to 5 stars',1:'2 to 5 stars',0:'all priorities'}[parseInt(m.prio,10)]||'priority '+m.prio);   /* PRTG's dial only: ring names stay as they were */
     }else if(t==='graph'){
-      if(m.draw==='pic')return null;
       x=(m.kind==='bars')?('Bars - '+({status:'sensor states',channels:'channels',sensors:'sensors'}[m.bsrc||'status'])+', '+(m.bdir==='col'?'vertical':'horizontal')):('Graph - '+({sensor:'sensor',sensors:'sensor list',toplist:'toplist'}[m.kind]||m.kind)+', '+String(amLab(GPERIODS,m.period)).toLowerCase()+((m.kind==='sensor'&&m.draw!=='pic'&&m.cstyle&&m.cstyle!=='area')?', '+m.cstyle:''));
+      if(m.draw==='pic'&&m.kind!=='bars')x+=', PRTG picture';   /* PRTG draws this graph as a picture */
     }else if(t==='sunburst'){
-      if(m.engine!=='ring')return null;
-      x='Sunburst - '+String(amLab(SBFACES,m.face||'gaps')).toLowerCase()+(m.sizeSensors?', by sensors':'')+(m.sizePriority?', by priority':'');
+      x='Sunburst - '+amLow(amLab(SBFACES,m.engine==='prtg'?'prtg':(m.face||'gaps')))+(m.sizeSensors?', by sensors':'')+(m.sizePriority?', by priority':'')+(m.engine==='prtg'&&m.hidePaused?', no paused devices':'');
     }else if(t==='donut'){
-      if(m.engine!=='ring')return null;
-      x='Donut - '+(m.mode==='alarms'?'alarms only':'all states')+(m.legend==='none'?', no legend':', legend '+m.legend);
+      x='Donut - '+(m.engine==='prtg'?'PRTG classic, ':'')+(m.mode==='alarms'?'alarms only':'all states')+(m.engine==='prtg'?(m.withName?', with name':'')+(m.light?', light text':', dark text'):(m.legend==='none'?', no legend':', legend '+m.legend));
     }else if(t==='status'){
       x='Status counts - '+(m.tiles||[]).join(', ');
     }else if(t==='tile'){
       x='Tile - '+String(amLab(TKINDS,m.kind)).toLowerCase();
     }else if(t==='icon'){
-      if(m.engine!=='custom')return null;
-      x='Icon - '+iStyle(m.style).name.toLowerCase()+(m.text&&m.text!=='none'?', with '+m.text:'');
+      if(m.engine!=='custom'){x='Icon - PRTG '+amLow(m.pname||'stock icon').replace(/\bxl\b/g,'XL').replace(/ background/g,'');   /* short enough to stay whole, so the XL ones keep their own names */}
+      else x='Icon - '+iStyle(m.style).name.toLowerCase()+(m.text&&m.text!=='none'?', with '+m.text:'');
     }else if(t==='geomap'){
       x='Geo map - '+String(amLab(GMSHAPES,m.shape)).toLowerCase()+' markers'+(m.icon==='device'?'':', '+m.icon+' icon');
     }else if(t==='links'){

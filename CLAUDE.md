@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.53.
+Last updated at version 1.5.54.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -140,6 +140,16 @@ A full run takes about 5 seconds (16 seconds the very first time).
   makes Map Studio treat them as two servers: Review shows already-pushed items as new, and Undo
   is not offered. Confirmed on the real PRTG at 1.5.43. Workaround: always use the same address.
   The owner chose to leave this until after `app.js` is split (the split is now done, at 1.5.53).
+
+## Object names (1.5.54)
+
+- The owner wants every Object builder object named "Map Studio ..." automatically (until they
+  type their own). `amName()` in `js/09-objects.js` builds it. Since 1.5.54 it also names gauges
+  on PRTG's dial, PRTG-drawn donuts, sunbursts and graphs, and PRTG's stock icons; template-based
+  names add what tells them apart. Ring-gauge names were deliberately left unchanged, because
+  files named that way are already installed in `mapobjects`.
+- Still the same name for different templates (already so before 1.5.54): the graph templates
+  that only differ in font size or labels, and four table templates cut off at 64 characters.
 
 ## Done recently (1.5.41 to 1.5.43)
 
