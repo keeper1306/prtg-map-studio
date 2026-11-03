@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.59.
+Last updated at version 1.5.60.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -158,6 +158,12 @@ A full run takes about 5 seconds (16 seconds the very first time).
   bar is HTML like the pill and always shows its word; Beacon's rays blink on alarm states when
   Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
   tile, badge, LED).
+
+## Sunburst category (1.5.60)
+
+- Every sunburst Map Studio builds (own faces and PRTG-drawn) gets the category `Sunbursts`
+  (the `<!--Category: Name-->` first line PRTG's map designer groups by), like gauges get `Gauges`.
+  PRTG's own sunburst templates stay under `Device Tree Views`. Only that line changed (checked for all faces).
 
 ## Tile kinds (1.5.59)
 

@@ -2342,13 +2342,14 @@ try{
   var SBCOLS='objid,name,probegroupdevice=treejson,basetype,priority,status=textraw,totalsens=textraw,upsens=textraw,downsens=textraw,partialdownsens=textraw,warnsens=textraw,pausedsens=textraw,unusualsens=textraw,undefinedsens=textraw,downacksens=textraw';
   var SBSTOCKCOLS='objid,name,access=treejson,probegroupdevice=treejson,basetype,icon=treejson,favorite,fold,devicenum=textraw,groupnum=textraw,totalsens=textraw,upsens=textraw,downsens=textraw,partialdownsens=textraw,warnsens=textraw,pausedsens=textraw,unusualsens=textraw,undefinedsens=textraw,downacksens=textraw,condition,status=textraw,message,info,priority';
   function blankSB(){
-    return {type:'sunburst',engine:'ring',face:'gaps',cat:'Device Tree Views',name:'Device tree sunburst',fname:'',titleMode:'object',title:'',
+    return {type:'sunburst',engine:'ring',face:'gaps',cat:'Sunbursts',name:'Device tree sunburst',fname:'',titleMode:'object',title:'',
       sizeSensors:true,sizePriority:false,hidePaused:false,labels:true,center:'total',hole:26,depth:0,legend:'below',links:true,mapTags:true,
       initW:420,initH:440,look:lookOf('Light card')};
   }
   function sbFromPreset(p){
     var S=blankSB();
-    S.engine='prtg';S.face='prtg';S.cat=p.cat;S.name=p.name+' custom';S.sizeSensors=!!p.sizeSensors;S.sizePriority=!!p.sizePriority;S.hidePaused=!!p.hidePaused;
+    S.engine='prtg';S.face='prtg';S.cat='Sunbursts';   /* PRTG files its own sunbursts under Device Tree Views; every sunburst Map Studio builds goes under Sunbursts, as gauges go under Gauges */
+    S.name=p.name+' custom';S.sizeSensors=!!p.sizeSensors;S.sizePriority=!!p.sizePriority;S.hidePaused=!!p.hidePaused;
     S.initW=0;S.initH=0;S.look=lookOf('PRTG default');
     return S;
   }
@@ -2509,7 +2510,7 @@ try{
   function buildSunburst(S){
     var cls=sbClassOf(S), css=sunburstCss(S,cls), L=sbEffLook(S), ring=(S.engine==='ring'), styled=!!css, o=[], tm=S.titleMode||'object';
     var titleInner=(tm==='custom')?clean(S.title):'<#objectproperty name="Name" id="<@objectid>">';
-    o.push('<!'+'--'+clean(S.cat||'Device Tree Views')+': '+clean(S.name||'Sunburst')+'-->');
+    o.push('<!'+'--'+clean(S.cat||'Sunbursts')+': '+clean(S.name||'Sunburst')+'-->');
     o.push('');
     o.push('<div class="map_object map_table'+(styled?' '+cls:'')+' <#sensor type="colorclassofstate" prefix="map_objectstate_" id="<@objectid>">" id="<@itemid>" objectid="<@objectid>" subid="<@subid>"'+sbInit(S)+(ring?' data-sunburst="loading"':'')+' style="overflow:hidden;<#mapobject type="coordinates" subid="<@subid>" mode="<@editmode>">">');
     o.push('\t<#mapobject type="objectgrip" mode="<@editmode>">');
