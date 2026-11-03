@@ -2679,6 +2679,8 @@ try{
   function trType(raw){var t=String(raw||'').toLowerCase();if(t.indexOf('sensor')>=0)return 'sensor';if(t==='probe'||t==='probenode')return 'probe';if(t.indexOf('device')>=0)return 'device';return 'group';}
   /* the tree as jstree takes it: nodes with data (the title), attr (objid, type) and children */
   function trParse(j){
+    /* 1.5.67: PRTG sends the Root group as one item with children; keep it as the top of the tree (taking only its children dropped Root) */
+    if(j&&!Array.isArray(j)&&typeof j==='object'&&(j.attr||j.data||j.metadata)&&Array.isArray(j.children))j=[j];
     var list=Array.isArray(j)?j:((j&&Array.isArray(j.children))?j.children:((j&&Array.isArray(j.nodes))?j.nodes:((j&&Array.isArray(j.tree))?j.tree:null))), nodes={}, count=0, roots;
     if(!list&&j&&typeof j==='object'&&(j.data||j.attr))list=[j];
     if(!list)return null;
@@ -2727,9 +2729,31 @@ try{
     TR.roots.forEach(function(id){walk(id,0);});
     return out;
   }
-  function trNote(text,depth,err){var el=document.createElement('div');el.className='trnote'+(err?' err':'');el.style.paddingLeft=(24+depth*14)+'px';el.textContent=text;return el;}
+  function trNote(text,depth,err){var el=document.createElement('div');el.className='trnote'+(err?' err':'');el.style.paddingLeft=(44+depth*24)+'px';el.textContent=text;return el;}
   /* a very small dot at the start of each row: PRTG's status number, read from the object tables */
   var TRSTATE={3:'up',4:'warn',5:'down',13:'down',14:'down',10:'warn',7:'off',8:'off',9:'off',12:'off'};
+  /* 1.5.67: the tree looks like PRTG's new UI: chevrons, line icons, bold names and status-count boxes under each probe, group and device */
+  var TRCNT=['down','downack','warn','unusual','paused','up','unknown'];   /* the order PRTG's new UI shows them in */
+  var TRCOL={down:'#E3063D',downack:'#F07A8F',warn:'#F2BE25',unusual:'#F07800',paused:'#478EFF',up:'#B4BF17',unknown:'#A3A6AE'};
+  var TRGLYPH={down:'<path d="M5 5l6 6M11 5l-6 6"/>',downack:'<path d="M4.5 8.5l2.5 2.5L11.5 5.5"/>',warn:'<path d="M8 3.8v5.4M8 11.6v.6"/>',unusual:'<path d="M3 9.2c1.6-3 3.2-3 4.8 0s3.2 3 4.8 0"/>',paused:'<path d="M6 4.5v7M10 4.5v7"/>',up:'<path d="M4 8.4l2.7 2.7L12 5.6"/>',unknown:'<path d="M5 8h6"/>'};
+  var TRSENS={up:'up',warn:'warn',down:'down',off:'paused',un:'unknown'};
+  function trSvg(inner,cls){return '<svg class="'+cls+'" viewBox="0 0 16 16" aria-hidden="true">'+inner+'</svg>';}
+  var TRICON={
+    group:'<rect x="1.5" y="2.5" width="9.5" height="6.5" rx="1"/><rect x="5" y="7" width="9.5" height="6.5" rx="1" fill="#fff"/>',
+    probe:'<circle cx="8" cy="8" r="3.6"/><path d="M8 1.2v3.2M8 11.6v3.2M1.2 8h3.2M11.6 8h3.2"/>',
+    device:'<rect x="1.5" y="4.5" width="13" height="7" rx="1.2"/><circle cx="4.6" cy="8" r=".9" fill="#E3063D" stroke="none"/><circle cx="7.2" cy="8" r=".9" fill="#E3063D" stroke="none"/>'
+  };
+  function trChips(c){
+    var o='', i, k, v;
+    if(!c)return '';
+    for(i=0;i<TRCNT.length;i++){k=TRCNT[i];v=c[k]||0;if(!v)continue;o+='<span class="trc" style="--c:'+TRCOL[k]+'" title="'+v+' '+k+'"><span class="trci">'+trSvg(TRGLYPH[k],'')+'</span><span class="trcn">'+v+'</span></span>';}
+    return o?'<div class="trcs">'+o+'</div>':'';
+  }
+  function trCounts(r){
+    var g=function(k){var x=parseInt(r[k],10);return isNaN(x)?0:x;};
+    if(r.upsens==null&&r.downsens==null&&r.warnsens==null)return null;
+    return {down:g('downsens')+g('partialdownsens'),downack:g('downacksens'),warn:g('warnsens'),unusual:g('unusualsens'),paused:g('pausedsens'),up:g('upsens'),unknown:g('undefinedsens')};
+  }
   function trDot(st){return (st==null||isNaN(st))?'':' sd-'+(TRSTATE[st]||'un');}
   function trNum(v){var x=parseInt(v,10);return isNaN(x)?null:x;}
   function trLoadStatus(){
@@ -2737,10 +2761,10 @@ try{
     if(TR.stLoading||!TR.loaded)return;
     TR.stLoading=true;
     jobs=['devices','groups','probenodes'].map(function(c){
-      return http('GET','/api/table.json',{content:c,columns:'objid,status_raw',count:100000}).then(function(t){
+      return http('GET','/api/table.json',{content:c,columns:'objid,status_raw,upsens,downsens,partialdownsens,downacksens,warnsens,unusualsens,pausedsens,undefinedsens',count:100000}).then(function(t){
         var j=parseJson(t,'The status of the '+c), a=j[c], k;
         if(!Array.isArray(a)){for(k in j){if(Array.isArray(j[k])){a=j[k];break;}}}
-        (a||[]).forEach(function(r){var n=TR.nodes[parseInt(r.objid,10)];if(n)n.st=trNum(r.status_raw);});
+        (a||[]).forEach(function(r){var n=TR.nodes[parseInt(r.objid,10)];if(n){n.st=trNum(r.status_raw);n.cnt=trCounts(r);}});
       },function(){});
     });
     Promise.all(jobs).then(function(){
@@ -2758,9 +2782,14 @@ try{
   function trRow(n,depth){
     var el=document.createElement('div'), open=!!n.open&&!TR.q, can=trCanOpen(n)&&!TR.q;
     el.className='trn'+(TR.sel&&TR.sel.id===n.id?' on':'')+(trValid(n)?'':' bad');el.setAttribute('role','treeitem');el.setAttribute('data-id',String(n.id));el.setAttribute('data-type',n.type);el.setAttribute('draggable','true');
-    el.style.paddingLeft=(6+depth*14)+'px';
-    el.innerHTML='<span class="sd'+trDot(n.st)+'"></span><span class="tw">'+(can?(open?'\u25BE':'\u25B8'):'')+'</span><span class="ti t-'+n.type+'"></span><span class="tl"></span>';
-    el.querySelector('.ti').textContent=TYPEGLYPH[n.type]||'';el.querySelector('.ti').title=n.type;
+    var i, bi=[], bp=[], sk, ic;
+    el.style.paddingLeft=(4+depth*24)+'px';
+    for(i=0;i<depth;i++){bi.push('linear-gradient(#DBDCDF,#DBDCDF)');bp.push((4+i*24+9)+'px 0');}   /* the thin guide line under each open parent */
+    if(bi.length){el.style.backgroundImage=bi.join(',');el.style.backgroundPosition=bp.join(',');el.style.backgroundSize='1px 100%';el.style.backgroundRepeat='no-repeat';}
+    if(n.type==='sensor'){sk=TRSENS[(TRSTATE[n.st]||'un')]||'unknown';if(n.st===10)sk='unusual';ic='<span class="trsq" style="--c:'+TRCOL[sk]+'">'+trSvg(TRGLYPH[sk],'')+'</span>';}
+    else ic=trSvg(TRICON[n.type]||TRICON.group,'tico');
+    el.innerHTML='<div class="trl"><span class="tw">'+(can?trSvg('<path d="M6 3.5l4.5 4.5L6 12.5"/>','tchev'+(open?' open':'')):'')+'</span><span class="ti t-'+n.type+'">'+ic+'</span><span class="tl"></span></div>'+(n.type!=='sensor'?trChips(n.cnt):'');
+    el.querySelector('.ti').title=n.type;
     el.querySelector('.tl').textContent=n.hit?trLabel(n):n.name;el.title=trLabel(n)+'  ['+n.type+', ID '+n.id+']';
     if(can)el.setAttribute('aria-expanded',open?'true':'false');
     el.querySelector('.tw').addEventListener('click',function(ev){ev.stopPropagation();if(can)trToggle(n);});

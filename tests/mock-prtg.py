@@ -77,6 +77,13 @@ class Handler(http.server.BaseHTTPRequestHandler):
             mode = state['mode']
             if path == '/api/table.json' and q.get('content') == 'maps':
                 return self.send(200, json.dumps({"maps": [{"objid": 2001, "name": "Test map"}]}), 'application/json')
+            if path == '/api/tree.json':   # PRTG sends the Root group as one item with its children
+                return self.send(200, json.dumps(TREE), 'application/json')
+            if path == '/api/table.json' and q.get('content') in ('devices', 'groups', 'probenodes'):
+                c = q.get('content')
+                return self.send(200, json.dumps({c: [r for r in COUNTS if r['kind'] == c]}), 'application/json')
+            if path == '/api/table.json' and q.get('content') == 'sensors' and q.get('id'):
+                return self.send(200, json.dumps({'sensors': SENSORS.get(q.get('id'), [])}), 'application/json')
             if path == '/api/mapobject.json':
                 return self.send(200, json.dumps(CATALOGUE), 'application/json')
             if path == '/index.htm':
@@ -109,5 +116,19 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 return self.send(200, '{}', 'application/json')
             return self.send(200, '<html></html>')
 
+
+TREE = {'data': 'Root', 'attr': {'objid': '0', 'type': 'group'}, 'state': 'open', 'children': [
+    {'data': 'Local Probe', 'attr': {'objid': '1', 'type': 'probe'}, 'children': [
+        {'data': 'Probe Device', 'attr': {'objid': '40', 'type': 'device'}},
+        {'data': '1st group', 'attr': {'objid': '2041', 'type': 'group'}, 'children': [
+            {'data': 'devicesetup.net', 'attr': {'objid': '2050', 'type': 'device'}}]}]},
+    {'data': 'PRTG Core Server', 'attr': {'objid': '1028', 'type': 'device'}}]}
+def _c(kind, objid, st, up=0, down=0, warn=0, paused=0):
+    return {'kind': kind, 'objid': objid, 'status_raw': st, 'upsens': up, 'downsens': down, 'partialdownsens': 0, 'downacksens': 0,
+            'warnsens': warn, 'unusualsens': 0, 'pausedsens': paused, 'undefinedsens': 0}
+COUNTS = [_c('groups', 0, 5, 57, 12, 3, 2), _c('probenodes', 1, 5, 54, 12, 3, 2), _c('devices', 40, 5, 4, 1),
+          _c('groups', 2041, 5, 50, 11, 3, 2), _c('devices', 2050, 5, 4, 1, 1), _c('devices', 1028, 3, 3)]
+SENSORS = {'1028': [{'objid': 1025, 'sensor': 'Core Health (Autonomous)', 'status_raw': 3},
+                    {'objid': 1026, 'sensor': 'Application Server', 'status_raw': 3}]}
 
 http.server.ThreadingHTTPServer(('127.0.0.1', PORT), Handler).serve_forever()

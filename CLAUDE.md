@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.66.
+Last updated at version 1.5.67.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -161,6 +161,20 @@ A full run takes about 5 seconds (16 seconds the very first time).
   bar is HTML like the pill and always shows its word; Beacon's rays blink on alarm states when
   Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
   tile, badge, LED).
+
+## Device tree: Root and the new UI look (1.5.67)
+
+- Root was missing: `trParse()` took a single top item's `children` and dropped the item itself. PRTG's classic designer tree
+  (`#objectpanel_tree`, from the same `/api/tree.json?groups=1&devices=1&probes=1&allowroot=1`) has exactly one top item,
+  Root (objid 0, type group). The raw answer could not be read from the page (401 without the designer's sign-in data), so the
+  single-item shape is inferred, not seen. `trParse()` now wraps a single item with children in a list.
+- The rows look like the new UI's tree (`localhost:1616`, measured there): 24px indent with 1px #DBDCDF guide lines,
+  chevrons, own line icons (group, probe, device; not PRTG's artwork, the repo is public), bold 12px names, selected row
+  #E7F0FF with the name in #0F67FF, sensors with a status square. Under each probe, group and device: status-count boxes
+  (`trChips`; down #E3063D, warning #F2BE25, paused #478EFF, up #B4BF17), from `upsens`, `downsens`, ... added to the
+  status call in `trLoadStatus()`. The tree box is now up to 360px tall.
+- `tests/mock-prtg.py` now serves a tree (Root as one item, as above), counts for devices/groups/probenodes and two sensors.
+- Checked against the stand-in server only (screenshot before/after). Not verified on the real PRTG: the counts columns and Root.
 
 ## Flexible limits follow the scale (1.5.66)
 
