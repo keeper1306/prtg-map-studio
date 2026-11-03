@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.46.
+Last updated at version 1.5.47.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -31,10 +31,12 @@ owner; stages so far:
 - Stage 2 (1.5.45): `tabs` → `js/02-tabs.js` (it starts with the blank line that followed
   config). Done; the owner said to go on.
 - Stage 3 (1.5.46): `dashtabs` → `js/10-dashtabs.js` and the last two lines → `js/11-start.js`
-  (no final line break, as before). Both load after `app.js`. Done; waiting for the owner's test.
-- Still in `app.js`: link style, page, info, dashboard, push, library, objects.
-- Next stages, in order: link style (`03-linkstyle.js`, add a `@region: linkstyle`
-  marker), page (`04-page.js`), info (`05-info.js`), objects (`09-objects.js`), library
+  (no final line break, as before). Both load after `app.js`. Done; the owner said to go on.
+- Stage 4 (1.5.47): the unnamed link-style block → `js/03-linkstyle.js`, now wrapped in
+  `@region: linkstyle` / `@endregion: linkstyle` (the only added lines). Done; waiting for the
+  owner's test. All 116 line-look drawings were checked identical to 1.5.46.
+- Still in `app.js`: page, info, dashboard, push, library, objects.
+- Next stages, in order: page (`04-page.js`), info (`05-info.js`), objects (`09-objects.js`), library
   (`08-library.js`), push (`07-push.js`), then what is left of `app.js` becomes `06-dashboard.js`.
   Only take a region from the front or the back of what is left, so the order never changes.
 - Checks at every stage: (1) join the files in `app.html`'s order and compare with the previous
