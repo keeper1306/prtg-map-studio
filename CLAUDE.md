@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.50.
+Last updated at version 1.5.51.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -40,11 +40,13 @@ owner; stages so far:
 - Stage 6 (1.5.49): `info` → `js/05-info.js`. Done; the owner said to go on. The 25 notes
   icons, their texts and a hover were checked identical to 1.5.48.
 - Stage 7 (1.5.50): `objects` → `js/09-objects.js` (it starts with the two blank lines that
-  followed library), loaded straight after `app.js`. Done; waiting for the owner's test. The
+  followed library), loaded straight after `app.js`. Done; the owner said to go on. The
   object file of each of the 10 object types (default settings) was checked identical to 1.5.49.
-- Still in `app.js`: dashboard, push, library.
-- Next stages, in order: library
-  (`08-library.js`), push (`07-push.js`), then what is left of `app.js` becomes `06-dashboard.js`.
+- Stage 8 (1.5.51): `library` → `js/08-library.js`, loaded straight after `app.js`. Done; waiting
+  for the owner's test. Save/load (with the 60-file limit), parseHead, the install script and the
+  zip's size were checked identical to 1.5.50.
+- Still in `app.js`: dashboard, push.
+- Next stages, in order: push (`07-push.js`), then what is left of `app.js` becomes `06-dashboard.js`.
   Only take a region from the front or the back of what is left, so the order never changes.
 - Checks at every stage: (1) join the files in `app.html`'s order and compare with the previous
   `app.js`: only the new changelog entry may differ; (2) `tests/run-tests.js`; (3) the list of
