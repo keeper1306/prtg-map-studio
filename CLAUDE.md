@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.62.
+Last updated at version 1.5.63.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -158,6 +158,19 @@ A full run takes about 5 seconds (16 seconds the very first time).
   bar is HTML like the pill and always shows its word; Beacon's rays blink on alarm states when
   Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
   tile, badge, LED).
+
+## Flexible or Fixed for every object with a box (1.5.63)
+
+- `FLEXT` lists the types (table, gauge, graph, donut, sunburst, tile, status). `m.fit` is the switch (Fixed = PRTG's
+  standard), `m.fitW`/`m.fitH` the normal size. `setFlex()` gives an object without a size the preview's size.
+- Tables: `tableFitRuntime` (1.5.62). The others: `flexRuntime` sets `--mss` on the root to min(width/fitW, height/fitH);
+  `fpx()` writes the title, root font, padding sizes as `calc(Npx * var(--mss,1))` and `flexCss()` does the same to every
+  `font-size:Npx` in the object's own CSS (preview via `setStyle`, file via `flexAppend`). The graph's own drawing
+  (`graphRuntime` drawInner) draws at the normal scale and enlarges (`C.flex`, `grCfg`). Drawings that already fill their
+  box (donut, sunburst, dial, tile values) keep doing so.
+- With Fixed the files equal 1.5.62's, except graphs (the runtime text changed, not what it draws).
+- The bar's style group has Title size (`L.titleSize`) and Text size (`L.size`) and the Flexible | Fixed buttons (`obFlex`).
+- Not verified on the real PRTG.
 
 ## Tables that scale with the object (1.5.62)
 

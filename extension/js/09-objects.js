@@ -558,15 +558,60 @@ try{
     return L;
   }
   function gClassOf(G){return 'pgau_'+slugOf(G.name);}
+  /* Flexible or Fixed. Fixed is PRTG\u2019s standard: the text keeps its size and only the box changes. Flexible: the text, the title
+     and the spacing follow the object\u2019s size. A table is scaled as one piece (tableFitRuntime); the other objects keep drawing
+     to fill their box and their text sizes are multiplied by --mss, which flexRuntime sets from the object\u2019s size against its normal size. */
+  var FLEXT={table:1,gauge:1,graph:1,donut:1,sunburst:1,tile:1,status:1};
+  function hasSize(m){return parseInt(m.initW,10)>0&&parseInt(m.initH,10)>0;}
+  function isFlex(m){return !!(m&&m.fit)&&hasSize(m);}
+  function flexOn(){return !!FLEXT[TYPE]&&TYPE!=='table'&&!isPaste()&&isFlex(M());}
+  function fpx(n){return flexOn()?'calc('+n+'px * var(--mss,1))':n+'px';}
+  function flexNorm(m){return {w:Math.max(40,parseInt(m.fitW,10)||parseInt(m.initW,10)||300),h:Math.max(30,parseInt(m.fitH,10)||parseInt(m.initH,10)||200)};}
+  function flexRuntime(root,C){
+    if(!root||root.__msflex)return;
+    root.__msflex=1;
+    function fit(){
+      var w=root.clientWidth, h=root.clientHeight;
+      if(!w||!h)return;
+      var s=Math.max(0.2,Math.min(6,Math.min(w/C.w,h/C.h)));
+      root.style.setProperty('--mss',s.toFixed(4));root.setAttribute('data-scale',s.toFixed(3));
+    }
+    var queued=false;
+    function later(){if(queued)return;queued=true;(window.requestAnimationFrame||setTimeout)(function(){queued=false;if(!document.documentElement.contains(root)){if(ro)ro.disconnect();return;}fit();});}
+    var ro=window.ResizeObserver?new window.ResizeObserver(later):null;
+    if(ro)ro.observe(root);
+    fit();
+  }
+  function flexClass(){return TYPE==='gauge'?gClassOf(G):TYPE==='graph'?grClassOf(GR):TYPE==='donut'?dClassOf(DN):TYPE==='sunburst'?sbClassOf(SB):TYPE==='tile'?tClassOf(TL):TYPE==='status'?sClassOf(SC):'';}
+  /* Flexible: every fixed text size in the object's own CSS follows --mss too (legends, labels, numbers) */
+  function flexCss(css){return String(css).replace(/font-size:\s*(\d+(?:\.\d+)?)px/g,'font-size:calc($1px * var(--mss,1))');}
+  /* the file gets the script that sets --mss, when the object is Flexible and its root carries the class the CSS is written for */
+  function flexAppend(text){
+    if(!flexOn())return text;
+    var cls=flexClass();
+    if(!cls||!new RegExp('class="map_object[^"]*\\b'+cls+'\\b').test(text))return text;
+    var C=flexNorm(M());
+    text=text.replace(/(<style>)([\s\S]*?)(<\/style>)/g,function(a,o,css,c){return o+flexCss(css)+c;});
+    return text+'\n<scr'+'ipt>\n(function(){\n  var F='+flexRuntime.toString()+';\n  var C={w:'+C.w+',h:'+C.h+'};\n'
+      +'  function all(){[].forEach.call(document.querySelectorAll(".'+cls+'"),function(r){F(r,C);});}\n'
+      +'  all();setTimeout(all,400);setTimeout(all,2000);\n})();\n<\/script>\n';
+  }
+  /* turning Flexible on needs a box: the size the preview shows now, which also becomes the normal size */
+  function setFlex(v){
+    var m=M();m.fit=!!v;
+    if(v&&!hasSize(m)){var r=prevEl.querySelector('.map_object'), wr=document.getElementById('edwrap');m.initW=Math.round(((TYPE==='table'?wr:r)||{}).offsetWidth||(TYPE==='table'?600:300));m.initH=Math.round(((TYPE==='table'?wr:r)||{}).offsetHeight||(TYPE==='table'?330:200));}
+    if(v&&!(parseInt(m.fitW,10)>0))m.fitW=parseInt(m.initW,10);
+    if(v&&TYPE!=='table'&&!(parseInt(m.fitH,10)>0))m.fitH=parseInt(m.initH,10);
+  }
   function titleRules(L,sel,bar){
     var c=[],col=bar?L.titleColor:(L.titleText||L.text);
     if(bar){
-      c.push(sel+'{font-size:'+L.titleSize+'px;font-weight:500;letter-spacing:.4px;color:'+L.titleColor+';background:'+L.titleBg+';padding:10px 14px;margin:0;text-transform:none;'+(L.card?'border-radius:'+L.radius+'px '+L.radius+'px 0 0;':'')+'}');
+      c.push(sel+'{font-size:'+fpx(L.titleSize)+';font-weight:500;letter-spacing:.4px;color:'+L.titleColor+';background:'+L.titleBg+';padding:'+fpx(10)+' '+fpx(14)+';margin:0;text-transform:none;'+(L.card?'border-radius:'+L.radius+'px '+L.radius+'px 0 0;':'')+'}');
     }else{
-      var tt='font-size:'+L.titleSize+'px;font-weight:600;color:'+col+';text-transform:none;';
-      if(L.titleStyle==='divider')tt+='padding:0 0 12px;margin:0 0 8px;border-bottom:1px solid '+L.line+';';
-      else if(L.titleStyle==='accent')tt+='padding:2px 0 2px 10px;margin:0 0 12px;border-left:3px solid '+L.accent+';line-height:1.2;';
-      else tt+='padding:0 0 10px;margin:0;';
+      var tt='font-size:'+fpx(L.titleSize)+';font-weight:600;color:'+col+';text-transform:none;';
+      if(L.titleStyle==='divider')tt+='padding:0 0 '+fpx(12)+';margin:0 0 '+fpx(8)+';border-bottom:1px solid '+L.line+';';
+      else if(L.titleStyle==='accent')tt+='padding:'+fpx(2)+' 0 '+fpx(2)+' '+fpx(10)+';margin:0 0 '+fpx(12)+';border-left:3px solid '+L.accent+';line-height:1.2;';
+      else tt+='padding:0 0 '+fpx(10)+';margin:0;';
       c.push(sel+'{'+tt+'}');
     }
     if(L.align)c.push(sel+'{text-align:'+L.align+';}');
@@ -577,7 +622,7 @@ try{
     var r='.'+cls, c=[], bar=(L.titleStyle==='bar');
     var fillA=(L.cardA==null?100:L.cardA);
     var cardFill=(fillA<100)?tint(L.cardBg,fillA/100):L.cardBg;
-    var root='font-family:'+familyStack(L.font)+';font-size:'+L.size+'px;color:'+L.text+';';
+    var root='font-family:'+familyStack(L.font)+';font-size:'+fpx(L.size)+';color:'+L.text+';';
     /* no padding and no border on the object itself: see the note in tableCss */
     if(L.card){
       root+='background:'+cardFill+';border-radius:'+L.radius+'px;';
@@ -587,7 +632,7 @@ try{
     c.push(r+'{'+root+'}');
     var gb='box-sizing:border-box;';
     var ip=(bar?0:(L.cardPad||0))+((L.card&&L.bw>0)?L.bw:0);
-    if(ip>0)gb+='padding:'+ip+'px;';
+    if(ip>0)gb+='padding:'+fpx(ip)+';';
     if(G.engine==='ring')gb+='height:100%;display:flex;flex-direction:column;';
     if(L.align)gb+='text-align:'+L.align+';';
     c.push(r+' .gbox{'+gb+'}');
@@ -1288,7 +1333,7 @@ try{
   function periodTag(p){return p===0?'<#lang key="html.sensor.livwdata" default="Live Data">':'<#system type="'+(p+1)+'period">';}
   function blankGR(){
     return {type:'graph',kind:'sensor',cat:'Graphs',name:'Sensor graph',fname:'',period:0,fontSize:12,legend:true,axis:true,tooltips:false,check:true,extra:[],
-      layout:'card',titleMode:'object',title:'',invert:'auto',tileW:336,tileH:175,mapTags:true,initW:520,initH:300,draw:'own',cstyle:'area',dots:false,maxCh:3,chNames:'',bsrc:'status',bdir:'row',bcolor:'status',bmax:8,lmax:12,lw:2,fillA:28,gridOn:true,bradius:3,look:lookOf('PRTG new UI')};
+      layout:'card',titleMode:'object',title:'',invert:'auto',tileW:336,tileH:175,mapTags:true,initW:520,initH:300,fit:true,fitW:520,fitH:300,draw:'own',cstyle:'area',dots:false,maxCh:3,chNames:'',bsrc:'status',bdir:'row',bcolor:'status',bmax:8,lmax:12,lw:2,fillA:28,gridOn:true,bradius:3,look:lookOf('PRTG new UI')};
   }
   function graphFromPreset(p){
     var G=blankGR();
@@ -1296,6 +1341,7 @@ try{
     if(p.kind==='sensor'){G.fontSize=p.fontSize;G.legend=!!p.legend;G.axis=!!p.axis;G.tooltips=!!p.tooltips;G.titleMode='object';}
     if(p.kind==='sensors'){G.tileW=p.tileW;G.tileH=p.tileH;G.mapTags=!!p.mapTags;G.titleMode='stock';G.layout='card';}
     if(p.kind==='toplist')G.titleMode='none';
+    G.fitW=parseInt(G.initW,10)||0;G.fitH=parseInt(G.initH,10)||0;if(!hasSize(G))G.fit=false;
     return G;
   }
   function grClassOf(G){return 'pgr_'+slugOf(G.name);}
@@ -1306,7 +1352,7 @@ try{
     return lum(L.cardBg)<0.3;
   }
   function grRoot(L,bg){
-    var root='font-family:'+familyStack(L.font)+';font-size:'+L.size+'px;color:'+L.text+';';
+    var root='font-family:'+familyStack(L.font)+';font-size:'+fpx(L.size)+';color:'+L.text+';';
     if(L.card){
       root+='background:'+bg+';border-radius:'+L.radius+'px;';
       if(L.bw>0)root+='outline:'+L.bw+'px solid '+L.border+';outline-offset:-'+L.bw+'px;';
@@ -1563,8 +1609,9 @@ try{
       var W,H,pl,pr=10,pt=8,pb,iw,ih,min,max,i,j,t,ticks,gx,xs,s,path,area,defs,gid,hx,hit,dots,guide,w0,pts,glowId=null;
       if(!D)return;
       if(box.getAttribute('data-g')!=='ok'){clear(box);wrap=dv('gwrap',box);svg=el('svg',{'class':'gsvg',preserveAspectRatio:'none'});wrap.appendChild(svg);tip=dv('gtip',wrap);tip.style.display='none';leg=dv('glegend',box);box.setAttribute('data-g','ok');}
-      W=Math.max(60,wrap.clientWidth);H=Math.max(50,wrap.clientHeight);
-      svg.setAttribute('viewBox','0 0 '+W+' '+H);svg.setAttribute('width',W);svg.setAttribute('height',H);clear(svg);
+      var KK=(C.flex&&root.clientWidth&&root.clientHeight)?Math.max(0.2,Math.min(6,Math.min(root.clientWidth/C.flex.w,root.clientHeight/C.flex.h))):1;   /* Flexible: the drawing grows with the object */
+      W=Math.max(60,wrap.clientWidth/KK);H=Math.max(50,wrap.clientHeight/KK);
+      svg.setAttribute('viewBox','0 0 '+W+' '+H);svg.setAttribute('width',W*KK);svg.setAttribute('height',H*KK);clear(svg);
       if((C.spark||C.heat||C.ring)&&D.s.length){special(W,H);legend();return;}
       pl=C.axis?44:10;pb=C.axis?22:8;iw=W-pl-pr;ih=H-pt-pb;
       var has1=D.s.some(function(q){return q.g===1;}), max1=0, tk1=[], min1=0, ns, st1, rw1, mg1;
@@ -1710,6 +1757,7 @@ try{
     load();
     if(!C.sample&&C.refresh>0)timer=setInterval(function(){if(!document.body.contains(box)){stop();return;}load();},C.refresh*1000);
   }
+  function grCfg(G,L){var c=graphConfig(G,L);if(TYPE==='graph'&&isFlex(G))c.flex=flexNorm(G);return c;}
   function graphConfig(G,L){
     var P=donutPalette(L), per=G.period||0, spec=[{range:7200,avg:0,points:120,refresh:60},{range:172800,avg:300,points:576,refresh:300},{range:2592000,avg:3600,points:720,refresh:900},{range:31536000,avg:86400,points:365,refresh:3600}][per]||{range:7200,avg:0,points:120,refresh:60},
         cardBg=(L.card===false)?'#FFFFFF':L.cardBg, acc=(L.accent&&L.accent!==LOOKBASE.accent)?L.accent:((L.link&&L.link!==LOOKBASE.link)?L.link:(L.accent||'#4F8FC9'));
@@ -1731,7 +1779,7 @@ try{
     return out;
   }
   function graphScript(G,L){
-    return '(function(){\n  var root=document.getElementById("<@itemid>");\n  if(!root)return;\n  var CFG='+JSON.stringify(graphConfig(G,L))+';\n  ('+graphRuntime.toString()+')(root,CFG);\n})();';
+    return '(function(){\n  var root=document.getElementById("<@itemid>");\n  if(!root)return;\n  var CFG='+JSON.stringify(grCfg(G,L))+';\n  ('+graphRuntime.toString()+')(root,CFG);\n})();';
   }
   /* ---- Graphs of every sensor on a device, group or probe, drawn by the tool: one small chart per sensor, with the same engine as the single graph ---- */
   function listRuntime(root,C,draw){
@@ -2118,7 +2166,7 @@ try{
   ];
   function blankSC(){
     return {type:'status',cat:'Status Counts',name:'Sensor status',fname:'',titleMode:'object',title:'',sub:'',tiles:['up','warning','down','paused'],quiet:true,cap:'of',
-      mapTags:true,reqTag:'',nameHas:'',initW:420,initH:200,look:lookOf('PRTG new UI')};
+      mapTags:true,reqTag:'',nameHas:'',initW:420,initH:200,fit:true,fitW:420,fitH:200,look:lookOf('PRTG new UI')};
   }
   function statusFromPreset(id){
     var S=blankSC(), p=null;
@@ -2129,7 +2177,7 @@ try{
   function blankD(){
     return {type:'donut',engine:'ring',cat:'Donuts',name:'Sensor states donut',fname:'',titleMode:'object',title:'',
       mode:'all',center:'total',caption:'',thick:28,gap:2,legend:'right',hideZero:true,showCounts:true,mapTags:true,reqTag:'',
-      light:false,withName:false,initW:340,initH:220,look:dnLook('PRTG new UI')};
+      light:false,withName:false,initW:340,initH:220,fit:true,fitW:340,fitH:220,look:dnLook('PRTG new UI')};
   }
   /* a donut's slices take the Colors choice, never the look's: a look only changes the box around the donut. A new donut starts on PRTG\u2019s colors */
   function dnPrtgC(){var r={};window.PMSSETS.sets.forEach(function(x){if(x[0]==='prtg')r=x[2];});return Object.assign({},r);}
@@ -2144,7 +2192,7 @@ try{
   function donutFromPreset(p){
     var D=blankD();
     D.engine='prtg';D.cat=p.cat;D.name=p.name+' custom';D.mode=p.alarms?'alarms':'all';D.light=!!p.light;D.withName=!!p.withName;D.noInitH=!!p.noInitH;   /* PRTG's own donut_alarms_font-light.htm has no initialheight; kept as shipped */
-    D.initW=0;D.initH=0;D.look=dnLook('PRTG default');
+    D.initW=0;D.initH=0;D.fit=false;D.look=dnLook('PRTG default');
     return D;
   }
   function dEffLook(D){
@@ -2397,13 +2445,13 @@ try{
   function blankSB(){
     return {type:'sunburst',engine:'ring',face:'gaps',cat:'Sunbursts',name:'Device tree sunburst',fname:'',titleMode:'object',title:'',
       sizeSensors:true,sizePriority:false,hidePaused:false,labels:true,center:'total',hole:26,depth:0,legend:'below',links:true,mapTags:true,
-      initW:420,initH:440,look:lookOf('Light card')};
+      initW:420,initH:440,fit:true,fitW:420,fitH:440,look:lookOf('Light card')};
   }
   function sbFromPreset(p){
     var S=blankSB();
     S.engine='prtg';S.face='prtg';S.cat='Sunbursts';   /* PRTG files its own sunbursts under Device Tree Views; every sunburst Map Studio builds goes under Sunbursts, as gauges go under Gauges */
     S.name=p.name+' custom';S.sizeSensors=!!p.sizeSensors;S.sizePriority=!!p.sizePriority;S.hidePaused=!!p.hidePaused;
-    S.initW=0;S.initH=0;S.look=lookOf('PRTG default');
+    S.initW=0;S.initH=0;S.fit=false;S.look=lookOf('PRTG default');
     return S;
   }
   function sbFace(){return SB.engine==='prtg'?'prtg':(SB.face||'gaps');}
@@ -3020,7 +3068,7 @@ try{
   function setTileKind(v){
     var old=null,nu=null;
     TLPRESETS.forEach(function(x){if(x.kind===TL.kind)old=x;if(x.kind===v)nu=x;});
-    if(old&&nu){if(TL.name===old.name)TL.name=nu.name;if(+TL.initW===old.w&&+TL.initH===old.h){TL.initW=nu.w;TL.initH=nu.h;}}
+    if(old&&nu){if(TL.name===old.name)TL.name=nu.name;if(+TL.initW===old.w&&+TL.initH===old.h){TL.initW=nu.w;TL.initH=nu.h;}if(+TL.fitW===old.w&&+TL.fitH===old.h){TL.fitW=nu.w;TL.fitH=nu.h;}}
     TL.kind=v;
   }
   /* a grid of kind pictures; one click changes the kind */
@@ -3045,12 +3093,12 @@ try{
   function blankTL(){
     return {type:'tile',kind:'stat',cat:'Tiles',name:'Stat tile',fname:'',titleMode:'object',title:'',sub:'',
       channel:'',min:'',max:'',warn:'',error:'',cap:'',hide:'Downtime',only:'',cols:'',ratio:'',chipw:120,strip:'',okW:'',infoW:'',warnW:'',errW:'',
-      initW:260,initH:170,look:lookOf('PRTG new UI')};
+      initW:260,initH:170,fit:true,fitW:260,fitH:170,look:lookOf('PRTG new UI')};
   }
   function tileFromPreset(id){
     var T_=blankTL(), p=null;
     TLPRESETS.forEach(function(x){if(x.id===id)p=x;});
-    if(p){T_.kind=p.kind;T_.name=p.name;T_.initW=p.w;T_.initH=p.h;T_.sub=p.sub||'';}
+    if(p){T_.kind=p.kind;T_.name=p.name;T_.initW=p.w;T_.initH=p.h;T_.fitW=p.w;T_.fitH=p.h;T_.sub=p.sub||'';}
     return T_;
   }
   function tEffLook(S){var L=S.look;if(L.mode==='prtg'){return lookOf('Light card');}return L;}
@@ -4195,7 +4243,7 @@ try{
   /* ---------- hands-on editing for the other object types: a frame with handles on the preview sets the size the file starts at, and a double-click on the title types a new one ---------- */
   var EO={ov:null,inp:null};
   function eoModel(){return TYPE==='gauge'?G:(TYPE==='sunburst'?SB:(TYPE==='donut'?DN:(TYPE==='graph'?GR:(TYPE==='icon'?IC:(TYPE==='status'?SC:(TYPE==='tile'?TL:null))))));}
-  function eoText(){return TYPE==='gauge'?buildGauge(G):(TYPE==='sunburst'?buildSunburst(SB):(TYPE==='donut'?buildDonut(DN):(TYPE==='tile'?buildTile(TL):(TYPE==='status'?buildStatus(SC):(TYPE==='graph'?buildGraph(GR):buildIcon(IC))))));}
+  function eoText(){return flexAppend(TYPE==='gauge'?buildGauge(G):(TYPE==='sunburst'?buildSunburst(SB):(TYPE==='donut'?buildDonut(DN):(TYPE==='tile'?buildTile(TL):(TYPE==='status'?buildStatus(SC):(TYPE==='graph'?buildGraph(GR):buildIcon(IC)))))));}
   function eoOk(){return CFG.edit.types.indexOf(TYPE)>-1&&!!eoModel()&&!(TYPE==='icon'&&IC.engine==='stock');}
   function eoSz(m,w,h_){var a=parseInt(m.initW,10), b=parseInt(m.initH,10);return [a>0?a:w,b>0?b:h_];}
   function eoBox(){
@@ -4400,6 +4448,18 @@ try{
     OB.syncs.push(function(){var v=get();if(/^#[0-9a-f]{6}$/i.test(v))i.value=v;});return i;
   }
   function obSep(){return h('i','fb-sep');}
+  function obLab(t,ctl){var w=h('span','fb-lab');w.appendChild(h('b',null,t));w.appendChild(ctl);return w;}
+  /* Flexible | Fixed, as two buttons side by side */
+  function obFlex(){
+    var w=h('span','fb-seg');w.title='Flexible: everything grows and shrinks with the object. Fixed: PRTG\u2019s standard, the text keeps its size.';
+    [['flex','Flexible'],['fixed','Fixed']].forEach(function(x){
+      var b=h('button','fb-t',x[1]);b.type='button';
+      b.addEventListener('click',function(){obDo(function(){setFlex(x[0]==='flex');});});
+      OB.syncs.push(function(){b.classList.toggle('on',(x[0]==='flex')===!!M().fit);});
+      w.appendChild(b);
+    });
+    return w;
+  }
   /* menus in the bar: a button that opens a small panel under it */
   function obCloseMenus(){
     if(!OB.el)return;
@@ -4766,9 +4826,12 @@ try{
     if(!(TYPE==='icon'&&!iHasBg(IC)))b.appendChild(mLooks);   /* on an icon without a background a look would only change the status colours, which Colors does */
     b.appendChild(mColors);
     b.appendChild(obSep());
+    if(FLEXT[TYPE]&&!isPaste()){b.appendChild(obFlex());b.appendChild(obSep());}
     /* fonts, colours and corners */
     sty.appendChild(fs);
-    sty.appendChild(obNum('Text size',function(){return L().size;},function(v){obSet(function(l){l.size=v;});},8,40));
+    /* two sizes: the title's and the text inside the object */
+    if(TYPE==='table'||('titleMode' in M()))sty.appendChild(obLab('Title',obNum('Title size',function(){return L().titleSize;},function(v){obSet(function(l){l.titleSize=v;});},8,60)));
+    sty.appendChild(obLab('Text',obNum('Text size',function(){return L().size;},function(v){obSet(function(l){l.size=v;});},8,40)));
     sty.appendChild(obSep());
     /* bold, italic, underline and UPPERCASE for the object's text, the same four as the Map designer's bar */
     [['tBold','Bold','<path d="M7 5h6a3.5 3.5 0 0 1 0 7H7zM7 12h7a3.5 3.5 0 0 1 0 7H7z"/>'],['tItal','Italic','<path d="M10 5h8M6 19h8M15 5l-6 14"/>'],['tUnder','Underline','<path d="M7 4v7a5 5 0 0 0 10 0V4M5 20h14"/>'],['tUpper','UPPERCASE','']].forEach(function(d){
@@ -5061,6 +5124,7 @@ try{
     }else if(fl){fl.removeAttribute('href');}
   }
   function setStyle(text){
+    if(flexOn())text=flexCss(text);
     var st=document.getElementById('opstyle');
     if(!st){st=h('style');st.id='opstyle';document.head.appendChild(st);}
     st.textContent=text;
@@ -5310,7 +5374,7 @@ try{
         html+='<div class="map_object map_graph '+cls+'" style="position:relative;overflow:hidden;width:'+w+'px;height:'+hh+'px;"><div class="gbox">'+(gt1?'<div class="gtitle">'+esc(gt1)+'</div>':'')+'<div class="ggraph"><div class="gown"></div></div></div></div>';
         prevEl.innerHTML=html+'</div>';
         applyBg(L);
-        try{var gcfg=graphConfig(GR,grLook(GR));gcfg.sample=true;graphRuntime(prevEl.querySelector('.map_graph'),gcfg);}catch(ge){}
+        try{var gcfg=grCfg(GR,grLook(GR));gcfg.sample=true;graphRuntime(prevEl.querySelector('.map_graph'),gcfg);}catch(ge){}
         return;
       }
       var uri=mockGraphUri(w,hh,{fontSize:GR.fontSize,legend:GR.legend,axis:GR.axis,period:GR.period});
@@ -5523,6 +5587,7 @@ try{
   function drawPreview(){
     if(TYPE!=='table')prevEl.style.minHeight='';if(TYPE==='gauge')drawGaugePreview();else if(isPaste())drawPastePreview();else if(TYPE==='graph')drawGraphPreview();else if(TYPE==='donut')drawDonutPreview();else if(TYPE==='sunburst')drawSunburstPreview();else if(TYPE==='tile')drawTilePreview();else if(TYPE==='status')drawStatusPreview();else if(TYPE==='icon')drawIconPreview();else if(TYPE==='geomap')drawGeoPreview();else if(TYPE==='links')drawLinksPreview();else drawTablePreview();
     if(TYPE!=='links'&&window.__mls&&window.__mls.stop)window.__mls.stop();   /* the Link style preview runs the same script as the map; stop it when another type is shown */
+    if(flexOn()){try{var _fc=flexClass(), _fr=(_fc&&prevEl.querySelector('.'+_fc))||prevEl.querySelector('.map_object');flexRuntime(_fr,flexNorm(M()));}catch(err){if(window.console)console.error('flexible',err);}}
     obZoom();eoAttach();obRefresh();}
 
   /* ---------- render ---------- */
@@ -5533,6 +5598,7 @@ try{
     if(TYPE==='links')lkDefSync(LK);   /* the Link style object IS the shared map link style; Map designer connectors read it live */
     obAutoName();
     var text=(TYPE==='gauge')?buildGauge(G):(isPaste()?buildPaste(FRc()):(TYPE==='graph'?buildGraph(GR):(TYPE==='donut'?buildDonut(DN):(TYPE==='sunburst'?buildSunburst(SB):(TYPE==='tile'?buildTile(TL):(TYPE==='status'?buildStatus(SC):(TYPE==='icon'?buildIcon(IC):(TYPE==='geomap'?buildGeoMap(GM):(TYPE==='links'?buildLinks(LK):buildTable(T))))))))));
+    text=flexAppend(text);
     codeEl.value=text;
     document.getElementById('ofname').textContent=fileNameOf(M());
     nameCheckShow();
@@ -6086,11 +6152,7 @@ try{
     var ed1=section('Size, rotation and title');secIf(ed1,isTable);
     ed1.appendChild(inChk('Edit in the preview',function(){return ED.on;},function(v){ED.on=v;},refreshUI));
     ed1.appendChild(h('p','note','In the preview: drag the handles to resize (this sets the size when dropped), drag the round handle to rotate (hold Shift to snap to 15 degrees), double-click the title to edit it. The title is part of the table and does not move on its own. A selected title also moves with the arrow keys.'));
-    ed1.appendChild(inChk('Scale everything with the object\u2019s size',function(){return !!T.fit;},function(v){
-      T.fit=v;
-      if(v&&!(parseInt(T.initW,10)>0&&parseInt(T.initH,10)>0)){var wr=document.getElementById('edwrap');T.initW=(wr&&wr.offsetWidth)||600;T.initH=(wr&&wr.offsetHeight)||330;}   /* scaling needs a box: the size the preview shows now */
-      if(v&&!(parseInt(T.fitW,10)>0))T.fitW=parseInt(T.initW,10)||600;
-    }));
+    ed1.appendChild(inSel('Size',function(){return T.fit?'flex':'fixed';},function(v){setFlex(v==='flex');},[['flex','Flexible: everything grows and shrinks with the object'],['fixed','Fixed: PRTG\u2019s standard, the text keeps its size']]));
     var fitw=h('div');
     fitw.appendChild(inNum('Normal width (px)',function(){return T.fitW;},function(v){T.fitW=v;},100,4000));
     var fb=h('button','btn ghost','Make the current width normal');fb.type='button';
@@ -6185,6 +6247,17 @@ try{
     var s7=section('Looks');secIf(s7,function(){return notIcStock()&&notPaste()&&TYPE!=='geomap'&&TYPE!=='links';});
     galleryEl=h('div','lookgrid');s7.appendChild(galleryEl);
     s7.appendChild(h('p','note','Click one to apply it, then fine-tune under Look details. The preview shows them on PRTG\u2019s own white map. Switch Background to \u201cThe look\u2019s own\u201d to see the stage each one was drawn for.'));
+
+    var sfx=section('Flexible or fixed');secIf(sfx,function(){return !!FLEXT[TYPE]&&TYPE!=='table'&&notPaste();});
+    sfx.appendChild(inSel('Size',function(){return M().fit?'flex':'fixed';},function(v){setFlex(v==='flex');},[['flex','Flexible: everything grows and shrinks with the object'],['fixed','Fixed: PRTG\u2019s standard, the text keeps its size']]));
+    var sfn=h('div');
+    sfn.appendChild(pair(inNum('Normal width (px)',function(){return M().fitW;},function(v){M().fitW=v;},40,4000),inNum('Normal height (px)',function(){return M().fitH;},function(v){M().fitH=v;},30,4000)));
+    var sfb=h('button','btn ghost','Make the current size normal');sfb.type='button';
+    sfb.addEventListener('click',function(){var m=M();m.fitW=parseInt(m.initW,10)||m.fitW;m.fitH=parseInt(m.initH,10)||m.fitH;refreshUI();render();});
+    sfn.appendChild(sfb);
+    sfn.appendChild(h('p','note','At the normal size the title and the text have the look\u2019s sizes. Make the object bigger or smaller, here or on the PRTG map, and they grow or shrink with it, together with the drawing.'));
+    showIf(sfn,function(){return !!M().fit;});sfx.appendChild(sfn);
+    sfx.appendChild(h('p','note','Fixed is how PRTG\u2019s own objects behave: only the box and the drawing change size, the text stays as it is.'));
 
     var s8a=section('Appearance');secIf(s8a,function(){return notIcStock()&&notPaste()&&TYPE!=='links';});
     (function(){
