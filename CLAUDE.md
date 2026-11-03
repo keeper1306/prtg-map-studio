@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-State when this file was written: version 1.5.40, commit dc4f284.
+Last updated at version 1.5.43.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -25,9 +25,12 @@ when they need to do something themselves.
    - Bump `"version"` in `extension/manifest.json`.
    - Add a changelog entry at the start of `CFG.changelog` in `extension/app.js`. It is one
      string, newest first, in the form `'1.5.41: What changed. 1.5.40: ...'`. Write apostrophes
-     as `\u2019`, like the existing entries do. (`CFG.version` in `app.js` still says `1.4.2`;
-     earlier sessions only bumped the manifest. Not verified whether anything reads it.)
-   - Commit, push `connectors`, then push `connectors:main`.
+     as `\u2019`, like the existing entries do. (`CFG.version` in the config says `1.4.2`, but
+     line ~98 of `app.js` replaces it with the manifest's version at startup, so only the
+     manifest needs bumping.)
+   - Commit, push `connectors`, then push `connectors:main`. The owner wants this done directly,
+     without pull requests or asking first. GitHub prints "Bypassed rule violations ... Changes
+     must be made through a pull request" for `main`; that is expected.
    - Copy `app.js` and `manifest.json` into the extension folder.
    - Confirm the copies are byte-identical by hash, for example:
      `Get-FileHash extension\app.js, "C:\Users\Administrator\Desktop\PRTG Map Studio\extension\app.js"`
@@ -42,7 +45,29 @@ Line endings: every text file in the repo is LF and there is no `.gitattributes`
 was installed with "Checkout as-is, commit as-is" (`core.autocrlf=false`). Keep it that way, or the
 hashes against GitHub won't match.
 
-## Done recently (1.5.37 to 1.5.40)
+## Tests
+
+`tests/` has a stand-in PRTG server and automated push and Undo checks (see `tests/README.md`).
+Run them after any change to push, Undo or storage code, and after each stage of splitting
+`app.js`. They need Node.js, Python and Playwright's Chromium; they are not part of the extension.
+
+## Known issues (not bugs to fix while doing other work)
+
+- The sync record and push history are keyed by the exact server address. Connecting to the same
+  PRTG through two addresses (for example the classic address and the new UI at `localhost:1616`)
+  makes Map Studio treat them as two servers: Review shows already-pushed items as new, and Undo
+  is not offered. Confirmed on the real PRTG at 1.5.43. Workaround: always use the same address.
+  The owner chose to leave this until after `app.js` is split.
+
+## Done recently (1.5.41 to 1.5.43)
+
+- 1.5.41: Undo (push and map edits) only uses history recorded for the current server.
+  History saved before 1.5.41 has no server and is not offered for Undo.
+- 1.5.42: Replacing an item adds the new one first and deletes the old one after.
+- 1.5.43: A push, Undo or map-edit record that can't be saved gives a red warning.
+- Tested by the owner on the real PRTG and by `tests/run-tests.js`.
+
+## Done earlier (1.5.37 to 1.5.40)
 
 - Gauges on PRTG's own dial (PRTG classic, Neon glass, Flat minimalist, Cyber tech, Ambient glow,
   Clean) have three options:

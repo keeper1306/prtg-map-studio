@@ -1,0 +1,11 @@
+{
+  "name": "prtg-map-studio-tests",
+  "private": true,
+  "description": "Test-only tools for PRTG Map Studio. The extension itself has no dependencies.",
+  "scripts": {
+    "test": "node run-tests.js"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0"
+  }
+}
