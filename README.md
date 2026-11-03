@@ -118,7 +118,15 @@ It works with the classic PRTG interface and with the new PRTG interface
   origin (`optional_host_permissions`) rather than for all sites.
 - `extension/background.js` — opens the app in a new tab when the toolbar icon
   is clicked.
-- `extension/app.html`, `extension/app.js` — the app.
+- `extension/app.html` — the app's page. It loads the scripts in `extension/js/`
+  one after another, in the order of their numbers.
+- `extension/js/` — the app's code, as plain scripts (no modules, no build step):
+  `01-config.js` (settings and changelog), `02-tabs.js`, `03-linkstyle.js`
+  (Connector line looks), `04-page.js` (label and button tool, folding sections,
+  preview), `05-info.js` (the "i" notes), `06-dashboard.js` (Map designer),
+  `07-push.js` (connect, push, Undo, existing maps), `08-library.js` (Your
+  objects, install script), `09-objects.js` (Object builder), `10-dashtabs.js`
+  (Map / Design / Push tabs) and `11-start.js`.
 - `extension/preview-sandbox.html` — sandboxed page that renders object
   previews.
 - `extension/icons/` — toolbar icons.
