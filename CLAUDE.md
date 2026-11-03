@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.45.
+Last updated at version 1.5.46.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -29,10 +29,11 @@ owner; stages so far:
 
 - Stage 1 (1.5.44): timer stopper + `config` → `js/01-config.js`. Done; the owner said to go on.
 - Stage 2 (1.5.45): `tabs` → `js/02-tabs.js` (it starts with the blank line that followed
-  config). Done; waiting for the owner's test.
-- Still in `app.js`: link style, page, info, dashboard, push, library, objects, dashtabs, start.
-- Next stages, in order: dashtabs + the last two lines (back,
-  `10-dashtabs.js` + `11-start.js`), link style (`03-linkstyle.js`, add a `@region: linkstyle`
+  config). Done; the owner said to go on.
+- Stage 3 (1.5.46): `dashtabs` → `js/10-dashtabs.js` and the last two lines → `js/11-start.js`
+  (no final line break, as before). Both load after `app.js`. Done; waiting for the owner's test.
+- Still in `app.js`: link style, page, info, dashboard, push, library, objects.
+- Next stages, in order: link style (`03-linkstyle.js`, add a `@region: linkstyle`
   marker), page (`04-page.js`), info (`05-info.js`), objects (`09-objects.js`), library
   (`08-library.js`), push (`07-push.js`), then what is left of `app.js` becomes `06-dashboard.js`.
   Only take a region from the front or the back of what is left, so the order never changes.
@@ -50,7 +51,8 @@ owner; stages so far:
    - Add a changelog entry at the start of `CFG.changelog` in `extension/js/01-config.js`
      (it moved there from `app.js` at 1.5.44). It is one
      string, newest first, in the form `'1.5.41: What changed. 1.5.40: ...'`. Write apostrophes
-     as `\u2019`, like the existing entries do. (`CFG.version` in the config says `1.4.2`, but
+     as `\u2019`, like the existing entries do (GNU `sed` turns `\u2019` into a real \u2019 character,
+     so add the entry with Node or an editor, and check it). (`CFG.version` in the config says `1.4.2`, but
      line ~98 of `js/01-config.js` replaces it with the manifest's version at startup, so only the
      manifest needs bumping.)
    - Commit, push `connectors`, then push `connectors:main`. The owner wants this done directly,
