@@ -272,7 +272,7 @@ try{
     root.__msfit=1;
     function px(v){return parseFloat(v)||0;}
     function fit(){
-      var pl=cont.querySelector('.prtg-plugin');
+      var pl=cont.querySelector('[class*="prtg-plugin"]');   /* PRTG renames prtg-plugin to prtg-plugin-initialized once its table script ran */
       if(!pl||!root.clientWidth||!root.clientHeight)return;
       var cs=window.getComputedStyle(cont), pw=px(cs.paddingLeft)+px(cs.paddingRight), ph=px(cs.paddingTop)+px(cs.paddingBottom);
       cont.style.height='100%';cont.style.boxSizing='border-box';cont.style.overflow='hidden';

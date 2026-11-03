@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.63.
+Last updated at version 1.5.64.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -158,6 +158,19 @@ A full run takes about 5 seconds (16 seconds the very first time).
   bar is HTML like the pill and always shows its word; Beacon's rays blink on alarm states when
   Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
   tile, badge, LED).
+
+## Checked on the real PRTG (1.5.64)
+
+- Test map 2197 has PRTG's `table1.htm` (sub 4, device 1028) and the installed `map-studio-sunburst-solid-by-sensors.htm`
+  (sub 5, Root). The scaling code was run in the map page (classic UI and the new UI, whose map view is the classic
+  `controls/mapview.htm` in an iframe): tables scale (600x330 -> 0.93, 800x440 -> 1.24, 300x165 -> 0.46) and the
+  sunburst's title and legend follow `--mss` (210x220 -> title 8px, 800x500 -> 18px).
+- Found and fixed: PRTG renames `.prtg-plugin` to `.prtg-plugin-initialized`; `tableFitRuntime` now uses `[class*="prtg-plugin"]`.
+- PRTG strips `<script>` from an item's HTML Before (it shows as text), so scripts can only come from object files.
+- PRTG's map refresh (every 30 s) replaces the items, so the file's script runs again each time.
+- A Chrome window behind others gets about 1 frame per second, so resizes there apply late; not a bug.
+- External Link works in the new UI too: clicking the item on map 2197 opened `/maps/2126/overview`.
+- Not yet: real Flexible files installed in `mapobjects` (only the owner installs files).
 
 ## Flexible or Fixed for every object with a box (1.5.63)
 
