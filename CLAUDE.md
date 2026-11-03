@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.44.
+Last updated at version 1.5.45.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -17,6 +17,8 @@ when they need to do something themselves.
 - The tool always runs as a chrome-extension page (`background.js` opens `app.html`, which is the
   only thing that loads the scripts). The comment at the top of `js/01-config.js` about being
   "loaded into a PRTG tab" is outdated.
+- PRTG install folder (read only, for reference): `C:\Program Files (x86)\PRTG Network Monitor`
+  (`webroot`, `themes`, `frontend`, `Custom Sensors`, `lookups`, ...).
 
 ## Splitting app.js (in progress)
 
@@ -25,9 +27,11 @@ loaded by `app.html` in the same order with `defer` (no modules, no build step).
 moved without changing a character. The full plan (region map, order, checks) was agreed with the
 owner; stages so far:
 
-- Stage 1 (1.5.44): timer stopper + `config` → `js/01-config.js`. Done; waiting for the owner's test.
-- Still in `app.js`: tabs, link style, page, info, dashboard, push, library, objects, dashtabs, start.
-- Next stages, in order: tabs (front, `02-tabs.js`), dashtabs + the last two lines (back,
+- Stage 1 (1.5.44): timer stopper + `config` → `js/01-config.js`. Done; the owner said to go on.
+- Stage 2 (1.5.45): `tabs` → `js/02-tabs.js` (it starts with the blank line that followed
+  config). Done; waiting for the owner's test.
+- Still in `app.js`: link style, page, info, dashboard, push, library, objects, dashtabs, start.
+- Next stages, in order: dashtabs + the last two lines (back,
   `10-dashtabs.js` + `11-start.js`), link style (`03-linkstyle.js`, add a `@region: linkstyle`
   marker), page (`04-page.js`), info (`05-info.js`), objects (`09-objects.js`), library
   (`08-library.js`), push (`07-push.js`), then what is left of `app.js` becomes `06-dashboard.js`.
@@ -35,8 +39,6 @@ owner; stages so far:
 - Checks at every stage: (1) join the files in `app.html`'s order and compare with the previous
   `app.js`: only the new changelog entry may differ; (2) `tests/run-tests.js`; (3) the list of
   window names the page creates (102 at 1.5.43) and `CFG` must be unchanged.
-- PRTG install folder (read only, for reference): `C:\Program Files (x86)\PRTG Network Monitor`
-  (`webroot`, `themes`, `frontend`, `Custom Sensors`, `lookups`, ...).
 
 ## Rules
 
