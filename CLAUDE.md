@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.56.
+Last updated at version 1.5.57.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -147,8 +147,10 @@ A full run takes about 5 seconds (16 seconds the very first time).
   side panel's gallery; the menu uses prefix `obg` so its gradient ids don't clash with the side
   panel's, which made LED and Soft orb draw blank).
 - `obRoot()` for icons is the whole preview strip, so a click on any state's icon opens the bar.
-- Looks is shown only when `iHasBg(IC)`: Tile, Traffic light, or the card switched on. The
-  traffic light's housing is a fixed colour (`#161C28`), so a look only changes its lamps.
+- Looks is shown only when `iHasBg(IC)`, which since 1.5.57 means only when the icon's card
+  ("Card behind the icon, from the look", `IC.card`) is on. The owner asked to remove Looks from
+  the Tile and the Traffic light too. A tried change (tile on the look's card colour, traffic-light
+  housing in the look's title colour) was shown as a mockup and rejected; don't redo it unasked.
 
 ## Gauges on PRTG's dial and lookup channels (1.5.55)
 

@@ -3113,7 +3113,7 @@ try{
     {id:'pill',  name:'Status pill',    group:'More',    w:160,h:32, vb:null,        gl:null}
   ];
   function iStyle(id){var r=ISTYLES[1];ISTYLES.forEach(function(s){if(s.id===id)r=s;});return r;}
-  function iHasBg(I){return I.style==='tile'||I.style==='traffic'||!!I.card;}   /* a background of its own (the tile, the traffic light's housing) or the card behind it */
+  function iHasBg(I){return !!I.card;}   /* Looks is offered only for an icon with its card on: the look then sets the card behind it */
   function blankI(){
     return {type:'icon',engine:'custom',cat:'Status Icons',name:'Status dot',fname:'',style:'dot',palette:'look',text:'none',tip:'name',link:'auto',animate:true,card:false,
       labels:{},initW:40,initH:40,look:lookOf('Minimal'),raw:''};
