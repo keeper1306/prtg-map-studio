@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.65.
+Last updated at version 1.5.66.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -161,6 +161,28 @@ A full run takes about 5 seconds (16 seconds the very first time).
   bar is HTML like the pill and always shows its word; Beacon's rays blink on alarm states when
   Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
   tile, badge, LED).
+
+## Flexible limits follow the scale (1.5.66)
+
+- Found on the real PRTG (map 2197): a Flexible Status counts at 300x170 (scale 0.714) wrapped its 4 boxes onto two rows,
+  because `.sbody` had `minmax(64px,1fr)`, `gap:8px` and the boxes `padding:4px 6px` in fixed px; and the box texts use
+  `clamp(Apx, cq units, Bpx)`, whose px floor and ceiling don't scale. Tiles have the same clamps.
+- Fix: `flexCss()` now runs `flexClamp()`, which turns a clamp's px floor and ceiling into `calc(Npx * var(--mss,1))`;
+  `statusCss()` writes the grid minimum, gap, margin and box padding with `fpx()`. Only Flexible tile and status files
+  change (checked: every type's file, Flexible and Fixed, identical to 1.5.65 except those two).
+
+## Checked on the real PRTG (1.5.65, 2026-11-03)
+
+- Nine 1.5.65 files written straight into `mapobjects`; the classic map designer listed them at once (no restart).
+- In the designer, dropping a look onto an existing item replaces that item's look (it keeps position, size, object and link).
+  A drop onto a place that seems empty can still land on the selected item, so drop onto an existing item on purpose.
+  The list's hover previews shift the entries; find an entry by its `data-url` (file name) right before dragging.
+  A double-click on a device-tree node adds it to the map at 0,0. Object scripts don't run in the designer, only on View Map.
+- Results on View Map (classic UI): table 300x170 after dragging its corner -> 0.47, rows fit; gauge 320x280 -> 1.0, then
+  190x170 after a corner drag -> 0.594 (title 16 -> 9.5px); graph on 190x170 -> 0.365; tile on 190x170 -> 0.731; donut on
+  300x170 -> 0.773, slices in PRTG UI Up green #B8C419 (only Up sensors exist); status counts 300x170 -> 0.714 but wrapped
+  (fixed in 1.5.66). Hexagon, beacon and status bar icons draw on a live map and keep the item's External Link.
+- Not checked: the new UI (`localhost:1616`) for these files; donut colors with other looks or non-Up states.
 
 ## Status counts name and donut category (1.5.65)
 

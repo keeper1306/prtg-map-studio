@@ -584,7 +584,20 @@ try{
   }
   function flexClass(){return TYPE==='gauge'?gClassOf(G):TYPE==='graph'?grClassOf(GR):TYPE==='donut'?dClassOf(DN):TYPE==='sunburst'?sbClassOf(SB):TYPE==='tile'?tClassOf(TL):TYPE==='status'?sClassOf(SC):'';}
   /* Flexible: every fixed text size in the object's own CSS follows --mss too (legends, labels, numbers) */
-  function flexCss(css){return String(css).replace(/font-size:\s*(\d+(?:\.\d+)?)px/g,'font-size:calc($1px * var(--mss,1))');}
+  function flexCss(css){return flexClamp(String(css).replace(/font-size:\s*(\d+(?:\.\d+)?)px/g,'font-size:calc($1px * var(--mss,1))'));}
+  /* 1.5.66: a clamp(min, size, max) keeps a fixed px floor and ceiling, which stopped Flexible tiles and status counts from shrinking or growing past them; the px floor and ceiling follow --mss too */
+  function flexClamp(css){
+    var out='', i=0, j, d, a, k, parts;
+    while((j=css.indexOf('clamp(',i))>-1){
+      out+=css.slice(i,j+6);d=1;a=j+6;parts=[];
+      for(k=a;k<css.length&&d>0;k++){var ch=css.charAt(k);if(ch==='(')d++;else if(ch===')'){d--;if(!d)break;}else if(ch===','&&d===1){parts.push(css.slice(a,k));a=k+1;}}
+      if(d){out+=css.slice(j+6);return out;}
+      parts.push(css.slice(a,k));
+      out+=parts.map(function(p,n){var t=p.trim();return ((n===0||n===parts.length-1)&&/^\d+(?:\.\d+)?px$/.test(t))?'calc('+t+' * var(--mss,1))':p;}).join(',')+')';
+      i=k+1;
+    }
+    return out+css.slice(i);
+  }
   /* the file gets the script that sets --mss, when the object is Flexible and its root carries the class the CSS is written for */
   function flexAppend(text){
     if(!flexOn())return text;
@@ -2784,8 +2797,8 @@ try{
         cardFill=(L.card)?((fillA<100)?tint(L.cardBg,fillA/100):L.cardBg):'#FFFFFF', q0=blend(cardFill.charAt(0)==='#'?cardFill:'#FFFFFF',L.text,0.1), rad=Math.max(2,Math.min(Number(L.radius)||4,12));
     c.push(r+'{container-type:size;}');
     c.push(r+' .gsub{flex:0 0 auto;color:'+muted+';font-size:12px;line-height:1.3;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}');
-    c.push(r+' .sbody{flex:1 1 auto;min-height:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(64px,1fr));grid-auto-rows:minmax(0,1fr);gap:8px;margin-top:8px;}');
-    c.push(r+' .stile{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;min-height:0;padding:4px 6px;border-radius:'+rad+'px;background:var(--bg);color:var(--fg);text-align:center;overflow:hidden;}');
+    c.push(r+' .sbody{flex:1 1 auto;min-height:0;display:grid;grid-template-columns:repeat(auto-fit,minmax('+fpx(64)+',1fr));grid-auto-rows:minmax(0,1fr);gap:'+fpx(8)+';margin-top:'+fpx(8)+';}');   /* 1.5.66: Flexible boxes keep one row as they shrink */
+    c.push(r+' .stile{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;min-height:0;padding:'+fpx(4)+' '+fpx(6)+';border-radius:'+rad+'px;background:var(--bg);color:var(--fg);text-align:center;overflow:hidden;}');
     c.push(r+' .stile .sl{font-family:'+familyStack(L.font)+';font-weight:600;font-size:14px;font-size:clamp(10px,min(8cqh,calc(17cqw / var(--n,4))),20px);line-height:1.2;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;}');
     c.push(r+' .stile .sn{font-family:'+familyStack(L.font)+';font-weight:600;font-size:30px;font-size:clamp(16px,min(30cqh,calc(40cqw / var(--n,4))),72px);line-height:1.05;font-variant-numeric:tabular-nums;white-space:nowrap;max-width:100%;overflow:hidden;}');
     c.push(r+' .stile .sc{font-family:'+familyStack(L.font)+';font-size:11px;font-size:clamp(9px,min(6cqh,calc(11cqw / var(--n,4))),14px);line-height:1.15;opacity:.85;white-space:normal;max-width:100%;}');
