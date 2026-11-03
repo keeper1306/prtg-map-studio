@@ -263,6 +263,48 @@ try{
       }
     }
   }
+  /* "Scale everything with the object's size": the whole table (title, header, rows) is drawn at a normal width (C.w, the object's
+     width at which the look's text sizes apply) and scaled to the object's box. It is laid out as wide as the box allows, never
+     narrower than the normal width, and shrunk until every row fits the box's height. Shipped inside the file as its own source text. */
+  function tableFitRuntime(root,C){
+    var cont=root.querySelector('.maptablecontainer,.top10listcontainer');
+    if(!cont||root.__msfit)return;
+    root.__msfit=1;
+    function px(v){return parseFloat(v)||0;}
+    function fit(){
+      var pl=cont.querySelector('.prtg-plugin');
+      if(!pl||!root.clientWidth||!root.clientHeight)return;
+      var cs=window.getComputedStyle(cont), pw=px(cs.paddingLeft)+px(cs.paddingRight), ph=px(cs.paddingTop)+px(cs.paddingBottom);
+      cont.style.height='100%';cont.style.boxSizing='border-box';cont.style.overflow='hidden';
+      root.style.overflow='hidden';
+      var aw=root.clientWidth-pw, ah=root.clientHeight-ph;
+      if(aw<10||ah<10)return;
+      var base=Math.max(40,(Number(C.w)||600)-pw), hi=aw/base, lo=0.08, s=hi, i, m;
+      pl.style.transformOrigin='0 0';pl.style.boxSizing='border-box';
+      function tall(k){pl.style.width=(aw/k)+'px';return pl.offsetHeight*k;}   /* offsetHeight is the height before the scale */
+      if(tall(hi)>ah+0.5){
+        if(tall(lo)>ah)s=lo;
+        else{for(i=0;i<14;i++){m=(lo+hi)/2;if(tall(m)<=ah+0.5)lo=m;else hi=m;}s=lo;}
+        tall(s);
+      }
+      pl.style.transform='scale('+s.toFixed(4)+')';
+      root.setAttribute('data-scale',s.toFixed(3));
+    }
+    var queued=false;
+    function later(){if(queued)return;queued=true;(window.requestAnimationFrame||setTimeout)(function(){queued=false;if(!document.documentElement.contains(root)){if(ro)ro.disconnect();if(mo)mo.disconnect();return;}fit();});}
+    var ro=window.ResizeObserver?new window.ResizeObserver(later):null, mo=window.MutationObserver?new window.MutationObserver(later):null;
+    if(ro)ro.observe(root);
+    if(mo)mo.observe(cont,{childList:true,subtree:true,characterData:true});   /* PRTG refreshes the rows: fit again */
+    fit();
+    if(document.fonts&&document.fonts.ready)document.fonts.ready.then(later);
+  }
+  function tableFits(T){return !!T.fit&&parseInt(T.initW,10)>0&&parseInt(T.initH,10)>0;}
+  function tableFitScript(T,cls){
+    if(!tableFits(T))return '';
+    return '(function(){\n  var F='+tableFitRuntime.toString()+';\n  var C={w:'+Math.max(40,parseInt(T.fitW,10)||parseInt(T.initW,10)||600)+'};\n'
+      +'  function all(){[].forEach.call(document.querySelectorAll(".'+cls+'"),function(r){F(r,C);});}\n'
+      +'  all();setTimeout(all,400);setTimeout(all,2000);\n})();';
+  }
   function tableScript(T,cls){
     var L=T.look;
     if(L.mode==='prtg'||T.cols.indexOf('status')<0)return '';
@@ -381,11 +423,12 @@ try{
     return f;
   }
   function buildTable(T){
-    var cls=classOf(T), css=tableCss(T,cls), js=tableScript(T,cls), o=[];
+    var cls=classOf(T), css=tableCss(T,cls), js=tableScript(T,cls), fjs=tableFitScript(T,cls), o=[];
+    if(fjs)js=js?js+'\n'+fjs:fjs;
     var useCls=!!(css||js);
     o.push('<!'+'--'+clean(T.cat||'Data Tables')+': '+clean(T.name||'Table')+'-->');
     o.push('');
-    o.push('<div class="map_object map_table'+(useCls?' '+cls:'')+'" id="<@itemid>" objectid="<@objectid>" subid="<@subid>"'+initAttr(T)+' style="overflow:auto;<#mapobject type="coordinates" subid="<@subid>" mode="<@editmode>">">');
+    o.push('<div class="map_object map_table'+(useCls?' '+cls:'')+'" id="<@itemid>" objectid="<@objectid>" subid="<@subid>"'+initAttr(T)+' style="overflow:'+(fjs?'hidden':'auto')+';<#mapobject type="coordinates" subid="<@subid>" mode="<@editmode>">">');
     o.push('  <#mapobject type="objectgrip" mode="<@editmode>">');
     o.push('  <#mapobject type="htmlbefore" subid="<@subid>">');
     o.push('  <#checkobjecttype objecttype="'+(T.checks||'probenode,group,device')+'" nicemessage="true" id="<@objectid>">');
@@ -416,7 +459,7 @@ try{
     return {id:'',cat:'Data Tables',name:'Site status',title:'Site status',titleObj:false,showTitle:true,
       cols:['status','device'],sortBy:'status',sortDir:'asc',count:0,status:[],mapTags:true,reqTag:'',nameContains:'',onlyValue:false,onlyFav:false,extra:[],
       links:false,sortable:false,refreshable:true,infoheader:false,box:'maptablecontainer',checks:'probenode,group,device',initW:600,initH:330,
-      rot:0,tOffX:0,tOffY:0,tAlign:'',
+      rot:0,tOffX:0,tOffY:0,tAlign:'',fit:true,fitW:600,
       look:lookOf('PRTG new UI'),fname:''};
   }
   function fromPreset(p){
@@ -424,7 +467,7 @@ try{
     ['cat','title','titleObj','cols','sortBy','sortDir','count','status','mapTags','reqTag','nameContains','onlyValue','onlyFav','extra','links','sortable','refreshable','infoheader','box','checks'].forEach(function(k){
       var v=p[k];T[k]=(v instanceof Array)?v.slice():v;
     });
-    T.initW=0;T.initH=0;T.id=p.id;T.name=p.name+' custom';T.showTitle=!!(p.title||p.titleObj);if(!p.title&&!p.titleObj)T.title='';
+    T.initW=0;T.initH=0;T.fit=false;T.id=p.id;T.name=p.name+' custom';T.showTitle=!!(p.title||p.titleObj);if(!p.title&&!p.titleObj)T.title='';
     T.look=lookOf('PRTG default');T.fname='';
     return T;
   }
@@ -4988,6 +5031,10 @@ try{
         if(ED.sel==='title'&&edOn()){var tt=prevEl.querySelector('.tabletitle');if(tt)tt.classList.add('edsel');}
       }
     }catch(err){if(window.console)console.error('preview editing',err);}
+    if(tableFits(T)){
+      try{var _fr=prevEl.querySelector('.map_object');if(_fr)tableFitRuntime(_fr,{w:Math.max(40,parseInt(T.fitW,10)||parseInt(T.initW,10)||600)});}
+      catch(err){if(window.console)console.error('table scale',err);}
+    }
     if(js){
       try{
         var _L=T.look, _dots=(_L.status==='dot'||_L.status==='dottext'), _pills=(_L.status==='pill'), _tn=!!_L.tint;
@@ -6039,6 +6086,18 @@ try{
     var ed1=section('Size, rotation and title');secIf(ed1,isTable);
     ed1.appendChild(inChk('Edit in the preview',function(){return ED.on;},function(v){ED.on=v;},refreshUI));
     ed1.appendChild(h('p','note','In the preview: drag the handles to resize (this sets the size when dropped), drag the round handle to rotate (hold Shift to snap to 15 degrees), double-click the title to edit it. The title is part of the table and does not move on its own. A selected title also moves with the arrow keys.'));
+    ed1.appendChild(inChk('Scale everything with the object\u2019s size',function(){return !!T.fit;},function(v){
+      T.fit=v;
+      if(v&&!(parseInt(T.initW,10)>0&&parseInt(T.initH,10)>0)){var wr=document.getElementById('edwrap');T.initW=(wr&&wr.offsetWidth)||600;T.initH=(wr&&wr.offsetHeight)||330;}   /* scaling needs a box: the size the preview shows now */
+      if(v&&!(parseInt(T.fitW,10)>0))T.fitW=parseInt(T.initW,10)||600;
+    }));
+    var fitw=h('div');
+    fitw.appendChild(inNum('Normal width (px)',function(){return T.fitW;},function(v){T.fitW=v;},100,4000));
+    var fb=h('button','btn ghost','Make the current width normal');fb.type='button';
+    fb.addEventListener('click',function(){T.fitW=parseInt(T.initW,10)||T.fitW;refreshUI();render();});
+    fitw.appendChild(fb);
+    fitw.appendChild(h('p','note','At the normal width the text has the look\u2019s sizes. Make the object wider or narrower, here or on the PRTG map, and the title, the header and the rows all grow or shrink with it. When there are more rows than the box can hold, everything shrinks until they all fit.'));
+    showIf(fitw,function(){return !!T.fit;});ed1.appendChild(fitw);
     ed1.appendChild(inNum('Rotation (degrees)',function(){return T.rot;},function(v){T.rot=v;},-180,180));
     ed1.appendChild(inSel('Title alignment',function(){return T.tAlign;},function(v){T.tAlign=v;},[['','As the look has it'],['left','Left'],['center','Center'],['right','Right']]));
     var edr=h('div','dpair');

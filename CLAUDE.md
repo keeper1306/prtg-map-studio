@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.61.
+Last updated at version 1.5.62.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -158,6 +158,15 @@ A full run takes about 5 seconds (16 seconds the very first time).
   bar is HTML like the pill and always shows its word; Beacon's rays blink on alarm states when
   Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
   tile, badge, LED).
+
+## Tables that scale with the object (1.5.62)
+
+- `T.fit` (on in `blankT`, off for templates and for tables saved before) and `T.fitW` (the normal width, 600).
+  `tableFitRuntime(root,C)` lays `.prtg-plugin` out at width box/scale and scales it with a transform: the largest scale
+  that fits the box's height, never above box width / normal width. It refits on resize (ResizeObserver) and when
+  PRTG refreshes the rows (MutationObserver). The file carries the function's own source (`tableFitScript`) and the root
+  gets `overflow:hidden`. Only for tables with a size (initW and initH > 0). With fit off the file is unchanged.
+- Not verified on the real PRTG (PRTG was signed out in Chrome when this was made): only the builder preview.
 
 ## Object links and donut colors (1.5.61)
 
