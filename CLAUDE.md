@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.54.
+Last updated at version 1.5.55.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -140,6 +140,23 @@ A full run takes about 5 seconds (16 seconds the very first time).
   makes Map Studio treat them as two servers: Review shows already-pushed items as new, and Undo
   is not offered. Confirmed on the real PRTG at 1.5.43. Workaround: always use the same address.
   The owner chose to leave this until after `app.js` is split (the split is now done, at 1.5.53).
+
+## Gauges on PRTG's dial and lookup channels (1.5.55)
+
+- Checked on the real PRTG (sensor pages 1004 and 1027, map 2126): PRTG's number dial has its
+  cut-out (`circle.backgroundfill`) at (89.1, 108.9) in a 198 px svg, with the needle at (99, 99);
+  Map Studio's faces move the needle to the cut-out on purpose. A **lookup** channel's dial has no
+  cut-out: four `g.arc.lookups` quarter arcs round (99, 99), no min/max text. Lookup channels also
+  carry `info.lookups` and a meaningless graph range (0 to about 72 million on sensor 1027).
+- `nativeRuntime()` now detects `g.lookups`: centre (99, 99), no scale, no value line, no
+  25/50/75 or ticks, decorations round the whole circle (`A0=-332`), text inside the ring.
+  `rangeOf()` returns no range for a channel with `lookups`. `ringRuntime()` never draws a
+  lookup channel on a number range. Scale numbers of 10,000 and up are written with k, M or G.
+  `fit()` may now scale PRTG's dial up to 4 times (was 1.6).
+- Number dials were compared old against new on PRTG's real markup for all six faces: the same
+  except for anti-aliasing noise (0 to 2 pixels).
+- An object file carries its own copy of this code, so files installed before 1.5.55 (for
+  example `bandwidth-gauge.htm` on map 2126) keep the old drawing until made again and installed.
 
 ## Object names (1.5.54)
 

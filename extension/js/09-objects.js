@@ -700,7 +700,8 @@ try{
       if(DATA&&sid!=null&&DATA.sensors){l=DATA.sensors;for(i=0;i<l.length&&!inf;i++){if(String(l[i].objid)===String(sid))inf=l[i].info&&l[i].info.data&&l[i].info.data[0];}}
       if(DATA&&!inf&&cid!=null&&DATA.channels){l=DATA.channels;for(i=0;i<l.length&&!inf;i++){var d=l[i].info&&l[i].info.data&&l[i].info.data[0];if(d&&String(d.id)===String(cid))inf=d;}}
       var jq=window.jQuery, gd=(jq&&box)?jq(box).data('gauge'):null;
-      if(gd&&gd.info){var s0=Number(gd.info.status);if(gd.info.graphmaxraw===null||gd.info.graphminraw===null||[0,1,6,7,8,9,11,12].indexOf(s0)>=0)return null;inf=gd.info;}   /* PRTG's own record of this gauge, kept on its box; PRTG greys the dial and hides its labels for these */
+      if(gd&&gd.info){var s0=Number(gd.info.status);if(gd.info.graphmaxraw===null||gd.info.graphminraw===null||[0,1,6,7,8,9,11,12].indexOf(s0)>=0)return null;inf=gd.info;}
+      if(inf&&inf.lookups)return null;   /* a lookup channel shows states, not numbers: its graph range means nothing on a dial */   /* PRTG's own record of this gauge, kept on its box; PRTG greys the dial and hides its labels for these */
       var lo=null,hi=null;
       if(inf){lo=nval(inf.graphminraw);hi=nval(inf.graphmaxraw);}
       if((lo===null||hi===null)&&labs.length===2&&labs.every(function(t){return getComputedStyle(t).display!=='none';})){var t0=String(labs[0].textContent).trim(),t1=String(labs[1].textContent).trim();
@@ -709,6 +710,7 @@ try{
     }
     function nice(raw){var p=Math.pow(10,Math.floor(Math.log(raw)/Math.LN10)),n=raw/p;return (n<=1?1:n<=2?2:n<=2.5?2.5:n<=5?5:10)*p;}
     function fmtN(x,step){var dec=step<1?Math.min(3,Math.ceil(-Math.log(step)/Math.LN10+0.001)):0;return String(Number(x.toFixed(dec)));}
+    function unitOf(lo,hi){var m=Math.max(Math.abs(lo),Math.abs(hi));return m>=1e9?[1e9,'G']:(m>=1e6?[1e6,'M']:(m>=1e4?[1e3,'k']:[1,'']));}   /* 72000000 is written 72M, so the numbers fit */
     function decorate(svg){
       if(svg.getAttribute('data-ms')==='1')return;
       svg.setAttribute('data-ms','1');
@@ -717,6 +719,9 @@ try{
       svg.style.overflow='visible';
       var bands=[].slice.call(svg.querySelectorAll('path')).filter(function(p){return /\bstatus\d+\b/.test(p.getAttribute('class')||'');});
       var bg=svg.querySelector('.backgroundfill'), needleG=null, needle=null;
+      var lookup=!!svg.querySelector('g.lookups');   /* PRTG's dial for a lookup channel: four state arcs round the centre, no off-centre cut-out, no numbers */
+      if(lookup){ccx=cx;ccy=cy;cr=R*0.56;}
+      var A0=lookup?-332:0;   /* where the decorations start: a lookup dial is a whole circle (1332 of PRTG's 270-degree units, just short of 360 so the arc still draws), a number dial three quarters */
       [].forEach.call(svg.querySelectorAll('g.pointerContainer'),function(g){if(g.querySelector('.needle'))needleG=g;});
       if(needleG)needle=needleG.querySelector('.needle');
       var noNeedle=!needleG||needleG.style.display==='none';
@@ -725,7 +730,7 @@ try{
       var VAL=(rot===null||noNeedle)?null:(rot-225)/270*1000;
       function zcol(v){var c=null;zones.forEach(function(z){if(v>=z.v0-0.5&&v<=z.v1+0.5)c=z.col;});return c||INK;}
       var cur=(VAL===null)?(zones.length?zones[zones.length-1].col:INK):zcol(VAL);
-      var labs=[].slice.call(svg.querySelectorAll('text')).slice(0,2), rng=big?rangeOf(svg,labs):null, labCol=labs[0]?getComputedStyle(labs[0]).fill:'#55607a';
+      var labs=[].slice.call(svg.querySelectorAll('text')).slice(0,2), rng=(big&&!lookup)?rangeOf(svg,labs):null, labCol=labs[0]?getComputedStyle(labs[0]).fill:'#55607a';
       if(!st){extras(true);return;}   /* PRTG classic: PRTG's dial as it is, with the scale and the value line when chosen */
       [].forEach.call(svg.querySelectorAll('text'),function(t){t.style.display='none';});
       var defs=el('defs',{},svg,svg.firstChild), clip=el('clipPath',{id:'c'+id},defs);
@@ -744,9 +749,9 @@ try{
       function vblock(nameCol,valCol,o){
         o=o||{};var box=svg.closest?svg.closest('.achannel'):null, nm=box&&box.querySelector('.channelname'), vv=box&&box.querySelector('.channelvalue');
         var label=String(nm?nm.textContent:'').replace(/\s+/g,' ').trim().toUpperCase(), vt=String(vv?vv.textContent:'').replace(/\s+/g,' ').trim();
-        if(label.length>18)label=label.slice(0,17)+'…';
-        var ins=(C.scale==='inside'&&!!rng), y=ccy+cr*(ins?0.84:0.56), m=/^(-?[\d.,]+\s?%?)\s*(.*)$/.exec(vt), num=m?m[1].replace(/\s/g,''):vt, unit=m?m[2]:'';
-        if(label)text(ccx,y+(ins?cr*0.36:14),label,ins?7:8,nameCol,'letter-spacing:1.2px;');
+        var lmax=lookup?14:18;if(label.length>lmax)label=label.slice(0,lmax-1)+'…';   /* inside a lookup dial's closed ring there is less room */
+        var ins=(C.scale==='inside'&&!!rng), y=ccy+cr*(lookup?0.34:(ins?0.84:0.56)),   /* a lookup dial's ring closes underneath, so its value sits higher, inside it */ m=/^(-?[\d.,]+\s?%?)\s*(.*)$/.exec(vt), num=m?m[1].replace(/\s/g,''):vt, unit=m?m[2]:'';
+        if(label)text(ccx,y+(lookup?11:(ins?cr*0.36:14)),label,(lookup||ins)?7:8,nameCol,'letter-spacing:1.2px;');
         if(vt){var v=el('text',{x:ccx,y:y,'text-anchor':'middle','class':'msn',style:'display:block !important;fill:'+valCol+' !important;font-size:'+(num.length>6?(ins?14:16):(ins?17:21))+'px;font-weight:'+(o.w||400)+';'+(o.mono?'font-family:Consolas,monospace;':'')+(o.glow?'filter:'+o.glow+';':'')},svg);
           var a=el('tspan',{},v);a.textContent=num;if(unit){var b=el('tspan',{dx:3,style:'font-size:10px;font-weight:400;'},v);b.textContent=unit.length>10?unit.slice(0,10):unit;}}
       }
@@ -764,23 +769,23 @@ try{
       if(st==='neon'){
         zones.forEach(function(z){css(z.p,'fill:'+mix(z.col,'#000000',0.12)+';filter:drop-shadow(0 0 '+(dark?7:4)+'px '+glowOf(z.col)+');');});
         var gl=el('linearGradient',{id:'gl'+id,x1:0,y1:0,x2:0,y2:1},defs);el('stop',{offset:0,'stop-color':'#fff','stop-opacity':0.45},gl);el('stop',{offset:0.6,'stop-color':'#fff','stop-opacity':0.05},gl);
-        under('path',{d:ring(0,1000,0.62*R,0.83*R),'clip-path':'url(#c'+id+')',fill:'url(#gl'+id+')'});
-        under('path',{d:ring(0,1000,0.82*R,0.85*R),'clip-path':'url(#c'+id+')',fill:'rgba(255,255,255,.55)'});
+        under('path',{d:ring(A0,1000,0.62*R,0.83*R),'clip-path':'url(#c'+id+')',fill:'url(#gl'+id+')'});
+        under('path',{d:ring(A0,1000,0.82*R,0.85*R),'clip-path':'url(#c'+id+')',fill:'rgba(255,255,255,.55)'});
         if(bg)css(bg,'stroke:'+(dark?'rgba(255,255,255,.35)':'rgba(29,36,51,.18)')+';stroke-width:1.5;');
-        if(C.scale!=='inside')ticks(0.44,0.5,zcol);if(!(C.scale!=='off'&&rng))[250,500,750].forEach(function(v){var p=cpt(v,0.35);text(p[0],+p[1]+3,String(v/10),8.5,zcol(v));});   /* its own percentages give way to the real scale */
+        if(C.scale!=='inside'&&!lookup)ticks(0.44,0.5,zcol);if(!lookup&&!(C.scale!=='off'&&rng))[250,500,750].forEach(function(v){var p=cpt(v,0.35);text(p[0],+p[1]+3,String(v/10),8.5,zcol(v));});   /* its own percentages give way to the real scale */
         needleStyle(0.32,dark?'#d9f6ff':'#1d2433',dark?'drop-shadow(0 0 4px #7fdcff)':'drop-shadow(0 0 3px rgba(60,170,255,.6))');
         if(!noNeedle){hub(8,CUT,dark?'#9adfff':'#2f9bd6',dark?'drop-shadow(0 0 5px #7fdcff)':null);hub(3,dark?'#d9f6ff':'#1d2433');}
         vblock(dark?'#cfe8ff':MUT,INK,{w:600});
       }else if(st==='flat'){
         if(bg)css(bg,'stroke:rgba(0,0,0,'+(dark?0.35:0.12)+');stroke-width:10;');
-        over('path',{d:line(0,1000,0.5*R,ccx,ccy),fill:'none',stroke:dark?'rgba(255,255,255,.4)':'rgba(29,36,51,.35)','stroke-width':1.5,'stroke-dasharray':'1 5','stroke-linecap':'round'});
+        over('path',{d:line(A0,1000,0.5*R,ccx,ccy),fill:'none',stroke:dark?'rgba(255,255,255,.4)':'rgba(29,36,51,.35)','stroke-width':1.5,'stroke-dasharray':'1 5','stroke-linecap':'round'});
         var nc=(lum(cur)<0.12)?mix(cur,'#4f7dff',0.6):cur;
         needleStyle(0.35,nc);if(!noNeedle)hub(6,CUT,nc);
         vblock(MUT,INK,{w:300});
       }else if(st==='cyber'){
-        for(var a=0;a<1000;a+=1000/54)under('path',{d:ring(a,a+3.5,0.3*R,0.9*R),fill:CUT});
+        for(var a=A0;a<1000;a+=1000/54)under('path',{d:ring(a,a+3.5,0.3*R,0.9*R),fill:CUT});
         zones.forEach(function(z){css(z.p,'filter:drop-shadow(0 0 4px '+glowOf(z.col)+');');});
-        under('path',{d:ring(0,1000,0.9*R,0.915*R),fill:dark?'rgba(90,190,255,.7)':'rgba(30,120,220,.6)'});
+        under('path',{d:ring(A0,1000,0.9*R,0.915*R),fill:dark?'rgba(90,190,255,.7)':'rgba(30,120,220,.6)'});
         over('circle',{cx:ccx,cy:ccy,r:cr-6,fill:'none',stroke:dark?'rgba(90,190,255,.35)':'rgba(30,120,220,.35)','stroke-width':1});
         var cy2=dark?'#7ee0ff':'#0b6fc2';
         needleStyle(0.3,cy2,'drop-shadow(0 0 5px '+(dark?'#3fc4ff':'rgba(30,120,220,.6)')+')');if(!noNeedle)hub(6,CUT,cy2);
@@ -789,7 +794,7 @@ try{
         var mg=el('linearGradient',{id:'mg'+id,x1:0,y1:0,x2:1,y2:1},defs);[['0','#f4f6fa'],['.35','#8a93a3'],['.55','#e9edf3'],['1','#5d6675']].forEach(function(s){el('stop',{offset:s[0],'stop-color':s[1]},mg);});
         var sh=el('linearGradient',{id:'sh'+id,x1:0,y1:0,x2:0,y2:1},defs);[[0,'#fff',0.55],[0.5,'#fff',0.08],[0.5,'#000',0.05],[1,'#000',0.2]].forEach(function(s){el('stop',{offset:s[0],'stop-color':s[1],'stop-opacity':s[2]},sh);});
         under('rect',{x:0,y:0,width:S,height:S,'clip-path':'url(#c'+id+')',fill:'url(#sh'+id+')'});
-        under('path',{d:ring(0,1000,0.85*R,0.92*R),fill:'url(#mg'+id+')',style:'filter:drop-shadow(0 2px 3px rgba(0,0,0,.45))'});
+        under('path',{d:ring(A0,1000,0.85*R,0.92*R),fill:'url(#mg'+id+')',style:'filter:drop-shadow(0 2px 3px rgba(0,0,0,.45))'});
         if(bg)css(bg,'stroke:url(#mg'+id+');stroke-width:5;');
         needleStyle(0.4,dark?'#e6f4ff':'#2b3445','drop-shadow(1px 2px 2px rgba(0,0,0,.45))');
         if(!noNeedle){var kn=el('radialGradient',{id:'kn'+id,cx:'.35',cy:'.3'},defs);el('stop',{offset:0,'stop-color':'#fff'},kn);el('stop',{offset:0.6,'stop-color':'#9aa3b2'},kn);el('stop',{offset:1,'stop-color':'#4a5160'},kn);hub(13,'url(#kn'+id+')','#2b303a','drop-shadow(0 3px 4px rgba(0,0,0,.5))');}
@@ -801,7 +806,7 @@ try{
         vblock(MUT,INK,{w:300,glow:dark?'drop-shadow(0 0 6px rgba(255,255,255,.5))':null});
       }else{   /* clean */
         css(svg,'filter:drop-shadow(0 6px 10px rgba(20,30,60,'+(dark?0.45:0.18)+'))');
-        if(C.scale!=='inside')ticks(0.46,0.5,function(){return dark?'#7d879c':'#9aa3b4';});
+        if(C.scale!=='inside'&&!lookup)ticks(0.46,0.5,function(){return dark?'#7d879c':'#9aa3b4';});
         needleStyle(0.35,INK);if(!noNeedle){hub(5,INK);hub(2,CUT);}
         vblock(MUT,INK,{w:700,valueFirst:1});
       }
@@ -809,7 +814,7 @@ try{
       /* the scale numbers and the value line, on PRTG classic and on every style */
       function extras(classic){
         if(!big)return;
-        var lineOn=(C.line==='full'||C.line==='value'), scaleOn=((C.scale==='outside'||C.scale==='inside')&&!!rng);
+        var lineOn=(C.line==='full'||C.line==='value')&&!lookup, scaleOn=((C.scale==='outside'||C.scale==='inside')&&!!rng);
         var padOut=(scaleOn&&C.scale==='outside')?R*0.34:(lineOn?R*0.07:0);
         if(padOut){var H=parseFloat(svg.getAttribute('height'))||S;svg.setAttribute('viewBox',(-padOut).toFixed(1)+' '+(-padOut).toFixed(1)+' '+(S+2*padOut).toFixed(1)+' '+(H+2*padOut).toFixed(1));}   /* room for what goes outside the zones */
         var gl=(st==='neon'||st==='amb'||st==='cyber');
@@ -825,13 +830,13 @@ try{
           if(V!==null){var tp=pt(V,lr,cx,cy);over('circle',{cx:tp[0],cy:tp[1],r:(R*0.04).toFixed(2),fill:'#ffffff',stroke:zcol(V),'stroke-width':(R*0.022).toFixed(2)});}
         }
         if(scaleOn){
-          var inside=(C.scale==='inside'), ox=inside?ccx:cx, oy=inside?ccy:cy, span=rng.hi-rng.lo, step=nice(span/(inside?5:10)), ms=step/5, norm=zones.length?zones[0].col:null;
+          var inside=(C.scale==='inside'), ox=inside?ccx:cx, oy=inside?ccy:cy, span=rng.hi-rng.lo, step=nice(span/(inside?5:10)), ms=step/5, norm=zones.length?zones[0].col:null, un=unitOf(rng.lo,rng.hi);
           var tickMute=classic?'#7a8296':(dark?'#7d879c':'#8a93a6'), numCol=classic?labCol:MUT;
           for(var x=Math.ceil(rng.lo/ms-1e-9)*ms;x<=rng.hi+ms*1e-6;x+=ms){
             var v=(x-rng.lo)/span*1000, maj=Math.abs(x/step-Math.round(x/step))<1e-6, zc=zcol(v), tc=(st==='neon')?zc:((norm&&zc!==norm)?zc:tickMute);
             var r0=inside?R*(maj?0.41:0.45):R*1.0, r1=inside?R*0.5:R*(maj?1.09:1.045), p0=pt(v,r0,ox,oy), p1=pt(v,r1,ox,oy);
             over('line',{x1:p0[0],y1:p0[1],x2:p1[0],y2:p1[1],stroke:tc,'stroke-width':maj?(R*0.016).toFixed(2):(R*0.008).toFixed(2),opacity:maj?1:0.75});
-            if(maj){var q=pt(v,inside?R*0.31:R*1.2,ox,oy);text(q[0],+q[1]+R*0.035,fmtN(x,step),(R*(inside?0.085:0.095)).toFixed(1),st==='neon'?zc:numCol);}
+            if(maj){var q=pt(v,inside?R*0.31:R*1.2,ox,oy);text(q[0],+q[1]+R*0.035,fmtN(x/un[0],step/un[0])+un[1],(R*(inside?0.085:0.095)).toFixed(1),st==='neon'?zc:numCol);}
           }
           if(classic){labs.forEach(function(t){t.style.display='none';});   /* the numbers replace PRTG's min and max */
             if(inside&&needle){var nf=getComputedStyle(needle).fill, hf=bg?getComputedStyle(bg).fill:'#ffffff';needleStyle(0.35,nf);if(!noNeedle){hub(R*0.05,nf);hub(R*0.02,hf);}}}
@@ -852,7 +857,7 @@ try{
          way by every browser (layout sizes ignore it), unlike CSS zoom, which older and newer Chrome report differently */
       c.style.zoom='';c.style.transformOrigin='0 0';c.style.transform='none';c.style.marginTop='0px';
       function tall(z){c.style.width=Math.floor(aw/z)+'px';return Math.max(c.offsetHeight,c.scrollHeight)*z;}   /* PRTG's boxes are shorter than what they hold: measure the content */
-      var lo=0.2, hi=1.6, i, best=lo;
+      var lo=0.2, hi=4, i, best=lo;   /* the dial is drawn as vectors, so it stays sharp when it grows to fill a large object */
       for(i=0;i<10;i++){var m=(lo+hi)/2;if(tall(m)<=ah){best=m;lo=m;}else hi=m;}
       var widest=0;[].forEach.call(c.children,function(k){var w=Math.max(k.offsetWidth,k.scrollWidth);if(w>widest)widest=w;});
       if(widest*best>aw)best=aw/widest;
@@ -873,7 +878,7 @@ try{
     var uid='g'+Math.floor(Math.random()*1e9).toString(36), seq=0;
     function el(tag,attrs,text){var e=document.createElementNS(NS,tag);for(var k in attrs){e.setAttribute(k,attrs[k]);}if(text!=null)e.textContent=text;return e;}
     function num(v){if(v===''||v===null||v===undefined)return null;var n=Number(v);return isNaN(n)?null:n;}
-    function fmt(n){if(n===null)return '';var a=Math.abs(n);if(a>=1000)return String(Math.round(n));return String(Math.round(n*10)/10);}
+    function fmt(n){if(n===null)return '';var a=Math.abs(n);if(a>=1e4){var d=a>=1e9?1e9:(a>=1e6?1e6:1e3);return String(Math.round(n/d*10)/10)+(d===1e9?'G':(d===1e6?'M':'k'));}if(a>=1000)return String(Math.round(n));return String(Math.round(n*10)/10);}
     function hx(c){c=String(c||'').replace('#','');if(c.length===3)c=c.charAt(0)+c.charAt(0)+c.charAt(1)+c.charAt(1)+c.charAt(2)+c.charAt(2);return c.length===6?c:null;}
     function mix(a,b,t){var x=hx(a),y=hx(b),o='#',i,v;if(!x||!y)return a;for(i=0;i<6;i+=2){v=Math.round(parseInt(x.substr(i,2),16)*(1-t)+parseInt(y.substr(i,2),16)*t);o+=(v<16?'0':'')+v.toString(16);}return o;}
     function strip(s){return String(s==null?'':s).replace(/<[^>]*>/g,'').replace(/&nbsp;/g,' ').replace(/^\s+|\s+$/g,'');}
@@ -929,6 +934,7 @@ try{
       var min=null,max=null,ranged=true;
       if(C.rangeMode!=='manual'){min=num(info.graphminraw);max=num(info.graphmaxraw);}
       if(min===null||max===null||max<=min){if(info.lookups&&C.rangeMode!=='manual')ranged=false;min=C.min;max=C.max;}
+      if(info.lookups&&C.rangeMode!=='manual')ranged=false;   /* PRTG gives lookup channels a graph range too, but it means nothing */
       if(max<=min)max=min+1;
       var lim={wl:null,wh:null,el:null,eh:null};
       if(C.limits==='channel'&&info.limitmode){lim.wl=num(info.limitminwarning);lim.wh=num(info.limitmaxwarning);lim.el=num(info.limitminerror);lim.eh=num(info.limitmaxerror);}
