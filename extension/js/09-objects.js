@@ -2086,17 +2086,27 @@ try{
   function blankD(){
     return {type:'donut',engine:'ring',cat:'Donuts',name:'Sensor states donut',fname:'',titleMode:'object',title:'',
       mode:'all',center:'total',caption:'',thick:28,gap:2,legend:'right',hideZero:true,showCounts:true,mapTags:true,reqTag:'',
-      light:false,withName:false,initW:340,initH:220,look:lookOf('PRTG new UI')};
+      light:false,withName:false,initW:340,initH:220,look:dnLook('PRTG new UI')};
+  }
+  /* a donut's slices take the Colors choice, never the look's: a look only changes the box around the donut. A new donut starts on PRTG\u2019s colors */
+  function dnPrtgC(){var r={};window.PMSSETS.sets.forEach(function(x){if(x[0]==='prtg')r=x[2];});return Object.assign({},r);}
+  function dnLook(name,c){var l=lookOf(name);l.c=Object.assign({},c||dnPrtgC());return l;}
+  /* runs fn, which may give the donut another look, and keeps the donut's own colors */
+  function dnKeepC(fn){
+    if(TYPE!=='donut'){fn();return;}
+    var c=Object.assign({},(DN.look&&DN.look.c)||dnPrtgC());
+    fn();
+    DN.look=Object.assign({},DN.look);DN.look.c=c;
   }
   function donutFromPreset(p){
     var D=blankD();
     D.engine='prtg';D.cat=p.cat;D.name=p.name+' custom';D.mode=p.alarms?'alarms':'all';D.light=!!p.light;D.withName=!!p.withName;D.noInitH=!!p.noInitH;   /* PRTG's own donut_alarms_font-light.htm has no initialheight; kept as shipped */
-    D.initW=0;D.initH=0;D.look=lookOf('PRTG default');
+    D.initW=0;D.initH=0;D.look=dnLook('PRTG default');
     return D;
   }
   function dEffLook(D){
     var L=D.look;
-    if(L.mode==='prtg'&&D.engine==='ring'){var m=lookOf('Minimal');m.name='PRTG default';return m;}
+    if(L.mode==='prtg'&&D.engine==='ring'){var m=lookOf('Minimal');m.name='PRTG default';if(L.c)m.c=Object.assign({},L.c);return m;}
     return L;
   }
   function dClassOf(D){return 'pdn_'+slugOf(D.name);}
@@ -3923,7 +3933,7 @@ try{
       var L=lookOf(name);
       var b=h('button','lookchip'+((M().look&&M().look.name===name)?' on':''));b.type='button';
       b.innerHTML=thumbHTML(L,TYPE)+'<span class="pname">'+name+'</span>';
-      b.addEventListener('click',function(){M().look=lookOf(name);if(TYPE==='gauge'&&G.nstyle)G.nbg='look';if(PS.cur&&!isPaste())csetPaint(PS.cur);refreshUI();render();});
+      b.addEventListener('click',function(){dnKeepC(function(){M().look=lookOf(name);if(TYPE==='gauge'&&G.nstyle)G.nbg='look';if(PS.cur&&!isPaste())csetPaint(PS.cur);});refreshUI();render();});
       galleryEl.appendChild(b);
     });
   }
@@ -4583,7 +4593,7 @@ try{
         if(name==='PRTG default'&&(TYPE==='icon'||TYPE==='status'||TYPE==='tile'||(TYPE==='gauge'&&G.engine==='ring')||(TYPE==='donut'&&DN.engine==='ring')||(TYPE==='sunburst'&&SB.engine==='ring')))return;
         var q=h('button','lookchip');q.type='button';q.setAttribute('data-look',name);
         q.innerHTML=thumbHTML(lookOf(name),TYPE)+'<span class="pname">'+name+'</span>';
-        q.addEventListener('click',function(){obDo(function(){M().look=lookOf(name);if(TYPE==='gauge'&&G.nstyle)G.nbg='look';if(PS.cur&&!isPaste())csetPaint(PS.cur);});});g.appendChild(q);
+        q.addEventListener('click',function(){obDo(function(){dnKeepC(function(){M().look=lookOf(name);if(TYPE==='gauge'&&G.nstyle)G.nbg='look';if(PS.cur&&!isPaste())csetPaint(PS.cur);});});});g.appendChild(q);
       });
       OB.syncs.push(function(){[].forEach.call(g.children,function(q){q.classList.toggle('on',L().name===q.getAttribute('data-look'));});});
     }));
@@ -5568,8 +5578,8 @@ try{
       document.body.classList.remove('objs');
       setMode(v);
     }else{
-      if(lk&&!isPaste()&&TYPE!=='links')M().look=lk;
-      if(!isPaste()&&(TYPE==='icon'||TYPE==='status'||TYPE==='tile'||(TYPE==='gauge'&&G.engine==='ring')||(TYPE==='donut'&&DN.engine==='ring')||(TYPE==='sunburst'&&SB.engine==='ring'))&&M().look.mode==='prtg')M().look=lookOf(TYPE==='icon'?'Minimal':'Light card');
+      if(lk&&!isPaste()&&TYPE!=='links')dnKeepC(function(){M().look=lk;});
+      if(!isPaste()&&(TYPE==='icon'||TYPE==='status'||TYPE==='tile'||(TYPE==='gauge'&&G.engine==='ring')||(TYPE==='donut'&&DN.engine==='ring')||(TYPE==='sunburst'&&SB.engine==='ring'))&&M().look.mode==='prtg')dnKeepC(function(){M().look=lookOf(TYPE==='icon'?'Minimal':'Light card');});
       document.body.classList.add('objs');
       buildPresetOptions();refreshUI();render();
     }
@@ -5935,7 +5945,7 @@ try{
     lk1.appendChild(inNum('Show PRTG’s own lines if this has not run after (seconds)',function(){return LK.wait;},function(v){LK.wait=v;},1,10));
     /* ---- donut ---- */
     var dn1=section('Donut');secIf(dn1,isDonut);
-    dn1.appendChild(inSel('Engine',function(){return DN.engine;},function(v){DN.engine=v;if(v==='ring'){if(!(parseInt(DN.initW,10)>0)){DN.initW=340;DN.initH=220;}if(DN.look.mode==='prtg')DN.look=lookOf('Light card');}refreshUI();},DENGINES));
+    dn1.appendChild(inSel('Engine',function(){return DN.engine;},function(v){DN.engine=v;if(v==='ring'){if(!(parseInt(DN.initW,10)>0)){DN.initW=340;DN.initH=220;}if(DN.look.mode==='prtg')DN.look=dnLook('Light card',DN.look.c);}refreshUI();},DENGINES));
     var dr=h('div');
     dr.appendChild(inSel('Shows',function(){return DN.mode;},function(v){DN.mode=v;},[['all','All sensor states'],['alarms','Alarms only (down, warning, unusual)']]));
     dr.appendChild(inSel('In the centre',function(){return DN.center;},function(v){DN.center=v;},DCENTERS));
@@ -6184,8 +6194,9 @@ try{
   (function(){
     var host=document.getElementById('ocset');
     if(!host)return;
-    var pk=PS.picker({get:function(){return PS.cur||'';},pick:function(id){if(!id){PS.cur='';PS.over={};refreshUI();render();return;}obDo(function(){csetApply(id);});},extraFirst:[['','The look\u2019s own']]});
+    var pk=PS.picker({get:function(){return PS.cur||(TYPE==='donut'?csetOf(DN.look):'');},pick:function(id){if(!id){PS.cur='';PS.over={};refreshUI();render();return;}obDo(function(){csetApply(id);});},extraFirst:[['','The look\u2019s own']],extra:[['custom','My own mix']]});
     host.appendChild(pk);window.PMSHDR=pk;
+    var psync=pk.sync;pk.sync=function(){[].forEach.call(pk.querySelectorAll('.csp-row'),function(q){var id=q.getAttribute('data-set');if(id==='')q.hidden=(TYPE==='donut');if(id==='custom')q.hidden=true;});psync();};pk.sync();
   })();
   document.getElementById('ozoom').addEventListener('change',function(){drawPreview();});
   obWire();

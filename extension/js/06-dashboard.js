@@ -967,10 +967,33 @@ try{
     else if(it.type==='banner'){old=+p.tsize||28;f=v/old;p.tsize=v;p.ssize=Math.max(6,Math.round((+p.ssize||15)*f));}
   }
   /* what each kind of item lets the bar change: pairs of [get, set], or null when the item has no such thing */
+  /* an object file's link is PRTG's own External Link of the map item (sent as ElementLink when it is pushed), stored the way PRTG's
+     designer writes it: map.htm?id=123 for a map. PRTG opens a PRTG page in the same tab and an address with :// in a new one, so there is no new-tab choice. */
+  function objLink(p){
+    function kind(){var e=String(p.elink||'');return p.elinkT||((e&&!/^\/?map\.htm\?id=\d+$/i.test(e))?'url':'map');}
+    function g(k){
+      var e=String(p.elink||''), m=/^\/?map\.htm\?id=(\d+)$/i.exec(e);
+      if(k==='newtab')return false;
+      if(k==='linktype')return kind();
+      return (m&&kind()==='map')?m[1]:e;
+    }
+    function set(x){
+      x=String(x==null?'':x).trim();
+      if(!x){p.elink='';return;}
+      if(kind()==='map'){var id=x.replace(/[^0-9]/g,'');p.elink=id?'map.htm?id='+id:'';return;}
+      p.elink=/^([a-z][a-z0-9+.-]*:|\/|#|[\w-]+\.htm(\?|#|$))/i.test(x)?x:'https://'+x;   /* a PRTG page such as sensor.htm?id=1001 stays as it is */
+    }
+    return {prtg:true,g:g,s:function(k,x){
+      if(k==='newtab')return;
+      if(k==='linktype'){var e=String(p.elink||'');p.elinkT=x;if(x==='map'&&!/^\/?map\.htm\?id=\d+$/i.test(e))p.elink='';return;}   /* a map link stays valid as an address */
+      set(x);
+    }};
+  }
   function fbAcc(it){
     var t=it.type, p=it.p||{}, s=it.state||{v:{},c:{}}, v=s.v, c=s.c, o={}, ck;
     function pp(k,d){return [function(){return p[k]==null?d:p[k];},function(x){p[k]=x;}];}
     function pw(){return [function(){return (+p.tweight||400)>=600;},function(b){p.tweight=b?'700':'400';}];}
+    if(t==='prtgobj'){o.link=objLink(p);return o;}
     if(t==='label'||t==='button'){
       ck=(t==='button')?'blabel':'color';
       o.fam=[function(){return v.fam;},function(x){v.fam=x;}];
@@ -1449,7 +1472,9 @@ try{
       nc.addEventListener('change',function(){fbApply(it,function(){A.link.s('newtab',nc.checked);});commit();});
       rm.addEventListener('click',function(e){e.stopPropagation();li.value='';ms.value='';fbApply(it,function(){A.link.s('link','');});fbarSync(it);commit();});
       [pop,ts,li,ms,nc,rm].forEach(fbStop);
-      pop.appendChild(ts);pop.appendChild(ms);pop.appendChild(li);pop.appendChild(nt);pop.appendChild(rm);fbar.appendChild(pop);
+      if(A.link.prtg){nt.hidden=true;var lh=el_('p','fb-note','PRTG opens a map or PRTG page in the same tab and any other website in a new tab.');pop.appendChild(ts);pop.appendChild(ms);pop.appendChild(li);pop.appendChild(lh);}
+      else{pop.appendChild(ts);pop.appendChild(ms);pop.appendChild(li);pop.appendChild(nt);}
+      pop.appendChild(rm);fbar.appendChild(pop);
       R.pop=pop;R.lt=ts;R.li=li;R.ms=ms;R.ln=nc;R.ph=lph;lph();
     }
     /* layer: the same four steps as the Layer row in Selected, as a pop-up so the bar stays short */
@@ -2165,6 +2190,7 @@ try{
     rm.addEventListener('click',function(){A.s('link','');done();});
     ph();
     var cw=el_('div','dfld inline');cw.appendChild(nc);cw.appendChild(el_('label',null,'Open in a new tab'));
+    if(A.prtg)return acc('Link',[wt,wm,wu,rm,el_('p','note','PRTG\u2019s External Link for this item: clicking it on the map opens the map or address. A map or another PRTG page opens in the same tab, any other website in a new tab. Leave it empty for no link.')],!!A.g('link'));
     return acc('Link',[wt,wm,wu,cw,rm,el_('p','note','Makes the whole item a link. Leave it empty for no link.')],!!A.g('link'));
   }
   function stdBuild(it){
@@ -2326,7 +2352,7 @@ try{
     }else{
     }
     if(it.type==='frame')formEl.appendChild(el_('p','note','Deleting a frame also deletes what is inside it. Undo brings it back.'));
-      if(it.type==='prtgobj'){formEl.appendChild(acc('Advanced',[geoFs],false));syncCode();inlSync();return;}   /* nothing to paste for an object PRTG draws */
+      if(it.type==='prtgobj'){var olk=linkSec(it);if(olk)formEl.appendChild(olk);formEl.appendChild(acc('Advanced',[geoFs],false));syncCode();inlSync();return;}   /* nothing to paste for an object PRTG draws */
     var cw=el_('div','dfld');
     codeEl=el_('textarea');codeEl.rows=7;codeEl.readOnly=true;codeEl.spellcheck=false;codeEl.id='dcode';
     codeEl.style.fontFamily='Consolas,Monaco,monospace';codeEl.style.fontSize='11px';

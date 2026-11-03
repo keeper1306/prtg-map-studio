@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.60.
+Last updated at version 1.5.61.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -158,6 +158,20 @@ A full run takes about 5 seconds (16 seconds the very first time).
   bar is HTML like the pill and always shows its word; Beacon's rays blink on alarm states when
   Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
   tile, badge, LED).
+
+## Object links and donut colors (1.5.61)
+
+- Checked on the real PRTG (test map 2197 "Map Studio link test", made for this): a map item's External Link
+  (`ElementLink` in `editmapobject.htm`, `externallink` in `mapsettings.htm?type=objectproperties`) makes PRTG add
+  `map_linkedobject`, `data-link` and `title` to the item's first div. `_Prtg.Maps.js` then opens it on a click: an address
+  with `://` in a new window, anything else with `window.location` (so `map.htm?id=2126` opens that map). PRTG's own
+  picker writes `map.htm?id=N`. Clicking a PRTG icon and a Map Studio icon with the link both opened map 2126 in the
+  classic UI. Not checked in the new UI (`localhost:1616`).
+- Canvas: `objLink(p)` in `js/06-dashboard.js` keeps an object item's link in `p.elink` (pushed as `rec.link`) and the
+  kind in `p.elinkT`; the bar's link menu and `linkSec()` use it, without the new-tab box.
+- Donuts: the slices use `DN.look.c`, which a look never replaces (`dnKeepC()` around every look change, `dnLook()` for
+  new donuts with the `prtg` color set). The header Colors picker shows the donut's set (`csetOf`) and hides
+  "The look's own" for donuts. PRTG-drawn donuts (`engine:'prtg'`) are still drawn by PRTG in its own colors.
 
 ## Sunburst category (1.5.60)
 
