@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.67.
+Last updated at version 1.5.68.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -161,6 +161,26 @@ A full run takes about 5 seconds (16 seconds the very first time).
   bar is HTML like the pill and always shows its word; Beacon's rays blink on alarm states when
   Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
   tile, badge, LED).
+
+## Industrial object (1.5.68)
+
+- The owner chose one "Industrial" object for six OT kinds (mockups: claude.ai artifact "Map Studio OT objects"); the
+  "control room look" (mockup 7) is to be a Look and color set later, not part of this object.
+- Underneath it is a Tile: `TYPE==='tile'` with `TL.fam==='ind'` (`tlFam()`). Its own type-grid button `ind`
+  (`setType('ind')`), and `TLKEEP` keeps the Tile and the Industrial object apart when switching. `blankInd()`,
+  `indFromPreset()`, templates in `TLPRESETS` with `fam:'ind'` (`ind_lamps`, `ind_onoff`, `ind_tank`, `ind_silo`,
+  `ind_equip`, `ind_pv`, `ind_count`), kinds `IKINDS` (pictures `iKindSvg`), category `Industrial`, names "Map Studio
+  Industrial - ...". Own config, CSS and runtime (`indConfig`, `indCss`, `indRuntime`, `indScript`) so Tile files stay
+  byte-identical (checked for every type, Flexible and Fixed). `obKey()` includes the family so the bar rebuilds.
+- Kinds: `lamps` (a lamp lights when a channel value says its word, or a channel named with the word is on; colour = that
+  channel's state), `onoff` (`onW`/`offW`/`onIf`/`bad`, styles lamp/switch/word), `tank` (`shape` tank/silo, `fill`,
+  `chan2`, lines at the channel's min/max limits, HIGH/LOW badge), `equip` (`eq`, `eLay`, `upW`; colour = sensor state),
+  `pv` (limit zones, setpoint `sp`, trend from `/api/historicdata.json` with `X-Requested-With`, last hour at avg 60:
+  one small call per object each time PRTG refreshes the map, about every 30 s), `count` (days left; warning/alarm from
+  the fields, else the channel's low limits, else 30/7; ring or pill; 0 or less = Expired).
+- PRTG's API answers 401 without the `X-Requested-With: XMLHttpRequest` header (that was the earlier "Unauthorized").
+- Checked in the builder preview with sample channels only. Not verified on the real PRTG: no OT sensors exist there, so
+  the lookup words (S7 CPU status, LEDs), the history column names and the colours on live values are untested.
 
 ## Device tree: Root and the new UI look (1.5.67)
 
