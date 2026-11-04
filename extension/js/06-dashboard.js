@@ -636,6 +636,7 @@ try{
   }
   function frameHTML(it){
     var p=it.p;
+    if(p.mapBg)return bgHTML(it);
     if(p.shape)return shapeHTML(it);
     return '<span style="display:block;'+cardCss(p,it)+'font-size:'+p.tsize+'px;font-weight:'+p.tweight+';color:'+p.tcolor+';line-height:1.25;'+(p.talign&&p.talign!=='left'?'text-align:'+p.talign+';':'')+'">'+(p.title?escMulti(p.title):'')+'</span>';
   }
@@ -819,7 +820,7 @@ try{
     if(isBox(it)||it.type==='prtgobj'){d.style.width=it.w+'px';d.style.height=it.h+'px';}
     else d.style.width='max-content';
     if(it.type==='prtgobj'&&((DASHAPI.pv||{})[it.id]||{}).state==='ok')d.className+=' pvok';
-    if(isLine(it))d.style.pointerEvents='none';   /* only the line itself can be clicked, not the empty corners of its box */
+    if(isLine(it)||(it.type==='frame'&&it.p.mapBg))d.style.pointerEvents='none';   /* the map background lets clicks through to the canvas */   /* only the line itself can be clicked, not the empty corners of its box */
     d.innerHTML=itemInner(it);
     return d;
   }
@@ -1645,7 +1646,7 @@ try{
   var gridPop=null, gridBtn=document.getElementById('dgridbtn');
   function gridPopBuild(){
     var pop=gridPop, seg, sec, row;
-    if(!pop){pop=gridPop=document.createElement('div');pop.id='dgridpop';pop.hidden=true;gridBtn.parentNode.appendChild(pop);
+    if(!pop){pop=gridPop=document.createElement('div');pop.id='dgridpop';pop.hidden=true;(document.getElementById('drbody')||gridBtn.parentNode).appendChild(pop);
       ['mousedown','click','dblclick','keydown'].forEach(function(ev){pop.addEventListener(ev,function(e){e.stopPropagation();});});}
     pop.innerHTML='';
     function lab(t){var l=document.createElement('div');l.className='gp-l';l.textContent=t;return l;}
@@ -1675,11 +1676,7 @@ try{
     var bw=document.createElement('div');bw.className='gp-btns';bw.appendChild(ba);bw.appendChild(bb);pop.appendChild(bw);
     var nt=document.createElement('p');nt.className='gp-note';nt.textContent='Both work on the items you Shift+click, or on everything when none are selected. Ctrl+Z undoes them.';pop.appendChild(nt);
   }
-  if(gridBtn)gridBtn.addEventListener('click',function(e){
-    e.stopPropagation();
-    if(!gridPop||gridPop.hidden){gridPopBuild();gridPop.hidden=false;gridBtn.classList.add('on');}else{gridPop.hidden=true;gridBtn.classList.remove('on');}
-  });
-  document.addEventListener('mousedown',function(e){if(gridPop&&!gridPop.hidden&&!gridPop.contains(e.target)&&!(gridBtn&&gridBtn.contains(e.target))){gridPop.hidden=true;if(gridBtn)gridBtn.classList.remove('on');}});
+  /* 1.5.70: the Grid button and the Grid icon on the bar at the right open this in the bar's panel (see railOpen) */
   /* ---- layouts: ready-made ways to divide the canvas into cells. Items fill the cells in reading order and take their shape; dropping an item on a cell puts it there ---- */
   var LAYOUTS=[
     ['One big cell',1,1,[[0,0,1,1]]],
@@ -1713,7 +1710,7 @@ try{
   var layOv=document.createElement('div');layOv.id='dlayov';wrap.appendChild(layOv);
   function layCells(){
     var L=D.layout, T, m, g, W, H, out=[];
-    if(!L||!(T=LAYOUTS[L.id]))return out;
+    if(!L||!(T=(L.custom||LAYOUTS[L.id])))return out;
     m=L.margin;g=L.gap;W=D.w-2*m;H=D.h-2*m;
     T[3].forEach(function(c){
       var x0=c[0]/T[1], x1=(c[0]+c[2])/T[1], y0=c[1]/T[2], y1=(c[1]+c[3])/T[2];
@@ -1783,9 +1780,9 @@ try{
     renderAll();buildForm();commit();
     toastDash(put?('Put '+put+(put===1?' item':' items')+' in the cells'+(skip?(', '+skip+' did not fit'):'')):(skip?'Nothing fits the cells. Try a bigger layout or smaller items':'Add some items first, then drop them on the cells'));
   }
-  function layApply(id){
+  function layApply(id,custom,gap,margin){   /* custom: a layout of your own, [name,cols,rows,cells] like LAYOUTS (id is then -1) */
     var old=D.layout;
-    D.layout={id:id,gap:old?old.gap:20,margin:old?old.margin:20};
+    D.layout={id:id,gap:gap!=null?gap:(old?old.gap:20),margin:margin!=null?margin:(old?old.margin:20),custom:custom||null};
     if(D.layFrames)layFramesSync();
     layFill();
   }
@@ -1816,63 +1813,398 @@ try{
   }
   var _raLay=renderAll;renderAll=function(){_raLay.apply(this,arguments);layPaint();};
   var layPop=null, layBtn=document.getElementById('dlaybtn');
-  function layThumb(T,on,i){
-    var b=document.createElement('button'), vh=Math.round(100*D.h/D.w*10)/10, tones=['#8fbfdc','#bcd9ec','#a9b8e6','#d9e6f2','#c9b8e0','#e9d3a6'], s='';
-    b.type='button';b.className='ly-t'+(on?' on':'');b.setAttribute('data-tip',T[0]);b.setAttribute('aria-label',T[0]);
+  /* ---- 1.5.70: the layouts panel. Layouts are grouped (My layouts first), can be searched, and "Build my own" makes a new one:
+     a number of boxes, columns and rows, joined and split, saved by name in this browser ---- */
+  var LYGROUPS=[
+    ['Simple',['One big cell','Two columns','Two rows','Three columns','Three rows','Four squares','Six tiles','Nine tiles','Five columns','Four rows']],
+    ['One big, several small',['Big left, two right','Two left, big right','Big top, two below','Two above, big below','Hero and three below','Three stacked and big','Big and four small']],
+    ['Header or sidebar',['Header and three columns','Header and two columns','Banner, two, banner','Sidebar and content','Content and sidebar','Two thirds and one third','One third and two thirds']]
+  ];
+  var LY={view:'list',q:'',b:null};
+  function lyValid(o){return !!o&&typeof o.name==='string'&&o.name.length>0&&o.cols>=1&&o.cols<=24&&o.rows>=1&&o.rows<=24&&Array.isArray(o.cells)&&o.cells.length>=1&&o.cells.every(function(c){return Array.isArray(c)&&c.length===4&&c.every(function(v){return typeof v==='number'&&v>=0;});});}
+  function myLays(){try{var a=JSON.parse(localStorage.getItem(CFG.keys.myLayouts)||'[]');return Array.isArray(a)?a.filter(lyValid):[];}catch(e){return [];}}
+  function myLaysSave(a){try{localStorage.setItem(CFG.keys.myLayouts,JSON.stringify(a));return true;}catch(e){return false;}}
+  function lyT(o){return [o.name,o.cols,o.rows,o.cells.map(function(c){return c.slice();})];}
+  function layName(){var L=D.layout, T=L&&(L.custom||LAYOUTS[L.id]);return T?T[0]:'';}
+  function layThumbSvg(T,mine){
+    var vh=Math.round(100*D.h/D.w*10)/10, tones=mine?['#E7C36A','#F0D58F','#DDB75A','#F5E2AE']:['#8fbfdc','#bcd9ec','#a9b8e6','#d9e6f2','#c9b8e0','#e9d3a6'], s='';
     T[3].forEach(function(c,j){
       var x=4+(c[0]/T[1])*92, w=(c[2]/T[1])*92, y=4+(c[1]/T[2])*(vh-8), h=(c[3]/T[2])*(vh-8);
       s+='<rect x="'+(x+1)+'" y="'+(y+1)+'" width="'+Math.max(1,w-2)+'" height="'+Math.max(1,h-2)+'" rx="2" fill="'+tones[j%tones.length]+'"/>';
     });
-    b.innerHTML='<svg viewBox="0 0 100 '+vh+'" aria-hidden="true">'+s+'</svg>';
-    b.addEventListener('click',function(){layApply(i);layPopBuild();});
-    return b;
+    return '<svg viewBox="0 0 100 '+vh+'" aria-hidden="true">'+s+'</svg>';
+  }
+  function lyCard(T,on,fn,mine,del){
+    var w=el_('div','ly-c'), b=document.createElement('button'), n=el_('span','ly-n'), x;
+    b.type='button';b.className='ly-t'+(on?' on':'');b.setAttribute('aria-label',T[0]+(on?' (on the canvas)':''));b.setAttribute('data-tip',T[0]);b.innerHTML=layThumbSvg(T,mine);
+    b.addEventListener('click',fn);
+    n.textContent=T[0];w.appendChild(b);w.appendChild(n);
+    if(del){x=document.createElement('button');x.type='button';x.className='ly-x';x.setAttribute('aria-label','Remove '+T[0]+' from My layouts');x.setAttribute('data-tip','Remove from My layouts');x.textContent='×';
+      x.addEventListener('click',function(e){e.stopPropagation();del();});w.appendChild(x);}
+    return w;
   }
   function layPopBuild(){
-    var pop=layPop, g, row, a, b2, nt, bw, ba, bb, sh, ck, l, ia, ib;
-    if(!pop){pop=layPop=document.createElement('div');pop.id='dlaypop';pop.hidden=true;layBtn.parentNode.appendChild(pop);
+    var pop=layPop, l, nt, q, lists;
+    if(!pop){pop=layPop=document.createElement('div');pop.id='dlaypop';pop.hidden=true;(railBody||layBtn.parentNode).appendChild(pop);
       ['mousedown','click','dblclick','keydown'].forEach(function(ev){pop.addEventListener(ev,function(e){e.stopPropagation();});});}
     pop.innerHTML='';
-    l=document.createElement('div');l.className='gp-l';l.textContent='Layouts';pop.appendChild(l);
-    g=document.createElement('div');g.className='ly-grid';
-    LAYOUTS.forEach(function(T,i){g.appendChild(layThumb(T,!!D.layout&&D.layout.id===i,i));});
-    pop.appendChild(g);
-    nt=document.createElement('p');nt.className='gp-note';nt.textContent='Pick a layout and your items fill its cells in reading order. Drag an item onto a cell to put it there (Alt places it freely).';pop.appendChild(nt);
-    if(D.layout){
-      row=document.createElement('div');row.className='gp-row';
-      a=document.createElement('label');a.textContent='Gap';ia=document.createElement('input');ia.type='number';ia.min=0;ia.max=200;ia.value=D.layout.gap;a.appendChild(ia);
-      b2=document.createElement('label');b2.textContent='Margin';ib=document.createElement('input');ib.type='number';ib.min=0;ib.max=400;ib.value=D.layout.margin;b2.appendChild(ib);
-      var go=function(){var gv=parseInt(ia.value,10), mv=parseInt(ib.value,10);if(isNaN(gv)||isNaN(mv))return;laySpacing(Math.max(0,Math.min(200,gv)),Math.max(0,Math.min(400,mv)));};
-      ia.addEventListener('change',go);ib.addEventListener('change',go);
-      row.appendChild(a);row.appendChild(b2);pop.appendChild(row);
-      sh=document.createElement('label');sh.className='gp-chk';ck=document.createElement('input');ck.type='checkbox';ck.checked=!!D.layShow;
-      ck.addEventListener('change',function(){D.layShow=ck.checked;layPaint();});sh.appendChild(ck);sh.appendChild(document.createTextNode(' Show the cells on the canvas'));pop.appendChild(sh);
-      var fr=document.createElement('label');fr.className='gp-chk';var fk=document.createElement('input');fk.type='checkbox';fk.checked=!!D.layFrames;fk.id='dlayframes';
-      fk.addEventListener('change',function(){
-        D.layFrames=fk.checked;
-        if(fk.checked){layFramesSync();renderAll();buildForm();commit();toastDash('A frame in each of the '+layCells().length+' cells');}
-        else{var g=layFramesOff();renderAll();buildForm();commit();toastDash(g?('Removed '+g+(g===1?' empty frame':' empty frames')):'Frames with items in them stay as ordinary frames');}
+    if(LY.view==='build'){lbBuild(pop);return;}
+    if(D.layout)pop.appendChild(layCurBox());
+    var nb=document.createElement('button');nb.type='button';nb.className='ly-new';nb.textContent='+ Build my own layout';
+    nb.addEventListener('click',function(){LY.view='build';LY.b=lbFromCurrent();layPopBuild();});
+    pop.appendChild(nb);
+    q=document.createElement('input');q.type='search';q.className='ly-q';q.placeholder='Search layouts';q.setAttribute('aria-label','Search layouts');q.value=LY.q;q.spellcheck=false;
+    pop.appendChild(q);
+    lists=el_('div','ly-lists');pop.appendChild(lists);
+    q.addEventListener('input',function(){LY.q=q.value;lyLists(lists);});
+    lyLists(lists);
+    nt=document.createElement('p');nt.className='gp-note';nt.textContent='Pick a layout and your items fill its cells in reading order. Drag an item onto a cell to put it there (Alt places it freely). Frames, shapes, banners, tiles and objects stretch to fill a cell; labels, buttons and chips keep their size. Ctrl+Z undoes a fill.';pop.appendChild(nt);
+  }
+  function lyLists(box){
+    var q=String(LY.q||'').trim().toLowerCase(), hit=function(n){return !q||n.toLowerCase().indexOf(q)>=0;}, used={}, any=false, L=D.layout, mine=myLays();
+    box.innerHTML='';
+    function group(title,cards,empty){
+      if(!cards.length&&!empty)return;
+      var g=el_('div','ly-g'), t=el_('div','gp-l'), grid=el_('div','ly-grid');
+      t.textContent=title;g.appendChild(t);
+      if(cards.length){cards.forEach(function(c){grid.appendChild(c);});g.appendChild(grid);any=true;}
+      else{var e=el_('p','gp-note');e.textContent=empty;g.appendChild(e);}
+      box.appendChild(g);
+    }
+    group('My layouts',mine.filter(function(o){return hit(o.name);}).map(function(o){
+      var T=lyT(o), on=!!(L&&L.custom&&L.custom[0]===o.name);
+      return lyCard(T,on,function(){layApply(-1,lyT(o));layPopBuild();},true,function(){
+        var a=myLays().filter(function(x){return x.name!==o.name;});
+        if(myLaysSave(a))toastDash('Removed “'+o.name+'” from My layouts');else toastDash('Could not change My layouts in this browser');
         layPopBuild();
       });
-      fr.appendChild(fk);fr.appendChild(document.createTextNode(' Add a frame in each cell'));pop.appendChild(fr);
-      if(D.layFrames){
-        var lr=document.createElement('div');lr.className='gp-row';var ll=document.createElement('label');ll.textContent='Frame look';var ls=document.createElement('select');ls.id='dlayflook';
-        Object.keys(FSTYLES).forEach(function(k){var o=document.createElement('option');o.value=k;o.textContent=k;ls.appendChild(o);});ls.value=D.layFrameLook||'Light card';
-        ls.addEventListener('change',function(){D.layFrameLook=ls.value;layFramesRestyle(ls.value);renderAll();buildForm();commit();});
-        ll.appendChild(ls);lr.appendChild(ll);pop.appendChild(lr);
-      }
-      bw=document.createElement('div');bw.className='gp-btns';
-      ba=document.createElement('button');ba.type='button';ba.className='btn ghost';ba.textContent='Fill cells with my items';ba.addEventListener('click',function(){layFill();});
-      bb=document.createElement('button');bb.type='button';bb.className='btn ghost';bb.textContent='Remove layout';bb.addEventListener('click',function(){layRemove();layPopBuild();});
-      bw.appendChild(ba);bw.appendChild(bb);pop.appendChild(bw);
-    }
-    nt=document.createElement('p');nt.className='gp-note';nt.textContent='Frames, shapes, banners, tiles and objects stretch to fill a cell. Labels, buttons and chips keep their size and sit in the middle, and are left out if the cell is smaller than they are. Ctrl+Z undoes a fill.';pop.appendChild(nt);
+    }),q?'':'Layouts you build and save appear here.');
+    LYGROUPS.forEach(function(G){
+      var cards=[];
+      G[1].forEach(function(n){var i;for(i=0;i<LAYOUTS.length;i++)if(LAYOUTS[i][0]===n)break;if(i>=LAYOUTS.length)return;used[i]=1;if(!hit(n))return;cards.push(lyCard(LAYOUTS[i],!!(L&&!L.custom&&L.id===i),(function(k){return function(){layApply(k);layPopBuild();};})(i)));});
+      group(G[0],cards);
+    });
+    var rest=[];LAYOUTS.forEach(function(T,i){if(used[i]||!hit(T[0]))return;rest.push(lyCard(T,!!(L&&!L.custom&&L.id===i),function(){layApply(i);layPopBuild();}));});
+    group('Other',rest);
+    if(q&&!any){var e=el_('p','gp-note');e.textContent='No layout has “'+LY.q.trim()+'” in its name.';box.appendChild(e);}
   }
-  if(layBtn)layBtn.addEventListener('click',function(e){
-    e.stopPropagation();
-    if(!layPop||layPop.hidden){D.sel=null;msClear();updateSel();buildForm();layPopBuild();layPop.hidden=false;layBtn.classList.add('on');if(gridPop){gridPop.hidden=true;if(gridBtn)gridBtn.classList.remove('on');}}else{layPop.hidden=true;layBtn.classList.remove('on');}
-  });
-  if(gridBtn)gridBtn.addEventListener('click',function(){if(layPop&&!layPop.hidden){layPop.hidden=true;layBtn.classList.remove('on');}});
-  document.addEventListener('mousedown',function(e){if(layPop&&!layPop.hidden&&!layPop.contains(e.target)&&!(layBtn&&layBtn.contains(e.target))){layPop.hidden=true;if(layBtn)layBtn.classList.remove('on');}});
+  /* the layout on the canvas: its spacing, cells, frames and buttons (these were in the old Layouts pop-up) */
+  function layCurBox(){
+    var box=el_('div','ly-cur'), l=el_('div','gp-l'), row, a, b2, ia, ib, sh, ck, bw, ba, bb;
+    l.textContent='On the canvas: '+layName();box.appendChild(l);
+    row=document.createElement('div');row.className='gp-row';
+    a=document.createElement('label');a.textContent='Gap';ia=document.createElement('input');ia.type='number';ia.min=0;ia.max=200;ia.value=D.layout.gap;a.appendChild(ia);
+    b2=document.createElement('label');b2.textContent='Margin';ib=document.createElement('input');ib.type='number';ib.min=0;ib.max=400;ib.value=D.layout.margin;b2.appendChild(ib);
+    var go=function(){var gv=parseInt(ia.value,10), mv=parseInt(ib.value,10);if(isNaN(gv)||isNaN(mv))return;laySpacing(Math.max(0,Math.min(200,gv)),Math.max(0,Math.min(400,mv)));};
+    ia.addEventListener('change',go);ib.addEventListener('change',go);
+    row.appendChild(a);row.appendChild(b2);box.appendChild(row);
+    sh=document.createElement('label');sh.className='gp-chk';ck=document.createElement('input');ck.type='checkbox';ck.checked=!!D.layShow;
+    ck.addEventListener('change',function(){D.layShow=ck.checked;layPaint();});sh.appendChild(ck);sh.appendChild(document.createTextNode(' Show the cells on the canvas'));box.appendChild(sh);
+    var fr=document.createElement('label');fr.className='gp-chk';var fk=document.createElement('input');fk.type='checkbox';fk.checked=!!D.layFrames;fk.id='dlayframes';
+    fk.addEventListener('change',function(){
+      D.layFrames=fk.checked;
+      if(fk.checked){layFramesSync();renderAll();buildForm();commit();toastDash('A frame in each of the '+layCells().length+' cells');}
+      else{var g=layFramesOff();renderAll();buildForm();commit();toastDash(g?('Removed '+g+(g===1?' empty frame':' empty frames')):'Frames with items in them stay as ordinary frames');}
+      layPopBuild();
+    });
+    fr.appendChild(fk);fr.appendChild(document.createTextNode(' Add a frame in each cell'));box.appendChild(fr);
+    if(D.layFrames){
+      var lr=document.createElement('div');lr.className='gp-row';var ll=document.createElement('label');ll.textContent='Frame look';var ls=document.createElement('select');ls.id='dlayflook';
+      Object.keys(FSTYLES).forEach(function(k){var o=document.createElement('option');o.value=k;o.textContent=k;ls.appendChild(o);});ls.value=D.layFrameLook||'Light card';
+      ls.addEventListener('change',function(){D.layFrameLook=ls.value;layFramesRestyle(ls.value);renderAll();buildForm();commit();});
+      ll.appendChild(ls);lr.appendChild(ll);box.appendChild(lr);
+    }
+    bw=document.createElement('div');bw.className='gp-btns';
+    ba=document.createElement('button');ba.type='button';ba.className='btn ghost';ba.textContent='Fill cells with my items';ba.addEventListener('click',function(){layFill();});
+    bb=document.createElement('button');bb.type='button';bb.className='btn ghost';bb.textContent='Remove layout';bb.addEventListener('click',function(){layRemove();layPopBuild();});
+    bw.appendChild(ba);bw.appendChild(bb);box.appendChild(bw);
+    return box;
+  }
+  /* ---- Build my own: cells on a grid of columns and rows, [x,y,w,h] like LAYOUTS ---- */
+  var LBMAX=24;
+  function lbEven(n,gap,margin){
+    var rows=Math.max(1,Math.min(n,Math.round(Math.sqrt(n*D.h/D.w)))), cols=Math.ceil(n/rows), cells=[], r, c, k, base, extra, x, w;
+    rows=Math.ceil(n/cols);
+    for(r=0;r<rows-1;r++)for(c=0;c<cols;c++)cells.push([c,r,1,1]);
+    k=n-(rows-1)*cols;base=Math.floor(cols/k);extra=cols%k;x=0;
+    for(c=0;c<k;c++){w=base+(c<extra?1:0);cells.push([x,rows-1,w,1]);x+=w;}
+    return {cols:cols,rows:rows,cells:cells,sel:[],name:'',gap:gap,margin:margin};
+  }
+  function lbGrid(cols,rows,gap,margin){var cells=[], r, c;for(r=0;r<rows;r++)for(c=0;c<cols;c++)cells.push([c,r,1,1]);return {cols:cols,rows:rows,cells:cells,sel:[],name:'',gap:gap,margin:margin};}
+  function lbFromCurrent(){
+    var L=D.layout, T=L&&(L.custom||LAYOUTS[L.id]), b;
+    if(!T)return lbEven(4,20,20);
+    b={cols:T[1],rows:T[2],cells:T[3].map(function(c){return c.slice();}),sel:[],name:L.custom?T[0]:'',gap:L.gap,margin:L.margin};
+    return b;
+  }
+  function gcd(a,b){while(b){var t=a%b;a=b;b=t;}return a;}
+  function lbNorm(b){   /* the smallest grid that still holds every cell, so Columns and Rows show what you see */
+    var gx=b.cols, gy=b.rows;
+    b.cells.forEach(function(c){gx=gcd(gx,gcd(c[0],c[2]));gy=gcd(gy,gcd(c[1],c[3]));});
+    if(gx>1){b.cols/=gx;b.cells.forEach(function(c){c[0]/=gx;c[2]/=gx;});}
+    if(gy>1){b.rows/=gy;b.cells.forEach(function(c){c[1]/=gy;c[3]/=gy;});}
+    b.cells.sort(function(p,q){return (p[1]-q[1])||(p[0]-q[0]);});   /* reading order: items fill the cells in this order */
+  }
+  function lbJoinable(b){
+    if(b.sel.length<2)return null;
+    var x0=1e9,y0=1e9,x1=-1,y1=-1,area=0;
+    b.sel.forEach(function(i){var c=b.cells[i];x0=Math.min(x0,c[0]);y0=Math.min(y0,c[1]);x1=Math.max(x1,c[0]+c[2]);y1=Math.max(y1,c[1]+c[3]);area+=c[2]*c[3];});
+    return (area===(x1-x0)*(y1-y0))?[x0,y0,x1-x0,y1-y0]:null;   /* the picked boxes cover a rectangle exactly */
+  }
+  function lbJoin(b){
+    var r=lbJoinable(b);if(!r)return;
+    var keep=b.cells.filter(function(c,i){return b.sel.indexOf(i)<0;});keep.push(r);b.cells=keep;b.sel=[];lbNorm(b);
+  }
+  function lbSplit(b,across){   /* across: side by side; otherwise top and bottom */
+    if(b.sel.length!==1)return;
+    if(b.cells.length>=LBMAX){toastDash('A layout can have up to '+LBMAX+' boxes');return;}
+    var i=b.sel[0], c=b.cells[i], a=across?0:1, s=across?2:3;
+    if(c[s]<2){
+      if((across?b.cols:b.rows)*2>LBMAX){toastDash('That box is as narrow as a layout allows');return;}
+      if(across)b.cols*=2;else b.rows*=2;
+      b.cells.forEach(function(x){x[a]*=2;x[s]*=2;});
+    }
+    var h=Math.floor(c[s]/2), n=c.slice();
+    n[a]=c[a]+h;n[s]=c[s]-h;c[s]=h;
+    b.cells.splice(i+1,0,n);b.sel=[];lbNorm(b);
+  }
+  function lbStepper(label,val,min,max,fn,tip){
+    var w=el_('div','lb-f'), st=el_('span','lb-step'), m=document.createElement('button'), v=el_('b'), p=document.createElement('button');
+    w.appendChild(document.createTextNode(label));
+    m.type='button';m.textContent='−';m.setAttribute('aria-label',label+': fewer');m.disabled=val<=min;m.addEventListener('click',function(){fn(val-1);});
+    p.type='button';p.textContent='+';p.setAttribute('aria-label',label+': more');p.disabled=val>=max;p.addEventListener('click',function(){fn(val+1);});
+    v.textContent=String(val);if(tip)w.setAttribute('data-tip',tip);
+    st.appendChild(m);st.appendChild(v);st.appendChild(p);w.appendChild(st);
+    return w;
+  }
+  function lbBuild(pop){
+    var b=LY.b||(LY.b=lbEven(4,20,20)), back, t, row, pv, nt, bw, bj, bs, bt, row2, nm, bw2, bsave, buse;
+    back=document.createElement('button');back.type='button';back.className='linkbtn ly-back';back.textContent='‹ All layouts';
+    back.addEventListener('click',function(){LY.view='list';layPopBuild();});pop.appendChild(back);
+    t=el_('div','gp-l');t.textContent='Build my own layout';pop.appendChild(t);
+    row=el_('div','lb-row');
+    row.appendChild(lbStepper('Boxes',b.cells.length,1,12,function(v){var k=LY.b;LY.b=lbEven(v,k.gap,k.margin);LY.b.name=k.name;layPopBuild();},'Start again with this many boxes, spread evenly'));
+    row.appendChild(lbStepper('Columns',b.cols,1,12,function(v){var k=LY.b;LY.b=lbGrid(v,k.rows,k.gap,k.margin);LY.b.name=k.name;layPopBuild();},'Start again with a plain grid'));
+    row.appendChild(lbStepper('Rows',b.rows,1,12,function(v){var k=LY.b;LY.b=lbGrid(k.cols,v,k.gap,k.margin);LY.b.name=k.name;layPopBuild();},'Start again with a plain grid'));
+    pop.appendChild(row);
+    pv=el_('div','lb-pv');pv.style.aspectRatio=D.w+' / '+D.h;pv.setAttribute('role','group');pv.setAttribute('aria-label','The boxes of your layout. Click boxes to pick them.');
+    b.cells.forEach(function(c,i){
+      var on=b.sel.indexOf(i)>=0, x=document.createElement('button');
+      x.type='button';x.className=on?'on':'';x.textContent=String(i+1);x.setAttribute('aria-pressed',on?'true':'false');x.setAttribute('aria-label','Box '+(i+1));
+      x.style.left='calc('+(100*c[0]/b.cols)+'% + 3px)';x.style.top='calc('+(100*c[1]/b.rows)+'% + 3px)';
+      x.style.width='calc('+(100*c[2]/b.cols)+'% - 6px)';x.style.height='calc('+(100*c[3]/b.rows)+'% - 6px)';
+      x.addEventListener('click',function(){var k=b.sel.indexOf(i);if(k>=0)b.sel.splice(k,1);else b.sel.push(i);layPopBuild();});
+      pv.appendChild(x);
+    });
+    pop.appendChild(pv);
+    nt=el_('p','gp-note');nt.textContent=b.sel.length?(b.sel.length+(b.sel.length===1?' box picked.':' boxes picked.')+' Join makes picked boxes one box; Split cuts one picked box in two.'):'Click boxes to pick them, then join or split them. The numbers are the order your items fill them in.';pop.appendChild(nt);
+    bw=el_('div','gp-btns');
+    bj=document.createElement('button');bj.type='button';bj.className='btn ghost';bj.textContent='Join';bj.disabled=!lbJoinable(b);
+    bj.setAttribute('data-tip',b.sel.length<2?'Pick two or more boxes next to each other':(lbJoinable(b)?'Make the picked boxes one box':'The picked boxes must form a rectangle'));
+    bj.addEventListener('click',function(){lbJoin(b);layPopBuild();});
+    bs=document.createElement('button');bs.type='button';bs.className='btn ghost';bs.textContent='Split ↔';bs.disabled=b.sel.length!==1;bs.setAttribute('data-tip','Cut the picked box into two, side by side');bs.setAttribute('aria-label','Split side by side');
+    bs.addEventListener('click',function(){lbSplit(b,true);layPopBuild();});
+    bt=document.createElement('button');bt.type='button';bt.className='btn ghost';bt.textContent='Split ↕';bt.disabled=b.sel.length!==1;bt.setAttribute('data-tip','Cut the picked box into two, one above the other');bt.setAttribute('aria-label','Split top and bottom');
+    bt.addEventListener('click',function(){lbSplit(b,false);layPopBuild();});
+    bw.appendChild(bj);bw.appendChild(bs);bw.appendChild(bt);pop.appendChild(bw);
+    row2=el_('div','gp-row');
+    [['Gap','gap',200],['Margin','margin',400]].forEach(function(f){
+      var l=document.createElement('label'), i=document.createElement('input');l.textContent=f[0];i.type='number';i.min=0;i.max=f[2];i.value=b[f[1]];
+      i.addEventListener('change',function(){var v=parseInt(i.value,10);if(!isNaN(v))b[f[1]]=Math.max(0,Math.min(f[2],v));});
+      l.appendChild(i);row2.appendChild(l);
+    });
+    pop.appendChild(row2);
+    nm=document.createElement('label');nm.className='lb-name';nm.textContent='Name';
+    var ni=document.createElement('input');ni.type='text';ni.maxLength=40;ni.placeholder='For example Plant overview';ni.value=b.name||'';ni.spellcheck=false;nm.appendChild(ni);pop.appendChild(nm);
+    bw2=el_('div','gp-btns');
+    bsave=document.createElement('button');bsave.type='button';bsave.className='btn ghost';bsave.textContent='Save to My layouts';bsave.disabled=!String(b.name||'').trim();
+    buse=document.createElement('button');buse.type='button';buse.className='btn';buse.textContent='Use on the canvas';
+    ni.addEventListener('input',function(){b.name=ni.value;bsave.disabled=!ni.value.trim();});
+    bsave.addEventListener('click',function(){
+      var name=String(b.name||'').trim(), a, i, was=false;if(!name)return;
+      a=myLays();for(i=0;i<a.length;i++)if(a[i].name.toLowerCase()===name.toLowerCase()){a.splice(i,1);was=true;break;}
+      a.unshift({name:name,cols:b.cols,rows:b.rows,cells:b.cells.map(function(c){return c.slice();})});
+      if(!myLaysSave(a.slice(0,40))){toastDash('Could not save in this browser');return;}
+      toastDash((was?'Updated “':'Saved “')+name+'” in My layouts');
+      LY.view='list';LY.q='';layPopBuild();
+    });
+    buse.addEventListener('click',function(){
+      var name=String(b.name||'').trim()||'My layout';
+      layApply(-1,[name,b.cols,b.rows,b.cells.map(function(c){return c.slice();})],b.gap,b.margin);
+      LY.view='list';layPopBuild();
+    });
+    bw2.appendChild(bsave);bw2.appendChild(buse);pop.appendChild(bw2);
+    var n2=el_('p','gp-note');n2.textContent='My layouts are kept in this browser, for every map you design here.';pop.appendChild(n2);
+  }
+  /* ---- 1.5.70: the map background. One item at the very back that covers the whole canvas: a colour, a pattern or a gradient.
+     It is a frame that does not hold other items (group:false, as the Background style), marked mapBg, drawn with CSS only,
+     so it is pushed to PRTG like any other item ---- */
+  var BGPRE=[
+    {id:'solid',name:'Solid navy',mode:'color',base:'#14163A'},
+    {id:'dots',name:'Dots',mode:'pattern',pat:'dots',base:'#161942',pc:'#969FE6',str:40,size:14},
+    {id:'blueprint',name:'Blueprint grid',mode:'pattern',pat:'grid',base:'#123461',pc:'#FFFFFF',str:13,size:48},
+    {id:'diag',name:'Diagonal lines',mode:'pattern',pat:'diag',base:'#1A1D48',pc:'#FFFFFF',str:6,size:12},
+    {id:'stripes',name:'Safety stripes',mode:'pattern',pat:'stripes',base:'#1B1C22',pc:'#F5C500',str:18,size:20},
+    {id:'honey',name:'Honeycomb',mode:'pattern',pat:'honey',base:'#151840',pc:'#96A0EB',str:28,size:28},
+    {id:'circuit',name:'Circuit',mode:'pattern',pat:'circuit',base:'#0F1D2E',pc:'#3CCDB9',str:30,size:60},
+    {id:'carbon',name:'Carbon fibre',mode:'pattern',pat:'carbon',base:'#1D1D1D',pc:'#000000',str:45,size:12},
+    {id:'ldots',name:'Light dots',mode:'pattern',pat:'dots',base:'#EEF1F5',pc:'#8E98AE',str:45,size:14},
+    {id:'glow',name:'Soft glow',mode:'gradient',grad:'glow',base:'#0F1233',g2:'#506EFF',g3:'#14C8B4',str:100},
+    {id:'fade',name:'Navy fade',mode:'gradient',grad:'diag',base:'#050F34',g2:'#1B3A8A'},
+    {id:'dusk',name:'Top to bottom',mode:'gradient',grad:'down',base:'#0F1233',g2:'#2A1838'}
+  ];
+  var BGSOLID=[['Navy','#14163A'],['Brand navy','#050F34'],['Wall display','#0B1220'],['Executive dark','#171926'],['Slate','#2B2D3C'],['Teal glass','#2A3B4C'],['Light grey','#F3F4F6'],['White','#FFFFFF'],['PRTG default','#DAD7D7']];
+  var BGTAB={tab:'pattern'};
+  function bgHex(v,d){return /^#[0-9a-fA-F]{6}$/.test(String(v||''))?String(v).toUpperCase():d;}
+  function bgN(v,mn,mx,d){v=+v;return isNaN(v)?d:Math.max(mn,Math.min(mx,v));}
+  function bgUri(svg){return "url('data:image/svg+xml,"+encodeURIComponent(svg).replace(/'/g,'%27').replace(/\(/g,'%28').replace(/\)/g,'%29')+"')";}
+  function bgCss(b){   /* the value of the CSS background shorthand for a background setting */
+    var base=bgHex(b.base,'#14163A'), pc=bgHex(b.pc,'#FFFFFF'), S=Math.round(bgN(b.size,6,160,14)), a=Math.round(bgN(b.str,0,100,40))/100, A=rgba(pc,a), q, r, w, h, f, s, st, k;
+    if(b.mode==='color')return base;
+    if(b.mode==='gradient'){
+      var g2=bgHex(b.g2,'#506EFF'), g3=bgHex(b.g3,'#14C8B4'), m=bgN(b.str==null?100:b.str,0,100,100)/100;
+      if(b.grad==='glow')return 'radial-gradient(circle at 25% 30%, '+rgba(g2,Math.round(55*m)/100)+', transparent 55%), radial-gradient(circle at 80% 75%, '+rgba(g3,Math.round(35*m)/100)+', transparent 50%), '+base;
+      if(b.grad==='down')return 'linear-gradient(180deg, '+base+', '+g2+')';
+      return 'linear-gradient(135deg, '+base+', '+g2+')';
+    }
+    f=function(x){return Math.round(x*100)/100;};
+    switch(b.pat){
+      case 'dots':r=Math.max(1,f(S*0.085));return 'radial-gradient(circle, '+A+' '+r+'px, transparent '+f(r+0.6)+'px) 0 0/'+S+'px '+S+'px, '+base;
+      case 'grid':q=Math.max(4,Math.round(S/4));
+        return 'linear-gradient('+A+' 1px, transparent 1px) 0 0/'+S+'px '+S+'px, linear-gradient(90deg, '+A+' 1px, transparent 1px) 0 0/'+S+'px '+S+'px, '
+          +'linear-gradient('+rgba(pc,f(a*0.4))+' 1px, transparent 1px) 0 0/'+q+'px '+q+'px, linear-gradient(90deg, '+rgba(pc,f(a*0.4))+' 1px, transparent 1px) 0 0/'+q+'px '+q+'px, '+base;
+      case 'diag':w=Math.max(1,Math.round(S/6));return 'repeating-linear-gradient(45deg, '+A+' 0 '+w+'px, transparent '+w+'px '+S+'px), '+base;
+      case 'stripes':h=f(S/2);return 'repeating-linear-gradient(-45deg, '+A+' 0 '+h+'px, transparent '+h+'px '+S+'px), '+base;
+      case 'carbon':q=f(S/4);h=f(S/2);s=rgba(pc,a);st=rgba('#FFFFFF',f(a*0.12));
+        return 'linear-gradient(27deg, '+s+' '+q+'px, transparent '+q+'px) 0 '+q+'px/'+S+'px '+S+'px, linear-gradient(207deg, '+s+' '+q+'px, transparent '+q+'px) '+h+'px 0/'+S+'px '+S+'px, '
+          +'linear-gradient(27deg, '+st+' '+q+'px, transparent '+q+'px) 0 '+h+'px/'+S+'px '+S+'px, linear-gradient(207deg, '+st+' '+q+'px, transparent '+q+'px) '+h+'px '+q+'px/'+S+'px '+S+'px, '+base;
+      case 'honey':
+        r=S/2;w=f(Math.sqrt(3)*r);h=f(3*r);k='';
+        [[0,0],[w,0],[w/2,1.5*r],[0,3*r],[w,3*r]].forEach(function(c){var pts=[], i, an;for(i=0;i<6;i++){an=Math.PI/180*(60*i-90);pts.push(f(c[0]+r*Math.cos(an))+','+f(c[1]+r*Math.sin(an)));}k+='<polygon points="'+pts.join(' ')+'"/>';});
+        return bgUri('<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'"><g fill="none" stroke="'+pc+'" stroke-opacity="'+a+'" stroke-width="1.2">'+k+'</g></svg>')+' 0 0/'+w+'px '+h+'px, '+base;
+      case 'circuit':
+        k=function(x){return f(x*S);};
+        return bgUri('<svg xmlns="http://www.w3.org/2000/svg" width="'+S+'" height="'+S+'"><g fill="none" stroke="'+pc+'" stroke-opacity="'+a+'" stroke-width="1.4" stroke-linecap="round">'
+          +'<path d="M0 '+k(.25)+'H'+k(.3)+'L'+k(.45)+' '+k(.4)+'V'+k(.62)+'"/><path d="M'+k(.6)+' 0V'+k(.1)+'L'+k(.75)+' '+k(.25)+'H'+S+'"/><path d="M'+k(.6)+' '+S+'V'+k(.85)+'L'+k(.5)+' '+k(.75)+'"/><path d="M'+k(.12)+' '+k(.62)+'V'+k(.9)+'H'+k(.3)+'"/><path d="M'+k(.78)+' '+k(.5)+'H'+k(.92)+'"/>'
+          +'</g><g fill="'+pc+'" fill-opacity="'+a+'"><circle cx="'+k(.45)+'" cy="'+k(.67)+'" r="'+f(Math.max(1.5,S*.035))+'"/><circle cx="'+k(.12)+'" cy="'+k(.58)+'" r="'+f(Math.max(1.5,S*.03))+'"/><circle cx="'+k(.74)+'" cy="'+k(.5)+'" r="'+f(Math.max(1.5,S*.03))+'"/><rect x="'+k(.3)+'" y="'+k(.86)+'" width="'+k(.08)+'" height="'+k(.08)+'"/></g></svg>')+' 0 0/'+S+'px '+S+'px, '+base;
+    }
+    return base;
+  }
+  function bgHTML(it){return '<span style="display:block;width:'+it.w+'px;height:'+it.h+'px;background:'+bgCss(it.p.bg||{mode:'color'})+';"></span>';}
+  function bgItem(){for(var i=0;i<D.items.length;i++){var x=D.items[i];if(x.type==='frame'&&x.p&&x.p.mapBg)return x;}return null;}
+  function bgFix(){   /* the background always covers the whole canvas and stays at the very back */
+    var b=bgItem(), m=null;if(!b)return;
+    b.x=0;b.y=0;b.w=D.w;b.h=D.h;b.parent=null;b.rot=0;
+    D.items.forEach(function(x){if(x!==b){var o=ordOf(x);if(m===null||o<m)m=o;}});
+    if(m!==null&&ordOf(b)>=m)b.ord=m-1;
+  }
+  function bgSet(v,live){
+    var it=bgItem();
+    if(!v){if(it){D.items=D.items.filter(function(x){return x!==it;});if(D.sel===it.id)D.sel=null;renderAll();buildForm();commit();}return;}
+    if(!it){
+      it={id:D.nextId++,type:'frame',parent:null,x:0,y:0,w:D.w,h:D.h,state:null,p:extend(newFrameP('Light card'),{title:'',fam:'',group:false,mapBg:true,bw:0,radius:0,shadow:'none',padx:0,pady:0})};
+      it.ord=minOrd()-1;D.items.push(it);it.p.bg=v;renderAll();if(!live)commit();return;
+    }
+    it.p.bg=v;refreshItem(it);if(!live)commit();
+  }
+  var bgPop=null;
+  function bgPopBuild(){
+    var pop=bgPop, cur=(bgItem()||{p:{}}).p.bg||null, seg, grid, nt, list;
+    if(!pop){pop=bgPop=document.createElement('div');pop.id='dbgpop';pop.hidden=true;(railBody||canvas.parentNode).appendChild(pop);
+      ['mousedown','click','dblclick','keydown'].forEach(function(ev){pop.addEventListener(ev,function(e){e.stopPropagation();});});}
+    pop.innerHTML='';
+    nt=el_('p','gp-note');nt.textContent='A layer at the very back of the map that fills the gaps between your boxes. It is sent to PRTG with your other items.';pop.appendChild(nt);
+    seg=el_('div','gp-seg');
+    [['color','Colour'],['pattern','Pattern'],['gradient','Gradient']].forEach(function(o){var b=document.createElement('button');b.type='button';b.textContent=o[1];b.setAttribute('aria-pressed',BGTAB.tab===o[0]?'true':'false');if(BGTAB.tab===o[0])b.className='on';b.addEventListener('click',function(){BGTAB.tab=o[0];bgPopBuild();});seg.appendChild(b);});
+    pop.appendChild(seg);
+    grid=el_('div','bg-grid');
+    list=(BGTAB.tab==='color')?BGSOLID.map(function(s){return {id:'c'+s[1],name:s[0],mode:'color',base:s[1]};}):BGPRE.filter(function(p){return p.mode===BGTAB.tab;});
+    list.forEach(function(p){
+      var on=!!cur&&(BGTAB.tab==='color'?(cur.mode==='color'&&bgHex(cur.base,'')===p.base):cur.id===p.id), b=document.createElement('button');
+      b.type='button';b.className='bg-t'+(on?' on':'');b.setAttribute('aria-label',p.name+(on?' (chosen)':''));b.setAttribute('aria-pressed',on?'true':'false');b.setAttribute('data-tip',p.name);
+      b.style.background=bgCss(p);
+      b.addEventListener('click',function(){var v=JSON.parse(JSON.stringify(p));bgSet(v);bgPopBuild();});
+      grid.appendChild(b);
+    });
+    pop.appendChild(grid);
+    if(BGTAB.tab==='color'){
+      var cl=el_('label','bg-f'), ci=document.createElement('input');ci.type='color';ci.value=(cur&&cur.mode==='color'?bgHex(cur.base,'#14163A'):'#14163A').toLowerCase();
+      cl.appendChild(ci);cl.appendChild(document.createTextNode(' Pick any colour'));
+      ci.addEventListener('input',function(){bgSet({id:'custom',mode:'color',base:ci.value.toUpperCase()},true);});
+      ci.addEventListener('change',function(){bgSet({id:'custom',mode:'color',base:ci.value.toUpperCase()});bgPopBuild();});
+      pop.appendChild(cl);
+    }
+    if(cur&&cur.mode!=='color'&&cur.mode===BGTAB.tab){
+      var box=el_('div','bg-set'), t=el_('div','gp-l');t.textContent='Change '+(BGPRE.filter(function(p){return p.id===cur.id;})[0]||{name:'it'}).name.toLowerCase();box.appendChild(t);
+      var fields=(cur.mode==='pattern')?[['base','Background','c'],['pc','Pattern colour','c'],['size','Pattern size','r',6,160],['str','Strength','r',0,100]]
+        :[['base','Colour 1','c'],['g2','Colour 2','c']].concat(cur.grad==='glow'?[['g3','Colour 3','c'],['str','Strength','r',0,100]]:[]);
+      fields.forEach(function(f){
+        var l=el_('label','bg-f'+(f[2]==='r'?' bg-r':'')), i=document.createElement('input'), v=el_('span','bg-v');
+        if(f[2]==='c'){i.type='color';i.value=bgHex(cur[f[0]],'#000000').toLowerCase();}
+        else{i.type='range';i.min=f[3];i.max=f[4];i.step=1;i.value=String(cur[f[0]]==null?(f[0]==='str'?100:14):cur[f[0]]);v.textContent=(f[0]==='str')?(i.value+'%'):(i.value+' px');}
+        var put=function(fin){var n=JSON.parse(JSON.stringify(cur));n[f[0]]=(f[2]==='c')?i.value.toUpperCase():parseInt(i.value,10);cur=n;if(f[2]==='r')v.textContent=(f[0]==='str')?(i.value+'%'):(i.value+' px');bgSet(n,!fin);};
+        i.addEventListener('input',function(){put(false);});i.addEventListener('change',function(){put(true);});
+        i.setAttribute('aria-label',f[1]);
+        if(f[2]==='c'){l.appendChild(i);l.appendChild(document.createTextNode(' '+f[1]));}
+        else{var top=el_('span','bg-rt');top.appendChild(document.createTextNode(f[1]));top.appendChild(v);l.appendChild(top);l.appendChild(i);}
+        box.appendChild(l);
+      });
+      pop.appendChild(box);
+    }
+    if(cur){
+      var bw=el_('div','gp-btns'), bn=document.createElement('button');bn.type='button';bn.className='btn ghost';bn.textContent='No background';
+      bn.addEventListener('click',function(){bgSet(null);bgPopBuild();toastDash('Background removed');});bw.appendChild(bn);pop.appendChild(bw);
+    }
+    var n2=el_('p','gp-note');n2.textContent='The map’s own colour in PRTG is set with Background under Build. Patterns use only CSS; honeycomb and circuit are small SVG pictures inside that CSS.';pop.appendChild(n2);
+    if(railBtns.bg){railBtns.bg.style.setProperty('--bgnow',cur?bgCss(cur):'transparent');railBtns.bg.classList.toggle('hasbg',!!cur);}
+  }
+  var _raBg=renderAll;renderAll=function(){bgFix();_raBg.apply(this,arguments);bgNow();};
+  function bgNow(){   /* after undo, redo or a load: the swatch on the bar, and the panel if it is open and not being used */
+    var b=bgItem(), c=b&&b.p.bg;
+    if(railBtns&&railBtns.bg){railBtns.bg.style.setProperty('--bgnow',c?bgCss(c):'transparent');railBtns.bg.classList.toggle('hasbg',!!c);}
+    if(RAIL&&RAIL.on==='bg'&&bgPop&&!bgPop.contains(document.activeElement))bgPopBuild();
+  }
+  document.addEventListener('dsize',function(){var b=bgItem();if(b&&(b.w!==D.w||b.h!==D.h)){bgFix();refreshItem(b);}});
+  /* ---- 1.5.70: the slim bar on the right of the canvas. Its panel slides out over the canvas and stays open while you work ---- */
+  var railEl=document.getElementById('drail'), railPanel=document.getElementById('drpanel'), railBody=document.getElementById('drbody'), railTitle=document.getElementById('drtitle'), railBtns={}, RAIL={on:null};
+  var RAILT={layouts:'Layouts',bg:'Background',grid:'Grid and snapping'};
+  if(railEl)[].forEach.call(railEl.querySelectorAll('[data-rail]'),function(b){railBtns[b.getAttribute('data-rail')]=b;b.addEventListener('click',function(e){e.stopPropagation();railOpen(b.getAttribute('data-rail'));});});
+  function railOpen(k,keep){
+    if(!railPanel)return;
+    if(RAIL.on===k&&!keep){railClose();return;}
+    RAIL.on=k;
+    if(k==='layouts'){D.sel=null;msClear();updateSel();buildForm();}
+    railPaint();
+    try{railPanel.querySelector('#drclose').focus({preventScroll:true});}catch(e){}
+  }
+  function railClose(){RAIL.on=null;railPaint();}
+  function railTop(){   /* the panel starts under the canvas toolbar, so Undo, Redo and the other buttons stay in reach */
+    if(!railEl||!RAIL.on)return;
+    var hd=document.querySelector('#dashstage .stage-head'), top=10, r, m;
+    if(hd&&hd.offsetParent){r=hd.getBoundingClientRect();m=railEl.getBoundingClientRect();top=Math.max(10,Math.round(r.bottom-m.top+8));}
+    railEl.style.setProperty('--drtop',top+'px');
+  }
+  (function(){var st=document.getElementById('stage');if(st)st.addEventListener('scroll',railTop,{passive:true});window.addEventListener('resize',railTop);})();
+  function railPaint(){
+    var k=RAIL.on;
+    if(k==='layouts')layPopBuild();else if(k==='grid')gridPopBuild();else if(k==='bg')bgPopBuild();
+    if(layPop)layPop.hidden=k!=='layouts';
+    if(gridPop)gridPop.hidden=k!=='grid';
+    if(bgPop)bgPop.hidden=k!=='bg';
+    railTop();railPanel.classList.toggle('open',!!k);railPanel.setAttribute('aria-hidden',k?'false':'true');
+    if('inert' in railPanel)railPanel.inert=!k;
+    if(railTitle)railTitle.textContent=k?RAILT[k]:'';
+    Object.keys(railBtns).forEach(function(n){railBtns[n].setAttribute('aria-pressed',n===k?'true':'false');});
+    if(layBtn)layBtn.classList.toggle('on',k==='layouts');
+    if(gridBtn)gridBtn.classList.toggle('on',k==='grid');
+  }
+  if(railPanel){
+    ['mousedown','click','dblclick','keydown'].forEach(function(ev){railPanel.addEventListener(ev,function(e){if(ev==='keydown'&&e.key==='Escape'){railClose();try{railBtns[Object.keys(railBtns)[0]].focus();}catch(x){}}e.stopPropagation();});});
+    var rc=document.getElementById('drclose');if(rc)rc.addEventListener('click',function(){railClose();});
+  }
+  if(layBtn)layBtn.addEventListener('click',function(e){e.stopPropagation();railOpen('layouts');});
+  if(gridBtn)gridBtn.addEventListener('click',function(e){e.stopPropagation();railOpen('grid');});
+  bgPopBuild();
   /* the zoom bar under the canvas, the Zoom list in Canvas size and grid, and the fit button all show the same zoom */
   function zoomSync(){
     var zs=document.getElementById('dzslider'), zl=document.getElementById('dzval'), zsel=document.getElementById('dzoom'), pc=Math.round(scale*100), o, i;
@@ -2294,6 +2626,12 @@ try{
     var it=byId(D.sel);
       if(window.SECAPI)SECAPI.note('Selected',it?itemName(it):'nothing selected');
     if(!it){formEl.appendChild(el_('p','note pst','Click an item on the canvas to change how it looks.'));inlSync();return;}
+    if(it.type==='frame'&&it.p.mapBg){
+      formEl.appendChild(el_('h4',null,'Map background'));
+      formEl.appendChild(el_('p','note pst','The colour or pattern behind the whole map. Change it with Background, on the bar at the right of the canvas.'));
+      var bgo=el_('button','btn ghost','Open Background');bgo.type='button';bgo.addEventListener('click',function(){railOpen('bg',true);});formEl.appendChild(bgo);
+      inlSync();return;
+    }
     formEl.appendChild(el_('h4',null,(it.type==='frame'&&it.p.shape)?(it.p.isConnector?'Connector':'Shape'):((it.type==='frame'&&it.p.group===false)?'Background':TYPENAME[it.type])));
     /* Duplicate and Delete are in the bar over the item; Ctrl+C, Ctrl+V, Ctrl+D and Delete work from the keyboard */
     var geoFs=acc('Size, position and layer',[geoRow(it),layerRow(it),parentSel(it)]), inlineOk=!!(OBJAPI.inline&&DASHAPI.active);

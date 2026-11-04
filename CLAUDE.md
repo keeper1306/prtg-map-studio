@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.69.
+Last updated at version 1.5.70.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -161,6 +161,29 @@ A full run takes about 5 seconds (16 seconds the very first time).
   bar is HTML like the pill and always shows its word; Beacon's rays blink on alarm states when
   Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
   tile, badge, LED).
+
+## Right-side bar: layouts, background, grid (1.5.70)
+
+- R1 from the "Map Studio backgrounds and layouts" mockups (claude.ai artifact): `#drail` is a third column of `main`
+  (60px, only in `body.dash`) with Layouts, Background and Grid (`data-rail`). `#drpanel` slides out to its left over the
+  canvas; it starts under the canvas toolbar (`railTop()`, `--drtop`) so Undo and the toolbar stay in reach, and stays open
+  while you work (× or Esc). `railOpen(k,keep)`, `railClose()`, `railPaint()`. The old `#dlaypop` and `#dgridpop` are built
+  inside `#drbody`; the toolbar's Layouts and Grid buttons open the same panel. Shapes stayed under Build (not in the bar).
+- Layouts: `LYGROUPS` (names; anything not listed goes under Other), search (`LY.q`), names under the pictures, the current
+  layout's settings in `.ly-cur`. Build my own: `LY.b={cols,rows,cells,sel,name,gap,margin}`, `lbEven(n)` (rows from the
+  canvas shape, the last row's boxes share its width), `lbGrid`, `lbJoin` (picked boxes must cover a rectangle),
+  `lbSplit` (doubles the grid when a box is one unit), `lbNorm` (smallest grid, reading order). My layouts:
+  `CFG.keys.myLayouts` in localStorage, up to 40, newest first. A custom layout on the canvas is
+  `D.layout={id:-1,custom:[name,cols,rows,cells],gap,margin}`; `layCells()` uses `custom` before `LAYOUTS[id]`.
+- Background: one frame item with `p.mapBg` (and `group:false`, so it never holds items), `p.bg={id,mode,pat|grad,base,pc,
+  size,str,g2,g3}`. `bgCss()` builds the CSS `background` value (gradients; honeycomb and circuit are SVG data URIs);
+  `frameHTML` → `bgHTML`. `bgFix()` (before every `renderAll`, and on `dsize`) keeps it at 0,0, the canvas size and the
+  lowest `ord`. Clicks pass through it (`pointer-events:none`). Presets `BGPRE`, solid colours `BGSOLID`. The map's own PRTG
+  colour (`setMapBg`, Build › Background) is unchanged and separate.
+- Checked against the stand-in server: push sends the background first at 0,0 with the canvas size; all 20 choices draw;
+  undo; canvas resize; every object file identical to 1.5.69 (22 compared). Not verified on the real PRTG: whether PRTG keeps
+  the CSS gradients and the SVG data URIs in HTML Before, and how a full-map item behaves in PRTG's map designer (clicks on
+  empty map areas may select it there).
 
 ## Graph choices as pictures, sunburst resize (1.5.69)
 
