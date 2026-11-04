@@ -1342,6 +1342,55 @@ try{
     else{[[6,12,10],[17,20,8],[28,8,14],[39,16,10],[50,22,6]].forEach(function(b){o+='<rect x="'+b[0]+'" y="'+(36-b[1]-b[2])+'" width="8" height="'+b[2]+'" rx="1.2" fill="'+A+'"/><rect x="'+b[0]+'" y="'+(36-b[1])+'" width="8" height="'+b[1]+'" rx="1.2" fill="'+B+'"/>';});}
     return o+'</svg>';
   }
+
+  /* 1.5.69: the graph's choices as pictures, so each one shows what it gives (the bar's Graph menu and the side panel) */
+  var GRPICK={
+    kind:[['sensor','Sensor graph','Graph of a sensor: its channels over time. Put it on a sensor.'],['bars','Bars','Bars of live values or sensor states, now. Put it on a sensor, device or group.'],['sensors','Every sensor','A small graph of every sensor on a device, group or probe.'],['toplist','Toplist','A sensor’s toplist, for example the top talkers of a flow sensor.']],
+    bsrc:[['status','Sensor states','The share of sensors in each state. Put it on a device, group or probe.'],['channels','Channels','The channels of one sensor, one bar each. Put it on a sensor.'],['sensors','Sensors by value','The sensors on a device or group, one bar each, by their value.']],
+    bdir:[['row','Horizontal','Bars from left to right'],['col','Vertical','Bars from the bottom up']],
+    bcolor:[['status','By state','Each bar in the colour of its sensor’s state'],['cat','One per bar','A different colour for each bar'],['one','All the same','Every bar in one colour']],
+    draw:[['own','Modern chart','Drawn by Map Studio from the history; follows the look and the chart styles'],['pic','PRTG’s picture','PRTG’s own graph picture, as on a sensor page']]
+  };
+  function grPic(g,v){
+    var G1='#B8C419',Y='#F5C500',R='#E30613',A='#1f6fe5',P='#8b5cf6',O='#f59e0b',T='#14b8a6',M='#9aa0ad',D='#1d2433',N='#E3E6EC',o='<rect x="1" y="1" width="62" height="42" rx="5" fill="#fff" stroke="#dfe3ea"/>';
+    function bar(x,y,w,hh,c){return '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+hh+'" rx="1.2" fill="'+c+'"/>';}
+    function lab(x,y,w){return '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="1.8" rx=".8" fill="'+M+'"/>';}
+    if(g==='kind'){
+      if(v==='sensor')o+=lab(6,6,20)+'<path d="M6 34 L14 27 L22 30 L30 20 L38 24 L46 14 L58 18 V38 H6 Z" fill="'+A+'" opacity=".16"/><path d="M6 34 L14 27 L22 30 L30 20 L38 24 L46 14 L58 18" fill="none" stroke="'+A+'" stroke-width="1.6" stroke-linejoin="round"/>';
+      else if(v==='bars')o+=lab(6,6,20)+bar(6,13,44,5,G1)+bar(6,21,26,5,Y)+bar(6,29,12,5,R)+lab(53,15,6)+lab(36,23,6)+lab(22,31,6);
+      else if(v==='sensors'){var i;for(i=0;i<4;i++){var x=5+(i%2)*28,y=5+Math.floor(i/2)*18;o+='<rect x="'+x+'" y="'+y+'" width="26" height="16" rx="2" fill="#f4f5f7"/><path d="M'+(x+2)+' '+(y+12)+' l5 -4 l5 2 l5 -5 l7 3" fill="none" stroke="'+[A,G1,O,T][i]+'" stroke-width="1.3"/>';}}
+      else if(v==='toplist')o+=[0,1,2,3].map(function(i){return '<text x="7" y="'+(13+i*8)+'" font-size="6" font-weight="700" fill="'+D+'" font-family="Inter,Segoe UI,Arial,sans-serif">'+(i+1)+'</text>'+bar(13,9+i*8,[44,32,22,14][i],4.5,A)+lab(13+[44,32,22,14][i]+2,10.5+i*8,4);}).join('');
+    }else if(g==='bsrc'){
+      if(v==='status')o+=bar(6,8,52,6,N)+bar(6,8,36,6,G1)+bar(42,8,8,6,Y)+bar(50,8,8,6,R)+'<circle cx="8" cy="23" r="1.8" fill="'+G1+'"/>'+lab(12,22,10)+'<circle cx="27" cy="23" r="1.8" fill="'+Y+'"/>'+lab(31,22,7)+'<circle cx="43" cy="23" r="1.8" fill="'+R+'"/>'+lab(47,22,7)+bar(6,30,40,4,G1)+bar(6,36,14,3,Y);
+      else if(v==='channels')o+=lab(6,7,16)+lab(6,17,10)+bar(18,15,36,5,A)+lab(6,25,10)+bar(18,23,22,5,A)+lab(6,33,10)+bar(18,31,30,5,A);
+      else o+=lab(6,7,16)+lab(6,17,10)+bar(18,15,38,5,G1)+lab(6,25,10)+bar(18,23,27,5,G1)+lab(6,33,10)+bar(18,31,16,5,Y);
+    }else if(g==='bdir'){
+      if(v==='row')o+=bar(8,9,46,6,A)+bar(8,19,32,6,A)+bar(8,29,20,6,A);
+      else o+=bar(13,10,8,28,A)+bar(28,18,8,20,A)+bar(43,26,8,12,A)+'<rect x="8" y="38" width="48" height="1" fill="'+M+'"/>';
+    }else if(g==='bcolor'){
+      var cs=(v==='status')?[G1,G1,Y,R]:(v==='cat')?[A,P,O,T]:[A,A,A,A];
+      o+=cs.map(function(c,i){return bar(8,7+i*8,[46,38,26,16][i],5,c);}).join('');
+    }else if(g==='draw'){
+      if(v==='own')o+='<path d="M6 32 C14 22 20 28 28 20 S44 12 58 16 V38 H6 Z" fill="'+A+'" opacity=".18"/><path d="M6 32 C14 22 20 28 28 20 S44 12 58 16" fill="none" stroke="'+A+'" stroke-width="1.8"/><circle cx="58" cy="16" r="2" fill="'+A+'"/>';
+      else o+='<rect x="6" y="6" width="52" height="28" fill="#fafafa" stroke="#c8cbd0" stroke-width=".6"/>'+[12,18,24,30].map(function(y){return '<line x1="6" y1="'+y+'" x2="58" y2="'+y+'" stroke="#e1e3e6" stroke-width=".5"/>';}).join('')
+        +'<polyline points="6,28 13,24 20,26 27,17 34,20 41,12 48,15 58,11" fill="none" stroke="#0f9d58" stroke-width="1"/><polyline points="6,31 13,29 20,30 27,27 34,28 41,25 48,27 58,24" fill="none" stroke="#db4437" stroke-width="1"/>'
+        +'<rect x="6" y="36" width="5" height="3" fill="#0f9d58"/>'+lab(12,36.6,10)+'<rect x="26" y="36" width="5" height="3" fill="#db4437"/>'+lab(32,36.6,10);
+    }
+    return '<svg viewBox="0 0 64 44" width="64" height="44" aria-hidden="true">'+o+'</svg>';
+  }
+  /* a grid of pictures for one choice; set is called with the value, done() after (refresh) */
+  function grPicGrid(g,get,set,keep,done){
+    var w=h('div','presetgrid tkindgrid grpick');
+    GRPICK[g].forEach(function(x){
+      if(keep&&!keep(x[0]))return;
+      var q=h('button','lookchip');q.type='button';q.setAttribute('data-v',x[0]);q.title=x[2];q.setAttribute('aria-label',x[1]+': '+x[2]);
+      q.innerHTML=grPic(g,x[0])+'<span class="pname">'+x[1]+'</span>';
+      q.addEventListener('click',function(){done(function(){set(x[0]);});});
+      w.appendChild(q);
+    });
+    w.syncPick=function(){var cur=String(get());[].forEach.call(w.children,function(q){var on=q.getAttribute('data-v')===cur;q.classList.toggle('on',on);q.setAttribute('aria-pressed',on?'true':'false');});};
+    return w;
+  }
   var GRKINDS=[['sensor','Graph of a sensor'],['bars','Bars: live values or sensor states'],['sensors','Graphs of every sensor on a device, group or probe'],['toplist','Toplist of a sensor']];
   function periodTag(p){return p===0?'<#lang key="html.sensor.livwdata" default="Live Data">':'<#system type="'+(p+1)+'period">';}
   function blankGR(){
@@ -5135,17 +5184,19 @@ try{
       }));
     }else if(TYPE==='graph'){
       b.appendChild(obMenu('Graph','What the graph shows and over what period',function(pop){
-        pfSel(pop,'Shows',function(){return GR.kind;},function(v){setGrKind(v);},GRKINDS.filter(function(x){return x[0]==='bars'?(fitsScope(graphScopes('bars','status'))||fitsScope(graphScopes('bars','channels'))):fitsScope(graphScopes(x[0]));}));
+        var obPick=function(label,g,get,set,keep){pop.appendChild(h('div','pf-h',label));var pg=grPicGrid(g,get,set,keep,obDo);pop.appendChild(pg);OB.syncs.push(function(){pg.syncPick();});};
+        obPick('Shows','kind',function(){return GR.kind;},function(v){setGrKind(v);},function(k){return k==='bars'?(fitsScope(graphScopes('bars','status'))||fitsScope(graphScopes('bars','channels'))):fitsScope(graphScopes(k));});
         if(GR.kind==='bars'){
-          pfSel(pop,'Bars show',function(){return GR.bsrc||'status';},function(v){GR.bsrc=v;if(v==='status'&&GR.bcolor==='cat')GR.bcolor='status';},[['status','Sensor states'],['channels','Channels of a sensor'],['sensors','Sensors by value']].filter(function(x){return fitsScope(graphScopes('bars',x[0]));}));
-          pfSel(pop,'Direction',function(){return GR.bdir||'row';},function(v){GR.bdir=v;},[['row','Horizontal'],['col','Vertical']]);
+          obPick('Bars show','bsrc',function(){return GR.bsrc||'status';},function(v){GR.bsrc=v;if(v==='status'&&GR.bcolor==='cat')GR.bcolor='status';},function(k){return fitsScope(graphScopes('bars',k));});
+          obPick('Direction','bdir',function(){return GR.bdir||'row';},function(v){GR.bdir=v;});
           if(GR.bsrc!=='status'){
-            pfSel(pop,'Bar colors',function(){return GR.bcolor||'status';},function(v){GR.bcolor=v;},[['status','By sensor state'],['cat','One color per bar'],['one','All the same']]);
+            obPick('Bar colors','bcolor',function(){return GR.bcolor||'status';},function(v){GR.bcolor=v;});
             pfNum(pop,'Most bars shown',function(){return GR.bmax||8;},function(v){GR.bmax=v;},1,40);
             pfText(pop,'Only names containing (comma separated)',function(){return GR.chNames;},function(v){GR.chNames=v;},GR.bsrc==='sensors'?'Ping':'Traffic');
           }
         }else{
           pfSel(pop,'Period',function(){return GR.period;},function(v){GR.period=parseInt(v,10);},GPERIODS);
+          if(GR.kind==='sensor'||GR.kind==='sensors')obPick('Drawing','draw',function(){return GR.draw||'own';},function(v){GR.draw=v;});
           if((GR.kind==='sensor'||GR.kind==='sensors')&&GR.draw!=='pic'){
           pop.appendChild(h('div','pf-h','Chart style'));
           var gsg=h('div','presetgrid');pop.appendChild(gsg);
@@ -6541,17 +6592,15 @@ try{
     showIf(sbp,sbPrtg);sb1.appendChild(sbp);
     /* ---- graph ---- */
     var gr1=section('Graph');secIf(gr1,isGraph);
-    gr1.appendChild(inSel('Shows',function(){return GR.kind;},function(v){
-      GR.kind=v;grKindSize(v);
-      if(v==='sensors'&&GR.titleMode==='object')GR.titleMode='stock';
-      else if(v!=='sensors'&&GR.titleMode==='stock')GR.titleMode='object';
-      refreshUI();
-    },GRKINDS));
+    gr1.appendChild(h('label',null,'Shows'));
+    gr1.appendChild((function(){var pg=grPicGrid('kind',function(){return GR.kind;},function(v){setGrKind(v);},null,function(fn){fn();refreshUI();render();});syncs.push(function(){pg.syncPick();});return pg;})());
     var grp_=h('div');grp_.appendChild(inSel('Period',function(){return GR.period;},function(v){GR.period=parseInt(v,10);},GPERIODS));showIf(grp_,gPeriod);gr1.appendChild(grp_);
     var gbr=h('div');
-    gbr.appendChild(inSel('Bars show',function(){return GR.bsrc||'status';},function(v){GR.bsrc=v;if(v==='status'&&GR.bcolor==='cat')GR.bcolor='status';refreshUI();},[['status','Share of sensors in each state: put it on a device, group or probe'],['channels','The channels of a sensor: put it on a sensor'],['sensors','The sensors on a device or group, by their value']]));
-    gbr.appendChild(inSel('Direction',function(){return GR.bdir||'row';},function(v){GR.bdir=v;},[['row','Horizontal bars'],['col','Vertical bars']]));
-    var gbc=h('div');gbc.appendChild(inSel('Bar colors',function(){return GR.bcolor||'status';},function(v){GR.bcolor=v;},[['status','By the state of each sensor'],['cat','One color per bar'],['one','All the same color']]));
+    gbr.appendChild(h('label',null,'Bars show'));
+    gbr.appendChild((function(){var pg=grPicGrid('bsrc',function(){return GR.bsrc||'status';},function(v){GR.bsrc=v;if(v==='status'&&GR.bcolor==='cat')GR.bcolor='status';},null,function(fn){fn();refreshUI();render();});syncs.push(function(){pg.syncPick();});return pg;})());
+    gbr.appendChild(h('label',null,'Direction'));
+    gbr.appendChild((function(){var pg=grPicGrid('bdir',function(){return GR.bdir||'row';},function(v){GR.bdir=v;},null,function(fn){fn();refreshUI();render();});syncs.push(function(){pg.syncPick();});return pg;})());
+    var gbc=h('div');gbc.appendChild(h('label',null,'Bar colors'));gbc.appendChild((function(){var pg=grPicGrid('bcolor',function(){return GR.bcolor||'status';},function(v){GR.bcolor=v;},null,function(fn){fn();refreshUI();render();});syncs.push(function(){pg.syncPick();});return pg;})());
     showIf(gbc,function(){return GR.bsrc!=='status';});gbr.appendChild(gbc);
     var gbn=h('div');
     gbn.appendChild(inNum('Most bars shown',function(){return GR.bmax;},function(v){GR.bmax=v;},1,40));
@@ -6560,7 +6609,8 @@ try{
     gbr.appendChild(h('p','note','The bars are drawn from the live values, using the viewer’s own PRTG login. Bars of different units in one object only make sense when you filter to one kind of value, for example “Ping”. “By the state” only applies to sensors; channels use one color per bar.'));
     showIf(gbr,gBars);gr1.appendChild(gbr);
     var gdw=h('div');
-    gdw.appendChild(inSel('Drawing',function(){return GR.draw||'own';},function(v){GR.draw=v;refreshUI();},[['own','Modern line chart: drawn by the tool, follows the look'],['pic','PRTG\u2019s own picture']]));
+    gdw.appendChild(h('label',null,'Drawing'));
+    gdw.appendChild((function(){var pg=grPicGrid('draw',function(){return GR.draw||'own';},function(v){GR.draw=v;},null,function(fn){fn();refreshUI();render();});syncs.push(function(){pg.syncPick();});return pg;})());
     showIf(gdw,function(){return gSensor()||gList();});gr1.appendChild(gdw);
     var gow=h('div');
     gow.appendChild(inSel('Chart style',function(){return GR.cstyle||'area';},function(v){GR.cstyle=v;},[['area','Line with a soft fill'],['smooth','Smooth line with a soft fill'],['line','Line only'],['bars','Bars, one per channel'],['stacked','Stacked bars'],['overlap','Overlapping areas, every channel filled'],['stackarea','Stacked area, the top edge is the total'],['mirror','Mirrored: first channel up, second down'],['threshold','Threshold colors from the channel\u2019s limits'],['glow','Glow gradient, for dark looks'],['step','Stepped line, holds each value'],['spark','Sparkline with the current value'],['combo','Bars + line: first channel as bars, the others as lines'],['heatmap','Heatmap: hour by day (last 7 or 30 days)'],['band','Min / max band around the average'],['dots','Dots, coloured by the channel\u2019s limits'],['ring','24-hour ring (last 24 hours)']]));

@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.68.
+Last updated at version 1.5.69.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -161,6 +161,17 @@ A full run takes about 5 seconds (16 seconds the very first time).
   bar is HTML like the pill and always shows its word; Beacon's rays blink on alarm states when
   Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
   tile, badge, LED).
+
+## Graph choices as pictures, sunburst resize (1.5.69)
+
+- The owner found the graph's options (Shows, Bars show, ...) not intuitive. `GRPICK` (kind, bsrc, bdir, bcolor, draw: value,
+  short name, tooltip) and `grPic(group,value)` draw a 64x44 picture per choice; `grPicGrid(group,get,set,keep,done)` makes
+  the grid (`.grpick`, same chips as the Tile's Kind pictures). Used in the bar's Graph menu (`obPick`, with the scope filter as
+  `keep`; Drawing added there too) and the side panel (replacing the selects). Chart style already had pictures (`GRSHOT`).
+- The sunburst could not be resized in the preview only because `CFG.edit.types` (set before sunbursts existed) did not list
+  it; `drawSunburstPreview` already used `eoSz`. Now listed: dragging changes `initialwidth`/`initialheight` (checked 420x440 ->
+  340x380). Every object file is byte-identical to 1.5.68 (22 compared).
+- Not verified on the real PRTG (builder only).
 
 ## Industrial object (1.5.68)
 
