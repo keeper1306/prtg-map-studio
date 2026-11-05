@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.73.
+Last updated at version 1.5.74.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -189,6 +189,13 @@ A full run takes about 5 seconds (16 seconds the very first time).
   preview), the Width/Height inputs (`ogauge`, `owlabel`), the Flexible buttons (hidden for the Any table: `buildAny` has no
   table fit), the table's Header/Stripes/Title buttons and the gauge's Needle/Min/max (hidden), and the align buttons
   (`L().align`, not `T.tAlign`). Checked: the bar shows for all nine Any templates; other object files unchanged.
+- 1.5.74, seen by the owner on the real PRTG (maps "WallDisplay", "WallDisplay Device", "WallDisplay Sensor", 2202):
+  on View Map all six Any objects were right on Root, a device (Proxmox) and a sensor, so the files work. The Map designer
+  canvas was wrong for the gauge, graph, icon and tile on Root and the device ("4 of 5 sensors up"): its preview asks
+  `/controls/mapobjectpreview.htm` with `count=5` (`pvCountFor`, as PRTG's designer does), which cuts the sensors table to 5
+  rows, except for names matching `CFG.preview.countPattern`. That was 'count|donut' (so status counts and donuts were right);
+  now 'count|donut|sunburst|any.object' (category "Any object", name or file "any object"). Sunbursts had the same cut.
+  The fix itself was not re-checked on the real PRTG.
 - Wall display is the only look with text size 18 (all others 13); the owner calls it the big screen preset. Fixes:
   `lookSet(m,look)` scales `initW/initH/fitW/fitH` by the size ratio when a look is picked or carried over by a type switch
   (tables had shrunk their text back by the Flexible fit, donut legends overflowed over the title and lost rows);
