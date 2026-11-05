@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.70.
+Last updated at version 1.5.71.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -161,6 +161,29 @@ A full run takes about 5 seconds (16 seconds the very first time).
   bar is HTML like the pill and always shows its word; Beacon's rays blink on alarm states when
   Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
   tile, badge, LED).
+
+## Any object templates and the Wall display fix (1.5.71)
+
+- The owner asked for one extra item per object that works on a probe, group, device and sensor, without removing anything.
+  Each type's template list ends with the group "Any object" (option value `any`; Table, Gauge, Graph, Donut, Sunburst,
+  Status counts, Icon, Tile, Industrial = `ANYT`, Industrial is the Tile with `fam:'ind'`). `anyStart()` makes a fresh
+  model of the type with `any:true` (`anyOn()`), size `ANYSZ` (times the look's text size / 13), Flexible except tables and icons.
+  `buildAny()` writes the file: `checkobjecttype` all four, hidden `.aname` / `.astatus` / `.alast` (`objectproperty Name`,
+  `objectstatus status` and `lastvalue`), and two JSON comments: `<#table content='sensors'>` and `<#table content='channels'>`.
+  `anyRuntime(root,C)` (C.view = the type): channels present and at most one sensor row = a sensor; else the sensors below.
+  No API calls. The type's own sections and bar menus hide while `anyOn()` (`ANYSEC`, `data-sec` on sections, `applyVis`);
+  the bar shows an "Any object" menu and the side panel an "Any object" section with "Preview it on" (`m.anyPv`, preview only).
+- Geo map (PRTG's own `locationlist` drawing) and Link style (not attached to an object) have no Any object template.
+- Wall display is the only look with text size 18 (all others 13); the owner calls it the big screen preset. Fixes:
+  `lookSet(m,look)` scales `initW/initH/fitW/fitH` by the size ratio when a look is picked or carried over by a type switch
+  (tables had shrunk their text back by the Flexible fit, donut legends overflowed over the title and lost rows);
+  `lookTs(L)`/`tsCss()` scale the fixed font sizes in `tileCss` and `indCss`, and graphs get `C.ts` (the drawing is
+  enlarged like Flexible). For size 13 the files are unchanged. The donut legend now clips with … (all ring donuts' CSS changed).
+- Checked: 12 tests; object files identical to 1.5.70 except graphs (one runtime line) and ring donuts (three legend rules);
+  the any files run against simulated PRTG output (sensor with and without itself in the sensors table, device whose channels
+  table errors, empty group). Not verified on the real PRTG (signed out in Chrome): what `<#table content='sensors'>` and
+  `content='channels'` return for a sensor and for a device, and whether `<#objectstatus name="status">` and `lastvalue` work
+  on probes, groups and devices.
 
 ## Right-side bar: layouts, background, grid (1.5.70)
 
