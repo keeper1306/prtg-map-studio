@@ -7166,6 +7166,17 @@ try{
   /* The Dashboard edits one of its frames or backgrounds in this tab's editor. The tab's own frame and its undo history are set aside for the
      time and come back untouched afterwards. */
   var EDK=null;
+  /* 1.5.75: the Looks for the Map designer's banners, as banner settings. A look whose titles sit on a bar (PRTG default, Light card,
+     Dark card, Corporate blue, Wall display) gives the banner that bar's colours; the others give it their card and title colours */
+  OBJAPI.bannerLooks=function(){
+    return LOOKORDER.map(function(n){
+      var L=lookOf(n), bar=(L.titleStyle==='bar'&&!!L.titleBg), card=(L.card!==false), bw=card?(L.bw==null?1:L.bw):0,
+          sh=({none:'none',soft:'soft',strong:'strong',glow:'strong'})[L.shadow]||'none';
+      return [n,bar?{fill:L.titleBg,fillA:100,bcolor:L.titleBg,bw:0,radius:L.radius||0,shadow:sh,tcolor:L.titleColor||'#FFFFFF',scolor:L.titleColor||'#FFFFFF',fam:L.font||'Roboto'}
+        :{fill:L.cardBg||'#FFFFFF',fillA:card?(L.cardA==null?100:L.cardA):0,bcolor:L.border||L.line||'#E3E5E9',bw:bw,radius:L.radius||0,shadow:card?sh:'none',
+          tcolor:L.titleText||L.text||'#0F172A',scolor:L.muted||L.headColor||'#64748B',fam:L.font||'Roboto'}];
+    });
+  };
   OBJAPI.frameEdit={
     begin:function(kind,p,w,h){
       var fr=blankFR(kind);

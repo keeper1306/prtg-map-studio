@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.74.
+Last updated at version 1.5.75.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -161,6 +161,16 @@ A full run takes about 5 seconds (16 seconds the very first time).
   bar is HTML like the pill and always shows its word; Beacon's rays blink on alarm states when
   Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
   tile, badge, LED).
+
+## Banner looks (1.5.75)
+
+- The owner found the Map designer's banners missing the Looks every other object has. `OBJAPI.bannerLooks()` (in
+  `js/09-objects.js`, read at click time from `fbPresets()` in `js/06-dashboard.js`) maps each look in `LOOKORDER` to banner
+  settings: looks with `titleStyle:'bar'` (PRTG default, Corporate blue, Light card, Dark card, Wall display) give the bar
+  colours (`titleBg`/`titleColor`); the others the card fill, border, shadow, `titleText` and `muted`; plus `font`.
+  The banner's Presets show "Colours" (`BSTYLES`, unchanged) and "Looks"; `p.style` is set to the look's name.
+  Frames, backgrounds and shapes already had the Looks through the Object builder (`lookToFrameP`); tiles still have only
+  `TSTYLES` (not asked). Checked on the stand-in server only: five looks applied and pushed; object files unchanged.
 
 ## The look in automatic names (1.5.72)
 

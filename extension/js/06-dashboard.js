@@ -1069,7 +1069,7 @@ try{
   /* the presets that suit an item, as {n: name, sw: swatch style, g: group, go: function that applies it} */
   function fbPresets(it){
     var t=it.type, out=[], k;
-    function tbl(T,skip){Object.keys(T).forEach(function(k){if(skip&&skip.test(k))return;out.push({n:k,sw:swStyle(T[k]),go:function(){extend(it.p,T[k]);it.p.style=k;if(it.p.shape)it.p.group=false;}});});}
+    function tbl(T,skip,g){Object.keys(T).forEach(function(k){if(skip&&skip.test(k))return;out.push({n:k,g:g,sw:swStyle(T[k]),go:function(){extend(it.p,T[k]);it.p.style=k;if(it.p.shape)it.p.group=false;}});});}
     if(t==='label'||t==='button'){
       (t==='button'?BTN_PRESETS:LBL_PRESETS).forEach(function(p){out.push({n:p.n,g:p.g,sw:p.sw,tip:p.tip,go:function(){
         var v=it.state.v, c=it.state.c, keep={txt:v.txt,link:v.link,linktype:v.linktype,newtab:c.newtab};
@@ -1089,7 +1089,10 @@ try{
       });
     }
     else if(t==='tile')tbl(TSTYLES);
-    else if(t==='banner')tbl(BSTYLES);
+    else if(t==='banner'){   /* the banner's own colours, then the same Looks as the Object builder's objects */
+      tbl(BSTYLES,null,'Colours');
+      ((window.OBJAPI&&OBJAPI.bannerLooks)?OBJAPI.bannerLooks():[]).forEach(function(x){out.push({g:'Looks',n:x[0],sw:swStyle(x[1]),on:it.p.style===x[0],go:function(){extend(it.p,x[1]);it.p.style=x[0];}});});
+    }
     else if(t==='chip')Object.keys(CHIPS).forEach(function(k){out.push({n:k.charAt(0).toUpperCase()+k.slice(1),sw:'background:'+CHIPS[k][0]+';color:'+CHIPS[k][1]+';border-radius:999px;padding:3px 10px;font-size:11px;font-weight:600;display:inline-block;',go:function(){it.p.variant=k;}});});
     return out;
   }
