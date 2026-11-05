@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.71.
+Last updated at version 1.5.72.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -161,6 +161,16 @@ A full run takes about 5 seconds (16 seconds the very first time).
   bar is HTML like the pill and always shows its word; Beacon's rays blink on alarm states when
   Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
   tile, badge, LED).
+
+## The look in automatic names (1.5.72)
+
+- The owner asked for the look in the autofilled file name. `amLook(m,x)` puts `m.look.name` after the type in every
+  `amName()` result ("Map Studio Gauge - Wall display - flat minimalist, main channel"), Any object names included.
+  Skipped where the builder offers no Looks: Geo map, Link style, icons with the stock engine or without their card.
+  Names over 64 characters now end on a whole word (`sp>40`) before the "…".
+- So every automatic name and file name changed, ring gauges included (1.5.54 had kept those unchanged because such
+  files are installed in `mapobjects`): an object made again gets a new file name and does not replace the old file in
+  PRTG. Checked: every object file equals 1.5.71 apart from the name (header line and the class names made from it).
 
 ## Any object templates and the Wall display fix (1.5.71)
 

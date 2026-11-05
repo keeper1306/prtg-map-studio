@@ -5069,9 +5069,18 @@ try{
   /* ---------- names: every object starts with "Map Studio" and says what is in it, until you type your own ---------- */
   function amLab(list,v){var r=v;list.forEach(function(o){if(o[0]===v)r=o[1];});return r;}
   function amLow(v){return String(v).toLowerCase().replace(/\bprtg\b/g,'PRTG');}   /* lower case, but PRTG stays PRTG */
+  /* 1.5.71+: the automatic name (and so the file name) carries the look's name after the type, e.g.
+     "Map Studio Gauge - Wall display - flat minimalist, ...", for every object whose Looks the builder offers */
+  function amLook(m,x){
+    var nm=m&&m.look&&m.look.name, i;
+    if(!nm||TYPE==='geomap'||TYPE==='links'||isPaste())return x;
+    if(TYPE==='icon'&&!m.any&&(m.engine==='stock'||!iHasBg(m)))return x;   /* an icon without its card has no Looks */
+    i=x.indexOf(' - ');
+    return (i<0)?x+' - '+nm:x.slice(0,i)+' - '+nm+x.slice(i);
+  }
   function amName(m){
     var t=TYPE, p='Map Studio ', x='', n;
-    if(m&&m.any&&ANYT[t])return p+ANYLAB[anyView()]+' - any object';
+    if(m&&m.any&&ANYT[t])return amLook(m,p+ANYLAB[anyView()]+' - any object');
     if(t==='table'){
       n=m.cols.length;x='Table - '+m.cols.slice(0,3).map(colLabel).join(', ')+(n>3?' +'+(n-3):'');
       if(m.status&&m.status.length)x+=' - '+m.status.join(' + ')+' only';
@@ -5101,8 +5110,11 @@ try{
     }else if(t==='links'){
       x='Link style - '+String(amLab(LKTYPES,m.line)).replace(/ \(.*$/,'').toLowerCase()+(m.dash==='solid'?'':', '+String(amLab(LKDASH,m.dash)).toLowerCase());
     }else return null;
-    x=p+x;
-    return x.length>64?x.slice(0,63).replace(/[ ,+\-]+$/,'')+'…':x;
+    x=amLook(m,p+x);
+    if(x.length<=64)return x;
+    var cut=x.slice(0,63), sp=cut.lastIndexOf(' ');   /* too long: end on a whole word, not half of one */
+    if(sp>40)cut=cut.slice(0,sp);
+    return cut.replace(/[ ,+\-]+$/,'')+'…';
   }
   function obAutoName(){
     var m=M();
