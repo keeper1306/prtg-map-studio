@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.72.
+Last updated at version 1.5.73.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -184,6 +184,11 @@ A full run takes about 5 seconds (16 seconds the very first time).
   No API calls. The type's own sections and bar menus hide while `anyOn()` (`ANYSEC`, `data-sec` on sections, `applyVis`);
   the bar shows an "Any object" menu and the side panel an "Any object" section with "Preview it on" (`m.anyPv`, preview only).
 - Geo map (PRTG's own `locationlist` drawing) and Link style (not attached to an object) have no Any object template.
+- 1.5.73: the owner found the floating bar missing on the Any object table: `obRoot()` returned `#edwrap` (the table's
+  column editor) for every table. Now `anyOn()` is checked there and in `edOn()`, `eoModel()`/`eoOk()` (drag-resize in the
+  preview), the Width/Height inputs (`ogauge`, `owlabel`), the Flexible buttons (hidden for the Any table: `buildAny` has no
+  table fit), the table's Header/Stripes/Title buttons and the gauge's Needle/Min/max (hidden), and the align buttons
+  (`L().align`, not `T.tAlign`). Checked: the bar shows for all nine Any templates; other object files unchanged.
 - Wall display is the only look with text size 18 (all others 13); the owner calls it the big screen preset. Fixes:
   `lookSet(m,look)` scales `initW/initH/fitW/fitH` by the size ratio when a look is picked or carried over by a type switch
   (tables had shrunk their text back by the Flexible fit, donut legends overflowed over the title and lost rows);

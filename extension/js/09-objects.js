@@ -4655,15 +4655,15 @@ try{
   function refreshUI(){
     syncs.forEach(function(f){f();});drawCols();drawGallery();applyVis();
     if(lookDetail)lookDetail.hidden=(M().look.mode==='prtg');
-    var gb=document.getElementById('ogauge');if(gb)gb.hidden=(TYPE==='table'||isPaste()||(TYPE==='icon'&&IC.engine==='stock'));
+    var gb=document.getElementById('ogauge');if(gb)gb.hidden=((TYPE==='table'&&!anyOn())||isPaste()||(TYPE==='icon'&&IC.engine==='stock'));
     var sb=document.getElementById('osamplebox');if(sb)sb.hidden=(TYPE!=='gauge');
-    var wl=document.getElementById('owlabel');if(wl)wl.textContent=(TYPE==='table')?'Width, blank = fit':'Width';
+    var wl=document.getElementById('owlabel');if(wl)wl.textContent=(TYPE==='table'&&!anyOn())?'Width, blank = fit':'Width';
     var wi=document.getElementById('owidth');if(wi)wi.placeholder=(TYPE==='sunburst')?(SB.engine==='ring'?'420':'auto'):(TYPE==='status')?'420':(TYPE==='tile')?'300':(TYPE==='gauge')?'320':(TYPE==='graph'?(GR.kind==='sensors'?'760':(GR.kind==='toplist'?'240':'520')):(TYPE==='donut'?(DN.engine==='ring'?'340':'auto'):(TYPE==='icon'?String(iStyle(IC.style).w):'fit')));
     var hi=document.getElementById('oheight');if(hi)hi.placeholder=(TYPE==='sunburst')?(SB.engine==='ring'?'440':'auto'):(TYPE==='status')?'200':(TYPE==='tile')?'150':(TYPE==='graph'?(GR.kind==='sensors'?'420':(GR.kind==='toplist'?'240':'300')):(TYPE==='donut'?(DN.engine==='ring'?'220':'auto'):(TYPE==='icon'?String(iStyle(IC.style).h):'280')));
     var pasteMode=isPaste();
     var csb=document.getElementById('ocsetw');if(csb){csb.style.display=pasteMode?'none':'';if(window.PMSHDR)window.PMSHDR.sync();}
     [['odl'],['ofname']].forEach(function(x){var e=document.getElementById(x[0]);if(e)e.style.display=pasteMode?'none':'';});   /* style, not the hidden attribute: a label has its own display rule */
-    [['owlabel'],['owidth']].forEach(function(x){var e=document.getElementById(x[0]);if(e)e.style.display=(pasteMode||(TYPE==='table'&&ED.on))?'none':'';});
+    [['owlabel'],['owidth']].forEach(function(x){var e=document.getElementById(x[0]);if(e)e.style.display=(pasteMode||edOn())?'none':'';});
     var fh=document.getElementById('ofheadtext');if(fh)fh.textContent=pasteMode?'Paste into HTML Before':'File';
   }
 
@@ -4826,7 +4826,7 @@ try{
   /* ---------- editing in the preview: resize, rotate, edit and move the title (tables first) ---------- */
   var edBusy=false;
   var ED={on:true,x:120,y:80,sel:null};   /* the box starts well in from the edge: room to grow to the left and above, and for the rotate handle */
-  function edOn(){return TYPE==='table'&&ED.on;}
+  function edOn(){return TYPE==='table'&&ED.on&&!anyOn();}   /* the Any object table has no column editor */
   function rotXY(dx,dy,deg){var a=deg*Math.PI/180,c=Math.cos(a),s=Math.sin(a);return [dx*c-dy*s,dx*s+dy*c];}
   function edRot(){return tableRot(T);}
   function edCursor(sx,sy){
@@ -4986,9 +4986,9 @@ try{
 
   /* ---------- hands-on editing for the other object types: a frame with handles on the preview sets the size the file starts at, and a double-click on the title types a new one ---------- */
   var EO={ov:null,inp:null};
-  function eoModel(){return TYPE==='gauge'?G:(TYPE==='sunburst'?SB:(TYPE==='donut'?DN:(TYPE==='graph'?GR:(TYPE==='icon'?IC:(TYPE==='status'?SC:(TYPE==='tile'?TL:null))))));}
+  function eoModel(){return anyOn()?M():TYPE==='gauge'?G:(TYPE==='sunburst'?SB:(TYPE==='donut'?DN:(TYPE==='graph'?GR:(TYPE==='icon'?IC:(TYPE==='status'?SC:(TYPE==='tile'?TL:null))))));}
   function eoText(){return flexAppend(anyOn()?buildAny(M()):TYPE==='gauge'?buildGauge(G):(TYPE==='sunburst'?buildSunburst(SB):(TYPE==='donut'?buildDonut(DN):(TYPE==='tile'?buildTile(TL):(TYPE==='status'?buildStatus(SC):(TYPE==='graph'?buildGraph(GR):buildIcon(IC)))))));}
-  function eoOk(){return CFG.edit.types.indexOf(TYPE)>-1&&!!eoModel()&&!(TYPE==='icon'&&IC.engine==='stock');}
+  function eoOk(){return (CFG.edit.types.indexOf(TYPE)>-1||anyOn())&&!!eoModel()&&!(TYPE==='icon'&&IC.engine==='stock');}
   function eoSz(m,w,h_){var a=parseInt(m.initW,10), b=parseInt(m.initH,10);return [a>0?a:w,b>0?b:h_];}
   function eoBox(){
     var ms=document.getElementById('mapshow'), root=prevEl.querySelector('.map_object'), ov=EO.ov, mr, rr, z=OZ();
@@ -5189,7 +5189,7 @@ try{
   /* sets of status colors: PRTG's own, and others with a clearer green or friendlier to color blindness */
   var PS=window.PMSSETS, CSETS=PS.sets;   /* the color sets are shared with the Map designer's bar; PS.cur is the one chosen */
   function obOk(){return !isLegacy(TYPE)&&!isPaste()&&TYPE!=='links'&&!(TYPE==='icon'&&IC.engine==='stock')&&!!M()&&!!M().look;}
-  function obRoot(){return TYPE==='table'?document.getElementById('edwrap'):((TYPE==='geomap'||TYPE==='icon')?(prevEl.querySelector('.icstrip')||prevEl.querySelector('.map_object')):prevEl.querySelector('.map_object'));}   /* the icon preview shows one icon per state: any of them opens the bar */
+  function obRoot(){return (TYPE==='table'&&!anyOn())?document.getElementById('edwrap'):((TYPE==='geomap'||TYPE==='icon')?(prevEl.querySelector('.icstrip')||prevEl.querySelector('.map_object')):prevEl.querySelector('.map_object'));}   /* the icon preview shows one icon per state: any of them opens the bar */
   function obSet(fn){var m=M(), l=m.look;if(l.mode==='prtg')l.mode='custom';fn(l,m);refreshUI();render();}
   function obBtn(label,title,get,set){
     var b=h('button','fb-t',label);b.type='button';b.title=title;
@@ -5591,7 +5591,7 @@ try{
     if(anyOn()||!(TYPE==='icon'&&!iHasBg(IC)))b.appendChild(mLooks);   /* on an icon without a background a look would only change the status colours, which Colors does */
     b.appendChild(mColors);
     b.appendChild(obSep());
-    if(FLEXT[TYPE]&&!isPaste()){b.appendChild(obFlex());b.appendChild(obSep());}
+    if(FLEXT[TYPE]&&!isPaste()&&!(TYPE==='table'&&anyOn())){b.appendChild(obFlex());b.appendChild(obSep());}
     /* fonts, colours and corners */
     sty.appendChild(fs);
     /* two sizes: the title's and the text inside the object */
@@ -5612,13 +5612,13 @@ try{
     sty.appendChild(obNum('Corner radius',function(){return L().radius;},function(v){obSet(function(l){l.card=true;l.radius=v;});},0,40));
     b.appendChild(sty);
     var sp=h('span','fb-g');b.appendChild(sp);
-    if(TYPE==='table'){
+    if(TYPE==='table'&&!anyOn()){
       sp.appendChild(obSep());
       sp.appendChild(obBtn('Header','Show the header row',function(){return L().head;},function(v){obSet(function(l){l.head=v;});}));
       sp.appendChild(obBtn('Stripes','Striped rows',function(){return L().zebra;},function(v){obSet(function(l){l.zebra=v;});}));
       sp.appendChild(obBtn('Title','Show the title',function(){return M().showTitle!==false;},function(v){M().showTitle=v;refreshUI();render();}));
     }else{
-      if(TYPE==='gauge'){
+      if(TYPE==='gauge'&&!anyOn()){
         sp.appendChild(obSep());
         sp.appendChild(obBtn('Needle','Show the needle',function(){return G.needle;},function(v){G.needle=v;refreshUI();render();}));
         sp.appendChild(obBtn('Min/max','Show the minimum and maximum',function(){return G.showMinMax;},function(v){G.showMinMax=v;refreshUI();render();}));
@@ -5631,9 +5631,9 @@ try{
     {
       var al=h('span','fb-al');
       [['left','Align left','<path d="M4 6h16M4 10h10M4 14h16M4 18h10"/>'],['center','Center','<path d="M4 6h16M7 10h10M4 14h16M7 18h10"/>'],['right','Align right','<path d="M4 6h16M10 10h10M4 14h16M10 18h10"/>']].forEach(function(a){
-        var q=h('button','fb-t fb-i','<svg viewBox="0 0 24 24" aria-hidden="true">'+a[2]+'</svg>');q.type='button';q.title=(TYPE==='table'?'Title: ':'')+a[1];q.setAttribute('aria-label',a[1]);
-        q.addEventListener('click',function(){if(TYPE==='table'){obDo(function(){T.tAlign=(T.tAlign===a[0])?'':a[0];});}else obSet(function(l){l.align=(l.align===a[0])?'':a[0];});});
-        OB.syncs.push(function(){q.classList.toggle('on',(TYPE==='table'?T.tAlign:L().align)===a[0]);});
+        var q=h('button','fb-t fb-i','<svg viewBox="0 0 24 24" aria-hidden="true">'+a[2]+'</svg>');q.type='button';q.title=((TYPE==='table'&&!anyOn())?'Title: ':'')+a[1];q.setAttribute('aria-label',a[1]);
+        q.addEventListener('click',function(){if(TYPE==='table'&&!anyOn()){obDo(function(){T.tAlign=(T.tAlign===a[0])?'':a[0];});}else obSet(function(l){l.align=(l.align===a[0])?'':a[0];});});
+        OB.syncs.push(function(){q.classList.toggle('on',((TYPE==='table'&&!anyOn())?T.tAlign:L().align)===a[0]);});
         al.appendChild(q);
       });
       sp.appendChild(obSep());sp.appendChild(al);
