@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.75.
+Last updated at version 1.5.76.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -161,6 +161,18 @@ A full run takes about 5 seconds (16 seconds the very first time).
   bar is HTML like the pill and always shows its word; Beacon's rays blink on alarm states when
   Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
   tile, badge, LED).
+
+## Connector colours on Map Studio icons (1.5.76)
+
+- Seen on the real PRTG (amer.prtglab.com, map 4823 "Global Status", shield icons on groups/devices, three connectors with
+  `colorMode:'status'`, look `beads`): every line drew in the fallback grey `#9aa4af`. A Map Studio icon on a probe, group or
+  device carries PRTG's rollup flags on the item itself (`map_objectstate_hasred ... map_objectstate_hasgreen`, `hasno...`
+  for the rest) and no inner label, and `statusColor()` in `connLiveRuntime` only read `map_objectstate_sens*` on the item and
+  `map_iconcolor_has*` on an inner label. It now also reads `map_objectstate_has<colour>` on the item (worst first, `ICOLORDER`).
+- Checked on that map by running the new runtime in the page (not saved): two lines red, one half green half red, as the
+  shields are. A connector's code is in its pushed HTML, so lines already on a map change only after the map is pushed again.
+- How the lines were read: `/controls/mapview.htm?id=N` still has each connector's `data-msln` (base64 of the runtime and its
+  JSON config); the live page drops the `<img>` once it has run.
 
 ## Banner looks (1.5.75)
 

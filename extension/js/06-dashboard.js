@@ -3377,6 +3377,13 @@ try{
            an inner SVG fill, anything), unlike reading computed style, which only sees a plain status dot */
         var m=/\bmap_objectstate_sens([a-z]+)\b/.exec(elx.className||''), k=m?LST[m[1]]:null;
         if(k)return LCOL[k];
+        /* 1.5.76: a Map Studio icon on a probe, group or device gets PRTG's rollup flags on the element itself
+           ("map_objectstate_hasred ... map_objectstate_hasgreen", with "hasno..." for the others), not on an inner
+           label. Seen on map 4823 (amer.prtglab.com): every line between such icons stayed grey. Worst state wins. */
+        var oc=String(elx.className||''), oi;
+        for(oi=0;oi<ICOLORDER.length;oi++){
+          if(new RegExp('\\bmap_objectstate_has'+ICOLORDER[oi]+'\\b').test(oc))return ICOLMAP[ICOLORDER[oi]];
+        }
         /* A plain device or sensor icon -- the ordinary thing to glue a connector to -- carries none of the
            classes above. PRTG marks its state with map_iconcolor_sens<letter> on a nested .label span, a
            third scheme distinct from both map_objectstate_sens<letter> and the map_iconcolor_has<colour>
