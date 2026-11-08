@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.77.
+Last updated at version 1.5.78.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -161,6 +161,25 @@ A full run takes about 5 seconds (16 seconds the very first time).
   bar is HTML like the pill and always shows its word; Beacon's rays blink on alarm states when
   Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
   tile, badge, LED).
+
+## Link style looks, preview and bar (1.5.78)
+
+- The owner asked for the Object builder's Links to have exactly the Connector looks, a preview that shows the object as in
+  PRTG and just says "Drop anywhere on the map", and a floating bar.
+- `LK.lnlook` (also in `LK_VKEYS`/`LK_DEFAULTS`, default `plain`; `LK.look` stays the object's Map Studio look). `lkLook(L)`,
+  `lkAnimOk(L)`. `lkCfg` adds `look` and `sp` (speed from `flowSec`, as `lsSpeed`) only for a look other than plain, and
+  `lkScript` then wraps the file's script as `(function(){var mkLook=...;(mlsRuntime)(cfg);})();` so `mkLook` stays out of
+  the page's globals. In `mlsRuntime` a look draws through `mkLook`; `ends(paint)` takes the two end colours from the first and
+  last stop of the PRTG line's gradient (or its one colour). Markers use those colours. Dash, glow and round ends are hidden
+  with a look (as for Connectors); Animate shows for dashed plain lines, Beads, Chevron and Dash sweep.
+- The file's `.mls-chip` (seen only in PRTG's map designer) now says "Drop anywhere on the map" (was "Link style"). The preview
+  draws that chip over the sample map; the sample map is `.map_object.lk-demo`, which `obRoot()` uses for the bar.
+- `obBuildLinks()`: Look (picture grid, `fgal`/`fgtile`, `lookThumb`), Shape, Width, Line, Color, Ends, Motion (hidden when
+  nothing can move). `obOk()` no longer excludes links. CSS `#obar .pf[hidden],#obar .fb-m[hidden]{display:none}`.
+- Checked against the stand-in server: plain files differ from 1.5.77 only in the chip text and the runtime's new (unused for
+  plain) code; the scripts for six looks ran on a PRTG-like `#mapsvg` (a gradient line and a one-colour line) without errors;
+  the 22 other object files are identical to 1.5.77; 12 tests pass. Not verified on the real PRTG: the looks on a live map,
+  whether PRTG's lines use a gradient there, and the chip in the map designer.
 
 ## Names stay automatic after Add (1.5.77)
 

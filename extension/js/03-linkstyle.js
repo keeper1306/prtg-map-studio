@@ -3,9 +3,9 @@
 /* ---------- the shared map link style: one saved look, used both by the Link style object (built in the dashboard module's objects tab)
    you push to PRTG, and, by default, by the Map designer's own connectors (also in the dashboard module). Top-level and not inside
    either module's IIFE, since both need to read and write it, and the two modules do not share a closure. ---------- */
-var LK_VKEYS=['line','dash','width','opacity','glow','round','colorMode','color','bend','radius','start','end','inset','flow','flowSec','calm','wait'];
+var LK_VKEYS=['line','dash','width','opacity','glow','round','colorMode','color','bend','radius','start','end','inset','flow','flowSec','calm','wait','lnlook'];
 var LK_DEFAULTS={line:'curve',dash:'solid',width:5,opacity:100,glow:true,round:true,colorMode:'status',color:'#2f80ed',bend:22,radius:20,
-  start:'none',end:'none',inset:28,flow:false,flowSec:1.4,calm:false,wait:4};
+  start:'none',end:'none',inset:28,flow:false,flowSec:1.4,calm:false,wait:4,lnlook:'plain'};
 function lkDefLoad(){try{var o=JSON.parse(localStorage.getItem(CFG.keys.linkStyle)||'null');return (o&&typeof o==='object')?o:null;}catch(e){return null;}}
 function lkDefSave(o){try{localStorage.setItem(CFG.keys.linkStyle,JSON.stringify(o));}catch(e){}}
 var LKDEF=(function(){var saved=lkDefLoad(), o={};LK_VKEYS.forEach(function(k){o[k]=(saved&&saved[k]!==undefined)?saved[k]:LK_DEFAULTS[k];});return o;})();

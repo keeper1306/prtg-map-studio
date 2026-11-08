@@ -4420,6 +4420,14 @@ try{
         g.appendChild(el('polygon',{points:f(x)+','+f(y)+' '+f(x-s*c-h*sn)+','+f(y-s*sn+h*c)+' '+f(x-s*c+h*sn)+','+f(y-s*sn-h*c),fill:paint}));
       }
     }
+    /* the two end colours of a PRTG line: the first and last stop of its gradient, or its one colour */
+    function ends(paint){
+      var mm=/url\(\s*['"]?#([^'")\s]+)/.exec(paint), gr, st, a, b;
+      if(!mm)return [paint,paint];
+      gr=document.getElementById(mm[1]);st=gr?gr.getElementsByTagName('stop'):[];
+      if(st.length){a=st[0].getAttribute('stop-color')||st[0].style.stopColor;b=st[st.length-1].getAttribute('stop-color')||st[st.length-1].style.stopColor;if(a&&b)return [a,b];}
+      return ['#9aa4af','#9aa4af'];
+    }
     function dashOf(w){
       if(C.dash==='dashed')return [w*2.6,w*1.8];
       if(C.dash==='dotted')return [0.1,w*2.2];
@@ -4427,7 +4435,7 @@ try{
       return null;
     }
     function draw(){
-      var svg=document.getElementById('mapsvg'), lines, g, old, i, l, x1, y1, x2, y2, paint, o, w=C.width, ds, sum, p, round;
+      var svg=document.getElementById('mapsvg'), lines, g, old, i, l, x1, y1, x2, y2, paint, o, w=C.width, ds, sum, p, round, ce, lk;
       if(!svg)return;
       if(svg.closest&&svg.closest('#mapeditor'))return; /* the editor keeps PRTG's own lines, so a link can still be removed */
       if(mo)mo.disconnect();
@@ -4444,6 +4452,14 @@ try{
           if(isNaN(x1+y1+x2+y2)||(x1===x2&&y1===y2))continue;
           paint=C.color||l.getAttribute('stroke')||'#9aa4af';
           o=geo(C.type,x1,y1,x2,y2);
+          if(C.look&&typeof mkLook==='function'){   /* one of the Connector looks */
+            ce=ends(paint);
+            lk=mkLook({look:C.look,d:o,paint:paint,w:w,c1:ce[0],c2:ce[1],uid:'mls'+i,anim:!!C.flow,sp:C.sp||1.6});
+            g.insertAdjacentHTML('beforeend',lk.defs+lk.body);
+            p=el('path',{d:o,fill:'none',stroke:'none'});g.appendChild(p);
+            capOn(g,p,false,C.start,w,ce[0]);capOn(g,p,true,C.end,w,ce[1]);
+            continue;
+          }
           if(C.glow)g.appendChild(el('path',{d:o,fill:'none',stroke:paint,'stroke-width':f(w*2.2),'stroke-linecap':'round','class':'mls-glow'}));
           p=el('path',{d:o,fill:'none',stroke:paint,'stroke-width':w,'stroke-linecap':round,'stroke-linejoin':'round','class':'mls-line'+((C.flow&&ds)?' mls-flow':'')});
           if(ds){p.setAttribute('stroke-dasharray',ds.map(f).join(' '));p.style.setProperty('--mls-p',f(sum)+'px');}
@@ -4489,15 +4505,21 @@ try{
   function blankLK(){
     return {type:'links',cat:'Links',name:'Map Studio Link style',fname:'',initW:48,initH:48,look:lookOf('Minimal'),
       line:'curve',dash:'solid',width:5,opacity:100,glow:true,round:true,colorMode:'status',color:'#2f80ed',bend:22,radius:20,
-      start:'none',end:'none',inset:28,flow:false,flowSec:1.4,calm:false,wait:4};
+      start:'none',end:'none',inset:28,flow:false,flowSec:1.4,calm:false,wait:4,lnlook:'plain'};
   }
+  /* the Connector line looks (LNLOOKS, drawn by mkLook) for the Link style too; plain keeps the Link style's own drawing */
+  function lkLook(L){var k=L&&L.lnlook;return (k&&k!=='plain'&&LNLOOKS.some(function(x){return x[0]===k;}))?k:'plain';}
+  function lkAnimOk(L){var k=lkLook(L);return k==='plain'?L.dash!=='solid':(k==='beads'||k==='chevron'||k==='sweep');}
   function lkNum(v,lo,hi,d){v=parseFloat(v);if(isNaN(v))v=d;return Math.max(lo,Math.min(hi,v));}
   function lkCfg(L){
     var line=LKTYPES.some(function(x){return x[0]===L.line;})?L.line:'curve', dash=LKDASH.some(function(x){return x[0]===L.dash;})?L.dash:'solid';
     function end(v){return (v==='dot'||v==='arrow')?v:'none';}
-    return {type:line,dash:dash,width:lkNum(L.width,1,16,5),opacity:lkNum(L.opacity,10,100,100),glow:!!L.glow,round:!!L.round,
+    var o={type:line,dash:dash,width:lkNum(L.width,1,16,5),opacity:lkNum(L.opacity,10,100,100),glow:!!L.glow,round:!!L.round,
       color:(L.colorMode==='custom'&&/^#[0-9a-fA-F]{6}$/.test(String(L.color)))?String(L.color):'',
       bend:lkNum(L.bend,4,60,22),radius:lkNum(L.radius,2,80,20),start:end(L.start),end:end(L.end),inset:lkNum(L.inset,0,150,28),flow:!!L.flow};
+    var lk=lkLook(L), sec=lkNum(L.flowSec,0.4,20,1.4);
+    if(lk!=='plain'){o.look=lk;o.sp=sec>=2.2?3:(sec<=1.0?0.8:1.6);}   /* only then, so plain Link style files stay as they were */
+    return o;
   }
   function linksCss(L){
     var wait=lkNum(L.wait,1,10,4), sec=lkNum(L.flowSec,0.4,20,1.4);
@@ -4516,7 +4538,10 @@ try{
     ].filter(Boolean).join('\n');
   }
   function lkScript(cfg){
-    return '('+String(mlsRuntime).replace(/\/\*[\s\S]*?\*\//g,'').replace(/\n\s*/g,'\n')+')('+JSON.stringify(cfg)+');';
+    var run='('+String(mlsRuntime).replace(/\/\*[\s\S]*?\*\//g,'').replace(/\n\s*/g,'\n')+')('+JSON.stringify(cfg)+');';
+    if(!cfg.look)return run;
+    /* a look: the file carries the same drawer as a Connector, kept inside a function so it adds nothing to the page */
+    return '(function(){var mkLook='+String(mkLook).replace(/\/\*[\s\S]*?\*\//g,'').replace(/\n\s*/g,'\n')+';'+run+'})();';
   }
   function buildLinks(L){
     var o=[], w=parseInt(L.initW,10), hh=parseInt(L.initH,10);
@@ -4526,7 +4551,7 @@ try{
     o.push('<div class="map_object map_links" id="<@itemid>" objectid="<@objectid>" subid="<@subid>"'+init+' style="<#mapobject type="coordinates" subid="<@subid>" mode="<@editmode>">">');
     o.push('<#mapobject type="objectgrip" mode="<@editmode>">');
     o.push('<#mapobject type="htmlbefore" subid="<@subid>">');
-    o.push('<span class="mls-chip">Link style</span>');
+    o.push('<span class="mls-chip">Drop anywhere on the map</span>');
     o.push('<#mapobject type="htmlafter" subid="<@subid>">');
     o.push('</div>');
     o.push('');
@@ -5192,7 +5217,7 @@ try{
   }
   /* sets of status colors: PRTG's own, and others with a clearer green or friendlier to color blindness */
   var PS=window.PMSSETS, CSETS=PS.sets;   /* the color sets are shared with the Map designer's bar; PS.cur is the one chosen */
-  function obOk(){return !isLegacy(TYPE)&&!isPaste()&&TYPE!=='links'&&!(TYPE==='icon'&&IC.engine==='stock')&&!!M()&&!!M().look;}
+  function obOk(){return !isLegacy(TYPE)&&!isPaste()&&!(TYPE==='icon'&&IC.engine==='stock')&&!!M()&&!!M().look;}
   function obRoot(){return (TYPE==='table'&&!anyOn())?document.getElementById('edwrap'):((TYPE==='geomap'||TYPE==='icon')?(prevEl.querySelector('.icstrip')||prevEl.querySelector('.map_object')):prevEl.querySelector('.map_object'));}   /* the icon preview shows one icon per state: any of them opens the bar */
   function obSet(fn){var m=M(), l=m.look;if(l.mode==='prtg')l.mode='custom';fn(l,m);refreshUI();render();}
   function obBtn(label,title,get,set){
@@ -5442,6 +5467,7 @@ try{
   }
   function obBuild(){
     if(TYPE==='geomap')return obBuildGeo();
+    if(TYPE==='links')return obBuildLinks();
     var b=OB.el, m=M(), L=function(){return M().look;};
     if(!b){b=h('div');b.id='obar';b.setAttribute('role','toolbar');b.setAttribute('aria-label','Options for this object');document.body.appendChild(b);OB.el=b;}
     b.innerHTML='';OB.syncs=[];
@@ -5715,6 +5741,56 @@ try{
     }));
     b.appendChild(obSep());
     b.appendChild(obBtn('Card','A card around the map: fill, border, rounded corners and shadow (details under Appearance)',function(){return GM.look.card;},function(v){GM.look.card=v;refreshUI();render();}));
+    OB.key=obKey();
+  }
+  /* the Link style's bar: the Connector looks as pictures, then the line's shape, paint, ends and motion */
+  function obBuildLinks(){
+    var b=OB.el;
+    if(!b){b=h('div');b.id='obar';b.setAttribute('role','toolbar');b.setAttribute('aria-label','Options for this object');document.body.appendChild(b);OB.el=b;}
+    b.innerHTML='';OB.syncs=[];OB.sty=null;
+    function shown(node,cond){OB.syncs.push(function(){node.hidden=!cond();});return node;}
+    function last(pop){return pop.lastChild;}
+    b.appendChild(obMenu('Look','How every line on the map is drawn: the same looks as a Connector',function(pop){
+      pop.className+=' fb-wide';
+      var g=h('div','fgal');pop.appendChild(g);
+      LNLOOKS.forEach(function(x){
+        var t=h('button','fgtile'), pv=h('div','fgprev'), cap=h('span','fgcap');
+        t.type='button';t.title=x[1];t.setAttribute('data-k',x[0]);pv.style.background='#F3F4F6';pv.innerHTML=lookThumb(x[0],72,34);cap.textContent=x[1];
+        t.appendChild(pv);t.appendChild(cap);t.addEventListener('click',function(){obDo(function(){LK.lnlook=x[0];});});g.appendChild(t);
+      });
+      OB.syncs.push(function(){[].forEach.call(g.children,function(t){t.classList.toggle('on',lkLook(LK)===t.getAttribute('data-k'));});});
+    }));
+    b.appendChild(obMenu('Shape','The path each line takes between two items',function(pop){
+      pfSel(pop,'Line type',function(){return LK.line;},function(v){LK.line=v;},LKTYPES);
+      pfNum(pop,'Curve strength %',function(){return LK.bend;},function(v){LK.bend=v;},4,60);shown(last(pop),function(){return LK.line==='curve';});
+      pfNum(pop,'Corner radius (px)',function(){return LK.radius;},function(v){LK.radius=v;},2,80);shown(last(pop),function(){return LK.line==='relbow';});
+    }));
+    b.appendChild(obSep());
+    b.appendChild(obLab('Width',obNum('Line width (px)',function(){return LK.width;},function(v){obDo(function(){LK.width=v;});},1,16)));
+    b.appendChild(obMenu('Line','Opacity, dashes and glow',function(pop){
+      pfNum(pop,'Opacity %',function(){return LK.opacity;},function(v){LK.opacity=v;},10,100);
+      pfSel(pop,'Line style',function(){return LK.dash;},function(v){LK.dash=v;},LKDASH);shown(last(pop),function(){return lkLook(LK)==='plain';});
+      pfChk(pop,'Soft glow',function(){return LK.glow;},function(v){LK.glow=v;});shown(last(pop),function(){return lkLook(LK)==='plain';});
+      pfChk(pop,'Round line ends',function(){return LK.round;},function(v){LK.round=v;});shown(last(pop),function(){return lkLook(LK)==='plain';});
+      pfNum(pop,'Show PRTG\u2019s own lines if this has not run after (seconds)',function(){return LK.wait;},function(v){LK.wait=v;},1,10);
+    }));
+    b.appendChild(obMenu('Color','From the two items\u2019 status, like PRTG, or one colour for every line',function(pop){
+      pfSel(pop,'Color',function(){return LK.colorMode;},function(v){LK.colorMode=v;},[['status','From the two items\u2019 status (like PRTG)'],['custom','One color for every line']]);
+      var w=h('div','pf pf-col'), i=h('input');i.type='color';w.appendChild(h('label',null,'Line color'));
+      i.addEventListener('input',function(){LK.color=i.value;refreshUI();render();});
+      OB.syncs.push(function(){if(document.activeElement!==i&&/^#[0-9a-f]{6}$/i.test(LK.color))i.value=LK.color;});
+      w.appendChild(i);pop.appendChild(w);shown(w,function(){return LK.colorMode==='custom';});
+    }));
+    b.appendChild(obMenu('Ends','A dot or an arrow at either end',function(pop){
+      pfSel(pop,'Start marker',function(){return LK.start;},function(v){LK.start=v;},LKENDS);
+      pfSel(pop,'End marker',function(){return LK.end;},function(v){LK.end=v;},LKENDS);
+      pfNum(pop,'Distance from the item centre (px)',function(){return LK.inset;},function(v){LK.inset=v;},0,150);shown(last(pop),function(){return LK.start!=='none'||LK.end!=='none';});
+    }));
+    b.appendChild(shown(obMenu('Motion','Let the line flow from one end to the other',function(pop){
+      pfChk(pop,'Animate: it flows along the line',function(){return LK.flow;},function(v){LK.flow=v;});
+      pfNum(pop,'Seconds per loop',function(){return LK.flowSec;},function(v){LK.flowSec=v;},0.4,20);shown(last(pop),function(){return LK.flow;});
+      pfChk(pop,'Pause it when the system asks for reduced motion',function(){return LK.calm;},function(v){LK.calm=v;});shown(last(pop),function(){return LK.flow;});
+    }),function(){return lkAnimOk(LK);}));
     OB.key=obKey();
   }
   function obKey(){return SCOPE+TYPE+(anyOn()?'any':'')+(TYPE==='tile'?tlFam():'')+(TYPE==='icon'?IC.engine+(iHasBg(IC)?'b':''):(TYPE==='gauge'?G.engine+(G.nstyle?'n':''):(TYPE==='donut'?DN.engine:TYPE==='sunburst'?SB.engine+SB.face:(TYPE==='graph'?GR.draw+GR.kind+(GR.kind==='bars'?GR.bsrc:''):''))));}
@@ -6302,7 +6378,9 @@ try{
     N.forEach(function(n){devs+='<div style="position:absolute;left:'+(n[0]-22)+'px;top:'+(n[1]-22)+'px;width:44px;height:44px;box-sizing:border-box;border-radius:10px;background:#f3f4f6;border:3px solid '+LKCOL[n[2]]+'"></div>';});
     prevEl.className='';prevEl.style.minHeight='300px';
     setStyle(linksCss(LK));applyFont(L);
-    prevEl.innerHTML='<div id="mapshow" class="map-body" style="padding-top:24px"><div style="position:relative;width:'+W+'px;height:'+HH+'px;margin:0 auto;background:#fff;border-radius:8px"><svg id="mapsvg" width="'+W+'" height="'+HH+'" style="position:absolute;left:0;top:0">'+'<defs>'+defs+'</defs>'+lines+'</svg>'+devs+'</div><p class="pcap" style="padding:10px 14px 12px;max-width:none">PRTG draws a link like this straight, one line between two devices. This is how it looks once this object is on the map.</p></div>';
+    /* the object itself, as PRTG\u2019s map designer shows it (the file\u2019s .mls-chip); on View Map it is invisible and only restyles the lines */
+    var chip='<span class="lk-chip" style="position:absolute;left:50%;top:22px;transform:translateX(-50%);font:11px/1.2 Roboto,&quot;Segoe UI&quot;,Arial,sans-serif;color:#6b7280;background:#fff;border:1px dashed #9aa4af;border-radius:4px;padding:2px 6px;white-space:nowrap">Drop anywhere on the map</span>';
+    prevEl.innerHTML='<div id="mapshow" class="map-body" style="padding-top:24px"><div class="map_object lk-demo" style="position:relative;width:'+W+'px;height:'+HH+'px;margin:0 auto;background:#fff;border-radius:8px"><svg id="mapsvg" width="'+W+'" height="'+HH+'" style="position:absolute;left:0;top:0">'+'<defs>'+defs+'</defs>'+lines+'</svg>'+devs+chip+'</div></div>';
     applyBg(L);
     mlsRuntime(lkCfg(LK));
   }
@@ -6872,22 +6950,30 @@ try{
     var lkOn=function(){return TYPE==='links';};
     var lk1=section('Link style');secIf(lk1,lkOn);
     lk1.appendChild(h('p','note','PRTG draws the lines between the items on a map. Put this object on a map and it restyles every line on that map. PRTG’s own lines are hidden from the first moment, so you never see them change. In the Map Designer PRTG’s lines stay as they are, so a link can still be removed there; the new style shows when you view the map.'));
+    lk1.appendChild(h('label',null,'Line look'));
+    var lkG=h('div','fgal');lk1.appendChild(lkG);
+    LNLOOKS.forEach(function(x){   /* the same looks as a Connector in the Map designer, drawn by the same code */
+      var t=h('button','fgtile'), pv=h('div','fgprev'), cap=h('span','fgcap');
+      t.type='button';t.title=x[1];pv.style.background='#F3F4F6';pv.innerHTML=lookThumb(x[0],72,34);cap.textContent=x[1];
+      t.appendChild(pv);t.appendChild(cap);t.addEventListener('click',function(){LK.lnlook=x[0];refreshUI();render();});lkG.appendChild(t);
+      syncs.push(function(){t.classList.toggle('on',lkLook(LK)===x[0]);});
+    });
     lk1.appendChild(inSel('Line type',function(){return LK.line;},function(v){LK.line=v;refreshUI();},LKTYPES));
     var lkB=h('div');lkB.appendChild(inNum('Curve strength %',function(){return LK.bend;},function(v){LK.bend=v;},4,60));showIf(lkB,function(){return TYPE==='links'&&LK.line==='curve';});lk1.appendChild(lkB);
     var lkR=h('div');lkR.appendChild(inNum('Corner radius (px)',function(){return LK.radius;},function(v){LK.radius=v;},2,80));showIf(lkR,function(){return TYPE==='links'&&LK.line==='relbow';});lk1.appendChild(lkR);
-    lk1.appendChild(inSel('Line style',function(){return LK.dash;},function(v){LK.dash=v;refreshUI();},LKDASH));
+    var lkD=h('div');lkD.appendChild(inSel('Line style',function(){return LK.dash;},function(v){LK.dash=v;refreshUI();},LKDASH));showIf(lkD,function(){return TYPE==='links'&&lkLook(LK)==='plain';});lk1.appendChild(lkD);
     lk1.appendChild(pair(inNum('Width (px)',function(){return LK.width;},function(v){LK.width=v;},1,16),inNum('Opacity %',function(){return LK.opacity;},function(v){LK.opacity=v;},10,100)));
-    lk1.appendChild(pair(inChk('Soft glow',function(){return LK.glow;},function(v){LK.glow=v;}),inChk('Round line ends',function(){return LK.round;},function(v){LK.round=v;})));
+    var lkGl=h('div');lkGl.appendChild(pair(inChk('Soft glow',function(){return LK.glow;},function(v){LK.glow=v;}),inChk('Round line ends',function(){return LK.round;},function(v){LK.round=v;})));showIf(lkGl,function(){return TYPE==='links'&&lkLook(LK)==='plain';});lk1.appendChild(lkGl);
     lk1.appendChild(inSel('Color',function(){return LK.colorMode;},function(v){LK.colorMode=v;refreshUI();},[['status','From the two items’ status (like PRTG)'],['custom','One color for every line']]));
     var lkC=h('div');lkC.appendChild(inColor('Line color',function(){return LK.color;},function(v){LK.color=v;}));showIf(lkC,function(){return TYPE==='links'&&LK.colorMode==='custom';});lk1.appendChild(lkC);
     lk1.appendChild(pair(inSel('Start marker',function(){return LK.start;},function(v){LK.start=v;refreshUI();},LKENDS),inSel('End marker',function(){return LK.end;},function(v){LK.end=v;refreshUI();},LKENDS)));
     var lkI=h('div');lkI.appendChild(inNum('Marker distance from the item centre (px)',function(){return LK.inset;},function(v){LK.inset=v;},0,150));
     lkI.appendChild(h('p','note','PRTG ends every line at the centre of an item, under its icon, so a marker sits this far in from the end to stay visible.'));
     showIf(lkI,function(){return TYPE==='links'&&(LK.start!=='none'||LK.end!=='none');});lk1.appendChild(lkI);
-    var lkF=h('div');lkF.appendChild(inChk('Animate: dashes flow along the line',function(){return LK.flow;},function(v){LK.flow=v;},refreshUI));
+    var lkF=h('div');lkF.appendChild(inChk('Animate: it flows along the line',function(){return LK.flow;},function(v){LK.flow=v;},refreshUI));
     var lkS=h('div');lkS.appendChild(inNum('Seconds per loop',function(){return LK.flowSec;},function(v){LK.flowSec=v;},0.4,20));showIf(lkS,function(){return TYPE==='links'&&LK.flow;});lkF.appendChild(lkS);
     var lkQ=h('div');lkQ.appendChild(inChk('Pause it when the system asks for reduced motion',function(){return LK.calm;},function(v){LK.calm=v;}));lkQ.appendChild(h('p','note','Off by default: you chose to animate, so it runs. Many servers and remote desktops have reduced motion switched on, which would otherwise stop it.'));showIf(lkQ,function(){return TYPE==='links'&&LK.flow;});lkF.appendChild(lkQ);
-    showIf(lkF,function(){return TYPE==='links'&&LK.dash!=='solid';});lk1.appendChild(lkF);
+    showIf(lkF,function(){return TYPE==='links'&&lkAnimOk(LK);});lk1.appendChild(lkF);
     lk1.appendChild(inNum('Show PRTG’s own lines if this has not run after (seconds)',function(){return LK.wait;},function(v){LK.wait=v;},1,10));
     /* ---- donut ---- */
     var dn1=section('Donut');secIf(dn1,isDonut);
