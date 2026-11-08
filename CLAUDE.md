@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.82.
+Last updated at version 1.5.83.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -161,6 +161,20 @@ A full run takes about 5 seconds (16 seconds the very first time).
   bar is HTML like the pill and always shows its word; Beacon's rays blink on alarm states when
   Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
   tile, badge, LED).
+
+## Two Link styles on one map (1.5.83)
+
+- The owner: two Link style items on a map crash everything. Reproduced on map 2203 (a second item, subid 15, added through the
+  designer's own `addToMap` + `InitMapObject`, without its size save): the designer was fine, opening View Map froze Chrome (the
+  Claude extension and the device bridge dropped). Reproduced in Playwright: two Link style scripts run in one go crash the page.
+- Cause: the second script calls `window.__mls.stop()` on the first, but the first one's draw was already queued as a microtask; it
+  ran afterwards, re-attached its MutationObserver (`if(mo)watch()`), and the two observers redrew each other forever.
+- Fix in `mlsRuntime`: `dead` flag set by `stop()` (draw and schedule return), and the observer ignores childList records whose
+  added/removed nodes are all `g.mls-g` or `linearGradient` (`mlsNode`). Last one to run wins.
+- An old file plus a new one still loops (the old copy has no `dead`), so all six installed `map-studio-link-style-*.htm` were
+  patched in place on 2026-11-08: only the runtime text replaced, config and everything else byte-identical; originals kept in
+  `Desktop\PRTG Map Studio\link-style-backup-1.5.82\`; all checked byte for byte. Playwright with the patched files: no crash,
+  one `g.mls-g`, clock continuous over three refreshes.
 
 ## Link style choices as pictures (1.5.82)
 

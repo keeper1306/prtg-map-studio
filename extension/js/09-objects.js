@@ -4361,7 +4361,10 @@ try{
      This object hides PRTG's lines by CSS (so they are never seen), draws its own paths from the same coordinates and colors,
      and draws them again whenever PRTG rebuilds the lines. If anything fails, PRTG's lines come back. */
   function mlsRuntime(C){
-    var NS='http://www.w3.org/2000/svg', PI=Math.PI, pend=false, mo=null, tick=0;
+    var NS='http://www.w3.org/2000/svg', PI=Math.PI, pend=false, mo=null, tick=0, dead=false;
+    /* One Link style per page: the last one to run wins. With two on a map, PRTG runs both scripts one after the other and the first
+       one's pending draw still came afterwards, switched its watcher back on, and the two then redrew each other without end until
+       the page crashed. Now a stopped one stays stopped (dead), and neither reacts to a Link style's own drawing. */
     if(window.__mls&&window.__mls.stop)window.__mls.stop();
     function f(n){return Math.round(n*10)/10;}
     function polyline(P,r){
@@ -4437,6 +4440,7 @@ try{
       return null;
     }
     function draw(){
+      if(dead)return;
       var svg=document.getElementById('mapsvg'), lines, g, old, i, l, x1, y1, x2, y2, paint, o, w=C.width, ds, sum, p, round, ce, lk;
       if(!svg)return;
       if(svg.closest&&svg.closest('#mapeditor'))return; /* the editor keeps PRTG's own lines, so a link can still be removed */
@@ -4476,7 +4480,8 @@ try{
       }
       if(mo)watch();
     }
-    function schedule(){if(pend)return;pend=true;Promise.resolve().then(function(){pend=false;draw();});}
+    function schedule(){if(pend||dead)return;pend=true;Promise.resolve().then(function(){pend=false;draw();});}
+    function mlsNode(n){return n&&n.nodeType===1&&((n.getAttribute&&/\bmls-g\b/.test(n.getAttribute('class')||''))||n.tagName==='linearGradient');}
     function inSvg(n){return n&&n.nodeType===1&&(n.id==='mapsvg'||(n.closest&&n.closest('#mapsvg')));}
     function hasSvg(n){return n&&n.nodeType===1&&(n.id==='mapsvg'||(n.querySelector&&n.querySelector('#mapsvg')));}
     function watch(){
@@ -4487,6 +4492,7 @@ try{
       for(i=0;i<recs.length&&!need;i++){
         r=recs[i];
         if(r.target.closest&&r.target.closest('g.mls-g'))continue;
+        if(r.type==='childList'&&[].every.call(r.addedNodes,mlsNode)&&[].every.call(r.removedNodes,mlsNode))continue;   /* a Link style's own drawing, not PRTG's */
         if(inSvg(r.target)){need=true;break;}
         if(r.type==='childList'){
           for(j=0;j<r.addedNodes.length;j++)if(hasSvg(r.addedNodes[j])){need=true;break;}
@@ -4499,7 +4505,7 @@ try{
       var svg=document.getElementById('mapsvg');
       if(svg&&!/\bmls-(on|off)\b/.test(svg.getAttribute('class')||''))schedule();
     },1500);
-    window.__mls={stop:function(){if(mo)mo.disconnect();clearInterval(tick);var g=document.querySelector('#mapsvg g.mls-g');if(g)g.parentNode.removeChild(g);}};
+    window.__mls={stop:function(){dead=true;if(mo)mo.disconnect();clearInterval(tick);var g=document.querySelector('#mapsvg g.mls-g');if(g)g.parentNode.removeChild(g);}};
     schedule();
   }
   var LKTYPES=[['straight','Straight (PRTG’s own shape)'],['curve','Curve'],['scurve','S-curve'],['elbow','Elbow (right angles)'],['relbow','Rounded elbow'],['arc','Arc']];
