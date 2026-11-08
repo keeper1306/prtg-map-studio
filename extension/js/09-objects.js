@@ -4534,8 +4534,23 @@ try{
       '.mls-flow{animation:mlsFlow '+sec+'s linear infinite}',
       (L.calm?'@media (prefers-reduced-motion:reduce){.mls-flow{animation:none}}':''),
       '.map_links .mls-chip{display:none}',
-      '#mapeditor .map_links .mls-chip{display:block;font:11px/1.2 Roboto,"Segoe UI",Arial,sans-serif;color:#6b7280;background:#fff;border:1px dashed #9aa4af;border-radius:4px;padding:2px 6px;white-space:nowrap}'
+      /* shown wherever the object itself is drawn rather than a map: PRTG's map designer, its object list preview, Map Studio's previews */
+      '#mapeditor .map_links .mls-chip,.mapobjectpreviewcontainer .map_links .mls-chip,#pvhost .map_links .mls-chip{display:inline-flex;align-items:center;gap:6px;font:11px/1.2 Roboto,"Segoe UI",Arial,sans-serif;color:#6b7280;background:#fff;border:1px dashed #9aa4af;border-radius:4px;padding:3px 7px;white-space:nowrap}',
+      '.map_links .mls-chip svg{display:block;flex:none}'
     ].filter(Boolean).join('\n');
+  }
+  /* a small picture of the line in its look, for the object as previews and PRTG's map designer show it */
+  function lkChipSvg(L){
+    var c=lkCfg(L), W=96, H=24, id='mlsc'+(Math.abs(JSON.stringify(c).split('').reduce(function(a,ch){return (a*31+ch.charCodeAt(0))|0;},7))%100000), A=c.color||'#b4cc38', B=c.color||'#d71920',
+      d=(c.type==='straight')?'M5 12L91 12':((c.type==='elbow'||c.type==='relbow')?'M5 18L48 18L48 6L91 6':(c.type==='scurve'?'M5 18C48 18 48 6 91 6':'M5 18Q48 -2 91 18')),
+      w=Math.max(1.5,Math.min(4,c.width*0.7)), paint='url(#'+id+')', r, dash='';
+    var g='<defs><linearGradient id="'+id+'" gradientUnits="userSpaceOnUse" x1="5" y1="0" x2="91" y2="0"><stop offset=".45" stop-color="'+A+'"/><stop offset=".55" stop-color="'+B+'"/></linearGradient></defs>';
+    if(c.look)r=mkLook({look:c.look,d:d,paint:paint,w:w,c1:A,c2:B,uid:id+'k',thumb:true});
+    else{
+      if(c.dash==='dashed')dash=' stroke-dasharray="'+(w*2.6).toFixed(1)+' '+(w*1.8).toFixed(1)+'"';else if(c.dash==='dotted')dash=' stroke-dasharray="0.1 '+(w*2.2).toFixed(1)+'"';else if(c.dash==='dashdot')dash=' stroke-dasharray="'+(w*3).toFixed(1)+' '+(w*1.6).toFixed(1)+' 0.1 '+(w*1.6).toFixed(1)+'"';
+      r={defs:'',body:(c.glow?'<path d="'+d+'" fill="none" stroke="'+paint+'" stroke-width="'+(w*2.2).toFixed(1)+'" stroke-opacity=".22"/>':'')+'<path d="'+d+'" fill="none" stroke="'+paint+'" stroke-width="'+w.toFixed(1)+'" stroke-linecap="'+((c.round||c.dash!=='dashed')?'round':'butt')+'"'+dash+'/>',over:''};
+    }
+    return '<svg xmlns="http://www.w3.org/2000/svg" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" style="overflow:visible"'+(c.opacity<100?' opacity="'+(c.opacity/100)+'"':'')+'>'+g+r.defs+r.body+r.over+'</svg>';
   }
   function lkScript(cfg){
     var run='('+String(mlsRuntime).replace(/\/\*[\s\S]*?\*\//g,'').replace(/\n\s*/g,'\n')+')('+JSON.stringify(cfg)+');';
@@ -4551,7 +4566,7 @@ try{
     o.push('<div class="map_object map_links" id="<@itemid>" objectid="<@objectid>" subid="<@subid>"'+init+' style="<#mapobject type="coordinates" subid="<@subid>" mode="<@editmode>">">');
     o.push('<#mapobject type="objectgrip" mode="<@editmode>">');
     o.push('<#mapobject type="htmlbefore" subid="<@subid>">');
-    o.push('<span class="mls-chip">Drop anywhere on the map</span>');
+    o.push('<span class="mls-chip">'+lkChipSvg(L)+'<span>Drop anywhere on the map</span></span>');
     o.push('<#mapobject type="htmlafter" subid="<@subid>">');
     o.push('</div>');
     o.push('');
@@ -5133,7 +5148,7 @@ try{
     }else if(t==='geomap'){
       x='Geo map - '+String(amLab(GMSHAPES,m.shape)).toLowerCase()+' markers'+(m.icon==='device'?'':', '+m.icon+' icon');
     }else if(t==='links'){
-      x='Link style - '+String(amLab(LKTYPES,m.line)).replace(/ \(.*$/,'').toLowerCase()+(m.dash==='solid'?'':', '+String(amLab(LKDASH,m.dash)).toLowerCase());
+      x='Link style - '+String(amLab(LNLOOKS,lkLook(m))).toLowerCase()+', '+String(amLab(LKTYPES,m.line)).replace(/ \(.*$/,'').toLowerCase()+((lkLook(m)!=='plain'||m.dash==='solid')?'':', '+String(amLab(LKDASH,m.dash)).toLowerCase());   /* the look first, as an icon's style, so a new look gives a new name and file name */
     }else return null;
     x=amLook(m,p+x);
     if(x.length<=64)return x;
@@ -5217,7 +5232,7 @@ try{
   }
   /* sets of status colors: PRTG's own, and others with a clearer green or friendlier to color blindness */
   var PS=window.PMSSETS, CSETS=PS.sets;   /* the color sets are shared with the Map designer's bar; PS.cur is the one chosen */
-  function obOk(){return !isLegacy(TYPE)&&!isPaste()&&!(TYPE==='icon'&&IC.engine==='stock')&&!!M()&&!!M().look;}
+  function obOk(){return !isLegacy(TYPE)&&!isPaste()&&!!M()&&!!M().look;}
   function obRoot(){return (TYPE==='table'&&!anyOn())?document.getElementById('edwrap'):((TYPE==='geomap'||TYPE==='icon')?(prevEl.querySelector('.icstrip')||prevEl.querySelector('.map_object')):prevEl.querySelector('.map_object'));}   /* the icon preview shows one icon per state: any of them opens the bar */
   function obSet(fn){var m=M(), l=m.look;if(l.mode==='prtg')l.mode='custom';fn(l,m);refreshUI();render();}
   function obBtn(label,title,get,set){
@@ -5395,6 +5410,7 @@ try{
       if(k==='chips'||k==='chipsfit')return svg([0,1,2,3,4,5].map(function(q){return '<rect x="'+(4+(q%3)*19)+'" y="'+(6+Math.floor(q/3)*15)+'" width="17" height="12" rx="6" fill="'+[G1,G1,Y,G1,R,N][q]+'"/>';}).join(''));
       return svg('<rect x="4" y="5" width="28" height="4" rx="2" fill="'+D+'" opacity=".6"/><rect x="4" y="14" width="34" height="14" rx="2" fill="'+G1+'"/><rect x="42" y="20" width="14" height="5" rx="2" fill="'+N+'"/>');
     }
+    if(type==='icon'&&p&&p.raw)return stkThumb(p);
     if(type==='icon')return svg('<circle cx="14" cy="19" r="8" fill="'+G1+'"/><circle cx="32" cy="19" r="8" fill="'+Y+'"/><circle cx="50" cy="19" r="8" fill="'+R+'"/>');
     return svg('<rect x="6" y="8" width="52" height="22" rx="3" fill="'+N+'"/>');
   }
@@ -5468,6 +5484,7 @@ try{
   function obBuild(){
     if(TYPE==='geomap')return obBuildGeo();
     if(TYPE==='links')return obBuildLinks();
+    if(TYPE==='icon'&&IC.engine==='stock')return obBuildStock();
     var b=OB.el, m=M(), L=function(){return M().look;};
     if(!b){b=h('div');b.id='obar';b.setAttribute('role','toolbar');b.setAttribute('aria-label','Options for this object');document.body.appendChild(b);OB.el=b;}
     b.innerHTML='';OB.syncs=[];
@@ -5741,6 +5758,16 @@ try{
     }));
     b.appendChild(obSep());
     b.appendChild(obBtn('Card','A card around the map: fill, border, rounded corners and shadow (details under Appearance)',function(){return GM.look.card;},function(v){GM.look.card=v;refreshUI();render();}));
+    OB.key=obKey();
+  }
+  /* a PRTG stock icon keeps PRTG's own file, so its bar only offers the way back: the templates (Map Studio's icon styles are under Blank status icon) */
+  function obBuildStock(){
+    var b=OB.el;
+    if(!b){b=h('div');b.id='obar';b.setAttribute('role','toolbar');b.setAttribute('aria-label','Options for this object');document.body.appendChild(b);OB.el=b;}
+    b.innerHTML='';OB.syncs=[];OB.sty=null;
+    obScope(b);
+    b.appendChild(obMenu('Templates','Start from a ready-made icon, or Blank status icon for Map Studio\u2019s own styles',function(pop){pop.className+=' fb-wide';},function(pop){obPresetGrid(pop);}));
+    b.appendChild(h('span','fb-scopenote','PRTG\u2019s own icon: its file is used as it ships'));
     OB.key=obKey();
   }
   /* the Link style's bar: the Connector looks as pictures, then the line's shape, paint, ends and motion */
@@ -6327,6 +6354,68 @@ try{
 
   /* ---------- status icon preview and style gallery ---------- */
   var ICSTRIP=[['Up','sensg'],['Warning','sensy'],['Down','sensr'],['Down (Acknowledged)','senso'],['Unusual','sensp'],['Paused','sensb'],['Unknown','sensx'],['Group: green + yellow','hasgreen hasyellow'],['Group: green + red','hasgreen hasred']];
+  /* PRTG's own status icons (the PRTG stock templates). PRTG fills them from live data, so the builder shows a stand-in:
+     the template's own markup with sample values, in the shapes PRTG gives its output (seen on PRTG 26.3: a count is
+     <a class="sensorlink..."><div class="sens.">N</div></a>, zero counts are left out). The look is Map Studio's own
+     approximation, not PRTG's artwork. When Map Studio is connected, PRTG's own drawing is shown under it (stkLive). */
+  var STKCSS=[
+    '.stkv{display:inline-block;position:relative;font:11.7px/1.45 "Segoe UI",Arial,sans-serif;color:#575756}',
+    '.stkv .map_object{position:relative!important;left:auto!important;top:auto!important;display:inline-block;white-space:nowrap}',
+    '.stkv .mapicon_status_white{background:#fff}',
+    '.stkv .map_icon_large{font-size:15.6px;font-weight:700}',
+    '.stkv .fll .label{margin-right:3px}',
+    '.stkv a[class^=sensorlink]{display:inline-block;margin-right:4px;color:#050f34;text-decoration:none}',
+    '.stkv .sensr:before,.stkv .sensy:before,.stkv .sensg:before,.stkv .sensb:before{display:inline-block;width:1.3em;height:1.3em;margin-right:3px;border-radius:2px;vertical-align:-.3em;text-align:center;font-size:.85em;line-height:1.3em;font-weight:700;color:#fff}',
+    '.stkv .sensr:before{content:"!!";background:#d71920}.stkv .sensy:before{content:"W";background:#ffcb05}.stkv .sensg:before{content:"\\2713";background:#b4cc38}.stkv .sensb:before{content:"II";background:#447fc1}',
+    '.stkv .sensr,.stkv .sensy,.stkv .sensg,.stkv .sensb{display:inline}',
+    '.stkv .map_icon2{display:block;padding:4px 8px 6px;text-align:center;color:#fff;background:#b4cc38;min-width:120px}',
+    '.stkv .map_icon2.mapicon_status_white,.stkv .map_icon2.mapicon_status_transparent{background:transparent;color:#575756}',
+    '.stkv .map_icon2.map_iconcolor_hasred{background:#d71920}',
+    '.stkv .map_icon2 a[class^=sensorlink]{color:#fff}',
+    '.stkv .map_icon2:not(.mapicon_status_white):not(.mapicon_status_transparent) .sensr:before,.stkv .map_icon2:not(.mapicon_status_white):not(.mapicon_status_transparent) .sensg:before{box-shadow:0 0 0 1px #fff}',
+    '.stkv .map_icon2.mapicon_status_white a[class^=sensorlink],.stkv .map_icon2.mapicon_status_transparent a[class^=sensorlink]{color:#050f34}',
+    '.stkv .stk-mg{display:inline-block;vertical-align:middle;margin:0 3px}',
+    '.stkv .stk-tl{display:inline-flex;flex-direction:column;gap:6px;padding:8px;background:#2b2f36;border-radius:10px}',
+    '.stkv .stk-tl i{width:26px;height:26px;border-radius:50%;background:#555b66}.stkv .stk-tl i.on{background:#d71920}',
+    '.stkv .stk-dot{display:inline-block;width:12px;height:12px;border-radius:50%;background:#d71920;vertical-align:middle;margin-right:5px}'
+  ].join('\n');
+  function stkCss(){if(!document.getElementById('stkcss')){var st=document.createElement('style');st.id='stkcss';st.textContent=STKCSS;document.head.appendChild(st);}}
+  function stkHTML(raw){
+    var r=String(raw||''), cnt={downsens:['red','sensr',3],warnsens:['warn','sensy',2],upsens:['green','sensg',24],pausedsens:['paused','sensb',1]};
+    if(/trafficlight|map_table map_icon_large/.test(r)&&/nodename/.test(r)&&!/objectstatus/.test(r))return '<span class="stk-tl"><i class="on"></i><i></i><i></i></span>';
+    r=r.replace(/<!--[\s\S]*?-->/g,'').replace(/<@\w+>/g,'');   /* the <@...> inside the tags first, or a tag would seem to end at their > */
+    r=r.replace(/<#sensor type="colorclassofstate"[^>]*>/g,'map_iconcolor_hasred map_iconcolor_hasyellow map_iconcolor_hasblue map_iconcolor_hasgreen');
+    r=r.replace(/<#objectstatus name="(\w+)"[^>]*>/g,function(m,n){
+      if(cnt[n])return '<a class="sensorlink'+cnt[n][0]+'"><div class="'+cnt[n][1]+'">'+cnt[n][2]+'</div></a>';
+      if(n==='lastvalue')return '0.09 Mbit/s';
+      if(n==='message')return 'OK';
+      if(n==='minigraph')return '<svg class="stk-mg" width="60" height="18" viewBox="0 0 60 18"><path d="M1 14 8 11 15 12 22 6 29 9 36 4 43 8 50 5 59 7" fill="none" stroke="#447fc1" stroke-width="1.5"/></svg>';
+      return '';
+    });
+    r=r.replace(/<#objectproperty (?:name="ParentDevice")[^>]*>/gi,'Branch office');
+    r=r.replace(/<#objectproperty (?:name="name"|type="nodename")[^>]*>/gi,'Core switch');
+    r=r.replace(/<#[^>]*>/g,'').replace(/<@\w+>/g,'');
+    if(/class="map_object statusdot/.test(r))r=r.replace(/(<div class="map_object statusdot[^>]*>)/,'$1<span class="stk-dot"></span>');
+    return r;
+  }
+  /* PRTG's own drawing of a stock icon, when Map Studio is connected: the same request PRTG's map designer makes */
+  var STKLIVE={tok:0};
+  function stkLive(I){
+    var box=prevEl.querySelector('.stk-live'), cap=prevEl.querySelector('.stk-livecap'), f=prevEl.querySelector('.stk-frame'), tok=++STKLIVE.tok;
+    if(!box||!window.PUSHAPI||!PUSHAPI.livePreview||!I.pname&&!I.raw)return;
+    var file=null;ICPRESETS.forEach(function(x){if(x.raw===I.raw)file=x.id+'.htm';});
+    if(!file)return;
+    PUSHAPI.livePreview(f,file,{w:260,h:140,kind:'g',name:I.name}).then(function(r){
+      if(tok!==STKLIVE.tok||!r)return;
+      if(r.why==='off'){box.hidden=true;return;}
+      box.hidden=false;f.hidden=!r.ok;
+      cap.textContent=r.ok?('PRTG\u2019s own drawing, with '+r.target+':'):('PRTG\u2019s own drawing: '+r.why+'.');
+    });
+  }
+  function stkThumb(p){
+    stkCss();
+    return '<span style="display:block;width:64px;height:38px;overflow:hidden;position:relative"><span class="stkv" style="position:absolute;left:0;top:0;transform:scale(.42);transform-origin:0 0">'+stkHTML(p.raw)+'</span></span>';
+  }
   function iconPreviewInner(I,idx){
     var Ip=Object.assign({},I,{link:'none',tip:'none'});
     return iconBodyLines(Ip,'pv'+idx).join('').replace(/<#objectproperty name="Name" id="<@objectid>">/g,'Core switch');
@@ -6335,9 +6424,13 @@ try{
     var L=iEffLook(IC), cls=iClassOf(IC), css=iconCss(IC,cls), st=iStyle(IC.style);
     prevEl.className='';
     if(IC.engine==='stock'){
-      setStyle('');applyFont(lookOf('Minimal'));
-      prevEl.innerHTML='<div id="mapshow" class="map-body"><div class="icstock"><strong>No preview for PRTG\\u2019s own icons.</strong> PRTG builds these from live data when the map is viewed: status counters, minigraphs or the object\\u2019s state classes. The file below is PRTG\\u2019s, written exactly as it ships, and only its name and category can change.</div></div>';
-      applyBg(lookOf('Minimal'));return;
+      setStyle('');applyFont(lookOf('Minimal'));stkCss();
+      prevEl.innerHTML='<div id="mapshow" class="map-body"><div class="icstock-wrap" style="padding:28px 24px"><div class="icstrip stk-root" style="display:inline-block"><span class="stkv">'+stkHTML(IC.raw)+'</span></div>'+
+        '<p class="pcap stk-cap" style="max-width:560px;margin:14px 0 0">Sample values, drawn by Map Studio in PRTG\u2019s layout. PRTG fills this icon from live data; its file is PRTG\u2019s own, and only its name and category change.</p>'+
+        '<div class="stk-live" hidden><p class="pcap stk-livecap" style="margin:14px 0 4px"></p><iframe class="stk-frame" title="PRTG\u2019s own drawing" style="width:100%;max-width:640px;height:200px;border:1px solid #E3E5E9;border-radius:6px;background:#fff"></iframe></div></div></div>';
+      applyBg(lookOf('Minimal'));
+      stkLive(IC);
+      return;
     }
     setStyle(css);applyFont(L);
     var w=parseInt(document.getElementById('owidth').value,10)||st.w, hh=parseInt(document.getElementById('oheight').value,10)||st.h;
@@ -6379,7 +6472,7 @@ try{
     prevEl.className='';prevEl.style.minHeight='300px';
     setStyle(linksCss(LK));applyFont(L);
     /* the object itself, as PRTG\u2019s map designer shows it (the file\u2019s .mls-chip); on View Map it is invisible and only restyles the lines */
-    var chip='<span class="lk-chip" style="position:absolute;left:50%;top:22px;transform:translateX(-50%);font:11px/1.2 Roboto,&quot;Segoe UI&quot;,Arial,sans-serif;color:#6b7280;background:#fff;border:1px dashed #9aa4af;border-radius:4px;padding:2px 6px;white-space:nowrap">Drop anywhere on the map</span>';
+    var chip='<span class="lk-chip" style="position:absolute;left:50%;top:22px;transform:translateX(-50%);font:11px/1.2 Roboto,&quot;Segoe UI&quot;,Arial,sans-serif;color:#6b7280;background:#fff;border:1px dashed #9aa4af;border-radius:4px;padding:2px 6px;white-space:nowrap;display:inline-flex;align-items:center;gap:6px">'+lkChipSvg(LK)+'<span>Drop anywhere on the map</span></span>';
     prevEl.innerHTML='<div id="mapshow" class="map-body" style="padding-top:24px"><div class="map_object lk-demo" style="position:relative;width:'+W+'px;height:'+HH+'px;margin:0 auto;background:#fff;border-radius:8px"><svg id="mapsvg" width="'+W+'" height="'+HH+'" style="position:absolute;left:0;top:0">'+'<defs>'+defs+'</defs>'+lines+'</svg>'+devs+chip+'</div></div>';
     applyBg(L);
     mlsRuntime(lkCfg(LK));

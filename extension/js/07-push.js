@@ -3049,7 +3049,30 @@ try{
   $('pushmap').addEventListener('change',function(){S.reviewed=null;S.cls=null;$('pushgo').hidden=true;$('pushlist').hidden=true;updateButtons();});
   ['pushoffx','pushoffy','pushz','pushserver'].forEach(function(x){$(x).addEventListener('input',function(){S.reviewed=null;$('pushgo').hidden=true;if(x==='pushserver')tokenPromise=null;describeWhere();updateButtons();});});
   describeWhere();
-  window.PUSHAPI={state:S,connect:connect,review:review,push:push,undo:undo,normalize:normalize,csrf:csrf,renderObjList:renderObjList};
+  /* PRTG's own drawing of one object file into a frame, for the Object builder (PRTG stock icons): the request the map designer makes,
+     on the map chosen under Existing PRTG maps (else the first map) and the default target. why:'off' when not connected. */
+  function livePreview(f,file,o){
+    o=o||{};
+    var mid=(S.maps&&S.maps.length)?(mapId()||String(S.maps[0].objid)):'', tg, w=o.w||260, hh=o.h||140;
+    if(!mid)return Promise.resolve({ok:false,why:'off'});
+    tg=defFor(o.kind||'g');
+    if(!tg)return Promise.resolve({ok:false,why:'no default object was found on this server'});
+    return prtgCss().catch(function(){}).then(function(){
+      return sampleGet({kind:'preview',label:'preview',path:'/controls/mapobjectpreview.htm',
+        params:{id:mid,count:5,dependency_:tg.id,width:w,height:hh,selected:'',mapelements:',*'+file+'*',maptitles:',*'+(o.name||file)+'*'}});
+    }).then(function(r){
+      var x;
+      if(r.error)return {ok:false,why:r.error};
+      if(r.status===401)return {ok:false,why:'PRTG asked for a login'};
+      if(r.status<200||r.status>=300)return {ok:false,why:'PRTG answered '+r.status};
+      x=pvExtract(r.body);
+      if(!x)return {ok:false,why:'PRTG returned no object for this file'};
+      if(/not(%20| )found!/i.test(x.inner))return {ok:false,why:'this file is not in this server\u2019s object list'};
+      setFramePreview(f,pvDoc(x,{mode:'content',w:w,h:hh,id:'ob'}),{allowScripts:true,allowSameOrigin:true});
+      return {ok:true,target:tg.name};
+    }).catch(function(e){return {ok:false,why:(e&&e.message)||'no answer'};});
+  }
+  window.PUSHAPI={state:S,connect:connect,review:review,push:push,undo:undo,normalize:normalize,csrf:csrf,renderObjList:renderObjList,livePreview:livePreview};
   updateButtons();
   storageGet(function(items){
     if(items.pm_lastServer){$('pushserver').value=items.pm_lastServer;$('pushserver').dispatchEvent(new Event('input'));}

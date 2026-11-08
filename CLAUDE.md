@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.79.
+Last updated at version 1.5.80.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -161,6 +161,26 @@ A full run takes about 5 seconds (16 seconds the very first time).
   bar is HTML like the pill and always shows its word; Beacon's rays blink on alarm states when
   Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
   tile, badge, LED).
+
+## Stock icons and Link style names and box (1.5.80)
+
+- The owner: picking a PRTG stock icon template left no preview ("No preview for PRTG\u2019s own icons", with the escape shown
+  as text) and no floating bar, so there was no way back to another template; the Templates menu showed the same three dots
+  for every stock icon. Now: `stkHTML(raw)` fills the template's own markup with sample values in the shapes PRTG outputs
+  (checked on PRTG 26.3 through `/controls/mapobjectpreview.htm`: a count is `<a class="sensorlink(red|warn|green|paused)">
+  <div class="sens(r|y|g|b)">N</div></a>`, zero counts left out, `colorclassofstate` gives `map_iconcolor_has...` on a group),
+  drawn with Map Studio's own CSS `STKCSS` (`.stkv`; own glyphs, not PRTG's `prtg-icons` font, the repo is public). Used for the
+  preview and the Templates pictures (`stkThumb`, from `pvThumb`). `<@...>` must be removed before the `<#...>` tags.
+- When connected, `stkLive()` shows PRTG's own drawing under it through `PUSHAPI.livePreview(frame,file,{w,h,kind,name})` in
+  `js/07-push.js` (the designer's request, on the map chosen under Existing PRTG maps or the first map, and the default
+  target; `pvDoc` content mode, `prtgCss`). `customStatusDot-*.htm` are not on every server ("File ... not found!" is reported).
+- `obBuildStock()`: the bar for a stock icon is the scope buttons and Templates only; `obOk()` no longer excludes stock icons.
+- Link style: `amName` puts the line look first ("Link style - beads, curve"; dash only for plain). `lkChipSvg(L)` draws the
+  line in its look (96x24) inside `.mls-chip`; `linksCss` shows the chip in `#mapeditor`, `.mapobjectpreviewcontainer` (the
+  wrapper of PRTG's preview answer) and `#pvhost` (Map Studio's preview frames), hidden elsewhere. Not verified on the real PRTG:
+  that PRTG's designer list keeps `.mapobjectpreviewcontainer` around the hover preview.
+- Checked: 12 tests; the 22 other object files identical to 1.5.79; stock icon files unchanged (PRTG's raw file).
+- Still open: the owner finds the View Map animation of the beads "weird"; not seen yet (Claude's Chrome tab was not signed in).
 
 ## Link style on the public map page (1.5.79)
 
