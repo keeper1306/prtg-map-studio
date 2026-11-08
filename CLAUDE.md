@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.83.
+Last updated at version 1.5.84.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -161,6 +161,25 @@ A full run takes about 5 seconds (16 seconds the very first time).
   bar is HTML like the pill and always shows its word; Beacon's rays blink on alarm states when
   Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
   tile, badge, LED).
+
+## Title banner layouts and dividing lines (1.5.84)
+
+- The owner (screenshot of an "MSP Customer Status" wall map with blue lines between the columns) asked for dividing lines as a
+  layout option, more layouts with a title space on top, and the banner put in automatically for editing.
+- `LAYOUTS` got ten entries appended (indexes of the old ones unchanged: the New map form keeps them by number) with a fifth
+  element `{banner:true}`; the first cell is the title row (1/9 or 1/10 of the height). `layT()`, `layHasBanner(T)`. Group
+  "With a title banner" first in `LYGROUPS`. Thumbnails draw the title cell dark with a white bar (`layTitleCell`).
+- `layBannerEnsure()` makes one banner item (`p.layBanner`, style Dark, "Dashboard title") if there is none; `layApply` selects a new
+  one and `layFill` puts it in cell 0 before the other items. `DASHAPI.newMapCanvas` does the same for the New map form.
+  `LAYBMADE` holds "just made" so nothing extra is saved on the item.
+- Dividing lines: `D.layLines`, `D.layLineColor` (#3B82F6), `D.layLineW` (3). `layLineSegs()` finds the shared edges of the cells
+  (grid units, merged per x or y), in the middle of the gap; `layLinesSync()` replaces the `p.layLine` line items (straight
+  `frame` shape lines, `matchLS:false`); `layApply`/`laySpacing` resync them; `layItems()` leaves them out. Checkbox and colour/
+  thickness in the "On the canvas" box (`#dlaylines`, `#dlaylinecol`, `#dlaylinew`). Not in the saved model: the box ticks itself
+  when the canvas has such lines.
+- Checked against the stand-in server: five columns + title = 5 lines (one under the title, four between columns), switching to
+  three columns 3, gap 60 kept them, Two columns 1, off 0; one banner throughout; push added all 6 items; 12 tests.
+  Not verified on the real PRTG.
 
 ## Two Link styles on one map (1.5.83)
 

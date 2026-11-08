@@ -1707,9 +1707,22 @@ try{
     ['Six tiles',3,2,[[0,0,1,1],[1,0,1,1],[2,0,1,1],[0,1,1,1],[1,1,1,1],[2,1,1,1]]],
     ['Nine tiles',3,3,[[0,0,1,1],[1,0,1,1],[2,0,1,1],[0,1,1,1],[1,1,1,1],[2,1,1,1],[0,2,1,1],[1,2,1,1],[2,2,1,1]]],
     ['Five columns',5,1,[[0,0,1,1],[1,0,1,1],[2,0,1,1],[3,0,1,1],[4,0,1,1]]],
-    ['Four rows',1,4,[[0,0,1,1],[0,1,1,1],[0,2,1,1],[0,3,1,1]]]
+    ['Four rows',1,4,[[0,0,1,1],[0,1,1,1],[0,2,1,1],[0,3,1,1]]],
+    /* 1.5.84: a slim row on top for the title banner (the first cell); picking one of these puts a banner there to edit */
+    ['Title and two columns',2,10,[[0,0,2,1],[0,1,1,9],[1,1,1,9]],{banner:true}],
+    ['Title and three columns',3,10,[[0,0,3,1],[0,1,1,9],[1,1,1,9],[2,1,1,9]],{banner:true}],
+    ['Title and four columns',4,10,[[0,0,4,1],[0,1,1,9],[1,1,1,9],[2,1,1,9],[3,1,1,9]],{banner:true}],
+    ['Title and five columns',5,10,[[0,0,5,1],[0,1,1,9],[1,1,1,9],[2,1,1,9],[3,1,1,9],[4,1,1,9]],{banner:true}],
+    ['Title and four squares',2,9,[[0,0,2,1],[0,1,1,4],[1,1,1,4],[0,5,1,4],[1,5,1,4]],{banner:true}],
+    ['Title and six tiles',3,9,[[0,0,3,1],[0,1,1,4],[1,1,1,4],[2,1,1,4],[0,5,1,4],[1,5,1,4],[2,5,1,4]],{banner:true}],
+    ['Title and nine tiles',3,10,[[0,0,3,1],[0,1,1,3],[1,1,1,3],[2,1,1,3],[0,4,1,3],[1,4,1,3],[2,4,1,3],[0,7,1,3],[1,7,1,3],[2,7,1,3]],{banner:true}],
+    ['Title, big left, two right',2,9,[[0,0,2,1],[0,1,1,8],[1,1,1,4],[1,5,1,4]],{banner:true}],
+    ['Title, sidebar and content',4,10,[[0,0,4,1],[0,1,1,9],[1,1,3,9]],{banner:true}],
+    ['Title, hero and three below',3,9,[[0,0,3,1],[0,1,3,4],[0,5,1,4],[1,5,1,4],[2,5,1,4]],{banner:true}]
   ];
-  D.layout=null;D.layShow=true;D.layFrames=false;D.layFrameLook='Light card';
+  function layT(){var L=D.layout;return L?(L.custom||LAYOUTS[L.id]||null):null;}
+  function layHasBanner(T){return !!(T&&T[4]&&T[4].banner);}
+  D.layout=null;D.layShow=true;D.layFrames=false;D.layFrameLook='Light card';D.layLines=false;D.layLineColor='#3B82F6';D.layLineW=3;
   var layOv=document.createElement('div');layOv.id='dlayov';wrap.appendChild(layOv);
   function layCells(){
     var L=D.layout, T, m, g, W, H, out=[];
@@ -1722,7 +1735,45 @@ try{
     });
     return out;
   }
-  function layItems(){return D.items.filter(function(x){return x.parent==null&&!(x.p&&x.p.cellFrame)&&!(x.type==='frame'&&x.p.group===false&&!x.p.shape);});}
+  function layItems(){return D.items.filter(function(x){return x.parent==null&&!(x.p&&(x.p.cellFrame||x.p.layLine))&&!(x.type==='frame'&&x.p.group===false&&!x.p.shape);});}
+  /* the title banner a layout with a title row puts in its first cell (p.layBanner), so it can be edited right away */
+  function layBanner(){var b=null;D.items.forEach(function(x){if(!b&&x.type==='banner'&&x.p&&x.p.layBanner)b=x;});return b;}
+  var LAYBMADE=false;   /* set when layBannerEnsure() had to make the banner (not kept on the item, which is saved) */
+  function layBannerEnsure(){
+    var b=layBanner(), made=false;LAYBMADE=false;
+    if(!layHasBanner(layT()))return null;
+    if(!b){
+      b={id:D.nextId++,type:'banner',parent:null,x:20,y:20,w:640,h:90,state:null,p:newBannerP('Dark')};
+      b.p.title='Dashboard title';b.p.layBanner=true;b.ord=layerOf(b)*100000+(++D.ordSeq);D.items.push(b);made=true;
+    }
+    LAYBMADE=made;return b;
+  }
+  /* dividing lines between the cells (p.layLine), in the middle of the gaps, like the lines between the columns of a wall dashboard */
+  function layLineItems(){return D.items.filter(function(x){return x.type==='frame'&&x.p&&x.p.layLine;});}
+  function layLineSegs(){
+    var T=layT(), L=D.layout, out=[], m, W, H, cs, vx={}, hy={};
+    if(!T)return out;
+    m=L.margin;W=D.w-2*m;H=D.h-2*m;cs=T[3];
+    function add(map,k,a,b){(map[k]=map[k]||[]).push([a,b]);}
+    cs.forEach(function(c){cs.forEach(function(d){
+      var a, b;
+      if(c[0]+c[2]===d[0]){a=Math.max(c[1],d[1]);b=Math.min(c[1]+c[3],d[1]+d[3]);if(b>a)add(vx,c[0]+c[2],a,b);}   /* d is right of c */
+      if(c[1]+c[3]===d[1]){a=Math.max(c[0],d[0]);b=Math.min(c[0]+c[2],d[0]+d[2]);if(b>a)add(hy,c[1]+c[3],a,b);}   /* d is below c */
+    });});
+    function merge(list){list.sort(function(p,q){return p[0]-q[0];});var r=[];list.forEach(function(s2){var l=r[r.length-1];if(l&&s2[0]<=l[1])l[1]=Math.max(l[1],s2[1]);else r.push(s2.slice());});return r;}
+    Object.keys(vx).forEach(function(k){var x=Math.round(m+(k/T[1])*W);merge(vx[k]).forEach(function(s2){out.push([[x,Math.round(m+(s2[0]/T[2])*H)],[x,Math.round(m+(s2[1]/T[2])*H)]]);});});
+    Object.keys(hy).forEach(function(k){var y=Math.round(m+(k/T[2])*H);merge(hy[k]).forEach(function(s2){out.push([[Math.round(m+(s2[0]/T[1])*W),y],[Math.round(m+(s2[1]/T[1])*W),y]]);});});
+    return out;
+  }
+  function layLinesOff(){var n=layLineItems().length;D.items=D.items.filter(function(x){return !(x.type==='frame'&&x.p&&x.p.layLine);});return n;}
+  function layLinesSync(){
+    layLinesOff();
+    layLineSegs().forEach(function(sg){
+      var it={id:D.nextId++,type:'frame',parent:null,x:0,y:0,w:10,h:10,state:null,p:newShapeP('line','right')};
+      it.p.color=D.layLineColor||'#3B82F6';it.p.thick=Math.max(1,Math.min(20,+D.layLineW||3));it.p.lt='straight';it.p.ha='none';it.p.hb='none';it.p.anim=false;it.p.matchLS=false;it.p.layLine=true;
+      lnSetAbs(it,sg[0],sg[1]);it.ord=layerOf(it)*100000+(++D.ordSeq);D.items.push(it);
+    });
+  }
   /* a frame in each cell: real frame items (styled, moved and pushed like any frame) that follow the layout's cells */
   function layCellFrames(){return D.items.filter(function(x){return x.type==='frame'&&x.p&&x.p.cellFrame;});}
   function layFrameIn(k){var f=null;layCellFrames().forEach(function(x){if(x.p.cell===k)f=x;});return f;}
@@ -1771,8 +1822,9 @@ try{
     layOv.innerHTML=html;
   }
   function layFill(){
-    var ids=msIds(), L=(ids.length>=2)?ids.map(byId).filter(Boolean):layItems(), cells=layCells(), used={}, rows=[], flat=[], put=0, skip=0;
+    var ids=msIds(), L=(ids.length>=2)?ids.map(byId).filter(Boolean):layItems(), cells=layCells(), used={}, rows=[], flat=[], put=0, skip=0, bn=layHasBanner(layT())?layBanner():null;
     FREE=false;
+    if(bn&&cells.length){layPut(bn,cells[0],0);used[0]=1;L=L.filter(function(x){return x!==bn;});}
     L.sort(function(a,b){return (a.y-b.y)||(a.x-b.x);});
     L.forEach(function(x){var r=rows[rows.length-1];if(r&&Math.abs(x.y-r.y)<=Math.max(r.h*0.6,20)){r.items.push(x);r.h=Math.max(r.h,x.h);}else rows.push({y:x.y,h:x.h,items:[x]});});
     rows.forEach(function(r){r.items.sort(function(a,b){return a.x-b.x;});flat=flat.concat(r.items);});
@@ -1787,13 +1839,18 @@ try{
     var old=D.layout;
     D.layout={id:id,gap:gap!=null?gap:(old?old.gap:20),margin:margin!=null?margin:(old?old.margin:20),custom:custom||null};
     if(D.layFrames)layFramesSync();
+    if(D.layLines||layLineItems().length)layLinesSync();
+    var bn=layBannerEnsure(), made=LAYBMADE;
+    if(bn&&made)D.sel=bn.id;   /* selected before the fill saves, so the panel opens on it */
     layFill();
+    if(bn&&made)toastDash('A title banner is in the top row, ready to edit: double-click its text');
   }
   function laySpacing(gap,margin){
     var before=layCells(), map=[], after;
     layItems().forEach(function(x){var k=layCellOf(before,x);if(k>=0)map.push([x,k]);});
     D.layout.gap=gap;D.layout.margin=margin;
     if(D.layFrames)layFramesSync();
+    if(D.layLines||layLineItems().length)layLinesSync();
     after=layCells();
     map.forEach(function(p){if(after[p[1]]&&layFits(p[0],after[p[1]]))layPut(p[0],after[p[1]]);});
     renderAll();buildForm();commit();
@@ -1819,6 +1876,7 @@ try{
   /* ---- 1.5.70: the layouts panel. Layouts are grouped (My layouts first), can be searched, and "Build my own" makes a new one:
      a number of boxes, columns and rows, joined and split, saved by name in this browser ---- */
   var LYGROUPS=[
+    ['With a title banner',['Title and two columns','Title and three columns','Title and four columns','Title and five columns','Title and four squares','Title and six tiles','Title and nine tiles','Title, big left, two right','Title, sidebar and content','Title, hero and three below']],
     ['Simple',['One big cell','Two columns','Two rows','Three columns','Three rows','Four squares','Six tiles','Nine tiles','Five columns','Four rows']],
     ['One big, several small',['Big left, two right','Two left, big right','Big top, two below','Two above, big below','Hero and three below','Three stacked and big','Big and four small']],
     ['Header or sidebar',['Header and three columns','Header and two columns','Banner, two, banner','Sidebar and content','Content and sidebar','Two thirds and one third','One third and two thirds']]
@@ -1833,10 +1891,12 @@ try{
     var vh=Math.round(100*D.h/D.w*10)/10, tones=mine?['#E7C36A','#F0D58F','#DDB75A','#F5E2AE']:['#8fbfdc','#bcd9ec','#a9b8e6','#d9e6f2','#c9b8e0','#e9d3a6'], s='';
     T[3].forEach(function(c,j){
       var x=4+(c[0]/T[1])*92, w=(c[2]/T[1])*92, y=4+(c[1]/T[2])*(vh-8), h=(c[3]/T[2])*(vh-8);
+      if(j===0&&layHasBanner(T)){s+=layTitleCell(x,y,w,h);return;}
       s+='<rect x="'+(x+1)+'" y="'+(y+1)+'" width="'+Math.max(1,w-2)+'" height="'+Math.max(1,h-2)+'" rx="2" fill="'+tones[j%tones.length]+'"/>';
     });
     return '<svg viewBox="0 0 100 '+vh+'" aria-hidden="true">'+s+'</svg>';
   }
+  function layTitleCell(x,y,w,h){return '<rect x="'+(x+1)+'" y="'+(y+1)+'" width="'+Math.max(1,w-2)+'" height="'+Math.max(1,h-2)+'" rx="2" fill="#33475E"/><rect x="'+(x+w/2-14)+'" y="'+(y+h/2-1.2)+'" width="28" height="2.4" rx="1.2" fill="#FFFFFF"/>';}
   function lyCard(T,on,fn,mine,del){
     var w=el_('div','ly-c'), b=document.createElement('button'), n=el_('span','ly-n'), x;
     b.type='button';b.className='ly-t'+(on?' on':'');b.setAttribute('aria-label',T[0]+(on?' (on the canvas)':''));b.setAttribute('data-tip',T[0]);b.innerHTML=layThumbSvg(T,mine);
@@ -1916,6 +1976,23 @@ try{
       Object.keys(FSTYLES).forEach(function(k){var o=document.createElement('option');o.value=k;o.textContent=k;ls.appendChild(o);});ls.value=D.layFrameLook||'Light card';
       ls.addEventListener('change',function(){D.layFrameLook=ls.value;layFramesRestyle(ls.value);renderAll();buildForm();commit();});
       ll.appendChild(ls);lr.appendChild(ll);box.appendChild(lr);
+    }
+    var lnOn=D.layLines||layLineItems().length>0, lr2=document.createElement('label');lr2.className='gp-chk';var lk2=document.createElement('input');lk2.type='checkbox';lk2.checked=lnOn;lk2.id='dlaylines';
+    lk2.addEventListener('change',function(){
+      D.layLines=lk2.checked;
+      if(lk2.checked){layLinesSync();renderAll();buildForm();commit();toastDash(layLineItems().length?('Added '+layLineItems().length+' dividing lines'):'This layout has no cells side by side to divide');}
+      else{var n=layLinesOff();renderAll();buildForm();commit();toastDash('Removed '+n+(n===1?' line':' lines'));}
+      layPopBuild();
+    });
+    lr2.appendChild(lk2);lr2.appendChild(document.createTextNode(' Add dividing lines between the cells'));box.appendChild(lr2);
+    if(lnOn){
+      var lrow=document.createElement('div');lrow.className='gp-row';
+      var lc=document.createElement('label');lc.textContent='Line color';var lci=document.createElement('input');lci.type='color';lci.id='dlaylinecol';lci.value=/^#[0-9a-f]{6}$/i.test(D.layLineColor)?D.layLineColor:'#3B82F6';lc.appendChild(lci);
+      var lw=document.createElement('label');lw.textContent='Thickness';var lwi=document.createElement('input');lwi.type='number';lwi.min=1;lwi.max=20;lwi.id='dlaylinew';lwi.value=D.layLineW||3;lw.appendChild(lwi);
+      lci.addEventListener('input',function(){D.layLineColor=lci.value;layLineItems().forEach(function(x){x.p.color=lci.value;});renderAll();});
+      lci.addEventListener('change',function(){commit();});
+      lwi.addEventListener('change',function(){var v=parseInt(lwi.value,10);if(isNaN(v))return;D.layLineW=Math.max(1,Math.min(20,v));D.layLines=true;layLinesSync();renderAll();buildForm();commit();});
+      lrow.appendChild(lc);lrow.appendChild(lw);box.appendChild(lrow);
     }
     bw=document.createElement('div');bw.className='gp-btns';
     ba=document.createElement('button');ba.type='button';ba.className='btn ghost';ba.textContent='Fill cells with my items';ba.addEventListener('click',function(){layFill();});
@@ -3262,7 +3339,7 @@ try{
     DASHAPI.layoutSvg=function(i,w,h){
       var T=LAYOUTS[i], vh=Math.round(100*(h||D.h)/(w||D.w)*10)/10, tones=['#8fbfdc','#bcd9ec','#a9b8e6','#d9e6f2','#c9b8e0','#e9d3a6'], s2='';
       if(!T)return '<svg viewBox="0 0 100 '+vh+'" aria-hidden="true"><rect x="5" y="5" width="90" height="'+Math.max(1,vh-10)+'" rx="3" fill="none" stroke="#b8c2cf" stroke-dasharray="4 3"/></svg>';
-      T[3].forEach(function(c,j){var x=4+(c[0]/T[1])*92, ww=(c[2]/T[1])*92, y=4+(c[1]/T[2])*(vh-8), hh=(c[3]/T[2])*(vh-8);s2+='<rect x="'+(x+1)+'" y="'+(y+1)+'" width="'+Math.max(1,ww-2)+'" height="'+Math.max(1,hh-2)+'" rx="2" fill="'+tones[j%tones.length]+'"/>';});
+      T[3].forEach(function(c,j){var x=4+(c[0]/T[1])*92, ww=(c[2]/T[1])*92, y=4+(c[1]/T[2])*(vh-8), hh=(c[3]/T[2])*(vh-8);if(j===0&&layHasBanner(T)){s2+=layTitleCell(x,y,ww,hh);return;}s2+='<rect x="'+(x+1)+'" y="'+(y+1)+'" width="'+Math.max(1,ww-2)+'" height="'+Math.max(1,hh-2)+'" rx="2" fill="'+tones[j%tones.length]+'"/>';});
       return '<svg viewBox="0 0 100 '+vh+'" aria-hidden="true">'+s2+'</svg>';
     };
     DASHAPI.setCanvasSize=function(w,h){   /* the selected PRTG map's size: taken, not sent back */
@@ -3275,6 +3352,7 @@ try{
       /* the canvas takes the new map's size; a chosen layout shows its cells (items already on the canvas stay where they are: Canvas, Layouts, Fill cells puts them in) */
       if(w>=320&&h>=240){D.w=w;D.h=h;var iw=document.getElementById('dw'),ih=document.getElementById('dh');if(iw)iw.value=String(w);if(ih)ih.value=String(h);applyScale();}
       D.layout=(lay==null||!LAYOUTS[lay])?null:{id:lay,gap:20,margin:20};D.layShow=true;
+      var nb=layBannerEnsure();if(nb){var c0=layCells()[0];if(c0)layPut(nb,c0,0);D.sel=nb.id;renderAll();buildForm();}
       layPaint();commit();
     };
     /* ---------- live link push: a connector can be pushed as its own real, self-updating object on the map,
