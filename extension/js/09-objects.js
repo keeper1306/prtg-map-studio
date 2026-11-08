@@ -5148,11 +5148,15 @@ try{
     no.type='button';yes.type='button';row.appendChild(no);row.appendChild(yes);box.appendChild(row);ov.appendChild(box);document.body.appendChild(ov);
     function close(){if(ov.parentNode)ov.parentNode.removeChild(ov);document.removeEventListener('keydown',kd,true);document.removeEventListener('prtgobjs',ncEv);}
     function kd(e){if(e.key==='Escape'){e.preventDefault();close();}else if(e.key==='Enter'&&e.target&&e.target.tagName==='INPUT'){e.preventDefault();go();}}
+    var nm0=i1.value, fn0=i2.value;
     function go(){
       var nm=clean(i1.value).trim(), fn=i2.value.replace(/[^A-Za-z0-9 _.\-]/g,'').trim().replace(/\.html?$/i,'');
       close();
-      if(nm){m.name=nm;m.nameUser=true;}
-      m.fname=fn;refreshUI();render();done();
+      /* 1.5.77: only names you typed (or a suggestion you picked) stay fixed. Pressing Add with the names as offered keeps them
+         automatic, so changing the icon, look or template afterwards changes the object name and the file name with it */
+      if(nm){if(nm!==clean(nm0).trim())m.nameUser=true;m.name=nm;}
+      m.fname=(fn===fn0&&!m.fname)?'':fn;
+      refreshUI();render();done();
     }
     no.addEventListener('click',close);yes.addEventListener('click',go);
     ov.addEventListener('pointerdown',function(e){if(e.target===ov)close();});

@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.76.
+Last updated at version 1.5.77.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -161,6 +161,15 @@ A full run takes about 5 seconds (16 seconds the very first time).
   bar is HTML like the pill and always shows its word; Beacon's rays blink on alarm states when
   Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
   tile, badge, LED).
+
+## Names stay automatic after Add (1.5.77)
+
+- The owner found an icon's file name (as used in the install script) not following a changed icon. Cause: `askNames()` (the
+  "Name this object" dialog behind Add to this list) set `m.nameUser=true` and `m.fname` on every Add, so `obAutoName()` and
+  `fileNameOf()` were frozen from then on (checked: shield, then flag and hexagon all stayed `map-studio-icon-shield.htm`).
+  Now `go()` sets `nameUser` only when the name differs from what was offered, and stores `fname` only when it was edited or
+  was already set. Applies to every object type. Objects frozen before keep their names until both fields are emptied.
+- Checked in the builder against the stand-in server: shield, Add, flag, Add, hexagon gave three file names; a typed name stays.
 
 ## Connector colours on Map Studio icons (1.5.76)
 
