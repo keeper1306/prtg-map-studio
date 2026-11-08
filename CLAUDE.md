@@ -175,6 +175,9 @@ A full run takes about 5 seconds (16 seconds the very first time).
   patched in place on 2026-11-08: only the runtime text replaced, config and everything else byte-identical; originals kept in
   `Desktop\PRTG Map Studio\link-style-backup-1.5.82\`; all checked byte for byte. Playwright with the patched files: no crash,
   one `g.mls-g`, clock continuous over three refreshes.
+- Then checked on the real PRTG (map 2203 with both items, classic View Map in a fresh Chrome tab): one `g.mls-g`, alive across a
+  refresh, clock continuous (14.7 -> 46.8 s); the public page too. A tab that froze earlier stays frozen (close it, don't reuse).
+  The test item (subid 15) was removed again with the designer's own `DeleteMapObject`; the map has its one Link style (subid 14).
 
 ## Link style choices as pictures (1.5.82)
 
