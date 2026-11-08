@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.78.
+Last updated at version 1.5.79.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -161,6 +161,17 @@ A full run takes about 5 seconds (16 seconds the very first time).
   bar is HTML like the pill and always shows its word; Beacon's rays blink on alarm states when
   Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
   tile, badge, LED).
+
+## Link style on the public map page (1.5.79)
+
+- Seen on the real PRTG (map 2203 "Global", public link `/public/mapshow.htm?id=2203&mapid=...`): the Link style's script
+  ran (`window.__mls`, `#mapsvg.mls-on`) but restyled nothing. The public page is `webroot\public\mapshow.htm`, which loads
+  `mapshow_simple.htm` in an iframe and refreshes by loading a new iframe; its own `createLine()` gives the lines the class
+  `connectionlineGradient` (the classic View Map uses `connectionline`, `_Prtg.Maps.js` `calcNewConnection`). Gradients carry
+  `connectionlineGradient` too, so the runtime selects `line.connectionline,line.connectionlineGradient` and `linksCss` hides both.
+- Checked on that public page in Chrome by running the patched script in the page (not saved): six beads lines, curved.
+- SMIL check (Playwright): an `<animate>` inserted later keeps the same phase as one that was there from the start, so a
+  redraw does not restart the beads.
 
 ## Link style looks, preview and bar (1.5.78)
 

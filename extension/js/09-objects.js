@@ -4441,7 +4441,7 @@ try{
       if(mo)mo.disconnect();
       try{
         old=svg.querySelector('g.mls-g');if(old)old.parentNode.removeChild(old);
-        lines=svg.querySelectorAll('line.connectionline');
+        lines=svg.querySelectorAll('line.connectionline,line.connectionlineGradient');   /* the public map page names its lines connectionlineGradient */
         g=el('g',{'class':'mls-g',opacity:C.opacity/100});
         svg.appendChild(g); /* in the page before the markers are placed, so the path can be measured */
         ds=dashOf(w);sum=0;if(ds)for(i=0;i<ds.length;i++)sum+=ds[i];
@@ -4524,10 +4524,10 @@ try{
   function linksCss(L){
     var wait=lkNum(L.wait,1,10,4), sec=lkNum(L.flowSec,0.4,20,1.4);
     return [
-      '#mapsvg line.connectionline{visibility:hidden;animation:mlsShow 0s linear '+wait+'s forwards}',
+      '#mapsvg line.connectionline,#mapsvg line.connectionlineGradient{visibility:hidden;animation:mlsShow 0s linear '+wait+'s forwards}',
       '@keyframes mlsShow{to{visibility:visible}}',
-      '#mapsvg.mls-on line.connectionline{animation:none;visibility:hidden}',
-      '#mapsvg.mls-off line.connectionline,#mapeditor #mapsvg line.connectionline{animation:none;visibility:visible}',
+      '#mapsvg.mls-on line.connectionline,#mapsvg.mls-on line.connectionlineGradient{animation:none;visibility:hidden}',
+      '#mapsvg.mls-off line.connectionline,#mapsvg.mls-off line.connectionlineGradient,#mapeditor #mapsvg line.connectionline{animation:none;visibility:visible}',
       '.mls-g{pointer-events:none}',
       '.mls-glow{opacity:.22;filter:blur(4px)}',
       '@keyframes mlsFlow{to{stroke-dashoffset:calc(var(--mls-p) * -1)}}',
