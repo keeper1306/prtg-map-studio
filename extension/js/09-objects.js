@@ -4512,6 +4512,42 @@ try{
   }
   /* the Connector line looks (LNLOOKS, drawn by mkLook) for the Link style too; plain keeps the Link style's own drawing */
   function lkLook(L){var k=L&&L.lnlook;return (k&&k!=='plain'&&LNLOOKS.some(function(x){return x[0]===k;}))?k:'plain';}
+  /* the Link style's choices as pictures (line type, line style, end markers), like the graph's choices */
+  function lkPic(kind,v){
+    var x1=9,y1=32,x2=55,y2=12, dx=x2-x1, dy=y2-y1, len=Math.sqrt(dx*dx+dy*dy), mx=(x1+x2)/2, my=(y1+y2)/2, d, k, ln='#5F6674', box='', body='';
+    function R(n){return Math.round(n*10)/10;}
+    if(kind==='line'){
+      if(v==='curve'){k=len*0.22;d='M'+x1+' '+y1+'Q'+R(mx+(dy/len)*k)+' '+R(my-(dx/len)*k)+' '+x2+' '+y2;}
+      else if(v==='scurve')d='M'+x1+' '+y1+'C'+mx+' '+y1+' '+mx+' '+y2+' '+x2+' '+y2;
+      else if(v==='elbow')d='M'+x1+' '+y1+'L'+mx+' '+y1+'L'+mx+' '+y2+'L'+x2+' '+y2;
+      else if(v==='relbow')d='M'+x1+' '+y1+'L'+(mx-6)+' '+y1+'Q'+mx+' '+y1+' '+mx+' '+(y1-6)+'L'+mx+' '+(y2+6)+'Q'+mx+' '+y2+' '+(mx+6)+' '+y2+'L'+x2+' '+y2;
+      else if(v==='arc')d='M'+x1+' '+y1+'A'+R(len*0.8)+' '+R(len*0.8)+' 0 0 1 '+x2+' '+y2;
+      else d='M'+x1+' '+y1+'L'+x2+' '+y2;
+      body='<path d="'+d+'" fill="none" stroke="'+ln+'" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>';
+      box='<rect x="'+(x1-5)+'" y="'+(y1-5)+'" width="10" height="10" rx="2" fill="#fff" stroke="#B8C419" stroke-width="2"/><rect x="'+(x2-5)+'" y="'+(y2-5)+'" width="10" height="10" rx="2" fill="#fff" stroke="#E30613" stroke-width="2"/>';
+    }else if(kind==='dash'){
+      var da={dashed:' stroke-dasharray="8 5"',dotted:' stroke-dasharray="0.1 6"',dashdot:' stroke-dasharray="9 4 0.1 4"'}[v]||'';
+      body='<path d="M8 22H56" fill="none" stroke="'+ln+'" stroke-width="3.4" stroke-linecap="'+(v==='dashed'?'butt':'round')+'"'+da+'/>';
+    }else{   /* 'start' or 'end': the marker at that end of the line */
+      var at=(kind==='start')?[12,22,Math.PI]:[52,22,0];
+      body='<path d="M8 22H56" fill="none" stroke="'+ln+'" stroke-width="2.4" stroke-linecap="round"/>';
+      if(v==='dot')body+='<circle cx="'+at[0]+'" cy="'+at[1]+'" r="4.5" fill="'+ln+'"/>';
+      else if(v==='arrow'){var c=Math.cos(at[2]), s2=11, hw=5.5;body+='<polygon points="'+(at[0]+c*4)+','+at[1]+' '+(at[0]+c*4-c*s2)+','+(at[1]-hw)+' '+(at[0]+c*4-c*s2)+','+(at[1]+hw)+'" fill="'+ln+'"/>';}
+    }
+    return '<svg viewBox="0 0 64 44" width="64" height="44" aria-hidden="true">'+body+box+'</svg>';
+  }
+  function lkPicGrid(kind,list,get,set,done){
+    var w=h('div','presetgrid tkindgrid grpick');
+    list.forEach(function(x){
+      var nm=String(x[1]).replace(/ \(.*$/,'');
+      var q=h('button','lookchip');q.type='button';q.setAttribute('data-v',x[0]);q.title=x[1];q.setAttribute('aria-label',x[1]);
+      q.innerHTML=lkPic(kind,x[0])+'<span class="pname">'+nm+'</span>';
+      q.addEventListener('click',function(){done(function(){set(x[0]);});});
+      w.appendChild(q);
+    });
+    w.syncPick=function(){var cur=String(get());[].forEach.call(w.children,function(q){var on=q.getAttribute('data-v')===cur;q.classList.toggle('on',on);q.setAttribute('aria-pressed',on?'true':'false');});};
+    return w;
+  }
   function lkAnimOk(L){var k=lkLook(L);return k==='plain'?L.dash!=='solid':(k==='beads'||k==='chevron'||k==='sweep');}
   function lkNum(v,lo,hi,d){v=parseFloat(v);if(isNaN(v))v=d;return Math.max(lo,Math.min(hi,v));}
   function lkCfg(L){
@@ -5790,16 +5826,19 @@ try{
       });
       OB.syncs.push(function(){[].forEach.call(g.children,function(t){t.classList.toggle('on',lkLook(LK)===t.getAttribute('data-k'));});});
     }));
+    function grid(pop,label,kind,list,key){var gq=lkPicGrid(kind,list,function(){return LK[key];},function(v){LK[key]=v;},obDo);var w=h('div','pf');w.appendChild(h('label',null,label));w.appendChild(gq);pop.appendChild(w);OB.syncs.push(gq.syncPick);return w;}
     b.appendChild(obMenu('Shape','The path each line takes between two items',function(pop){
-      pfSel(pop,'Line type',function(){return LK.line;},function(v){LK.line=v;},LKTYPES);
+      pop.className+=' fb-wide';
+      grid(pop,'Line type','line',LKTYPES,'line');
       pfNum(pop,'Curve strength %',function(){return LK.bend;},function(v){LK.bend=v;},4,60);shown(last(pop),function(){return LK.line==='curve';});
       pfNum(pop,'Corner radius (px)',function(){return LK.radius;},function(v){LK.radius=v;},2,80);shown(last(pop),function(){return LK.line==='relbow';});
     }));
     b.appendChild(obSep());
     b.appendChild(obLab('Width',obNum('Line width (px)',function(){return LK.width;},function(v){obDo(function(){LK.width=v;});},1,16)));
     b.appendChild(obMenu('Line','Opacity, dashes and glow',function(pop){
+      pop.className+=' fb-wide';
       pfNum(pop,'Opacity %',function(){return LK.opacity;},function(v){LK.opacity=v;},10,100);
-      pfSel(pop,'Line style',function(){return LK.dash;},function(v){LK.dash=v;},LKDASH);shown(last(pop),function(){return lkLook(LK)==='plain';});
+      shown(grid(pop,'Line style','dash',LKDASH,'dash'),function(){return lkLook(LK)==='plain';});
       pfChk(pop,'Soft glow',function(){return LK.glow;},function(v){LK.glow=v;});shown(last(pop),function(){return lkLook(LK)==='plain';});
       pfChk(pop,'Round line ends',function(){return LK.round;},function(v){LK.round=v;});shown(last(pop),function(){return lkLook(LK)==='plain';});
       pfNum(pop,'Show PRTG\u2019s own lines if this has not run after (seconds)',function(){return LK.wait;},function(v){LK.wait=v;},1,10);
@@ -5812,8 +5851,9 @@ try{
       w.appendChild(i);pop.appendChild(w);shown(w,function(){return LK.colorMode==='custom';});
     }));
     b.appendChild(obMenu('Ends','A dot or an arrow at either end',function(pop){
-      pfSel(pop,'Start marker',function(){return LK.start;},function(v){LK.start=v;},LKENDS);
-      pfSel(pop,'End marker',function(){return LK.end;},function(v){LK.end=v;},LKENDS);
+      pop.className+=' fb-wide';
+      grid(pop,'Start marker','start',LKENDS,'start');
+      grid(pop,'End marker','end',LKENDS,'end');
       pfNum(pop,'Distance from the item centre (px)',function(){return LK.inset;},function(v){LK.inset=v;},0,150);shown(last(pop),function(){return LK.start!=='none'||LK.end!=='none';});
     }));
     b.appendChild(shown(obMenu('Motion','Let the line flow from one end to the other',function(pop){
@@ -7054,15 +7094,16 @@ try{
       t.appendChild(pv);t.appendChild(cap);t.addEventListener('click',function(){LK.lnlook=x[0];refreshUI();render();});lkG.appendChild(t);
       syncs.push(function(){t.classList.toggle('on',lkLook(LK)===x[0]);});
     });
-    lk1.appendChild(inSel('Line type',function(){return LK.line;},function(v){LK.line=v;refreshUI();},LKTYPES));
+    var lkDo=function(fn){fn();refreshUI();render();};
+    var lkTG=lkPicGrid('line',LKTYPES,function(){return LK.line;},function(v){LK.line=v;},lkDo);lk1.appendChild(h('label',null,'Line type'));lk1.appendChild(lkTG);syncs.push(lkTG.syncPick);
     var lkB=h('div');lkB.appendChild(inNum('Curve strength %',function(){return LK.bend;},function(v){LK.bend=v;},4,60));showIf(lkB,function(){return TYPE==='links'&&LK.line==='curve';});lk1.appendChild(lkB);
     var lkR=h('div');lkR.appendChild(inNum('Corner radius (px)',function(){return LK.radius;},function(v){LK.radius=v;},2,80));showIf(lkR,function(){return TYPE==='links'&&LK.line==='relbow';});lk1.appendChild(lkR);
-    var lkD=h('div');lkD.appendChild(inSel('Line style',function(){return LK.dash;},function(v){LK.dash=v;refreshUI();},LKDASH));showIf(lkD,function(){return TYPE==='links'&&lkLook(LK)==='plain';});lk1.appendChild(lkD);
+    var lkD=h('div'), lkDG=lkPicGrid('dash',LKDASH,function(){return LK.dash;},function(v){LK.dash=v;},lkDo);lkD.appendChild(h('label',null,'Line style'));lkD.appendChild(lkDG);syncs.push(lkDG.syncPick);showIf(lkD,function(){return TYPE==='links'&&lkLook(LK)==='plain';});lk1.appendChild(lkD);
     lk1.appendChild(pair(inNum('Width (px)',function(){return LK.width;},function(v){LK.width=v;},1,16),inNum('Opacity %',function(){return LK.opacity;},function(v){LK.opacity=v;},10,100)));
     var lkGl=h('div');lkGl.appendChild(pair(inChk('Soft glow',function(){return LK.glow;},function(v){LK.glow=v;}),inChk('Round line ends',function(){return LK.round;},function(v){LK.round=v;})));showIf(lkGl,function(){return TYPE==='links'&&lkLook(LK)==='plain';});lk1.appendChild(lkGl);
     lk1.appendChild(inSel('Color',function(){return LK.colorMode;},function(v){LK.colorMode=v;refreshUI();},[['status','From the two items’ status (like PRTG)'],['custom','One color for every line']]));
     var lkC=h('div');lkC.appendChild(inColor('Line color',function(){return LK.color;},function(v){LK.color=v;}));showIf(lkC,function(){return TYPE==='links'&&LK.colorMode==='custom';});lk1.appendChild(lkC);
-    lk1.appendChild(pair(inSel('Start marker',function(){return LK.start;},function(v){LK.start=v;refreshUI();},LKENDS),inSel('End marker',function(){return LK.end;},function(v){LK.end=v;refreshUI();},LKENDS)));
+    ['start','end'].forEach(function(k){var gq=lkPicGrid(k,LKENDS,function(){return LK[k];},function(v){LK[k]=v;},lkDo);lk1.appendChild(h('label',null,k==='start'?'Start marker':'End marker'));lk1.appendChild(gq);syncs.push(gq.syncPick);});
     var lkI=h('div');lkI.appendChild(inNum('Marker distance from the item centre (px)',function(){return LK.inset;},function(v){LK.inset=v;},0,150));
     lkI.appendChild(h('p','note','PRTG ends every line at the centre of an item, under its icon, so a marker sits this far in from the end to stay visible.'));
     showIf(lkI,function(){return TYPE==='links'&&(LK.start!=='none'||LK.end!=='none');});lk1.appendChild(lkI);
