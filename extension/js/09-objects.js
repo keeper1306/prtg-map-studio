@@ -4428,6 +4428,8 @@ try{
       if(st.length){a=st[0].getAttribute('stop-color')||st[0].style.stopColor;b=st[st.length-1].getAttribute('stop-color')||st[st.length-1].style.stopColor;if(a&&b)return [a,b];}
       return ['#9aa4af','#9aa4af'];
     }
+    /* PRTG replaces the whole map, #mapsvg included, on every refresh (about every 30 s), and a new <svg> starts its animation clock at 0, so every moving line jumped back to its start. Each new #mapsvg is set to one clock kept on the top page (the public page reloads its frame), so the movement carries on. */
+    function msClock(svg){try{var w=window,c;try{if(window.top&&window.top.document)w=window.top;}catch(x){}c=w.__msClock||(w.__msClock=Date.now());if(svg&&svg.setCurrentTime&&!svg.__msClk){svg.__msClk=1;svg.setCurrentTime((Date.now()-c)/1000);}}catch(e){}}
     function dashOf(w){
       if(C.dash==='dashed')return [w*2.6,w*1.8];
       if(C.dash==='dotted')return [0.1,w*2.2];
@@ -4468,6 +4470,7 @@ try{
           capOn(g,p,true,C.end,w,paint);
         }
         svg.setAttribute('class',(svg.getAttribute('class')||'').replace(/\bmls-(on|off)\b/g,'').trim()+' mls-on');
+        msClock(svg);
       }catch(e){
         svg.setAttribute('class',(svg.getAttribute('class')||'').replace(/\bmls-(on|off)\b/g,'').trim()+' mls-off'); /* show PRTG's lines again if anything goes wrong */
       }

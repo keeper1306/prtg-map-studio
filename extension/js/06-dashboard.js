@@ -3453,6 +3453,8 @@ try{
         return null;
       }
       function find(){return [atPos(C.posA)||pick(C.selA,C.posA),atPos(C.posB)||pick(C.selB,C.posB)];}
+      /* PRTG replaces the whole map, #mapsvg included, on every refresh (about every 30 s), and a new <svg> starts its animation clock at 0, so every moving line jumped back to its start. Each new #mapsvg is set to one clock kept on the top page (the public page reloads its frame), so the movement carries on. */
+      function msClock(svg){try{var w=window,c;try{if(window.top&&window.top.document)w=window.top;}catch(x){}c=w.__msClock||(w.__msClock=Date.now());if(svg&&svg.setCurrentTime&&!svg.__msClk){svg.__msClk=1;svg.setCurrentTime((Date.now()-c)/1000);}}catch(e){}}
       function draw(){
         var svg=document.getElementById('mapsvg'), els=find(), elA=els[0], elB=els[1], old=svg&&svg.querySelector('g.'+gcls);
         /* while PRTG redraws its items the line stays where it was, rather than vanishing until the next look */
@@ -3493,6 +3495,7 @@ try{
         g.appendChild(p2);
         capOn(g,p2,false,C.start,w,colA);capOn(g,p2,true,C.end,w,colB);
         if(lk&&lk.over)g.insertAdjacentHTML('beforeend',lk.over);
+        msClock(svg);
       }
       function schedule(){if(raf)return;raf=requestAnimationFrame(function(){raf=null;draw();});}
       function obs(elx){if(!elx)return null;try{var o=new MutationObserver(schedule);o.observe(elx,{attributes:true,attributeFilter:['style','class'],subtree:true});return o;}catch(e){return null;}}

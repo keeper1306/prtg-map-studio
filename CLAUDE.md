@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.80.
+Last updated at version 1.5.81.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -162,6 +162,17 @@ A full run takes about 5 seconds (16 seconds the very first time).
   Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
   tile, badge, LED).
 
+## Animations keep running across PRTG's refresh (1.5.81)
+
+- Seen on the real PRTG (map 2203, classic View Map, Link style with chevrons): every ~30 s PRTG replaces the whole map view,
+  `#mapsvg` included (`document.getElementById('mapsvg')` is a new element, `getCurrentTime()` back to 0). SMIL times count
+  from the outermost `<svg>`'s own clock, so every animated line (Link style and Connectors) snapped back to its start.
+- `msClock(svg)` in `mlsRuntime` and `connLiveRuntime`: one clock `__msClock` (Date.now at first run) on `window.top` when
+  reachable (the public page reloads its iframe, the top page stays), and each new `#mapsvg` gets `setCurrentTime(now-clock)` once
+  (`svg.__msClk`). Checked on the real map by setting it from the console: across a refresh the first chevron went
+  911 -> 993 -> 1072 px instead of restarting. Playwright: a replaced svg went on at 3.33 s (1.5.80: 0.30 s).
+- Installed Link style files and pushed Connectors carry their own copy of the code: make/install and push again.
+
 ## Stock icons and Link style names and box (1.5.80)
 
 - The owner: picking a PRTG stock icon template left no preview ("No preview for PRTG\u2019s own icons", with the escape shown
@@ -180,7 +191,7 @@ A full run takes about 5 seconds (16 seconds the very first time).
   wrapper of PRTG's preview answer) and `#pvhost` (Map Studio's preview frames), hidden elsewhere. Not verified on the real PRTG:
   that PRTG's designer list keeps `.mapobjectpreviewcontainer` around the hover preview.
 - Checked: 12 tests; the 22 other object files identical to 1.5.79; stock icon files unchanged (PRTG's raw file).
-- Still open: the owner finds the View Map animation of the beads "weird"; not seen yet (Claude's Chrome tab was not signed in).
+- The "weird" View Map animation was found and fixed in 1.5.81 (below).
 
 ## Link style on the public map page (1.5.79)
 
