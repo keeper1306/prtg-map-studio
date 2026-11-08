@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.86.
+Last updated at version 1.5.87.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -161,6 +161,14 @@ A full run takes about 5 seconds (16 seconds the very first time).
   bar is HTML like the pill and always shows its word; Beacon's rays blink on alarm states when
   Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
   tile, badge, LED).
+
+## Outlined whole-map looks (1.5.87)
+
+- The owner asked for more of the whole-map looks with the columns fully surrounded by lines. `OBJAPI.mapLooks()` now also
+  returns an outlined copy of each look (`name` "<look> outlined", `label` the look's name, `outline:true`, `border` = accent,
+  frame `bcolor` accent, `bw` 2, no shadow; banner `bcolor` accent, `bw` 2). The picker shows them as a second group
+  "Columns outlined in the accent colour" (`.ly-looks-out`); thumbnails draw the outlines thicker.
+- Checked against the stand-in server: Neon plum, Executive dark and Clean card outlined drawn; 22 object files unchanged; 12 tests.
 
 ## Which dividing lines (1.5.86)
 

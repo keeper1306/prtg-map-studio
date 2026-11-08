@@ -7414,13 +7414,22 @@ try{
      from the same Looks as the objects. Dark looks get a soft glow of their accent over the look's page colour; light ones a plain colour. */
   OBJAPI.mapLooks=function(){
     var B={};OBJAPI.bannerLooks().forEach(function(x){B[x[0]]=x[1];});
-    return LOOKORDER.filter(function(n){return n!=='PRTG default';}).map(function(n){
+    var base=LOOKORDER.filter(function(n){return n!=='PRTG default';}).map(function(n){
       var L=lookOf(n), stage=L.stage||'#F3F4F6', dark=readableOn(stage)==='#FFFFFF',
           acc=(L.accent&&L.accent!==LOOKBASE.accent)?L.accent:((L.link&&L.link!==LOOKBASE.link)?L.link:(dark?'#3B82F6':'#007DB8'));
       return {name:n,dark:dark,accent:acc,card:L.cardBg||'#FFFFFF',border:L.border||L.line||'#E3E5E9',
         bg:dark?{mode:'gradient',grad:'glow',base:stage,g2:acc,g3:(L.link&&L.link!==acc)?L.link:acc,str:40}:{mode:'color',base:stage},
         frame:lookToFrameP(n,'frame'),banner:B[n]};
     });
+    /* 1.5.87: the same looks with every column (cell frame) and the title banner fully outlined in the look's accent colour */
+    var out=base.map(function(M){
+      var o=JSON.parse(JSON.stringify(M));
+      o.name=M.name+' outlined';o.label=M.name;o.outline=true;o.border=M.accent;
+      o.frame.bcolor=M.accent;o.frame.bw=2;o.frame.shadow='none';
+      if(o.banner){o.banner.bcolor=M.accent;o.banner.bw=2;}
+      return o;
+    });
+    return base.concat(out);
   };
   OBJAPI.frameEdit={
     begin:function(kind,p,w,h){

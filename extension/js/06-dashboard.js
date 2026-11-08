@@ -1788,14 +1788,14 @@ try{
     layLookBanner(layBanner(),ML);
     D.layLineColor=ML.accent;layLineItems().forEach(function(x){x.p.color=ML.accent;});
     renderAll();buildForm();commit();
-    toastDash(n+': background, frames'+(layBanner()?', title banner':'')+(layLineItems().length?' and lines':'')+' in this look');
+    toastDash((ML.outline?ML.label+', outlined':n)+': background, frames'+(layBanner()?', title banner':'')+(layLineItems().length?' and lines':'')+' in this look');
   }
   function layLookThumb(ML){
     var bg=ML.bg.base, s='<svg viewBox="0 0 100 62" aria-hidden="true"><rect width="100" height="62" rx="3" fill="'+bg+'"/>';
     if(ML.bg.mode==='gradient')s+='<circle cx="25" cy="20" r="26" fill="'+ML.accent+'" fill-opacity=".22"/>';
-    s+='<rect x="5" y="5" width="90" height="9" rx="1.5" fill="'+(ML.banner&&ML.banner.fill||ML.card)+'" stroke="'+ML.border+'" stroke-width=".6"/>';
+    s+='<rect x="5" y="5" width="90" height="9" rx="1.5" fill="'+(ML.banner&&ML.banner.fill||ML.card)+'" stroke="'+ML.border+'" stroke-width="'+(ML.outline?1.4:.6)+'"/>';
     s+='<rect x="38" y="8.6" width="24" height="1.8" rx=".9" fill="'+(ML.banner&&ML.banner.tcolor||'#FFFFFF')+'"/>';
-    [5,36.5,68].forEach(function(x){s+='<rect x="'+x+'" y="19" width="27" height="38" rx="2" fill="'+ML.card+'" stroke="'+ML.border+'" stroke-width=".6"/>';});
+    [5,36.5,68].forEach(function(x){s+='<rect x="'+x+'" y="19" width="27" height="38" rx="2" fill="'+ML.card+'" stroke="'+ML.border+'" stroke-width="'+(ML.outline?1.4:.6)+'"/>';});
     s+='<path d="M34.3 18.5V57.5M65.8 18.5V57.5M5 16.4H95" stroke="'+ML.accent+'" stroke-width="1"/>';
     return s+'</svg>';
   }
@@ -2005,15 +2005,18 @@ try{
     row.appendChild(a);row.appendChild(b2);box.appendChild(row);
     sh=document.createElement('label');sh.className='gp-chk';ck=document.createElement('input');ck.type='checkbox';ck.checked=!!D.layShow;
     ck.addEventListener('change',function(){D.layShow=ck.checked;layPaint();});sh.appendChild(ck);sh.appendChild(document.createTextNode(' Show the cells on the canvas'));box.appendChild(sh);
-    var mlh=el_('div','gp-l');mlh.textContent='Look for the whole map';box.appendChild(mlh);
-    var mlg=el_('div','ly-grid ly-looks');
-    ((window.OBJAPI&&OBJAPI.mapLooks)?OBJAPI.mapLooks():[]).forEach(function(ML){
+    var MLS=(window.OBJAPI&&OBJAPI.mapLooks)?OBJAPI.mapLooks():[];
+    [['Look for the whole map',false],['Columns outlined in the accent colour',true]].forEach(function(G){
+    var mlh=el_('div','gp-l');mlh.textContent=G[0];box.appendChild(mlh);
+    var mlg=el_('div','ly-grid ly-looks'+(G[1]?' ly-looks-out':''));
+    MLS.filter(function(ML){return !!ML.outline===G[1];}).forEach(function(ML){
       var w=el_('div','ly-c'), bt=document.createElement('button'), nm=el_('span','ly-n');
       bt.type='button';bt.className='ly-t'+(D.layLook===ML.name?' on':'');bt.setAttribute('data-look',ML.name);bt.setAttribute('aria-label',ML.name+': background, frames, title banner and lines in this look');bt.setAttribute('data-tip',ML.name);
       bt.innerHTML=layLookThumb(ML);bt.addEventListener('click',function(){layLookApply(ML.name);layPopBuild();});
-      nm.textContent=ML.name;w.appendChild(bt);w.appendChild(nm);mlg.appendChild(w);
+      nm.textContent=ML.label||ML.name;w.appendChild(bt);w.appendChild(nm);mlg.appendChild(w);
     });
     box.appendChild(mlg);
+    });
     var fr=document.createElement('label');fr.className='gp-chk';var fk=document.createElement('input');fk.type='checkbox';fk.checked=!!D.layFrames;fk.id='dlayframes';
     fk.addEventListener('change',function(){
       D.layFrames=fk.checked;
