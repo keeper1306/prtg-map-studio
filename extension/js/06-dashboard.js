@@ -1722,7 +1722,7 @@ try{
   ];
   function layT(){var L=D.layout;return L?(L.custom||LAYOUTS[L.id]||null):null;}
   function layHasBanner(T){return !!(T&&T[4]&&T[4].banner);}
-  D.layout=null;D.layShow=true;D.layFrames=false;D.layFrameLook='Light card';D.layLook='';D.layLines=false;D.layLineColor='#3B82F6';D.layLineW=3;
+  D.layout=null;D.layShow=true;D.layFrames=false;D.layFrameLook='Light card';D.layLook='';D.layLines=false;D.layLineColor='#3B82F6';D.layLineW=3;D.layLineMode='all';
   var layOv=document.createElement('div');layOv.id='dlayov';wrap.appendChild(layOv);
   function layCells(){
     var L=D.layout, T, m, g, W, H, out=[];
@@ -1762,6 +1762,14 @@ try{
       if(c[1]+c[3]===d[1]){a=Math.max(c[0],d[0]);b=Math.min(c[0]+c[2],d[0]+d[2]);if(b>a)add(hy,c[1]+c[3],a,b);}   /* d is below c */
     });});
     function merge(list){list.sort(function(p,q){return p[0]-q[0];});var r=[];list.forEach(function(s2){var l=r[r.length-1];if(l&&s2[0]<=l[1])l[1]=Math.max(l[1],s2[1]);else r.push(s2.slice());});return r;}
+    /* which lines (D.layLineMode): all, only the up-and-down ones, or those plus the top one (under the title row); a column with
+       several boxes stacked in it then keeps one unbroken line beside it */
+    var mode=D.layLineMode||'all', top=Infinity;
+    if(mode!=='all'){
+      Object.keys(hy).forEach(function(k){if(+k<top)top=+k;});
+      Object.keys(hy).forEach(function(k){if(mode==='v'||+k!==top)delete hy[k];});
+      Object.keys(vx).forEach(function(k){vx[k]=[[merge(vx[k])[0][0],merge(vx[k]).slice(-1)[0][1]]];});
+    }
     Object.keys(vx).forEach(function(k){var x=Math.round(m+(k/T[1])*W);merge(vx[k]).forEach(function(s2){out.push([[x,Math.round(m+(s2[0]/T[2])*H)],[x,Math.round(m+(s2[1]/T[2])*H)]]);});});
     Object.keys(hy).forEach(function(k){var y=Math.round(m+(k/T[2])*H);merge(hy[k]).forEach(function(s2){out.push([[Math.round(m+(s2[0]/T[1])*W),y],[Math.round(m+(s2[1]/T[1])*W),y]]);});});
     return out;
@@ -1789,6 +1797,14 @@ try{
     s+='<rect x="38" y="8.6" width="24" height="1.8" rx=".9" fill="'+(ML.banner&&ML.banner.tcolor||'#FFFFFF')+'"/>';
     [5,36.5,68].forEach(function(x){s+='<rect x="'+x+'" y="19" width="27" height="38" rx="2" fill="'+ML.card+'" stroke="'+ML.border+'" stroke-width=".6"/>';});
     s+='<path d="M34.3 18.5V57.5M65.8 18.5V57.5M5 16.4H95" stroke="'+ML.accent+'" stroke-width="1"/>';
+    return s+'</svg>';
+  }
+  function layModeThumb(m){   /* a title row, three columns with two boxes each, and the lines that mode draws */
+    var c=D.layLineColor||'#3B82F6', s='<svg viewBox="0 0 100 62" aria-hidden="true"><rect x="5" y="4" width="90" height="8" rx="1.5" fill="#33475E"/>';
+    [5,36.5,68].forEach(function(x){s+='<rect x="'+x+'" y="17" width="27" height="19" rx="1.5" fill="#bcd9ec"/><rect x="'+x+'" y="39" width="27" height="19" rx="1.5" fill="#d9e6f2"/>';});
+    s+='<path d="M34.2 16V58.5M65.7 16V58.5" stroke="'+c+'" stroke-width="1.6"/>';
+    if(m!=='v')s+='<path d="M5 14.3H95" stroke="'+c+'" stroke-width="1.6"/>';
+    if(m==='all')s+='<path d="M5 37.5H32M36.5 37.5H63.5M68 37.5H95" stroke="'+c+'" stroke-width="1.6"/>';
     return s+'</svg>';
   }
   function layLinesSync(){
@@ -2028,6 +2044,16 @@ try{
       lci.addEventListener('change',function(){commit();});
       lwi.addEventListener('change',function(){var v=parseInt(lwi.value,10);if(isNaN(v))return;D.layLineW=Math.max(1,Math.min(20,v));D.layLines=true;layLinesSync();renderAll();buildForm();commit();});
       lrow.appendChild(lc);lrow.appendChild(lw);box.appendChild(lrow);
+      var lmh=el_('div','gp-l');lmh.textContent='Which lines';box.appendChild(lmh);
+      var lmg=el_('div','ly-grid ly-lmodes');
+      [['all','All lines'],['vt','Columns and the top line'],['v','Columns only']].forEach(function(m){
+        var w=el_('div','ly-c'), bt=document.createElement('button'), nm=el_('span','ly-n');
+        bt.type='button';bt.className='ly-t'+((D.layLineMode||'all')===m[0]?' on':'');bt.setAttribute('data-mode',m[0]);bt.setAttribute('aria-label',m[1]);bt.setAttribute('data-tip',m[1]);
+        bt.innerHTML=layModeThumb(m[0]);
+        bt.addEventListener('click',function(){D.layLineMode=m[0];D.layLines=true;layLinesSync();renderAll();buildForm();commit();layPopBuild();});
+        nm.textContent=m[1];w.appendChild(bt);w.appendChild(nm);lmg.appendChild(w);
+      });
+      box.appendChild(lmg);
     }
     bw=document.createElement('div');bw.className='gp-btns';
     ba=document.createElement('button');ba.type='button';ba.className='btn ghost';ba.textContent='Fill cells with my items';ba.addEventListener('click',function(){layFill();});

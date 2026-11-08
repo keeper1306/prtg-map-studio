@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.85.
+Last updated at version 1.5.86.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -161,6 +161,14 @@ A full run takes about 5 seconds (16 seconds the very first time).
   bar is HTML like the pill and always shows its word; Beacon's rays blink on alarm states when
   Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
   tile, badge, LED).
+
+## Which dividing lines (1.5.86)
+
+- The owner asked for only vertical lines, or one horizontal on top plus the verticals (columns with several boxes stacked).
+  `D.layLineMode`: `all` (default), `vt` (verticals plus the topmost horizontal boundary, i.e. under the title row), `v` (verticals
+  only). In `vt`/`v`, `layLineSegs` makes each vertical boundary one line from its first to its last segment. Picker "Which
+  lines" (`.ly-lmodes`, `data-mode`, `layModeThumb`) under the line colour/thickness. Not in the saved model.
+- Checked against the stand-in server: Title and six tiles gives 4 / 3 / 2 lines for all / vt / v; 12 tests.
 
 ## A look for the whole map (1.5.85)
 
