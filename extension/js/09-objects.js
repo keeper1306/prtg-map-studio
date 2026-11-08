@@ -7410,6 +7410,18 @@ try{
           tcolor:L.titleText||L.text||'#0F172A',scolor:L.muted||L.headColor||'#64748B',fam:L.font||'Roboto'}];
     });
   };
+  /* 1.5.85: a whole-map look for the Map designer's layouts: background, cell frames, title banner and dividing lines in one go,
+     from the same Looks as the objects. Dark looks get a soft glow of their accent over the look's page colour; light ones a plain colour. */
+  OBJAPI.mapLooks=function(){
+    var B={};OBJAPI.bannerLooks().forEach(function(x){B[x[0]]=x[1];});
+    return LOOKORDER.filter(function(n){return n!=='PRTG default';}).map(function(n){
+      var L=lookOf(n), stage=L.stage||'#F3F4F6', dark=readableOn(stage)==='#FFFFFF',
+          acc=(L.accent&&L.accent!==LOOKBASE.accent)?L.accent:((L.link&&L.link!==LOOKBASE.link)?L.link:(dark?'#3B82F6':'#007DB8'));
+      return {name:n,dark:dark,accent:acc,card:L.cardBg||'#FFFFFF',border:L.border||L.line||'#E3E5E9',
+        bg:dark?{mode:'gradient',grad:'glow',base:stage,g2:acc,g3:(L.link&&L.link!==acc)?L.link:acc,str:40}:{mode:'color',base:stage},
+        frame:lookToFrameP(n,'frame'),banner:B[n]};
+    });
+  };
   OBJAPI.frameEdit={
     begin:function(kind,p,w,h){
       var fr=blankFR(kind);

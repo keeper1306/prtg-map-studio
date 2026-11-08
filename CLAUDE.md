@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.84.
+Last updated at version 1.5.85.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -161,6 +161,21 @@ A full run takes about 5 seconds (16 seconds the very first time).
   bar is HTML like the pill and always shows its word; Beacon's rays blink on alarm states when
   Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
   tile, badge, LED).
+
+## A look for the whole map (1.5.85)
+
+- The owner asked for combinations with predefined backgrounds in the layouts, in the objects' Looks (Neon, Indigo, ...).
+- `OBJAPI.mapLooks()` (js/09-objects.js): every look in `LOOKORDER` except PRTG default, as {name, dark, accent, card, border,
+  bg, frame, banner}: `bg` is a glow gradient (`base` = the look's `stage`, `g2`/`g3` = accent and link, `str` 40) for dark
+  stages (`readableOn`), a plain colour otherwise; `frame` = `lookToFrameP(n,'frame')`; `banner` = `OBJAPI.bannerLooks()`.
+- In js/06-dashboard.js: `D.layLook`, `mapLookOf(n)`, `layLookApply(n)` (sets the map background with `bgSet`, turns the cell
+  frames on and restyles them, styles the title banner, recolours the dividing lines to the accent), `layLookThumb(ML)`,
+  picker "Look for the whole map" (`.ly-looks`, `data-look`) in the "On the canvas" box. A new title banner takes `D.layLook`.
+  Picking a frame look from the old list clears `D.layLook`. `layFramesSync` skips cell 0 of a title layout (no frame
+  around the banner).
+- Checked against the stand-in server: Neon plum, Indigo board, Light card drawn; switching to another title layout keeps the
+  look; push of Title and four columns + lines + Neon plum added 12 items (background, banner, 5 frames, 5 lines); 22 object
+  files unchanged; 12 tests. Not verified on the real PRTG.
 
 ## Title banner layouts and dividing lines (1.5.84)
 

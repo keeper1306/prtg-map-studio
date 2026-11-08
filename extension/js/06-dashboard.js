@@ -1722,7 +1722,7 @@ try{
   ];
   function layT(){var L=D.layout;return L?(L.custom||LAYOUTS[L.id]||null):null;}
   function layHasBanner(T){return !!(T&&T[4]&&T[4].banner);}
-  D.layout=null;D.layShow=true;D.layFrames=false;D.layFrameLook='Light card';D.layLines=false;D.layLineColor='#3B82F6';D.layLineW=3;
+  D.layout=null;D.layShow=true;D.layFrames=false;D.layFrameLook='Light card';D.layLook='';D.layLines=false;D.layLineColor='#3B82F6';D.layLineW=3;
   var layOv=document.createElement('div');layOv.id='dlayov';wrap.appendChild(layOv);
   function layCells(){
     var L=D.layout, T, m, g, W, H, out=[];
@@ -1745,6 +1745,7 @@ try{
     if(!b){
       b={id:D.nextId++,type:'banner',parent:null,x:20,y:20,w:640,h:90,state:null,p:newBannerP('Dark')};
       b.p.title='Dashboard title';b.p.layBanner=true;b.ord=layerOf(b)*100000+(++D.ordSeq);D.items.push(b);made=true;
+      if(D.layLook){var MLb=mapLookOf(D.layLook);if(MLb)layLookBanner(b,MLb);}
     }
     LAYBMADE=made;return b;
   }
@@ -1766,6 +1767,30 @@ try{
     return out;
   }
   function layLinesOff(){var n=layLineItems().length;D.items=D.items.filter(function(x){return !(x.type==='frame'&&x.p&&x.p.layLine);});return n;}
+  /* 1.5.85: one look for the whole map (background, cell frames, title banner, dividing lines), from OBJAPI.mapLooks() */
+  function mapLookOf(n){var a=(window.OBJAPI&&OBJAPI.mapLooks)?OBJAPI.mapLooks():[], r=null;a.forEach(function(x){if(x.name===n)r=x;});return r;}
+  function layLookFrame(f,ML){var t=f.p.title, cell=f.p.cell;f.p=extend(newFrameP('Light card'),ML.frame);f.p.title=t;f.p.cellFrame=true;f.p.cell=cell;f.p.group=true;}
+  function layLookBanner(b,ML){if(b&&ML.banner){extend(b.p,ML.banner);b.p.style=ML.name;}}
+  function layLookApply(n){
+    var ML=mapLookOf(n);if(!ML)return;
+    D.layLook=n;
+    bgSet(JSON.parse(JSON.stringify(ML.bg)),true);
+    D.layFrames=true;if(D.layout)layFramesSync();
+    layCellFrames().forEach(function(f){layLookFrame(f,ML);});
+    layLookBanner(layBanner(),ML);
+    D.layLineColor=ML.accent;layLineItems().forEach(function(x){x.p.color=ML.accent;});
+    renderAll();buildForm();commit();
+    toastDash(n+': background, frames'+(layBanner()?', title banner':'')+(layLineItems().length?' and lines':'')+' in this look');
+  }
+  function layLookThumb(ML){
+    var bg=ML.bg.base, s='<svg viewBox="0 0 100 62" aria-hidden="true"><rect width="100" height="62" rx="3" fill="'+bg+'"/>';
+    if(ML.bg.mode==='gradient')s+='<circle cx="25" cy="20" r="26" fill="'+ML.accent+'" fill-opacity=".22"/>';
+    s+='<rect x="5" y="5" width="90" height="9" rx="1.5" fill="'+(ML.banner&&ML.banner.fill||ML.card)+'" stroke="'+ML.border+'" stroke-width=".6"/>';
+    s+='<rect x="38" y="8.6" width="24" height="1.8" rx=".9" fill="'+(ML.banner&&ML.banner.tcolor||'#FFFFFF')+'"/>';
+    [5,36.5,68].forEach(function(x){s+='<rect x="'+x+'" y="19" width="27" height="38" rx="2" fill="'+ML.card+'" stroke="'+ML.border+'" stroke-width=".6"/>';});
+    s+='<path d="M34.3 18.5V57.5M65.8 18.5V57.5M5 16.4H95" stroke="'+ML.accent+'" stroke-width="1"/>';
+    return s+'</svg>';
+  }
   function layLinesSync(){
     layLinesOff();
     layLineSegs().forEach(function(sg){
@@ -1779,11 +1804,12 @@ try{
   function layFrameIn(k){var f=null;layCellFrames().forEach(function(x){if(x.p.cell===k)f=x;});return f;}
   function layInner(c,k){var f=(k>=0)?layFrameIn(k):null, t;if(!f)return c;t=f.p.title?Math.round((f.p.tsize||18)*1.6+(f.p.pady||16)):(f.p.pady||16);return {x:c.x+(f.p.padx||20),y:c.y+t,w:Math.max(20,c.w-2*(f.p.padx||20)),h:Math.max(20,c.h-t-(f.p.pady||16))};}
   function layFramesSync(){
-    var cells=layCells(), have=layCellFrames(), keep={}, proto=null;
-    have.forEach(function(f){if(!proto)proto=f.p;if(f.p.cell<cells.length&&!keep[f.p.cell]){keep[f.p.cell]=f;}});
+    var cells=layCells(), have=layCellFrames(), keep={}, proto=null, skip0=layHasBanner(layT());   /* the title row holds the banner, not a frame */
+    have.forEach(function(f){if(!proto)proto=f.p;if(f.p.cell<cells.length&&!keep[f.p.cell]&&!(skip0&&f.p.cell===0)){keep[f.p.cell]=f;}});
     have.forEach(function(f){if(keep[f.p.cell]!==f&&!D.items.some(function(c){return c.parent===f.id;}))D.items=D.items.filter(function(x){return x!==f;});});   /* frames of cells that are gone go, unless something sits inside them */
     cells.forEach(function(c,k){
       var f=keep[k], dx, dy;
+      if(skip0&&k===0)return;
       if(!f){
         f={id:D.nextId++,type:'frame',parent:null,x:c.x,y:c.y,w:c.w,h:c.h,state:null,p:proto?JSON.parse(JSON.stringify(proto)):newFrameP(D.layFrameLook||'Light card')};
         if(!proto)f.p.title='';
@@ -1963,6 +1989,15 @@ try{
     row.appendChild(a);row.appendChild(b2);box.appendChild(row);
     sh=document.createElement('label');sh.className='gp-chk';ck=document.createElement('input');ck.type='checkbox';ck.checked=!!D.layShow;
     ck.addEventListener('change',function(){D.layShow=ck.checked;layPaint();});sh.appendChild(ck);sh.appendChild(document.createTextNode(' Show the cells on the canvas'));box.appendChild(sh);
+    var mlh=el_('div','gp-l');mlh.textContent='Look for the whole map';box.appendChild(mlh);
+    var mlg=el_('div','ly-grid ly-looks');
+    ((window.OBJAPI&&OBJAPI.mapLooks)?OBJAPI.mapLooks():[]).forEach(function(ML){
+      var w=el_('div','ly-c'), bt=document.createElement('button'), nm=el_('span','ly-n');
+      bt.type='button';bt.className='ly-t'+(D.layLook===ML.name?' on':'');bt.setAttribute('data-look',ML.name);bt.setAttribute('aria-label',ML.name+': background, frames, title banner and lines in this look');bt.setAttribute('data-tip',ML.name);
+      bt.innerHTML=layLookThumb(ML);bt.addEventListener('click',function(){layLookApply(ML.name);layPopBuild();});
+      nm.textContent=ML.name;w.appendChild(bt);w.appendChild(nm);mlg.appendChild(w);
+    });
+    box.appendChild(mlg);
     var fr=document.createElement('label');fr.className='gp-chk';var fk=document.createElement('input');fk.type='checkbox';fk.checked=!!D.layFrames;fk.id='dlayframes';
     fk.addEventListener('change',function(){
       D.layFrames=fk.checked;
@@ -1974,7 +2009,7 @@ try{
     if(D.layFrames){
       var lr=document.createElement('div');lr.className='gp-row';var ll=document.createElement('label');ll.textContent='Frame look';var ls=document.createElement('select');ls.id='dlayflook';
       Object.keys(FSTYLES).forEach(function(k){var o=document.createElement('option');o.value=k;o.textContent=k;ls.appendChild(o);});ls.value=D.layFrameLook||'Light card';
-      ls.addEventListener('change',function(){D.layFrameLook=ls.value;layFramesRestyle(ls.value);renderAll();buildForm();commit();});
+      ls.addEventListener('change',function(){D.layFrameLook=ls.value;D.layLook='';layFramesRestyle(ls.value);renderAll();buildForm();commit();});
       ll.appendChild(ls);lr.appendChild(ll);box.appendChild(lr);
     }
     var lnOn=D.layLines||layLineItems().length>0, lr2=document.createElement('label');lr2.className='gp-chk';var lk2=document.createElement('input');lk2.type='checkbox';lk2.checked=lnOn;lk2.id='dlaylines';
