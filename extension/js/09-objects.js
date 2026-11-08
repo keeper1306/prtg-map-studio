@@ -5175,7 +5175,7 @@ try{
       x='Gauge - '+amLow(amLab(GFACES.concat([['n-glass','Glass & metallic']]),gk))+(m.engine==='prtg'?(m.small?', small':''):', '+(m.shape==='half'?'half ring':'ring'))+', '+({'sensor-primary':'main channel','sensor-all':'all channels',device:'device sensors'}[m.kind]||m.kind);
       if(m.engine==='prtg'&&m.kind==='device')x+=', '+({4:'5 stars only',3:'4 and 5 stars',2:'3 to 5 stars',1:'2 to 5 stars',0:'all priorities'}[parseInt(m.prio,10)]||'priority '+m.prio);   /* PRTG's dial only: ring names stay as they were */
     }else if(t==='graph'){
-      x=(m.kind==='bars')?('Bars - '+({status:'sensor states',channels:'channels',sensors:'sensors'}[m.bsrc||'status'])+', '+(m.bdir==='col'?'vertical':'horizontal')):('Graph - '+({sensor:'sensor',sensors:'sensor list',toplist:'toplist'}[m.kind]||m.kind)+', '+String(amLab(GPERIODS,m.period)).toLowerCase()+((m.kind==='sensor'&&m.draw!=='pic'&&m.cstyle&&m.cstyle!=='area')?', '+m.cstyle:''));
+      x=(m.kind==='bars')?('Bars - '+({status:'states',channels:'channels',sensors:'sensors'}[m.bsrc||'status'])+', '+(m.bdir==='col'?'columns':'rows')+', '+({status:'by state',cat:'colourful',one:'one colour'}[m.bcolor||'status']||m.bcolor)):   /* short words, so all three choices fit in 64 characters with any look */('Graph - '+((m.kind==='sensor'&&m.draw!=='pic')?(m.cstyle||'area'):({sensor:'sensor',sensors:'sensor list',toplist:'toplist'}[m.kind]||m.kind))+', '+String(amLab(GPERIODS,m.period)).toLowerCase());   /* 1.5.88: a sensor graph is named by its chart style, as an icon by its style, first so it is never cut off */
       if(m.draw==='pic'&&m.kind!=='bars')x+=', PRTG picture';   /* PRTG draws this graph as a picture */
     }else if(t==='sunburst'){
       x='Sunburst - '+amLow(amLab(SBFACES,m.engine==='prtg'?'prtg':(m.face||'gaps')))+(m.sizeSensors?', by sensors':'')+(m.sizePriority?', by priority':'')+(m.engine==='prtg'&&m.hidePaused?', no paused devices':'');
@@ -5193,7 +5193,7 @@ try{
     }else if(t==='geomap'){
       x='Geo map - '+String(amLab(GMSHAPES,m.shape)).toLowerCase()+' markers'+(m.icon==='device'?'':', '+m.icon+' icon');
     }else if(t==='links'){
-      x='Link style - '+String(amLab(LNLOOKS,lkLook(m))).toLowerCase()+', '+String(amLab(LKTYPES,m.line)).replace(/ \(.*$/,'').toLowerCase()+((lkLook(m)!=='plain'||m.dash==='solid')?'':', '+String(amLab(LKDASH,m.dash)).toLowerCase());   /* the look first, as an icon's style, so a new look gives a new name and file name */
+      x='Link style - '+String(amLab(LNLOOKS,lkLook(m))).toLowerCase()+', '+String(amLab(LKTYPES,m.line)).replace(/ \(.*$/,'').toLowerCase()+((lkLook(m)!=='plain'||m.dash==='solid')?'':', '+String(amLab(LKDASH,m.dash)).toLowerCase())+((m.start&&m.start!=='none')?', '+m.start+' start':'')+((m.end&&m.end!=='none')?', '+m.end+' end':'');   /* the look first, as an icon's style, so a new look gives a new name and file name */
     }else return null;
     x=amLook(m,p+x);
     if(x.length<=64)return x;

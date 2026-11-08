@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.87.
+Last updated at version 1.5.88.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -161,6 +161,16 @@ A full run takes about 5 seconds (16 seconds the very first time).
   bar is HTML like the pill and always shows its word; Beacon's rays blink on alarm states when
   Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
   tile, badge, LED).
+
+## Names follow every picture choice (1.5.88)
+
+- The owner asked that every object name its files the way icons and Link styles do (a new choice gives a new name).
+  Checked in the builder (every visible picture group of every type clicked through): only three choices did not change the name.
+  `amName` now: a sensor graph (not a picture) is "Graph - <chart style>, <period>" (was "sensor, <period>", the style only when
+  not area); Bars add their colour mode ("by state", "colourful", "one colour"); a Link style adds "<marker> start" / "<marker> end".
+- Every look x period x chart style and every Bars combination fits in 64 characters (no cut, no two choices with one name).
+- Object files equal 1.5.87 apart from the name (graphs: header line and the class names made from it); 22 compared; 12 tests.
+  So those objects get new file names when made again; files already in `mapobjects` are not replaced. Not verified on the real PRTG.
 
 ## Outlined whole-map looks (1.5.87)
 
