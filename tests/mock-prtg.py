@@ -6,11 +6,15 @@ delete map items, read the map back). It keeps the map's items in memory.
 
 Maps made through /addmap2.htm (the scaled copy, 1.5.92) are added to the map list and keep their own items,
 apart from the test map 2001; /controls/objectdata.htm and /editsettings stand in for the map settings form.
+1.5.93: that form also has a background picture (a radio group and a file field, with made-up names: the real names are not
+known, Map Studio finds them by type and label); /controls/mapview.htm shows the picture as PRTG does (background-image).
+/api/mapsvg.htm gives the map's size (1920 x 1080) only when the mode has {"svg":1}, so the older tests are unchanged.
 
 Test-only control addresses:
   /__reset?items=<json>&next=<n>   set the items on the map and the next item id
   /__mode?m=<json>                 {"addfail":1} or {"delfail":1} makes that call fail
   /__state                         the items on the map and every PRTG call made
+  /__pic?id=<map>                  the picture saved for that map (404 when none)
 
 Usage: python mock-prtg.py <extension folder> <port>
 """
@@ -18,7 +22,7 @@ import http.server, json, os, re, sys, threading, urllib.parse
 
 EXT = sys.argv[1]
 PORT = int(sys.argv[2])
-state = {'items': {}, 'next': 10, 'log': [], 'mode': {}, 'maps': [{'objid': 2001, 'name': 'Test map'}], 'other': {}, 'bg': {}}
+state = {'items': {}, 'next': 10, 'log': [], 'mode': {}, 'maps': [{'objid': 2001, 'name': 'Test map'}], 'other': {}, 'bg': {}, 'pic': {}}
 MAIN = '2001'   # the map the push tests use; maps made with addmap2.htm keep their items in state['other'][id]
 lock = threading.Lock()
 CATALOGUE = {
@@ -48,12 +52,27 @@ class Handler(http.server.BaseHTTPRequestHandler):
         q = dict(urllib.parse.parse_qsl(u.query))
         if self.command == 'POST':
             n = int(self.headers.get('Content-Length') or 0)
-            body = self.rfile.read(n).decode('utf-8', 'replace')
-            if 'multipart/form-data' in (self.headers.get('Content-Type') or ''):   # addmap2.htm and editsettings
-                for m in re.finditer(r'name="([^"]+)"\r\n\r\n(.*?)\r\n--', body, re.S):
-                    q[m.group(1)] = m.group(2)
+            raw = self.rfile.read(n)
+            ct = self.headers.get('Content-Type') or ''
+            if 'multipart/form-data' in ct:   # addmap2.htm and editsettings; a file part keeps its bytes
+                bnd = re.search(r'boundary=("?)([^";]+)\1', ct).group(2).encode()
+                for part in raw.split(b'--' + bnd)[1:]:
+                    if part.startswith(b'--'):
+                        break
+                    head, _, data = part.partition(b'\r\n\r\n')
+                    data = data[:-2] if data.endswith(b'\r\n') else data
+                    h = head.decode('utf-8', 'replace')
+                    nm = re.search(r'name="([^"]*)"', h)
+                    if not nm:
+                        continue
+                    fn = re.search(r'filename="([^"]*)"', h)
+                    if fn:
+                        t = re.search(r'Content-Type:\s*(\S+)', h, re.I)
+                        q.setdefault('__files', {})[nm.group(1)] = (fn.group(1), data, t.group(1) if t else 'application/octet-stream')
+                    else:
+                        q[nm.group(1)] = data.decode('utf-8', 'replace')
             else:
-                q.update(dict(urllib.parse.parse_qsl(body)))
+                q.update(dict(urllib.parse.parse_qsl(raw.decode('utf-8', 'replace'))))
         return u.path, q
 
     def do_GET(self):
@@ -69,9 +88,16 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 state['mode'] = json.loads(q.get('m', '{}'))
                 return self.send(200, 'ok')
             if path == '/__state':
-                return self.send(200, json.dumps({'items': state['items'], 'log': state['log'], 'maps': state['maps'], 'other': state['other'], 'bg': state['bg']}), 'application/json')
+                return self.send(200, json.dumps({'items': state['items'], 'log': state['log'], 'maps': state['maps'], 'other': state['other'], 'bg': state['bg'],
+                                                  'pic': {k: {'name': v[0], 'size': len(v[1]), 'type': v[2]} for k, v in state['pic'].items()}}), 'application/json')
+            if path == '/__pic' or path.startswith('/mapbackground/'):
+                mid = q.get('id') or os.path.splitext(path.split('/')[-1])[0]
+                if mid not in state['pic']:
+                    return self.send(404, 'no picture')
+                return self.send(200, state['pic'][mid][1], state['pic'][mid][2])
             if path == '/__reset':
                 state['items'] = json.loads(q.get('items', '{}'))
+                state['pic'] = {}
                 state['log'] = []
                 state['next'] = int(q.get('next', '10'))
                 return self.send(200, 'ok')
@@ -82,7 +108,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
                         return self.send(200, fh.read(), TYPES.get(os.path.splitext(f)[1], 'application/octet-stream'))
                 return self.send(404, 'not found')
             if path.startswith('/api/') or path.startswith('/controls/'):
-                state['log'].append({'path': path, 'q': {k: v for k, v in q.items() if k not in ('passhash', 'htmlbefore_', 'htmlafter_')}})
+                state['log'].append({'path': path, 'q': {k: v for k, v in q.items() if k not in ('passhash', 'htmlbefore_', 'htmlafter_', '__files')}})
             mode = state['mode']
             if path == '/api/table.json' and q.get('content') == 'maps':
                 return self.send(200, json.dumps({"maps": state['maps']}), 'application/json')
@@ -93,11 +119,26 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 return self.send(200, '<html>map %d</html>' % oid)
             if path == '/controls/objectdata.htm' and q.get('objecttype') == 'map':
                 mid = q.get('id')
-                return self.send(200, '<form action="/editsettings"><input name="id" value="%s"><input name="bgcolor_" value="%s"><input name="width_" value="1920"><input name="height_" value="1080"></form>'
-                                 % (mid, state['bg'].get(mid, '#123456' if mid == MAIN else '')))
+                has = mid in state['pic']
+                return self.send(200, '<form action="/editsettings"><input name="id" value="%s"><input name="bgcolor_" value="%s"><input name="width_" value="1920"><input name="height_" value="1080">'
+                                 '<div class="control-group"><label class="control-label">Background Image</label>'
+                                 '<input type="radio" name="mapbgpic_" id="pic1" value="1"%s><label for="pic1">Use a custom background image, for example, your company logo</label>'
+                                 '<input type="radio" name="mapbgpic_" id="pic0" value="0"%s><label for="pic0">Do not use a background image</label>'
+                                 '<input type="file" name="mapbgfile_"></div></form>'
+                                 % (mid, state['bg'].get(mid, '#123456' if mid == MAIN else ''), ' checked' if has else '', '' if has else ' checked'))
             if path == '/editsettings':
-                state['bg'][q.get('id')] = q.get('bgcolor_', '')
+                mid = q.get('id')
+                state['bg'][mid] = q.get('bgcolor_', '')
+                f = q.get('__files', {}).get('mapbgfile_')
+                if q.get('mapbgpic_') == '0':
+                    state['pic'].pop(mid, None)
+                elif q.get('mapbgpic_') == '1' and f and f[1]:
+                    state['pic'][mid] = f
                 return self.send(200, 'ok')
+            if path == '/controls/mapview.htm':
+                mid = q.get('id')
+                bgi = ';background-image:url(/mapbackground/%s.img)' % mid if mid in state['pic'] else ''
+                return self.send(200, '<div id="mapview" style="background-color:%s%s"><div id="mapshow" data-connections="[]"></div></div>' % (state['bg'].get(mid, '#123456'), bgi))
             if path == '/api/tree.json':   # PRTG sends the Root group as one item with its children
                 return self.send(200, json.dumps(TREE), 'application/json')
             if path == '/api/table.json' and q.get('content') in ('devices', 'groups', 'probenodes'):
@@ -137,7 +178,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 html = ''.join('<div class="map_object" subid="%s" objectid="%s" style="left:%spx;top:%spx;width:%spx;height:%spx;z-index:1"></div>'
                                % (s, i['target'] or 0, i['left'], i['top'], i['width'], i['height'])
                                for s, i in (state['other'].get(q.get('id'), {}) if q.get('id') not in (None, MAIN) else state['items']).items())
-                return self.send(200, '<html><body>' + html + '</body></html>')
+                svg = '<svg width="1920px" height="1080px"></svg>' if mode.get('svg') else ''
+                return self.send(200, '<html><body>' + svg + html + '</body></html>')
             if path.endswith('.json'):
                 return self.send(200, '{}', 'application/json')
             return self.send(200, '<html></html>')

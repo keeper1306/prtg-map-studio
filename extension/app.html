@@ -985,6 +985,39 @@ body:not(.objs) #obar{display:none!important}
 .nmov{position:fixed;inset:0;z-index:100001;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center}
 .nmbox{width:min(440px,92vw);background:#fff;border-radius:12px;padding:20px 22px;box-shadow:0 10px 40px rgba(15,23,42,.35)}
 .nmbox h3{margin:0 0 8px;font-size:16px;font-weight:500;color:var(--blue)}
+/* 1.5.93: background picture (Build > Background) and its editor */
+.bgititle{margin-top:14px}#mapbginow{display:block;max-width:100%;max-height:90px;margin:6px 0 2px;border:1px solid var(--g20);border-radius:6px;background:repeating-conic-gradient(#eef0f4 0 25%,#fff 0 50%) 0 0/12px 12px}#mapbginow[hidden]{display:none}
+.bgirow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:8px 0 2px}.bgirow [hidden]{display:none}
+.bgebox{width:min(1120px,96vw);max-height:94vh;display:flex;flex-direction:column;padding:16px 18px}
+.bgehead{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px}.bgehead h3{margin:0}.bgeinfo{font-size:12px;color:#6B7280}
+.bgebody{display:flex;gap:16px;min-height:0;flex:1 1 auto;margin-top:10px}
+.bgeleft{flex:1 1 auto;min-width:0;display:flex;flex-direction:column}
+.bgestage{position:relative;height:min(62vh,560px);border-radius:10px;border:1px solid #E3E6EC;background:repeating-conic-gradient(#e9ecf1 0 25%,#f7f8fa 0 50%) 0 0/16px 16px;display:flex;align-items:center;justify-content:center;overflow:hidden;user-select:none}
+.bgecv{display:block;box-shadow:0 1px 6px rgba(15,23,42,.25);cursor:grab;touch-action:none}.bgestage.dragging .bgecv{cursor:grabbing}.bgestage.cropping .bgecv{cursor:default;opacity:.55}
+.bgecrop{position:absolute;box-sizing:border-box;border:2px solid #fff;outline:1px solid rgba(15,23,42,.6);box-shadow:0 0 0 9999px rgba(15,23,42,.45);cursor:move;touch-action:none}.bgecrop[hidden]{display:none}
+.bgecrop::before,.bgecrop::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,transparent calc(33.33% - .5px),rgba(255,255,255,.6) 0 calc(33.33% + .5px),transparent 0 calc(66.66% - .5px),rgba(255,255,255,.6) 0 calc(66.66% + .5px),transparent 0)}
+.bgecrop::after{background:linear-gradient(180deg,transparent calc(33.33% - .5px),rgba(255,255,255,.6) 0 calc(33.33% + .5px),transparent 0 calc(66.66% - .5px),rgba(255,255,255,.6) 0 calc(66.66% + .5px),transparent 0)}
+.bgeh{position:absolute;width:12px;height:12px;background:#fff;border:1px solid #0F67FF;border-radius:2px;margin:-7px 0 0 -7px}
+.bgeh-nw{left:0;top:0;cursor:nwse-resize}.bgeh-n{left:50%;top:0;cursor:ns-resize}.bgeh-ne{left:100%;top:0;cursor:nesw-resize}.bgeh-e{left:100%;top:50%;cursor:ew-resize}
+.bgeh-se{left:100%;top:100%;cursor:nwse-resize}.bgeh-s{left:50%;top:100%;cursor:ns-resize}.bgeh-sw{left:0;top:100%;cursor:nesw-resize}.bgeh-w{left:0;top:50%;cursor:ew-resize}
+.bgecsz{position:absolute;left:4px;top:4px;padding:1px 6px;border-radius:4px;background:rgba(15,23,42,.7);color:#fff;font-size:11px;pointer-events:none}
+.bgehint{margin:6px 2px 0;font-size:12px;color:#6B7280}
+.bgeside{flex:0 0 300px;overflow:auto;padding-right:4px}
+.bgesec{padding:10px 0;border-top:1px solid #EEF0F4}.bgesec:first-child{border-top:0;padding-top:0}.bgesec.bgeoff{opacity:.4;pointer-events:none}
+.bgest{font-size:13px;font-weight:500;color:var(--blue);margin-bottom:6px}.bgesub{font-size:12px;color:#4B5563;margin:8px 0 4px}
+.bgebtns{display:flex;flex-wrap:wrap;gap:5px}.bgebtns[hidden],.bgecutbox[hidden],.bgesl[hidden]{display:none}
+.bgebox .fb-t{border:1px solid #D5DAE3;border-radius:7px;padding:4px 9px;background:#fff;font:inherit;font-size:12px;cursor:pointer;color:#1F2937}.bgebox .fb-t:hover{border-color:#94A3B8}
+.bgebox .fb-t.on{border-color:var(--cyan);background:#e6f3fa;color:#0B5C85}
+.bgenote{margin:5px 0 0;font-size:11.5px;color:#6B7280;line-height:1.35}.bgenote:empty{display:none}
+.bgesl{display:grid;grid-template-columns:96px minmax(0,1fr) 48px;align-items:center;gap:8px;margin:5px 0;font-size:12px;color:#374151}.bgesl input[type=range]{width:100%}
+.bgesl input[type=color],.bgefill input[type=color]{width:34px;height:24px;padding:0;border:1px solid #D5DAE3;border-radius:6px;background:none;cursor:pointer}.bgefill input.on{box-shadow:0 0 0 2px var(--cyan)}
+.bgeslv{text-align:right;font-variant-numeric:tabular-nums;color:#6B7280}
+.bgeposrow{display:flex;align-items:center;gap:10px}.bgegrid{display:grid;grid-template-columns:repeat(3,22px);gap:3px}
+.bgegc{width:22px;height:22px;border:1px solid #D5DAE3;border-radius:5px;background:#fff;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center}.bgegc i{width:6px;height:6px;border-radius:50%;background:#94A3B8}.bgegc.on{border-color:var(--cyan);background:#e6f3fa}.bgegc.on i{background:var(--cyan)}
+.bgefill{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.bgefoot{align-items:center;flex-wrap:wrap}.bgeout{margin-right:auto;font-size:12px;color:#6B7280}.bgeout.err{color:#B91C1C}
+.bgemsg{margin:8px 0 0}#bgpanel .pst.err,.bgebox .pst.err{color:#b4232b}#bgpanel .pst.ok,.bgebox .pst.ok{color:#1c7a3f}
+@media (max-width:760px){.bgebody{flex-direction:column}.bgeside{flex:none}.bgestage{height:44vh}}
 .pkbox{width:min(620px,94vw)}
 .pkbox .pkall{display:flex;align-items:center;gap:6px;font-size:13px;margin:10px 0 6px;cursor:pointer}
 .pkbox .pklist{max-height:min(46vh,380px);overflow:auto;border:1px solid #E3E6EC;border-radius:8px}
@@ -1209,7 +1242,7 @@ body.pkopen #obar{visibility:hidden!important}
         <button class="btn ghost" type="button" data-add="label" data-tip="Plain text on the map. Double-click to add it, or drag it onto the canvas.">Label</button>
         <button class="btn ghost" type="button" data-add="button" data-tip="A button that opens a map or a web address. Double-click to add it, or drag it onto the canvas.">Button</button>
         <button class="btn ghost" type="button" data-add="banner" data-tip="A wide strip of text. Double-click to add it, or drag it onto the canvas.">Banner</button>
-        <button class="btn ghost bgpick" type="button" id="mapbgbtn" aria-expanded="false" aria-controls="bgpanel" data-tip="Change the map’s background color"><span>Background</span><i class="bgnow" id="mapbgnow"></i></button>
+        <button class="btn ghost bgpick" type="button" id="mapbgbtn" aria-expanded="false" aria-controls="bgpanel" data-tip="Change the map’s background color or picture"><span>Background</span><i class="bgnow" id="mapbgnow"></i></button>
         <button class="btn ghost" type="button" data-add="shape" data-tip="An arrow, line or box. Double-click to add it, or drag it onto the canvas.">Shape</button>
         <button class="btn ghost" type="button" data-add="connector" data-tip="A line that glues to two objects and can push to PRTG as a real, self-updating link. Double-click to add it, or drag it onto the canvas.">Connector</button>
         <button class="btn ghost" type="button" id="showexisting" aria-expanded="false" aria-controls="objfs" data-tip="Click to see the object files on the connected PRTG server, then add one to the canvas.">PRTG Server Objects</button>
@@ -1220,6 +1253,11 @@ body.pkopen #obar{visibility:hidden!important}
         <div class="bgpresets" id="bgpresets" aria-label="Map background presets"></div>
         <label class="bgcustom" for="mapbgcolor"><input type="color" id="mapbgcolor" value="#dad7d7" disabled><span>Pick any color</span></label>
         <p class="note pst" id="mapbgmsg" hidden></p>
+        <div class="bgtitle bgititle">Picture</div>
+        <img id="mapbginow" alt="The map’s current background picture" hidden>
+        <div class="bgirow"><button class="btn ghost sm" id="mapbgipick" type="button" disabled data-tip="Cut, place and adjust a picture; Map Studio then sends it to PRTG at exactly the map’s size">Choose a picture&hellip;</button><button class="btn ghost sm" id="mapbgiedit" type="button" hidden>Edit the current one</button><button class="linkbtn" id="mapbgidel" type="button" hidden>Remove</button></div>
+        <input type="file" id="mapbgifile" accept="image/png,image/jpeg,image/gif,image/webp,image/bmp" hidden>
+        <p class="note pst" id="mapbgimsg" hidden></p>
       </div>
     </fieldset>
     <fieldset id="objfs">

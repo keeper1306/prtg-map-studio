@@ -1133,7 +1133,7 @@ try{
       return httpMultipart('/editsettings',p);
     }).then(function(){return mapForm(id);}).then(function(p){
       if(hex6(p.bgcolor_)!==c)throw new Error('PRTG did not keep the new colour.');
-      EX.bgColor=c;
+      EX.bgColor=c;if(BGI.cur.id===String(id))BGI.cur.color=c;
       exPaintBg();
       if(!$('dexist')){try{$('dcanvas').style.backgroundColor=c;}catch(e){}}
       bgMsg('Background changed to '+c.toUpperCase()+' on “'+mapName()+'”.','ok');
@@ -1309,6 +1309,437 @@ try{
       b.addEventListener('click',function(){$('mapbgcolor').value=p[1].toLowerCase();setMapBg(p[1]);});
       box.appendChild(b);
     });
+  })();
+  /* ---- 1.5.93: a picture behind the map. PRTG's map settings have "Background Image" (use a custom background image / do not use
+     one) and a file field (JPG, PNG or GIF, under 20 MB), and PRTG draws the picture at its own size from the map's top-left corner.
+     So the editor makes a picture of exactly the map's size (cut, placement, zoom, position, turn, flip, colour changes, a tint) and
+     sends it through that same settings form, read as it stands (like the background colour). Field names are found in the form:
+     the file field, and the radio group whose labels speak of using or not using a background image. */
+  var BGI={busy:false,cur:{id:'',url:''}};
+  function bgh(tag,cls,txt){var n=document.createElement(tag);if(cls)n.className=cls;if(txt!=null)n.textContent=txt;return n;}
+  function bgiMsg(t,kind){var n=$('mapbgimsg');if(!n)return;n.hidden=!t;n.textContent=t||'';n.className='note pst'+(kind?' '+kind:'');}
+  function bgiLabel(f,e){
+    var id=e.getAttribute('id'), l=null, t='', s;
+    if(id)try{l=f.querySelector('label[for="'+id.replace(/["\\]/g,'')+'"]');}catch(x){}
+    if(!l)l=e.closest('label');
+    if(l)t=l.textContent;
+    for(s=e.nextSibling;!t&&s;s=s.nextSibling)t=(s.textContent||'').trim();
+    return String(t||'').replace(/\s+/g,' ').trim();
+  }
+  function bgiForm(id){
+    return http('GET','/controls/objectdata.htm',{objecttype:'map',id:id}).then(function(t){
+      var d=new DOMParser().parseFromString(t,'text/html'), f=d.querySelector('form[action="/editsettings"]')||d.querySelector('form'), files, groups={}, r=null;
+      if(!f)throw new Error('PRTG did not send the map settings.');
+      files=[].filter.call(f.querySelectorAll('input[type=file]'),function(e){return e.getAttribute('name')&&!e.disabled;});
+      files=files.filter(function(e){return /back|image|bg|pic/i.test(e.getAttribute('name'));}).concat(files);
+      [].forEach.call(f.querySelectorAll('input[type=radio]'),function(e){
+        var n=e.getAttribute('name');if(!n||e.disabled)return;
+        (groups[n]=groups[n]||[]).push({v:e.getAttribute('value')==null?'on':e.getAttribute('value'),t:bgiLabel(f,e),on:e.hasAttribute('checked')});
+      });
+      Object.keys(groups).forEach(function(n){
+        var use=null, no=null;
+        groups[n].forEach(function(o){if(!/image|picture/i.test(o.t))return;if(/\b(do not|don.t|no)\b/i.test(o.t))no=no||o;else use=use||o;});
+        if(use&&no&&!r)r={name:n,on:use.v,off:no.v,cur:(groups[n].filter(function(o){return o.on;})[0]||{}).v};
+      });
+      return {file:files.length?files[0].getAttribute('name'):'',radio:r};
+    });
+  }
+  function bgiSize(id){return MAPSZ[id]?Promise.resolve(MAPSZ[id]):readMapSize(id).then(function(s){MAPSZ[id]=s;return s;});}
+  function bgiDims(url){return new Promise(function(ok){if(!url)return ok(null);var i=new Image();i.onload=function(){ok({w:i.naturalWidth,h:i.naturalHeight});};i.onerror=function(){ok(null);};i.src=url;});}
+  /* the map's current picture, for the panel's thumbnail and the Edit and Remove buttons */
+  function bgiRefresh(){
+    var id=mapId();
+    if(!id||!(S&&S.maps)){bgiSync();return Promise.resolve();}
+    return exMapView(id).then(function(v){
+      if(String(mapId())!==String(id)){if(v.bg)try{URL.revokeObjectURL(v.bg);}catch(e){}return;}
+      if(BGI.cur.url&&BGI.cur.url!==v.bg)try{URL.revokeObjectURL(BGI.cur.url);}catch(e){}
+      BGI.cur={id:String(id),url:v.bg||'',color:hex6(v.color)};bgiSync();
+    });
+  }
+  function bgiSync(){
+    var on=!!(window.PRTGSTATE&&window.PRTGSTATE.map), has=on&&BGI.cur.url&&BGI.cur.id===String(mapId()), im=$('mapbginow');
+    if(!$('mapbgipick'))return;
+    $('mapbgipick').disabled=!on||BGI.busy;
+    $('mapbgiedit').hidden=!has;$('mapbgiedit').disabled=BGI.busy;
+    $('mapbgidel').hidden=!has;$('mapbgidel').disabled=BGI.busy;
+    im.hidden=!has;if(has&&im.getAttribute('src')!==BGI.cur.url)im.src=BGI.cur.url;
+  }
+  /* shows the new picture on the canvas at once, as the colour change does */
+  function bgiShow(url){
+    if($('dexist')){EX.bg=url||'';exPaintBg();return;}
+    try{var c=$('dcanvas');c.style.backgroundImage=url?'url("'+url+'")':'';c.style.backgroundRepeat='no-repeat';c.style.backgroundPosition='0 0';c.style.backgroundSize=url?'100% 100%':'';}catch(e){}
+  }
+  function bgiSend(id,blob,name){
+    var info;
+    return bgiForm(id).then(function(i){
+      info=i;
+      if(!i.file)throw new Error('PRTG\u2019s map settings have no picture field Map Studio recognises, so nothing was sent.');
+      return mapForm(id,true);
+    }).then(function(p){
+      if(info.radio)p[info.radio.name]=info.radio.on;
+      p[info.file]=new File([blob],name,{type:blob.type});
+      return httpMultipart('/editsettings',p);
+    }).then(function(){return exMapView(id);});
+  }
+  function bgiRemove(){
+    var id=mapId(), name=mapName();
+    if(!id||BGI.busy)return;
+    BGI.busy=true;bgiSync();bgiMsg('Removing the picture\u2026','');
+    bgiForm(id).then(function(i){
+      if(!i.radio)throw new Error('PRTG\u2019s map settings have no \u201CDo not use a background image\u201D choice Map Studio recognises, so nothing was changed.');
+      return mapForm(id,true).then(function(p){p[i.radio.name]=i.radio.off;return httpMultipart('/editsettings',p);});
+    }).then(function(){return exMapView(id);}).then(function(v){
+      if(v.bg){try{URL.revokeObjectURL(v.bg);}catch(e){}throw new Error('PRTG still shows a picture on \u201C'+name+'\u201D.');}
+      if(BGI.cur.url)try{URL.revokeObjectURL(BGI.cur.url);}catch(e){}
+      BGI.cur={id:String(id),url:'',color:BGI.cur.color};bgiShow('');
+      bgiMsg('The picture was taken off \u201C'+name+'\u201D. The map shows its background colour.','ok');
+    }).catch(function(e){if(e&&e.status===401)authNeeded();bgiMsg((e&&e.message)||'Could not remove the picture.','err');})
+      .then(function(){BGI.busy=false;bgiSync();});
+  }
+  function bgiLoad(src){
+    return new Promise(function(ok,no){
+      var i=new Image();
+      i.onload=function(){if(!i.naturalWidth)no(new Error('That file has no picture in it.'));else ok(i);};
+      i.onerror=function(){no(new Error('Chrome cannot open that file as a picture. Use a JPG, PNG, GIF, WebP or BMP file.'));};
+      i.src=src;
+    });
+  }
+  function bgiOpen(src,fname,own){
+    var id=mapId();
+    if(!id||BGI.busy)return;
+    bgiMsg('Opening the picture\u2026','');
+    Promise.all([bgiLoad(src),bgiSize(id),BGI.cur.id===String(id)?null:bgiRefresh()]).then(function(r){bgiMsg('','');bgeOpen(r[0],r[1],fname,id);})
+      .catch(function(e){if(e&&e.status===401)authNeeded();bgiMsg((e&&e.message)||'Could not open the picture.','err');})
+      .then(function(){if(own)setTimeout(function(){try{URL.revokeObjectURL(src);}catch(e){}},60000);});
+  }
+
+  /* ---- the picture editor ---- */
+  var BGEMODES=[['fill','Fill','Covers the whole map; the edges that stick out are cut off.'],['fit','Fit','The whole picture shows; the rest of the map gets the empty-area colour.'],
+    ['stretch','Stretch','Pulled to the map\u2019s exact width and height (the shape changes).'],['orig','Original size','At its own size, 1 picture pixel = 1 map pixel.'],['tile','Tile','Repeated across the map, like wallpaper.']];
+  var BGEASPECT=[['free','Free'],['map','Map shape'],['1','Square'],['1.7778','16:9'],['1.3333','4:3']];
+  function bgeBlank(){return {mode:'fill',zoom:1,ax:.5,ay:.5,rot:0,fh:false,fv:false,crop:null,br:100,ct:100,sat:100,blur:0,gray:0,op:100,tint:'#000000',tintA:0,fill:'',fmt:'jpg',q:88};}
+  function bgeOpen(img,size,fname,mapid){
+    var W=size.w, H=size.h, st=bgeBlank(), src=null, cropping=null, aspect='free', blobT=null, outBlob=null;
+    var mapCol=(BGI.cur.id===String(mapid)&&BGI.cur.color)||(EX.map===mapid&&hex6(EX.bgColor))||hex6($('mapbgcolor').value)||'#ffffff';
+    var ov=bgh('div','nmov'), box=bgh('div','nmbox bgebox');
+    ov.setAttribute('role','dialog');ov.setAttribute('aria-modal','true');ov.setAttribute('aria-label','Map background picture');
+    var head=bgh('div','bgehead');head.appendChild(bgh('h3',null,'Background picture'));
+    var info=bgh('span','bgeinfo');head.appendChild(info);box.appendChild(head);
+    var body=bgh('div','bgebody'), stage=bgh('div','bgestage'), cv=bgh('canvas','bgecv'), crop=bgh('div','bgecrop'), hint=bgh('p','bgehint');
+    stage.appendChild(cv);stage.appendChild(crop);
+    var left=bgh('div','bgeleft');left.appendChild(stage);left.appendChild(hint);body.appendChild(left);
+    var side=bgh('div','bgeside');body.appendChild(side);box.appendChild(body);
+    var foot=bgh('div','nmbtns bgefoot'), outInfo=bgh('span','bgeout'), reset=bgh('button','btn ghost','Start over'), dl=bgh('button','btn ghost','Download'), no=bgh('button','btn ghost','Cancel'), go=bgh('button','btn primary','Put it on the map');
+    foot.appendChild(outInfo);[reset,dl,no,go].forEach(function(b){b.type='button';foot.appendChild(b);});
+    var msg=bgh('p','note pst bgemsg');msg.hidden=true;box.appendChild(msg);box.appendChild(foot);
+    ov.appendChild(box);document.body.appendChild(ov);
+    info.textContent='Map \u201C'+mapName()+'\u201D: '+W+' \u00D7 '+H+' \u00B7 picture'+(fname?' \u201C'+fname+'\u201D':'')+': '+img.naturalWidth+' \u00D7 '+img.naturalHeight;
+    function say(t,kind){msg.hidden=!t;msg.textContent=t||'';msg.className='note pst bgemsg'+(kind?' '+kind:'');}
+
+    /* the picture turned and flipped; the cut is a rectangle on it */
+    function source(){
+      if(src)return src;
+      var r=st.rot%180!==0, w=r?img.naturalHeight:img.naturalWidth, h=r?img.naturalWidth:img.naturalHeight, c=document.createElement('canvas'), x;
+      c.width=w;c.height=h;x=c.getContext('2d');
+      x.translate(w/2,h/2);x.rotate(st.rot*Math.PI/180);x.scale(st.fh?-1:1,st.fv?-1:1);
+      x.drawImage(img,-img.naturalWidth/2,-img.naturalHeight/2);
+      return (src=c);
+    }
+    function cutRect(){var s=source();return st.crop||{x:0,y:0,w:s.width,h:s.height};}
+    function place(){
+      var c=cutRect(), sx, sy;
+      if(st.mode==='fill')sx=sy=Math.max(W/c.w,H/c.h)*st.zoom;
+      else if(st.mode==='fit')sx=sy=Math.min(W/c.w,H/c.h)*st.zoom;
+      else if(st.mode==='stretch'){sx=W/c.w*st.zoom;sy=H/c.h*st.zoom;}
+      else sx=sy=st.zoom;
+      var dw=c.w*sx, dh=c.h*sy;
+      if(st.mode==='tile')return {c:c,dw:dw,dh:dh,x:(W-dw)/2+(st.ax-.5)*dw,y:(H-dh)/2+(st.ay-.5)*dh};   /* tiles: the position moves the pattern */
+      return {c:c,dw:dw,dh:dh,x:(W-dw)*st.ax,y:(H-dh)*st.ay};
+    }
+    function emptyCol(){return st.fill||(st.fmt==='png'?'':mapCol);}
+    function filt(k){
+      var f=[];
+      if(st.br!==100)f.push('brightness('+st.br+'%)');if(st.ct!==100)f.push('contrast('+st.ct+'%)');
+      if(st.sat!==100)f.push('saturate('+st.sat+'%)');if(st.gray)f.push('grayscale('+st.gray+'%)');
+      if(st.blur)f.push('blur('+(st.blur*k).toFixed(2)+'px)');
+      return f.length?f.join(' '):'none';
+    }
+    /* draws the finished picture into x at k canvas pixels per map pixel */
+    function paint(x,k){
+      var p=place(), s=source(), c=p.c, e=emptyCol(), i, j, x0, y0;
+      x.setTransform(1,0,0,1,0,0);x.clearRect(0,0,x.canvas.width,x.canvas.height);
+      x.setTransform(k,0,0,k,0,0);
+      if(e){x.fillStyle=e;x.fillRect(0,0,W,H);}
+      x.save();x.globalAlpha=st.op/100;x.filter=filt(k);x.imageSmoothingQuality='high';
+      if(st.mode==='tile'){
+        x0=((p.x%p.dw)+p.dw)%p.dw;if(x0>0)x0-=p.dw;
+        y0=((p.y%p.dh)+p.dh)%p.dh;if(y0>0)y0-=p.dh;
+        for(j=y0;j<H;j+=p.dh)for(i=x0;i<W;i+=p.dw)x.drawImage(s,c.x,c.y,c.w,c.h,i,j,p.dw,p.dh);
+      }else x.drawImage(s,c.x,c.y,c.w,c.h,p.x,p.y,p.dw,p.dh);
+      x.restore();
+      if(st.tintA){x.globalAlpha=st.tintA/100;x.fillStyle=st.tint;x.fillRect(0,0,W,H);x.globalAlpha=1;}
+    }
+    /* ---- the preview ---- */
+    var view={k:1,cw:0,ch:0};
+    function fitStage(aw,ah){
+      var bw=Math.max(200,stage.clientWidth-24), bh=Math.max(160,stage.clientHeight-24), k=Math.min(bw/aw,bh/ah), dpr=window.devicePixelRatio||1;
+      view.cw=Math.max(1,Math.round(aw*k));view.ch=Math.max(1,Math.round(ah*k));view.k=k;
+      cv.style.width=view.cw+'px';cv.style.height=view.ch+'px';cv.width=Math.round(view.cw*dpr);cv.height=Math.round(view.ch*dpr);
+      return view.cw*dpr/aw;
+    }
+    function draw(){
+      if(cropping){drawCrop();return;}
+      crop.hidden=true;stage.classList.remove('cropping');
+      paint(cv.getContext('2d'),fitStage(W,H));
+      hint.textContent=st.mode==='tile'?'Drag to move the pattern, scroll to make the tiles bigger or smaller.':'Drag the picture to move it, scroll to zoom. What you see is the whole map.';
+      queueOut();
+    }
+    /* ---- cutting: the whole (turned) picture with a rectangle on it ---- */
+    function drawCrop(){
+      var s=source(), k=fitStage(s.width,s.height), x=cv.getContext('2d');
+      x.setTransform(1,0,0,1,0,0);x.clearRect(0,0,cv.width,cv.height);x.setTransform(k,0,0,k,0,0);x.drawImage(s,0,0);
+      stage.classList.add('cropping');crop.hidden=false;
+      var r=cropping, q=view.k, ox=cv.offsetLeft, oy=cv.offsetTop;
+      crop.style.left=(ox+r.x*q)+'px';crop.style.top=(oy+r.y*q)+'px';crop.style.width=(r.w*q)+'px';crop.style.height=(r.h*q)+'px';
+      cropSize.textContent=Math.round(r.w)+' \u00D7 '+Math.round(r.h);
+      hint.textContent='Drag the box or its handles to choose the part to keep, then press Use this part.';
+    }
+    var cropSize=bgh('span','bgecsz');crop.appendChild(cropSize);
+    ['nw','n','ne','e','se','s','sw','w'].forEach(function(d){var g=bgh('i','bgeh bgeh-'+d);g.setAttribute('data-h',d);crop.appendChild(g);});
+    function ratio(){var s=source();return aspect==='free'?0:aspect==='map'?W/H:parseFloat(aspect)||0;}
+    function cropBiggest(){
+      var s=source(), a=ratio(), w=s.width, h=s.height;
+      if(a){if(w/h>a)w=h*a;else h=w/a;}
+      cropping={x:(s.width-w)/2,y:(s.height-h)/2,w:w,h:h};
+    }
+    function cropFix(r,d){
+      var s=source(), a=ratio(), m=16;
+      if(a&&d){if(/[ns]$/.test(d)&&d.length===1)r.w=r.h*a;else r.h=r.w/a;}
+      r.w=Math.max(m,Math.min(r.w,s.width));r.h=Math.max(m,Math.min(r.h,s.height));
+      if(a){if(r.w/r.h>a+1e-6)r.w=r.h*a;else if(r.w/r.h<a-1e-6)r.h=r.w/a;}
+      r.x=Math.max(0,Math.min(r.x,s.width-r.w));r.y=Math.max(0,Math.min(r.y,s.height-r.h));
+      return r;
+    }
+    crop.addEventListener('pointerdown',function(e){
+      var d=e.target.getAttribute('data-h')||'move', r0={x:cropping.x,y:cropping.y,w:cropping.w,h:cropping.h}, px=e.clientX, py=e.clientY;
+      e.preventDefault();crop.setPointerCapture(e.pointerId);
+      function mv(ev){
+        var dx=(ev.clientX-px)/view.k, dy=(ev.clientY-py)/view.k, r={x:r0.x,y:r0.y,w:r0.w,h:r0.h}, a=ratio();
+        if(d==='move'){r.x+=dx;r.y+=dy;}
+        else{
+          if(/w/.test(d)){r.x+=dx;r.w-=dx;}if(/e/.test(d))r.w+=dx;
+          if(/^n/.test(d)){r.y+=dy;r.h-=dy;}if(/^s/.test(d))r.h+=dy;
+          if(a){var right=r0.x+r0.w, bottom=r0.y+r0.h;cropFix(r,d);if(/w/.test(d))r.x=right-r.w;if(/^n/.test(d))r.y=bottom-r.h;if(d==='n'||d==='s')r.x=r0.x+(r0.w-r.w)/2;if(d==='e'||d==='w')r.y=r0.y+(r0.h-r.h)/2;}
+        }
+        cropping=cropFix(r,null);drawCrop();
+      }
+      function up(){crop.removeEventListener('pointermove',mv);crop.removeEventListener('pointerup',up);crop.removeEventListener('pointercancel',up);}
+      crop.addEventListener('pointermove',mv);crop.addEventListener('pointerup',up);crop.addEventListener('pointercancel',up);
+    });
+    /* ---- moving and zooming in the preview ---- */
+    cv.addEventListener('pointerdown',function(e){
+      if(cropping)return;
+      var p0=place(), px=e.clientX, py=e.clientY, ax0=st.ax, ay0=st.ay;
+      e.preventDefault();cv.setPointerCapture(e.pointerId);stage.classList.add('dragging');
+      function mv(ev){
+        var dx=(ev.clientX-px)/view.k, dy=(ev.clientY-py)/view.k;
+        if(st.mode==='tile'){st.ax=ax0+dx/p0.dw;st.ay=ay0+dy/p0.dh;}
+        else{
+          if(Math.abs(W-p0.dw)>0.5)st.ax=Math.max(0,Math.min(1,(p0.x+dx)/(W-p0.dw)));
+          if(Math.abs(H-p0.dh)>0.5)st.ay=Math.max(0,Math.min(1,(p0.y+dy)/(H-p0.dh)));
+        }
+        draw();syncCtl();
+      }
+      function up(){stage.classList.remove('dragging');cv.removeEventListener('pointermove',mv);cv.removeEventListener('pointerup',up);cv.removeEventListener('pointercancel',up);}
+      cv.addEventListener('pointermove',mv);cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
+    });
+    cv.addEventListener('wheel',function(e){
+      if(cropping)return;
+      e.preventDefault();
+      st.zoom=Math.max(0.1,Math.min(8,st.zoom*Math.exp(-e.deltaY*0.0015)));
+      draw();syncCtl();
+    },{passive:false});
+    /* a picture dropped on the editor replaces this one */
+    stage.addEventListener('dragover',function(e){e.preventDefault();});
+    stage.addEventListener('drop',function(e){
+      e.preventDefault();var f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];if(!f)return;
+      var u=URL.createObjectURL(f);
+      bgiLoad(u).then(function(i){img=i;src=null;st.crop=null;st.rot=0;st.fh=st.fv=false;fname=f.name;
+        info.textContent='Map \u201C'+mapName()+'\u201D: '+W+' \u00D7 '+H+' \u00B7 picture \u201C'+fname+'\u201D: '+img.naturalWidth+' \u00D7 '+img.naturalHeight;draw();syncCtl();},
+        function(er){say(er.message,'err');});
+    });
+
+    /* ---- the controls ---- */
+    var ctl={};
+    function sec(t){var s=bgh('div','bgesec');s.appendChild(bgh('div','bgest',t));side.appendChild(s);return s;}
+    function btns(parent,list,key,cls){
+      var r=bgh('div','bgebtns'+(cls?' '+cls:''));
+      list.forEach(function(o){var b=bgh('button','fb-t',o[1]);b.type='button';b.setAttribute('data-v',o[0]);if(o[2])b.title=o[2];r.appendChild(b);});
+      parent.appendChild(r);ctl[key]=r;return r;
+    }
+    function slider(parent,label,key,min,max,step,unit,fmt){
+      var row=bgh('label','bgesl'), t=bgh('span','bgesll',label), i=bgh('input'), v=bgh('span','bgeslv');
+      i.type='range';i.min=min;i.max=max;i.step=step;row.appendChild(t);row.appendChild(i);row.appendChild(v);parent.appendChild(row);
+      i.addEventListener('input',function(){st[key]=parseFloat(i.value);v.textContent=fmt?fmt(st[key]):st[key]+unit;draw();});
+      ctl[key]={i:i,v:v,fmt:fmt,unit:unit};return row;
+    }
+    // Cut
+    var s1=sec('Cut');
+    var cutB=bgh('div','bgebtns'), cutGo=bgh('button','fb-t','Cut a part\u2026'), cutAll=bgh('button','fb-t','Use the whole picture');
+    [cutGo,cutAll].forEach(function(b){b.type='button';cutB.appendChild(b);});s1.appendChild(cutB);
+    var cutBox=bgh('div','bgecutbox');cutBox.hidden=true;s1.appendChild(cutBox);
+    cutBox.appendChild(bgh('div','bgesub','Shape of the part'));
+    var asp=btns(cutBox,BGEASPECT,'aspect');
+    var cutOk=bgh('div','bgebtns'), cutUse=bgh('button','fb-t on','Use this part'), cutNo=bgh('button','fb-t','Cancel');
+    [cutUse,cutNo].forEach(function(b){b.type='button';cutOk.appendChild(b);});cutBox.appendChild(cutOk);
+    var cutNote=bgh('p','bgenote');s1.appendChild(cutNote);
+    function cutStart(){
+      cropping=st.crop?{x:st.crop.x,y:st.crop.y,w:st.crop.w,h:st.crop.h}:null;
+      if(!cropping){aspect='map';cropBiggest();}
+      cutBox.hidden=false;cutB.hidden=true;syncCtl();draw();
+    }
+    function cutEnd(keep){
+      if(keep&&cropping){var s=source();st.crop=(cropping.w>=s.width-0.5&&cropping.h>=s.height-0.5)?null:{x:Math.round(cropping.x),y:Math.round(cropping.y),w:Math.round(cropping.w),h:Math.round(cropping.h)};st.ax=st.ay=.5;}
+      cropping=null;cutBox.hidden=true;cutB.hidden=false;syncCtl();draw();
+    }
+    cutGo.addEventListener('click',cutStart);
+    cutAll.addEventListener('click',function(){st.crop=null;syncCtl();draw();});
+    cutUse.addEventListener('click',function(){cutEnd(true);});
+    cutNo.addEventListener('click',function(){cutEnd(false);});
+    asp.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;aspect=b.getAttribute('data-v');cropBiggest();syncCtl();drawCrop();});
+    // Place
+    var s2=sec('Place on the map');
+    var modes=btns(s2,BGEMODES,'mode','bgemodes');
+    modes.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;st.mode=b.getAttribute('data-v');st.zoom=1;st.ax=st.ay=.5;syncCtl();draw();});
+    var modeNote=bgh('p','bgenote');s2.appendChild(modeNote);
+    slider(s2,'Zoom','zoom',0.1,4,0.01,'',function(v){return Math.round(v*100)+' %';});
+    s2.appendChild(bgh('div','bgesub','Position'));
+    var posRow=bgh('div','bgeposrow'), grid=bgh('div','bgegrid');
+    [[0,0],[.5,0],[1,0],[0,.5],[.5,.5],[1,.5],[0,1],[.5,1],[1,1]].forEach(function(p){var b=bgh('button','bgegc');b.type='button';b.setAttribute('data-ax',p[0]);b.setAttribute('data-ay',p[1]);b.title=(p[1]===0?'Top':p[1]===1?'Bottom':'Middle')+' '+(p[0]===0?'left':p[0]===1?'right':'centre');b.appendChild(bgh('i'));grid.appendChild(b);});
+    posRow.appendChild(grid);
+    var center=bgh('button','fb-t','Center');center.type='button';posRow.appendChild(center);s2.appendChild(posRow);
+    grid.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;st.ax=parseFloat(b.getAttribute('data-ax'));st.ay=parseFloat(b.getAttribute('data-ay'));syncCtl();draw();});
+    center.addEventListener('click',function(){st.ax=st.ay=.5;syncCtl();draw();});
+    s2.appendChild(bgh('div','bgesub','Turn and flip'));
+    var tf=btns(s2,[['l','\u21B6 Left'],['r','Right \u21B7'],['h','\u21C6 Flip across'],['v','\u21C5 Flip up/down']],'turn');
+    tf.addEventListener('click',function(e){
+      var b=e.target.closest('button');if(!b)return;var v=b.getAttribute('data-v');
+      if(v==='l')st.rot=(st.rot+270)%360;else if(v==='r')st.rot=(st.rot+90)%360;else if(v==='h')st.fh=!st.fh;else st.fv=!st.fv;
+      src=null;st.crop=null;draw();syncCtl();
+    });
+    // Colours
+    var s3=sec('Colours');
+    slider(s3,'Brightness','br',20,200,1,' %');
+    slider(s3,'Contrast','ct',20,200,1,' %');
+    slider(s3,'Colour','sat',0,200,1,' %');
+    slider(s3,'Black and white','gray',0,100,1,' %');
+    slider(s3,'Blur','blur',0,30,0.5,' px');
+    slider(s3,'Picture strength','op',0,100,1,' %');
+    s3.appendChild(bgh('p','bgenote','A lower picture strength lets the empty-area colour through, so items on the map stay easy to read.'));
+    var tintRow=bgh('label','bgesl'), tintC=bgh('input');tintC.type='color';tintC.value=st.tint;
+    tintRow.appendChild(bgh('span','bgesll','Tint'));tintRow.appendChild(tintC);s3.appendChild(tintRow);
+    tintC.addEventListener('input',function(){st.tint=tintC.value;draw();});
+    slider(s3,'Tint strength','tintA',0,90,1,' %');
+    var tintPre=btns(s3,[['#000000:45','Darker'],['#ffffff:45','Lighter'],[mapCol+':40','Map colour']],'tintpre');
+    tintPre.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;var p=b.getAttribute('data-v').split(':');st.tint=p[0];st.tintA=parseFloat(p[1]);tintC.value=p[0];syncCtl();draw();});
+    // Empty areas and the file
+    var s4=sec('Empty areas and file');
+    var fillRow=bgh('div','bgefill'), fillMap=bgh('button','fb-t','The map\u2019s colour'), fillPick=bgh('input');
+    fillMap.type='button';fillPick.type='color';fillPick.value=mapCol;fillPick.title='Another colour';
+    fillRow.appendChild(fillMap);fillRow.appendChild(fillPick);s4.appendChild(fillRow);
+    fillMap.addEventListener('click',function(){st.fill='';syncCtl();draw();});
+    fillPick.addEventListener('input',function(){st.fill=fillPick.value;syncCtl();draw();});
+    var fmts=btns(s4,[['jpg','JPG (smaller)'],['png','PNG (sharp, see-through)']],'fmt');
+    fmts.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;st.fmt=b.getAttribute('data-v');syncCtl();draw();});
+    var qRow=slider(s4,'JPG quality','q',40,100,1,' %');
+    var fillNote=bgh('p','bgenote');s4.appendChild(fillNote);
+
+    function on(row,v){[].forEach.call(row.querySelectorAll('button'),function(b){b.classList.toggle('on',b.getAttribute('data-v')===String(v));});}
+    function syncCtl(){
+      on(modes,st.mode);on(asp,aspect);on(fmts,st.fmt);
+      var m=BGEMODES.filter(function(x){return x[0]===st.mode;})[0];modeNote.textContent=m?m[2]:'';
+      ['zoom','br','ct','sat','gray','blur','op','tintA','q'].forEach(function(k){var c=ctl[k];if(!c)return;c.i.value=st[k];c.v.textContent=c.fmt?c.fmt(st[k]):st[k]+c.unit;});
+      [].forEach.call(grid.children,function(b){b.classList.toggle('on',parseFloat(b.getAttribute('data-ax'))===st.ax&&parseFloat(b.getAttribute('data-ay'))===st.ay);});
+      fillMap.classList.toggle('on',!st.fill);fillPick.classList.toggle('on',!!st.fill);
+      qRow.hidden=st.fmt!=='jpg';
+      fillNote.textContent=(st.fmt==='png'&&!st.fill)?'Empty areas stay see-through, so PRTG\u2019s background colour shows there.':'';
+      var c=cutRect();cutNote.textContent=st.crop?'Using a part: '+c.w+' \u00D7 '+c.h+' of '+source().width+' \u00D7 '+source().height+'.':'Using the whole picture.';
+      cutAll.hidden=!st.crop;
+      [s2,s3,s4].forEach(function(s){s.classList.toggle('bgeoff',!!cropping);});
+      go.disabled=dl.disabled=!!cropping||BGI.busy;
+    }
+    /* ---- the finished file ---- */
+    function makeBlob(){
+      return new Promise(function(ok,no){
+        var c=document.createElement('canvas');c.width=W;c.height=H;paint(c.getContext('2d'),1);
+        c.toBlob(function(b){if(b)ok(b);else no(new Error('Chrome could not make the picture.'));},st.fmt==='png'?'image/png':'image/jpeg',st.q/100);
+      });
+    }
+    function kb(n){return n>=1048576?(n/1048576).toFixed(1)+' MB':Math.max(1,Math.round(n/1024))+' KB';}
+    function queueOut(){
+      clearTimeout(blobT);outBlob=null;outInfo.textContent=W+' \u00D7 '+H+' \u00B7 '+st.fmt.toUpperCase()+' \u00B7 \u2026';
+      blobT=setTimeout(function(){makeBlob().then(function(b){outBlob=b;outInfo.textContent=W+' \u00D7 '+H+' \u00B7 '+st.fmt.toUpperCase()+' \u00B7 '+kb(b.size)+(b.size>=20*1048576?' \u00B7 too big for PRTG (20 MB)':'');outInfo.classList.toggle('err',b.size>=20*1048576);},function(){});},350);
+    }
+    function fileName(){return 'map-studio-background-'+mapid+'-'+W+'x'+H+'.'+(st.fmt==='png'?'png':'jpg');}
+    function close(){if(BGI.busy)return;clearTimeout(blobT);window.removeEventListener('resize',draw);document.removeEventListener('keydown',key,true);if(ov.parentNode)ov.parentNode.removeChild(ov);}
+    function key(e){
+      if(e.key==='Escape'){e.stopPropagation();if(cropping)cutEnd(false);else close();return;}
+      if(cropping||/^(INPUT|SELECT|TEXTAREA)$/.test((e.target&&e.target.tagName)||''))return;
+      var d={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];if(!d)return;
+      e.preventDefault();var p=place(), n=e.shiftKey?20:2;
+      if(st.mode==='tile'){st.ax+=d[0]*n/p.dw;st.ay+=d[1]*n/p.dh;draw();syncCtl();return;}
+      if(Math.abs(W-p.dw)>0.5)st.ax=Math.max(0,Math.min(1,(p.x+d[0]*n)/(W-p.dw)));
+      if(Math.abs(H-p.dh)>0.5)st.ay=Math.max(0,Math.min(1,(p.y+d[1]*n)/(H-p.dh)));
+      draw();syncCtl();
+    }
+    no.addEventListener('click',close);
+    ov.addEventListener('mousedown',function(e){if(e.target===ov)close();});
+    reset.addEventListener('click',function(){st=bgeBlank();src=null;cropping=null;aspect='free';tintC.value=st.tint;fillPick.value=mapCol;cutBox.hidden=true;cutB.hidden=false;syncCtl();draw();});
+    dl.addEventListener('click',function(){
+      makeBlob().then(function(b){var a=document.createElement('a'), u=URL.createObjectURL(b);a.href=u;a.download=fileName();document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u);},30000);});
+    });
+    go.addEventListener('click',function(){
+      var name=mapName();
+      if(String(mapId())!==String(mapid)){say('The map chosen in Map Studio changed. Close this and open the picture again.','err');return;}
+      BGI.busy=true;syncCtl();bgiSync();say('Sending the picture to \u201C'+name+'\u201D\u2026','');
+      var blob;
+      makeBlob().then(function(b){
+        blob=b;
+        if(b.size>=20*1048576)throw new Error('The picture is '+kb(b.size)+'; PRTG takes pictures under 20 MB. Choose JPG or a lower quality.');
+        return bgiSend(mapid,b,fileName());
+      }).then(function(v){
+        if(!v.bg)return {v:v,dims:null};
+        return bgiDims(v.bg).then(function(d){return {v:v,dims:d};});
+      }).then(function(r){
+        BGI.busy=false;
+        if(BGI.cur.url&&BGI.cur.url!==r.v.bg)try{URL.revokeObjectURL(BGI.cur.url);}catch(e){}
+        BGI.cur={id:String(mapid),url:r.v.bg||'',color:hex6(r.v.color)||mapCol};
+        bgiShow(r.v.bg||URL.createObjectURL(blob));bgiSync();
+        if(!r.v.bg)bgiMsg('The picture was sent to \u201C'+name+'\u201D, but Map Studio could not read the map back to check it. Open the map in PRTG to see it.','');
+        else if(r.dims&&(r.dims.w!==W||r.dims.h!==H))bgiMsg('\u201C'+name+'\u201D now has the picture, but PRTG shows it at '+r.dims.w+' \u00D7 '+r.dims.h+' instead of '+W+' \u00D7 '+H+'.','err');
+        else bgiMsg('\u201C'+name+'\u201D now has the picture ('+W+' \u00D7 '+H+', '+kb(blob.size)+').','ok');
+        close();
+      }).catch(function(e){
+        BGI.busy=false;syncCtl();bgiSync();
+        if(e&&e.status===401)authNeeded();
+        say((e&&e.message)||'Could not send the picture.','err');
+      });
+    });
+    window.addEventListener('resize',draw);
+    document.addEventListener('keydown',key,true);
+    syncCtl();
+    requestAnimationFrame(draw);
+    try{go.focus();}catch(e){}
+  }
+  (function(){
+    var f=$('mapbgifile');
+    if(!f)return;
+    $('mapbgipick').addEventListener('click',function(){f.value='';f.click();});
+    f.addEventListener('change',function(){var x=f.files&&f.files[0];if(x)bgiOpen(URL.createObjectURL(x),x.name,true);});
+    $('mapbgiedit').addEventListener('click',function(){if(BGI.cur.url)bgiOpen(BGI.cur.url,'the map\u2019s current picture',false);});
+    $('mapbgidel').addEventListener('click',bgiRemove);
+    $('mapbgbtn').addEventListener('click',function(){setTimeout(function(){if(!$('bgpanel').hidden)bgiRefresh();},0);});   /* js/10-dashtabs.js opens the panel after this runs */
+    $('pushmap').addEventListener('change',function(){BGI.cur={id:'',url:''};bgiMsg('','');bgiSync();if(!$('bgpanel').hidden)bgiRefresh();});
   })();
   var LINKST={g:'up',r:'down',y:'warning',o:'unusual',b:'paused',bl:'paused',gr:'unknown'};
   function exLinks(conn){
@@ -2120,7 +2551,7 @@ try{
     if(!connected||!window.PRTGOBJS||!window.PRTGOBJS.length)pubObjs();
     window.PRTGMAPS=connected?(S.maps||[]).map(function(m){return {id:String(m.objid),name:String(m.name||'')};}):[];
     $('next2').disabled=!window.PRTGSTATE.map;
-    $('mapbgcolor').disabled=!window.PRTGSTATE.map;try{bgPreSync();}catch(e){}$('mapbgbtn').disabled=!window.PRTGSTATE.map;$('mapbgbtn').dataset.tip=window.PRTGSTATE.map?'Change the map\u2019s background color':'Connect and choose a map first';
+    $('mapbgcolor').disabled=!window.PRTGSTATE.map;try{bgPreSync();}catch(e){}$('mapbgbtn').disabled=!window.PRTGSTATE.map;$('mapbgbtn').dataset.tip=window.PRTGSTATE.map?'Change the map\u2019s background color or picture':'Connect and choose a map first';try{bgiSync();}catch(e){}
     try{document.dispatchEvent(new CustomEvent('prtgstate',{detail:window.PRTGSTATE}));}catch(e){}
     if(S.needLogin&&!connected&&!busy){$('prtgpop').hidden=false;}
     if(connected)S.needLogin=false;

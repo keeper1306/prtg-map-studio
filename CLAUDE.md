@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.92.
+Last updated at version 1.5.93.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -161,6 +161,52 @@ A full run takes about 5 seconds (16 seconds the very first time).
   bar is HTML like the pill and always shows its word; Beacon's rays blink on alarm states when
   Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
   tile, badge, LED).
+
+## Background picture (1.5.93)
+
+- The owner asked for a way to upload a background image that the tool adds to the map, with editing options (cut, center,
+  expand and others). Build › Background (the panel with the colours) has a "Picture" part: Choose a picture… (`#mapbgipick`,
+  hidden `#mapbgifile`), Edit the current one (`#mapbgiedit`, re-opens the picture PRTG shows), Remove (`#mapbgidel`), a thumbnail
+  (`#mapbginow`) and `#mapbgimsg`. All the code is in js/07-push.js after `bgPreSync` (`BGI`, `bgi*`, `bgeOpen`).
+- PRTG's manual: Map settings › Background Image is a choice "Use a custom background image" / "Do not use a background image"
+  plus a file (JPG, PNG or GIF, under 20 MB); PRTG draws it at its own size from the map's top-left (Paessler's KB says the same;
+  `exPaintBg` draws it that way). So the editor (`bgeOpen`) always makes a picture of exactly the map's size (`readMapSize`).
+- `bgiForm(id)` reads `/controls/objectdata.htm` and finds the field names instead of guessing them: the form's file input, and
+  the radio group whose labels mention an image with and without "do not". `bgiSend` sends the whole form (`mapForm`) with that
+  radio on "use" and the file (a `File` in `httpMultipart`'s FormData), then reads the map back (`exMapView`) and checks the
+  picture's size. Remove sets the radio to "do not use" and checks that no picture is left.
+- Editor: Cut (aspect Free / Map shape / Square / 16:9 / 4:3, box with 8 handles), Place (Fill, Fit, Stretch, Original size, Tile),
+  Zoom (slider and mouse wheel), position (drag, arrow keys, 3 x 3 buttons, Center), turn left/right, flip across/up-down,
+  Brightness, Contrast, Colour, Black and white, Blur, Picture strength, Tint (colour and strength, presets Darker / Lighter /
+  Map colour), empty-area colour (the map's own PRTG colour by default), JPG (quality) or PNG (empty areas see-through),
+  Start over, Download, and a picture dropped on the preview replaces the one in the editor. Drawn with canvas `filter`.
+- `tests/mock-prtg.py` got a made-up radio group (`mapbgpic_`) and file field (`mapbgfile_`), real multipart parsing, the picture in
+  `/controls/mapview.htm`, and `/api/mapsvg.htm` gives a size only with mode `{"svg":1}`. Two new checks (14 in all): a 1200x600
+  picture, cut square and fitted, arrives as 1920x1080 with the right colours left, right and in the empty area; Remove removes it.
+- Not verified on the real PRTG: the real names and labels of the Background Image fields (found by type and label, see above),
+  that PRTG accepts the upload this way, how it stores the file, and that the picture appears in the classic and new UI.
+
+## After 1.5.92 (no code changes; done 2026-11-09)
+
+- 20 dashboard kits from the owner's 20 mockups (claude.ai Design artifact "20 PRTG Dashboard Mockups", 1280 x 900 boards):
+  `Install-NN-*.ps1` and a README in `C:\Users\Administrator\Desktop\Map-Studio-dashboard-kits\`. The generators (`kitspec.js`,
+  `kitgen.js`, `design.js`, `inpage.js`) were lost with that session. The kits map each mockup panel to the nearest Map Studio object in a
+  Map Studio look (01 Wall display, 02 to 07 Dark card, ...), not the mockups' own colours, fonts, sizes or positions.
+- 61 object files installed in `webroot\mapobjects`, hash-checked; three replaced, with copies in
+  `Desktop\PRTG Map Studio\mapobjects-backup-1.5.92\` (status-counts-wall-display-up-warning-down, industrial-light-card-state-lamps,
+  tile-light-card-stat-tile).
+- 20 maps in PRTG, ids 2204 to 2223, "Map Studio NN - Title". Targets: group objects Local Probe 1; ping 2096; status bars the pings
+  2096, 2132, 2136, 2137, 2138, 2144; traffic and toplist 2097; CPU and multichannel System Health 1001; memory 2166; disk 1004; SSL
+  countdown 2140. Every item checked on its map; View Map only looked at for maps 01, 04, 09, 18 and 19.
+- Running the scripts: `powershell -ExecutionPolicy Bypass -File "<path>"`; each ends with "Press Enter to close" (run them one by one or
+  with `ForEach-Object`). On this server they say "Unchanged / 0 written".
+- Lab PRTG limits seen (not bugs): Top 10 CPU table empty, no NetFlow data in the toplist, the On/off object shows "Off", status bars
+  are small and show no names.
+- Offered, no answer yet: dark looks give frame titles dark on dark (fixed by hand with #A9B7CA in specs 01 to 07, not in the tool);
+  names on status bars; a double-click `.cmd` launcher in packs and kits; the scripts said "PRTG was not found as a service"
+  (`Get-CimInstance` for `PRTGCoreService`) although PRTG is installed (they fell back to the right default folder; cause not checked).
+- The owner asked (2026-11-09) to rebuild maps 01 to 03 to look like the mockups; postponed for the background picture. Claude in Chrome
+  was not connected and the Claude app's browser refuses PRTG's self-signed certificate at `https://localhost`.
 
 ## Scaled copy for another screen (1.5.92)
 

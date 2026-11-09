@@ -15,6 +15,7 @@ dependencies and no build step.
 - Undo is offered only for pushes made to the server you are connected to, and
   not for history saved before 1.5.41 (1.5.41).
 - A push record that cannot be saved gives a red warning (1.5.43).
+- A background picture is cut and fitted in the editor, arrives at exactly the map's size, and Remove takes it off (1.5.93).
 - The page shows no script errors while doing all of this.
 
 ## What they cannot check

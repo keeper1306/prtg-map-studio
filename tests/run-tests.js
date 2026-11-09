@@ -126,6 +126,30 @@ async function waitForServer() {
     r = await push();
     check('full storage gives a red warning', /could not save its record/.test(r.msg) && r.cls.includes('err'), r);
 
+    /* 13-14. 1.5.93: a background picture is cut and placed in the editor, sent at exactly the map's size, then removed */
+    await start();
+    await mock('/__mode?m=' + encodeURIComponent('{"svg":1}'));
+    await page.evaluate(() => document.dispatchEvent(new CustomEvent('gotodashtab', { detail: 'add' })));
+    await page.click('#mapbgbtn');
+    const png = await page.evaluate(() => { const c = document.createElement('canvas'); c.width = 1200; c.height = 600; const x = c.getContext('2d'); x.fillStyle = '#0F67FF'; x.fillRect(0, 0, 1200, 600); x.fillStyle = '#E3063D'; x.fillRect(600, 0, 600, 600); return c.toDataURL('image/png').split(',')[1]; });
+    await page.setInputFiles('#mapbgifile', { name: 'test.png', mimeType: 'image/png', buffer: Buffer.from(png, 'base64') });
+    await page.waitForSelector('.bgebox', { timeout: 10000 });
+    await page.locator('.bgebox button', { hasText: 'Cut a part' }).click();
+    await page.click('.bgecutbox button[data-v="1"]');
+    await page.locator('.bgecutbox button', { hasText: 'Use this part' }).click();
+    await page.click('.bgemodes button[data-v="fit"]');
+    await page.locator('.bgebox button', { hasText: 'Put it on the map' }).click();
+    await page.waitForFunction(() => !document.querySelector('.bgebox'), null, { timeout: 10000 }).catch(() => {});
+    s = await state();
+    const px = await page.evaluate(async (b) => { const r = await fetch(b + '/__pic?id=2001'); if (!r.ok) return null; const bm = await createImageBitmap(await r.blob()); const c = new OffscreenCanvas(bm.width, bm.height), x = c.getContext('2d'); x.drawImage(bm, 0, 0);
+      const at = (u, v) => Array.from(x.getImageData(u, v, 1, 1).data.slice(0, 3)); return { w: bm.width, h: bm.height, blue: at(700, 540), red: at(1300, 540), side: at(40, 540) }; }, BASE);
+    const near = (a, b) => a && a.every((v, i) => Math.abs(v - b[i]) < 24);
+    check('background picture sent at the map’s size, cut and fitted', px && px.w === 1920 && px.h === 1080 && near(px.blue, [15, 103, 255]) && near(px.red, [227, 6, 61]) && near(px.side, [18, 52, 86]) && /now has the picture/.test(await page.textContent('#mapbgimsg')), { px, pic: s.pic, msg: await page.textContent('#mapbgimsg') });
+    await page.click('#mapbgidel');
+    await page.waitForFunction(() => /taken off|Could not|still shows/.test(document.getElementById('mapbgimsg').textContent), null, { timeout: 10000 }).catch(() => {});
+    s = await state();
+    check('background picture removed', Object.keys(s.pic).length === 0 && /taken off/.test(await page.textContent('#mapbgimsg')), { pic: s.pic, msg: await page.textContent('#mapbgimsg') });
+
     check('no errors in the page', pageErrors.length === 0, pageErrors);
   } finally {
     if (browser) await browser.close();
