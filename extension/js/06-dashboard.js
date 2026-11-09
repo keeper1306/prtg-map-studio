@@ -231,9 +231,9 @@ try{
     'Background light':{fill:'#F1F5F9',fillA:100,bcolor:'#E2E8F0',bw:0,radius:0,shadow:'none',tcolor:'#0F172A',group:false},
     'Background dark':{fill:'#0F172A',fillA:100,bcolor:'#0F172A',bw:0,radius:0,shadow:'none',tcolor:'#F1F5F9',group:false}
   };
+  /* 1.5.89: Light tile and Dark tile left the presets (almost the same as the Clean card and Dark card looks); a new tile still starts white, as before */
+  var TILE0={fill:'#FFFFFF',fillA:100,bcolor:'#E2E8F0',bw:1,radius:8,shadow:'soft',ccolor:'#64748B',vcolor:'#0F172A'};
   var TSTYLES={
-    'Light tile':{fill:'#FFFFFF',fillA:100,bcolor:'#E2E8F0',bw:1,radius:8,shadow:'soft',ccolor:'#64748B',vcolor:'#0F172A'},
-    'Dark tile':{fill:'#243047',fillA:100,bcolor:'#334155',bw:0,radius:10,shadow:'soft',ccolor:'#94A3B8',vcolor:'#F8FAFC'},
     'Accent tile':{fill:'#007DB8',fillA:100,bcolor:'#007DB8',bw:0,radius:8,shadow:'soft',ccolor:'#D6EEF9',vcolor:'#FFFFFF'}
   };
   var BSTYLES={
@@ -617,7 +617,7 @@ try{
     return '';
   }
   function newFrameP(style){return extend({title:'Title',fam:'Inter',tsize:18,tweight:'600',padx:20,pady:16,style:style},FSTYLES[style]);}
-  function newTileP(style){return extend({caption:'Caption',value:'1,234',delta:'+4.2%',dir:'up',dcolor:'',fam:'Inter',csize:14,vsize:40,dsize:14,padx:18,pady:14,style:style},TSTYLES[style]);}
+  function newTileP(style){return extend({caption:'Caption',value:'1,234',delta:'+4.2%',dir:'up',dcolor:'',fam:'Inter',csize:14,vsize:40,dsize:14,padx:18,pady:14,style:style},TSTYLES[style]||TILE0);}
   function newBannerP(style){return extend({title:'Banner headline',sub:'',fam:'Inter',tsize:28,ssize:15,tweight:'700',align:'center',fit:false,padx:24,pady:12,style:style},BSTYLES[style]);}
   function newChipP(){return {text:'Operational',variant:'success',fam:'Inter',size:13};}
 
@@ -2866,7 +2866,7 @@ try{
       if(type==='shape'){it.type='frame';it.w=CFG.shape.w;it.h=CFG.shape.h;it.p=newShapeP('b_arrow','right');}
       else if(type==='connector'){it.type='frame';it.w=CFG.shape.w;it.h=CFG.shape.h;it.p=newShapeP('line','right');it.p.isConnector=true;it.p.pushLive=true;it.p.matchLS=false;it.p.lt='curve';it.p.thick=5;it.p.anim=false;it.p.ha='none';it.p.hb='none';it.p.colorMode='status';it.p.cn2=1;}   /* same line/glue machinery as a Shapes line, just born ready to link two objects and push live */
       else if(type==='frame'){it.w=CFG.frame.w;it.h=CFG.frame.h;it.p=newFrameP('Light card');}
-      else if(type==='tile'){it.w=230;it.h=112;it.p=newTileP('Light tile');}
+      else if(type==='tile'){it.w=230;it.h=112;it.p=newTileP('');}
       else if(type==='banner'){it.w=640;it.h=90;it.p=newBannerP('Info');}
       else if(type==='chip'){it.p=newChipP();}
         else if(type==='prtgobj'){it.w=(extra&&extra.w)||320;it.h=(extra&&extra.h)||200;it.p={cat:extra.cat,name:extra.name,value:extra.value,target:extra.target?{id:parseInt(extra.target.id,10)||0,name:extra.target.name||''}:{id:0,name:''}};if(extra.target)it.p.targetDefault=true;}   /* a default target, until you choose the real one */

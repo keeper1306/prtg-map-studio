@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.88.
+Last updated at version 1.5.89.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -161,6 +161,14 @@ A full run takes about 5 seconds (16 seconds the very first time).
   bar is HTML like the pill and always shows its word; Beacon's rays blink on alarm states when
   Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
   tile, badge, LED).
+
+## Plain tile presets (1.5.89)
+
+- The owner removed Light tile and Dark tile from the Map designer's plain Tile (`TSTYLES` in js/06-dashboard.js): they were almost
+  the same as the Clean card and Dark card looks. `TSTYLES` keeps only Accent tile; a new tile starts from `TILE0` (the old Light tile
+  values, not offered as a preset), so a new tile is unchanged. Tiles saved with those styles keep their colours (`p.style` is only a name).
+- Checked against the stand-in server: a new tile's pushed HTML and an Accent tile's are identical to 1.5.88; the Presets menu shows
+  only Accent tile; 12 tests. Not verified on the real PRTG.
 
 ## Names follow every picture choice (1.5.88)
 
