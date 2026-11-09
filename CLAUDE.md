@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.90.
+Last updated at version 1.5.91.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -161,6 +161,21 @@ A full run takes about 5 seconds (16 seconds the very first time).
   bar is HTML like the pill and always shows its word; Beacon's rays blink on alarm states when
   Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
   tile, badge, LED).
+
+## Animated or still in packs and names (1.5.91)
+
+- The owner asked for Link styles animated by default, or the pack to ask (animated, still or both), and the same for every object
+  that moves. Only two things move: Link styles with `lkAnimOk` (plain dashed, Beads, Chevron, Dash sweep; switch `LK.flow`) and
+  the Beacon and Pulse icons (`ICANIM`, switch `IC.animate`). The builder's own default (`blankLK` flow off) was left unchanged.
+- Pack dialog: "Animation" buttons Animated (default) / Still / Both (`.pkanim`, `data-anim`), shown only when the pack has
+  something that moves; `pkBuild(anim)` makes one file per item, or two for Both (`pkCanAnim`, `pkAnimSet`). Pulse joined the icon pack.
+- Names: a Link style with flow on that can move is "Link style - animated <look>, ..."; a Beacon or Pulse with Animate off is
+  "Icon - beacon, still". Link style words were shortened so all 1080 combinations stay unique within 64 characters (4 trimmed,
+  none alike): plain dashed lines are named by the dash (dashed, dotted, dashdot), Dash sweep = "sweep", Rounded elbow = "round
+  elbow", ends "arrows"/"dots" (both), "arrow start", "dot end", "dot-arrow". Before, 19 combinations with end markers shared a name.
+- Checked against the stand-in server: Animated/Still/Both give 8/8/13 Link style files (5 with flow) and 10/10/12 icon files
+  (beacon/pulse animated or not), all names unique; the builder's Animate switches change the names; pack files equal the
+  builder's own; 22 object files identical to 1.5.90 (defaults are not animated); 12 tests. Not verified on the real PRTG.
 
 ## Packs (1.5.90)
 

@@ -4554,6 +4554,7 @@ try{
     w.syncPick=function(){var cur=String(get());[].forEach.call(w.children,function(q){var on=q.getAttribute('data-v')===cur;q.classList.toggle('on',on);q.setAttribute('aria-pressed',on?'true':'false');});};
     return w;
   }
+  var ICANIM={beacon:1,pulse:1};   /* the status icon styles that move (Animate) */
   function lkAnimOk(L){var k=lkLook(L);return k==='plain'?L.dash!=='solid':(k==='beads'||k==='chevron'||k==='sweep');}
   function lkNum(v,lo,hi,d){v=parseFloat(v);if(isNaN(v))v=d;return Math.max(lo,Math.min(hi,v));}
   function lkCfg(L){
@@ -5189,11 +5190,16 @@ try{
       x='Tile - '+String(amLab(TKINDS,m.kind)).toLowerCase();
     }else if(t==='icon'){
       if(m.engine!=='custom'){x='Icon - PRTG '+amLow(m.pname||'stock icon').replace(/\bxl\b/g,'XL').replace(/ background/g,'');   /* short enough to stay whole, so the XL ones keep their own names */}
-      else x='Icon - '+iStyle(m.style).name.toLowerCase()+(m.text&&m.text!=='none'?', with '+m.text:'');
+      else x='Icon - '+iStyle(m.style).name.toLowerCase()+(m.text&&m.text!=='none'?', with '+m.text:'')+((ICANIM[m.style]&&!m.animate)?', still':'');   /* 1.5.91: a still Beacon or Pulse gets its own name */
     }else if(t==='geomap'){
       x='Geo map - '+String(amLab(GMSHAPES,m.shape)).toLowerCase()+' markers'+(m.icon==='device'?'':', '+m.icon+' icon');
     }else if(t==='links'){
-      x='Link style - '+String(amLab(LNLOOKS,lkLook(m))).toLowerCase()+', '+String(amLab(LKTYPES,m.line)).replace(/ \(.*$/,'').toLowerCase()+((lkLook(m)!=='plain'||m.dash==='solid')?'':', '+String(amLab(LKDASH,m.dash)).toLowerCase())+((m.start&&m.start!=='none')?', '+m.start+' start':'')+((m.end&&m.end!=='none')?', '+m.end+' end':'');   /* the look first, as an icon's style, so a new look gives a new name and file name */
+      /* 1.5.91: short words, so every look, line, dash, animation and pair of ends fits in 64 characters without two names alike
+         (a plain dashed line is named by its dash, Dash sweep is 'sweep', Rounded elbow 'round elbow', two equal ends 'arrows'/'dots') */
+      var lw=(lkLook(m)==='plain')?((m.dash&&m.dash!=='solid')?(m.dash==='dashdot'?'dashdot':String(amLab(LKDASH,m.dash)).toLowerCase()):'plain'):(lkLook(m)==='sweep'?'sweep':String(amLab(LNLOOKS,lkLook(m))).toLowerCase()),
+          ls=(m.start==='dot'||m.start==='arrow')?m.start:'', le=(m.end==='dot'||m.end==='arrow')?m.end:'';
+      x='Link style - '+((m.flow&&lkAnimOk(m))?'animated ':'')+lw+', '+String(amLab(LKTYPES,m.line)).replace(/ \(.*$/,'').toLowerCase().replace('rounded elbow','round elbow')
+        +((ls||le)?', '+((ls===le)?ls+'s':(!ls?le+' end':(!le?ls+' start':ls+'-'+le))):'');   /* the look first, as an icon's style, so a new look gives a new name and file name */
     }else return null;
     x=amLook(m,p+x);
     if(x.length<=64)return x;
@@ -5279,25 +5285,33 @@ try{
     donut:{name:'Donuts',items:[['All states',blankD],['Alarms only',pkWith(blankD,{mode:'alarms'})],['All states, legend below',pkWith(blankD,{legend:'below'})]]},
     sunburst:{name:'Sunbursts',items:[['Separated',pkWith(blankSB,{face:'gaps'})],['Solid',pkWith(blankSB,{face:'solid'})],['Soft pastel',pkWith(blankSB,{face:'pastel'})]]},
     status:{name:'Status counts',items:[['Sensor status',function(){return statusFromPreset('status');}],['Interfaces',function(){return statusFromPreset('interfaces');}],['Availability',function(){return statusFromPreset('availability');}]]},
-    icon:{name:'Status icons',items:[['Dot','dot'],['LED','led'],['Shield','shield'],['Hexagon','hexagon'],['Status bar','sbar'],['Traffic light','traffic'],['Beacon','beacon'],['Signal bars','bars']].map(function(x){return [x[0],pkIcon(x[1])];})},
+    icon:{name:'Status icons',items:[['Dot','dot'],['LED','led'],['Shield','shield'],['Hexagon','hexagon'],['Status bar','sbar'],['Traffic light','traffic'],['Beacon','beacon'],['Pulse','pulse'],['Signal bars','bars']].map(function(x){return [x[0],pkIcon(x[1])];})},
     tile:{name:'Tiles',items:[['Stat tile','stat'],['String tile','string'],['Bar gauge','bar'],['Interface traffic tile','interface'],['Channel chips','chips'],['Channel chips (fit)','chipsfit']].map(function(x){return [x[0],function(){return tileFromPreset(x[1]);}];})},
     ind:{name:'Industrial objects',items:[['State lamps','ind_lamps'],['On/Off indicator','ind_onoff'],['Tank level','ind_tank'],['Silo level','ind_silo'],['Equipment symbol','ind_equip'],['Process value','ind_pv'],['Countdown','ind_count']].map(function(x){return [x[0],function(){return indFromPreset(x[1]);}];})},
     links:{name:'Link styles',items:[['Plain, curve',pkLink('plain','curve')],['Plain, straight',pkLink('plain','straight')],['Beads, curve',pkLink('beads','curve')],['Beads, straight',pkLink('beads','straight')],
       ['Chevron, curve',pkLink('chevron','curve')],['Chevron, straight',pkLink('chevron','straight')],['Dash sweep, arc',pkLink('sweep','arc')],['Soft glow, curve',pkLink('glow','curve')]]}
   };
+  /* 1.5.91: objects that can move: animated, still, or both (two files) */
+  function pkCanAnim(k,m){return (k==='links')?lkAnimOk(m):(k==='icon'&&m.engine==='custom'&&!!ICANIM[m.style]);}
+  function pkAnimSet(k,m,on){if(k==='links')m.flow=!!on;else m.animate=!!on;}
   function pkKey(){return (TYPE==='tile'&&tlFam()==='ind')?'ind':TYPE;}
   function pkOk(){return !!PACKS[pkKey()]&&!isLegacy(TYPE)&&!isPaste()&&!!M();}
   function pkSync(){var b=document.getElementById('opack');if(b)b.hidden=!pkOk();}
   function pkLookName(){var L=M().look;return (L&&L.mode==='prtg')?'PRTG default':((L&&L.name)||'');}
   function pkSetName(){var n='';if(PS.cur)CSETS.forEach(function(x){if(x[0]===PS.cur)n=x[1];});return n;}
   /* every file of the pack, as {name (file), text, title, label} */
-  function pkBuild(){
+  function pkBuild(anim){
     var k=TYPE, pk=PACKS[pkKey()], cur=M(), saved=JSON.stringify(cur), look=JSON.stringify(cur.look), out=[], seen={}, list=pk.items.slice();
+    anim=anim||'on';
     if(ANYT[k])list.push(['Any object (probe, group, device or sensor)',function(){anyStart();return M();}]);
     try{
       list.forEach(function(it){
         pkSet(k,JSON.parse(saved));   /* each item starts from the object on screen, so anyStart keeps its look and family */
-        var m=it[1]();
+        var m=it[1](), runs=[null], m0;
+        if(pkCanAnim(k,m))runs=(anim==='both')?['on','off']:[anim];
+        m0=JSON.stringify(m);
+        runs.forEach(function(a){
+        m=JSON.parse(m0);if(a)pkAnimSet(k,m,a==='on');
         pkSet(k,m);
         if(!m.any)lookSet(m,JSON.parse(look));
         if(k==='gauge'&&m.engine==='prtg'&&m.nstyle&&cur.engine==='prtg'&&cur.nstyle&&cur.nbg)m.nbg=cur.nbg;   /* PRTG's dial: its background as on screen (picking a look sets it to the look's) */
@@ -5306,7 +5320,8 @@ try{
         if(it[2]){m.name=amLook(m,'Map Studio '+it[2]);m.nameUser=true;}else obAutoName();
         var fn=fileNameOf(m);
         if(seen[fn])return;seen[fn]=1;
-        out.push({name:fn,text:codeNow(),title:m.name,label:it[0]});
+        out.push({name:fn,text:codeNow(),title:m.name,label:it[0]+(a?(a==='on'?', animated':', still'):''),anim:!!a});
+        });
       });
     }finally{pkSet(k,JSON.parse(saved));}
     return out;
@@ -5317,7 +5332,7 @@ try{
   }
   function pkOpen(){
     if(!pkOk())return;
-    var files=pkBuild(), pk=PACKS[pkKey()], lk=pkLookName(), cs=pkSetName(), slug=slugOf(pk.name+' '+((pkKey()==='links')?'':(pkKey()==='icon')?cs:lk)).replace(/_/g,'-').replace(/-+$/,'');
+    var anim='on', files=pkBuild(anim), pk=PACKS[pkKey()], lk=pkLookName(), cs=pkSetName(), slug=slugOf(pk.name+' '+((pkKey()==='links')?'':(pkKey()==='icon')?cs:lk)).replace(/_/g,'-').replace(/-+$/,'');
     var ov=h('div','nmov'), box=h('div','nmbox pkbox');
     ov.setAttribute('role','dialog');ov.setAttribute('aria-modal','true');ov.setAttribute('aria-label','Download a pack');
     box.appendChild(h('h3',null,pk.name+' pack'));
@@ -5325,16 +5340,32 @@ try{
     box.appendChild(h('p','pknote',(pk0==='links')?'Link styles have no look: they draw PRTG\u2019s own lines in a new shape.':
       (pk0==='icon')?csT+'Status icons take the status colors chosen on screen. A look only shows on an icon with its card on, and these have none. Choose other status colors first for a pack in those.':
       ('Look: '+lk+'. '+csT+'Every object is made in the look and colors chosen on screen; pick another look first for a pack in that look.')));
-    var all=h('label','pkall'), allc=h('input');allc.type='checkbox';allc.checked=true;all.appendChild(allc);all.appendChild(document.createTextNode(' All '+files.length));box.appendChild(all);
+    var moves=files.some(function(f){return f.anim;});
+    if(moves){
+      var ar=h('div','pkanim');ar.appendChild(h('span','pkal','Animation'));
+      [['on','Animated'],['off','Still'],['both','Both (two files each)']].forEach(function(o){
+        var b=h('button','fb-t'+(o[0]===anim?' on':''),o[1]);b.type='button';b.setAttribute('data-anim',o[0]);
+        b.addEventListener('click',function(){anim=o[0];[].forEach.call(ar.querySelectorAll('button'),function(x){x.classList.toggle('on',x===b);});files=pkBuild(anim);fill();});
+        ar.appendChild(b);
+      });
+      box.appendChild(ar);
+      box.appendChild(h('p','pknote',(pkKey()==='links')?'Beads, Chevron and Dash sweep can flow along the line; Plain and Soft glow lines don\u2019t move, so they come as one file.':'Beacon and Pulse blink on alarms; the other icons don\u2019t move, so they come as one file.'));
+    }
+    var all=h('label','pkall'), allc=h('input'), allt=document.createTextNode('');allc.type='checkbox';allc.checked=true;all.appendChild(allc);all.appendChild(allt);box.appendChild(all);
     var lst=h('div','pklist'), checks=[];
-    files.forEach(function(f){
-      var row=h('label','pkrow'), c=h('input'), t=h('span','pkt'), n=h('span','pkf');
-      c.type='checkbox';c.checked=true;t.textContent=f.label;n.textContent=f.name;
-      row.appendChild(c);row.appendChild(t);row.appendChild(n);lst.appendChild(row);checks.push(c);
-      c.addEventListener('change',sync);
-    });
+    function fill(){
+      lst.textContent='';checks=[];allt.textContent=' All '+files.length;
+      files.forEach(function(f){
+        var row=h('label','pkrow'), c=h('input'), t=h('span','pkt'), n=h('span','pkf');
+        c.type='checkbox';c.checked=true;t.textContent=f.label;n.textContent=f.name;n.title=f.name;
+        row.appendChild(c);row.appendChild(t);row.appendChild(n);lst.appendChild(row);checks.push(c);
+        c.addEventListener('change',sync);
+      });
+      if(st)sync();
+    }
+    var st=null;fill();
     box.appendChild(lst);
-    var st=h('p','pknote pkst');box.appendChild(st);
+    st=h('p','pknote pkst');box.appendChild(st);
     var row=h('div','nmbtns pkbtns'), no=h('button','btn ghost','Close'), add=h('button','btn ghost','Add to Your objects'), zip=h('button','btn ghost','Download ZIP'), ps=h('button','btn primary','Download install script');
     [no,add,zip,ps].forEach(function(x){x.type='button';row.appendChild(x);});
     box.appendChild(row);ov.appendChild(box);document.body.appendChild(ov);
