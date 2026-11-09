@@ -186,6 +186,27 @@ A full run takes about 5 seconds (16 seconds the very first time).
 - Not verified on the real PRTG: the real names and labels of the Background Image fields (found by type and label, see above),
   that PRTG accepts the upload this way, how it stores the file, and that the picture appears in the classic and new UI.
 
+## Mockup dashboards 01 to 03 (2026-11-09, no extension change)
+
+- The owner asked why the maps did not have the mockups' elements and to make maps 01 to 03 look like them. Each map is now one
+  object that draws the whole mockup (1280 x 900) with live data: `map-studio-mockup-01-noc-overview.htm`, `-02-slos-and-error-budget.htm`,
+  `-03-wan-and-bandwidth.htm` in `webroot\mapobjects` (new files, category "Map Studio Dashboards", byte-checked). Source and sensor choices:
+  `dashboards/mockups/` (`node gen.js <out>` rebuilds the installed files exactly). The drawing is in a shadow root (PRTG's CSS can't touch it),
+  scaled to the item's box; data from `/api/table.json` and `/api/historicdata.json` (with `X-Requested-With`), cached on `window.top`
+  (30 s / 5 min / 60 s), so it needs a signed-in PRTG session (the public map page will say "Sign in"). In View Map the map's frame page
+  takes the dashboard colour.
+- Maps 2204, 2205, 2206: width 1280, height 900, "Scale map view to fit browser size" on, background #0E1218, old items removed, one item
+  each (on Local Probe, id 1, at 0,0, 1280 x 900). Backups first: PRTG clones 2224, 2225, 2226 "... (backup before mockup)" with all 17/12/12
+  items (`POST /api/duplicateobject.htm` with id, name, targetid=0 and the anti-csrf-token header; GET answered 400).
+- Real PRTG facts seen: sensors table columns `status_raw`, `lastvalue_raw`, `message_raw`, `downtimesince_raw` (seconds), `tags` (space or
+  comma separated); historic data keys `Traffic In (Speed)` (bytes/s), `Downtime` (per cent per row), `Response Time` (ping, raw ms),
+  `Loading Time` (HTTP v2); most sensors have ~6 days of history. Map settings form: `width_`, `height_`, `mapautoscale_`, `bgcolor_`,
+  `usebgimage_` (1 "Use a background image" / 0 "Do not use a background image") and the file field `upfile_` (1.5.93 finds these by label).
+- What the data can't fill (shown as a note in the mockup's own card): 02 HTTP status mix (no sensor counts status codes), 03 Top talkers
+  (no NetFlow sensor: shows the busiest interfaces instead, labelled) and Interface errors (the SNMP Traffic sensors have no Errors/Discards
+  channels). 02's SLO goals and 03's link capacities (1 Gbit/s, printer 100 Mbit/s) are set in `gen.js`, not read from PRTG.
+- Checked on the real PRTG: all three in classic View Map (`mapshow.htm`). Not checked: the new UI, the public page, a real wall screen.
+
 ## After 1.5.92 (no code changes; done 2026-11-09)
 
 - 20 dashboard kits from the owner's 20 mockups (claude.ai Design artifact "20 PRTG Dashboard Mockups", 1280 x 900 boards):
@@ -205,8 +226,7 @@ A full run takes about 5 seconds (16 seconds the very first time).
 - Offered, no answer yet: dark looks give frame titles dark on dark (fixed by hand with #A9B7CA in specs 01 to 07, not in the tool);
   names on status bars; a double-click `.cmd` launcher in packs and kits; the scripts said "PRTG was not found as a service"
   (`Get-CimInstance` for `PRTGCoreService`) although PRTG is installed (they fell back to the right default folder; cause not checked).
-- The owner asked (2026-11-09) to rebuild maps 01 to 03 to look like the mockups; postponed for the background picture. Claude in Chrome
-  was not connected and the Claude app's browser refuses PRTG's self-signed certificate at `https://localhost`.
+- Maps 01 to 03 were rebuilt to look like the mockups on 2026-11-09 (see "Mockup dashboards 01 to 03" below).
 
 ## Scaled copy for another screen (1.5.92)
 
