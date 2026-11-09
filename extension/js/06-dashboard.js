@@ -3717,6 +3717,77 @@ try{
       out.forEach(function(rec){delete rec._liveConn;});
       return out;
     };   /* the Objects tab pastes the same frame code */
+    /* 1.5.92: the canvas made for a map of another size (W x H), for a scaled copy. "Spread to fill": the spaces stretch to the new
+       width and height, while each item keeps its shape and is scaled evenly by k = the smaller of the two factors, centred where it
+       was. Frames, banners and box shapes stretch with their column or row; the map background fills the new map; lines keep their
+       ends where the things they join went. Pasted pieces are drawn at their old size in "design" units and shown at k with CSS zoom,
+       so every font, border and padding scales with them. PRTG objects only get the new size (Flexible files rescale themselves).
+       The canvas is put back exactly as it was afterwards. */
+    DASHAPI.scaledItems=function(W,H){
+      W=Math.round(W);H=Math.round(H);
+      if(!(W>0&&H>0&&D.w>0&&D.h>0))return [];
+      var sx=W/D.w, sy=H/D.h, k=Math.min(sx,sy), saved={}, geo={}, ends={}, out;
+      function kindOf(it){
+        if(it.type==='frame'&&it.p.mapBg)return 'bg';
+        if(isLine(it))return 'line';
+        if(it.type==='banner'||(it.type==='frame'&&(!it.p.shape||!isPathShape(it.p.shape))))return 'stretch';
+        return 'keep';
+      }
+      D.items.forEach(function(it){saved[it.id]=JSON.stringify(it);});
+      /* where everything goes, from the canvas as it is */
+      D.items.forEach(function(it){
+        var kd=kindOf(it), g;
+        if(kd==='bg')g={x:0,y:0,fw:W,fh:H};
+        else if(kd==='stretch')g={x:it.x*sx,y:it.y*sy,fw:it.w*sx,fh:it.h*sy};
+        else if(kd==='keep')g={x:it.x*sx+(it.w*sx-it.w*k)/2,y:it.y*sy+(it.h*sy-it.h*k)/2,fw:it.w*k,fh:it.h*k};
+        if(g){g.kd=kd;g.ow=it.w;g.oh=it.h;g.ox=it.x;g.oy=it.y;geo[it.id]=g;}
+        if(kd==='line')ends[it.id]=lnAbs(it);
+      });
+      /* a line's end glued to an item stays at the same place on that item; a free end moves with the spaces */
+      function mapEnd(P,glue){
+        var g=glue&&geo[glue.id];
+        if(g&&g.ow>0&&g.oh>0)return [g.x+(P[0]-g.ox)/g.ow*g.fw,g.y+(P[1]-g.oy)/g.oh*g.fh];
+        return [P[0]*sx,P[1]*sy];
+      }
+      var wrap={};
+      try{
+        D.items.forEach(function(it){
+          var g=geo[it.id];
+          if(isLine(it)){
+            var e=ends[it.id], A=mapEnd(e[0],it.p.ga), B=mapEnd(e[1],it.p.gb);
+            if(it.p.pushLive&&it.p.ga&&it.p.gb){   /* drawn live on the map between its two items: only its thickness and label follow k */
+              if(it.p.thick)it.p.thick=Math.max(1,Math.round(it.p.thick*k*10)/10);
+              if(it.p.labelSize)it.p.labelSize=Math.max(6,Math.round(it.p.labelSize*k*10)/10);
+            }
+            lnSetAbs(it,[A[0]/k,A[1]/k],[B[0]/k,B[1]/k]);
+            wrap[it.id]={k:k,dw:it.w,dh:it.h};
+            it.x=it.x*k;it.y=it.y*k;
+            return;
+          }
+          if(!g)return;
+          if(it.type==='prtgobj'){it.x=g.x;it.y=g.y;it.w=g.fw;it.h=g.fh;return;}
+          it.x=g.x;it.y=g.y;it.w=g.fw/k;it.h=g.fh/k;
+          wrap[it.id]={k:k,dw:it.w,dh:it.h};
+        });
+        out=DASHAPI.pushItems();
+        out.forEach(function(rec){
+          var it=byId(rec.id), w=wrap[rec.id];
+          if(!w)return;
+          rec.width=Math.max(1,Math.round(w.dw*w.k));rec.height=Math.max(1,Math.round(w.dh*w.k));
+          if(it&&isLine(it)&&it.p.pushLive&&it.p.ga&&it.p.gb)return;   /* its script draws on the map itself */
+          var kz=Math.round(w.k*10000)/10000;
+          rec.html='<div style="zoom:'+kz+';width:'+(Math.round(w.dw*100)/100)+'px;height:'+(Math.round(w.dh*100)/100)+'px;position:relative;">'+(rec.html||'')+'</div>';
+        });
+      }finally{
+        D.items.forEach(function(it){
+          var o=JSON.parse(saved[it.id]), q;
+          for(q in it)if(!(q in o))delete it[q];
+          for(q in o)it[q]=o[q];
+        });
+        D.items.forEach(function(it){try{itemInner(it);}catch(e){}});   /* the code panel shows each item's own HTML again */
+      }
+      return out;
+    };
 
   baseSnap=snapshot();
   committed=snapModel();

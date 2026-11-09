@@ -252,6 +252,7 @@ try{
     $('objsamples').disabled=!(S.maps&&mapId())||S.busy;
     $('exload').disabled=!(S.maps&&mapId())||S.busy;
     try{mcSync();}catch(e){}
+    try{scSync();}catch(e){}
     $('objrefresh').disabled=!(S.maps&&S.objFile)||S.busy;
     updateTarget();
     if(typeof xeButtons==='function')xeButtons();
@@ -724,6 +725,7 @@ try{
       offerLayout();
       if(S.storeFail){msg+=storeWarn();kind='err';}
       S.busy=false;S.reviewed=null;S.cls=null;$('pushgo').hidden=true;say(msg,kind);updateButtons();
+      if(kind==='ok'){try{$('scbox').classList.add('ask');scSync();scSay('Want this map for another screen size too? Pick the size and press Make the scaled copy.','');}catch(e){}}   /* 1.5.92 */
     }
     function fail(err){
       if(err&&err.status===401)authNeeded();
@@ -1194,6 +1196,105 @@ try{
   });
   $('pushmap').addEventListener('change',function(){szLast='';adoptMapSize();});
   document.addEventListener('prtgstate',function(){if(window.PRTGSTATE&&window.PRTGSTATE.map)adoptMapSize();else szLast='';});
+  /* ---- 1.5.92: a scaled copy. A new PRTG map of another size gets everything on the canvas, resized to fit it (DASHAPI.scaledItems:
+     the spaces stretch, items keep their shape). The map being pushed to is not touched. The copy's items are remembered as a push
+     to the new map, so choosing that map and pressing Undo last push takes them off again. Not kept in sync with the canvas:
+     make the copy again after changing the design. ---- */
+  var SCSIZES=[[1280,720,'HD'],[1366,768,'Laptop'],[1600,900,''],[1920,1080,'Full HD'],[2560,1440,'QHD'],[3840,2160,'4K'],[1280,1024,''],[1024,768,''],[1080,1920,'Portrait Full HD']];
+  var SC={named:false,busy:false};
+  function scSay(t,kind){var n=$('scmsg');n.textContent=t||'';n.className='note pst'+(kind?' '+kind:'');}
+  function scWH(){return {w:parseInt($('scw').value,10)||0,h:parseInt($('sch').value,10)||0};}
+  function scName(){var z=scWH();return (mapName()||'Map')+' '+z.w+'x'+z.h;}
+  function scSync(){
+    var ready=!!(S.maps&&S.objFile), n=0;try{n=DASHAPI.pushItems().length;}catch(e){}
+    var z=scWH(), cw=+$('dw').value, ch=+$('dh').value;
+    $('scgo').disabled=!ready||!n||S.busy||SC.busy||!(z.w>=100&&z.h>=100);
+    $('scgo').title=!ready?'Connect to PRTG first':(!n?'Put something on the canvas first':'');
+    if(!SC.named)$('scname').value=scName();
+    $('scfrom').textContent=(cw&&ch)?'Now '+cw+' \u00D7 '+ch+'.':'';
+  }
+  (function(){
+    var sel=$('scsize'), cw=+$('dw').value||1920, ch=+$('dh').value||1080, pick=null;
+    SCSIZES.forEach(function(z,i){var o=document.createElement('option');o.value=String(i);o.textContent=z[0]+' \u00D7 '+z[1]+(z[2]?' ('+z[2]+')':'');sel.appendChild(o);if(!pick&&!(z[0]===cw&&z[1]===ch)&&z[0]*z[1]>cw*ch)pick=String(i);});
+    var oc=document.createElement('option');oc.value='custom';oc.textContent='Another size\u2026';sel.appendChild(oc);
+    function fromSel(){var z=SCSIZES[+sel.value];$('scwh').hidden=!!z;if(z){$('scw').value=z[0];$('sch').value=z[1];}scSync();}
+    sel.value=pick||'0';fromSel();
+    sel.addEventListener('change',fromSel);
+    ['scw','sch'].forEach(function(k){$(k).addEventListener('input',scSync);});
+    $('scname').addEventListener('input',function(){SC.named=!!String($('scname').value).trim();});
+    $('pushmap').addEventListener('change',scSync);
+    document.addEventListener('prtgstate',scSync);
+    document.addEventListener('canvassize',function(){setTimeout(scSync,0);});
+    $('scgo').addEventListener('click',scMake);
+  })();
+  /* PRTG's addmap2.htm, as createMap() does; the new map is found in the map list afterwards */
+  function scCreate(name,w,h){
+    var before={};(S.maps||[]).forEach(function(m){before[m.objid]=true;});
+    var postErr=null;
+    return httpMultipart('/addmap2.htm',{mapurl_:newMapGuid(),name_:name,width_:String(w),height_:String(h),pubaccess_:'0'}).catch(function(e){postErr=e;}).then(function(){
+      return http('GET','/api/table.json',{content:'maps',columns:'name,objid'});
+    }).then(function(t){
+      var j=parseJson(t,'The list of maps'), maps=(j&&j.maps)||[], match=null, sel=$('pushmap'), keep=sel.value;
+      maps.forEach(function(m){if(m.name===name&&!before[m.objid]&&(!match||Number(m.objid)>Number(match.objid)))match=m;});
+      if(!match)throw postErr||new Error('PRTG did not report an error, but the new map could not be found afterward.');
+      S.maps=maps;sel.innerHTML='';
+      maps.forEach(function(m){var o=document.createElement('option');o.value=String(m.objid);o.textContent=m.name;sel.appendChild(o);});
+      sel.value=keep;MAPSZ[match.objid]={w:w,h:h};
+      return String(match.objid);
+    });
+  }
+  function scMake(){
+    var z=scWH(), name=String($('scname').value||'').trim()||scName(), from=mapId(), z0=parseInt($('pushz').value,10)||0, items, newId=null, k=0, skipped=0, entry=null;
+    if(!(S.maps&&S.objFile)||SC.busy||S.busy)return;
+    if(!(z.w>=100&&z.h>=100&&z.w<=20000&&z.h<=20000)){scSay('Choose a width and height between 100 and 20000.','err');return;}
+    try{items=DASHAPI.scaledItems(z.w,z.h)||[];}catch(e){scSay('The canvas could not be resized: '+(e.message||e),'err');return;}
+    if(!items.length){scSay('Put something on the canvas first.','err');return;}
+    var work=items.map(function(it,i){
+      var links=(it.fonts||[]).map(function(hh){return '<link href="'+hh+'" rel="stylesheet">';}).join('');
+      var o={id:it.id,name:it.name,type:it.type,left:it.left,top:it.top,width:it.width,height:it.height,z:z0+i};
+      if(it.object){o.kind='object';o.object=it.object;o.html=it.html||'';if(it.after)o.after=it.after;if(it.link)o.link=it.link;}
+      else{o.kind='paste';o.html=norm(links+it.html);}
+      return o;
+    }).filter(function(o){
+      if(o.kind==='object'&&S.catalog&&o.object.value!==S.objFile&&!S.catalog.some(function(c){return c.value===o.object.value;})){skipped++;return false;}
+      return true;
+    });
+    SC.busy=true;S.busy=true;updateButtons();scSync();
+    scSay('Making the map \u201C'+name+'\u201D ('+z.w+' \u00D7 '+z.h+')\u2026','');
+    scCreate(name,z.w,z.h).then(function(id){
+      newId=id;
+      entry={map:id,srv:srvId(),name:name,at:new Date().toISOString(),added:[],updated:[],removed:[]};
+      /* the same background colour as the map being pushed to, when PRTG has one set */
+      return mapForm(from).then(function(f){
+        var c=hex6(f.bgcolor_);if(!c)return;
+        return mapForm(id).then(function(q){q.bgcolor_=c;return httpMultipart('/editsettings',q);});
+      }).catch(function(){});
+    }).then(function(){
+      return work.reduce(function(pr,it){return pr.then(function(){
+        k++;scSay('Adding '+k+' of '+work.length+' to \u201C'+name+'\u201D\u2026','');
+        var o={objectid:0,top:it.top,left:it.left,id:newId,width:it.width,height:it.height,mapobject_:S.objFile,noautoposition:1,result:'html'};
+        if(it.kind==='object'){o.objectid=it.object.target.id;o.mapobject_=it.object.value;}
+        return http('POST','/api/addobjecttomap.htm',o).then(function(resp){
+          var sub=itemId(resp);
+          if(!sub)throw new Error('PRTG added an item but did not say which one, so it cannot be set up.');
+          entry.added.push(sub);
+          return editCall(newId,sub,fullSet(it));
+        }).then(function(){return new Promise(function(r){setTimeout(r,CFG.push.pauseMs);});});
+      });},Promise.resolve());
+    }).then(function(){
+      return sampleGet({kind:'verify',label:'Items on the map',path:'/api/mapsvg.htm',params:{id:newId}}).then(function(o){
+        return (o&&!o.error&&o.status>=200&&o.status<300)?exParse(o.body||'').length:-1;
+      },function(){return -1;});
+    }).then(function(n){
+      var h=loadHist();h.push(entry);saveHist(h);
+      scSay('Made \u201C'+name+'\u201D ('+z.w+' \u00D7 '+z.h+') with '+entry.added.length+(entry.added.length===1?' item':' items')+'.'+(n>=0?(n>=entry.added.length?' Checked on the map: all there.':' The map shows '+n+'; open it in PRTG to check.'):'')+(skipped?' '+skipped+(skipped===1?' object was':' objects were')+' left out because PRTG does not list its file yet.':'')+' Choose it under Map to see it; Undo last push there takes the copy\u2019s items off again.','ok');
+      $('scbox').classList.remove('ask');
+    }).catch(function(err){
+      if(err&&err.status===401)authNeeded();
+      if(entry&&entry.added.length){var h=loadHist();h.push(entry);saveHist(h);}
+      scSay((newId?'Stopped after '+(entry?entry.added.length:0)+' of '+work.length+' items on \u201C'+name+'\u201D: ':'Could not make the map: ')+((err&&err.message)||err)+(entry&&entry.added.length?' Choose that map and press Undo last push to take them off.':''),'err');
+    }).then(function(){SC.busy=false;S.busy=false;updateButtons();scSync();});
+  }
   /* background presets: the stage colour each look in the Objects tab was drawn for, plus PRTG's own grey and white */
   var BGPRE=[['PRTG default','#DAD7D7'],['White','#FFFFFF'],['PRTG new UI','#F9F9FA'],['Clean card','#F3F4F6'],['Corporate blue','#F2F4F7'],['Executive dark','#171926'],['Indigo board','#161240'],['Slate fintech','#2B2D3C'],['Neon plum','#2A1838'],['Teal glass','#2A3B4C'],['Wall display','#0B1220'],['Brand navy','#050F34']];
   function bgPreSync(){

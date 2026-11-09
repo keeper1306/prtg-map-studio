@@ -992,6 +992,11 @@ body:not(.objs) #obar{display:none!important}
 .pkbox .pkrow:first-child{border-top:0}
 .pkbox .pkf{color:#6B7280;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pkbox .pkbtns{flex-wrap:wrap}
+.scbox{margin-top:14px;padding:12px;border:1px solid #E3E6EC;border-radius:10px;background:#FAFBFC}
+.scbox.ask{border-color:#0F67FF;box-shadow:0 0 0 3px rgba(15,103,255,.12);background:#F5F9FF}
+.scbox .sch{font-weight:500;font-size:13px;margin-bottom:2px}
+.scbox #scname,.scbox #scsize{width:100%;box-sizing:border-box}
+#scwh[hidden]{display:none!important}
 .pkbox .pkanim{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:12px 0 0}
 .pkbox .pkanim .pkal{font-size:13px;font-weight:500;margin-right:4px}
 .pkbox .pkanim .fb-t{border:1px solid #D5DAE3;border-radius:8px;padding:5px 12px;background:#fff;font:inherit;font-size:13px;cursor:pointer}
@@ -1320,6 +1325,15 @@ body.pkopen #obar{visibility:hidden!important}
     <p class="note pst" id="pushmsg"></p>
     <div class="row" style="margin-top:8px"><button class="btn ghost" id="pushforget" type="button" hidden>Forget what was pushed</button></div>
     <p class="note" id="pushforgetnote" hidden>Use this if you deleted the pushed items in PRTG by hand. The next push then adds everything as new.</p>
+    <div id="scbox" class="scbox">
+      <div class="sch">Scaled copy for another screen</div>
+      <p class="note pst">Makes a new map in PRTG in another size and adds everything on this canvas to it, resized to fit: the spaces stretch to the new shape and each item keeps its own shape. The map above is not changed. <span id="scfrom"></span></p>
+      <label for="scsize">Size</label><select id="scsize"></select>
+      <div class="row3" id="scwh" hidden><div><label for="scw">Width</label><input type="number" id="scw" min="100" step="10"></div><div><label for="sch">Height</label><input type="number" id="sch" min="100" step="10"></div></div>
+      <label for="scname">Name of the new map</label><input type="text" id="scname" spellcheck="false">
+      <div class="row" style="margin-top:8px"><button class="btn ghost" id="scgo" type="button" disabled>Make the scaled copy</button></div>
+      <p class="note pst" id="scmsg"></p>
+    </div>
   </fieldset>
     <div class="grp">Layout</div>
 

@@ -4,6 +4,9 @@ It serves the extension's files under /ext/ and answers the PRTG calls the
 Map designer's push and Undo make (map list, object catalogue, add, edit and
 delete map items, read the map back). It keeps the map's items in memory.
 
+Maps made through /addmap2.htm (the scaled copy, 1.5.92) are added to the map list and keep their own items,
+apart from the test map 2001; /controls/objectdata.htm and /editsettings stand in for the map settings form.
+
 Test-only control addresses:
   /__reset?items=<json>&next=<n>   set the items on the map and the next item id
   /__mode?m=<json>                 {"addfail":1} or {"delfail":1} makes that call fail
@@ -11,11 +14,12 @@ Test-only control addresses:
 
 Usage: python mock-prtg.py <extension folder> <port>
 """
-import http.server, json, os, sys, threading, urllib.parse
+import http.server, json, os, re, sys, threading, urllib.parse
 
 EXT = sys.argv[1]
 PORT = int(sys.argv[2])
-state = {'items': {}, 'next': 10, 'log': [], 'mode': {}}
+state = {'items': {}, 'next': 10, 'log': [], 'mode': {}, 'maps': [{'objid': 2001, 'name': 'Test map'}], 'other': {}, 'bg': {}}
+MAIN = '2001'   # the map the push tests use; maps made with addmap2.htm keep their items in state['other'][id]
 lock = threading.Lock()
 CATALOGUE = {
     "Gauges": [{"name": "Gauge A", "value": "a.htm"}, {"name": "Gauge B", "value": "b.htm"}],
@@ -44,7 +48,12 @@ class Handler(http.server.BaseHTTPRequestHandler):
         q = dict(urllib.parse.parse_qsl(u.query))
         if self.command == 'POST':
             n = int(self.headers.get('Content-Length') or 0)
-            q.update(dict(urllib.parse.parse_qsl(self.rfile.read(n).decode())))
+            body = self.rfile.read(n).decode('utf-8', 'replace')
+            if 'multipart/form-data' in (self.headers.get('Content-Type') or ''):   # addmap2.htm and editsettings
+                for m in re.finditer(r'name="([^"]+)"\r\n\r\n(.*?)\r\n--', body, re.S):
+                    q[m.group(1)] = m.group(2)
+            else:
+                q.update(dict(urllib.parse.parse_qsl(body)))
         return u.path, q
 
     def do_GET(self):
@@ -60,7 +69,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 state['mode'] = json.loads(q.get('m', '{}'))
                 return self.send(200, 'ok')
             if path == '/__state':
-                return self.send(200, json.dumps({'items': state['items'], 'log': state['log']}), 'application/json')
+                return self.send(200, json.dumps({'items': state['items'], 'log': state['log'], 'maps': state['maps'], 'other': state['other'], 'bg': state['bg']}), 'application/json')
             if path == '/__reset':
                 state['items'] = json.loads(q.get('items', '{}'))
                 state['log'] = []
@@ -76,7 +85,19 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 state['log'].append({'path': path, 'q': {k: v for k, v in q.items() if k not in ('passhash', 'htmlbefore_', 'htmlafter_')}})
             mode = state['mode']
             if path == '/api/table.json' and q.get('content') == 'maps':
-                return self.send(200, json.dumps({"maps": [{"objid": 2001, "name": "Test map"}]}), 'application/json')
+                return self.send(200, json.dumps({"maps": state['maps']}), 'application/json')
+            if path == '/addmap2.htm':
+                oid = 3000 + len(state['maps'])
+                state['maps'].append({'objid': oid, 'name': q.get('name_', ''), 'w': q.get('width_'), 'h': q.get('height_')})
+                state['other'][str(oid)] = {}
+                return self.send(200, '<html>map %d</html>' % oid)
+            if path == '/controls/objectdata.htm' and q.get('objecttype') == 'map':
+                mid = q.get('id')
+                return self.send(200, '<form action="/editsettings"><input name="id" value="%s"><input name="bgcolor_" value="%s"><input name="width_" value="1920"><input name="height_" value="1080"></form>'
+                                 % (mid, state['bg'].get(mid, '#123456' if mid == MAIN else '')))
+            if path == '/editsettings':
+                state['bg'][q.get('id')] = q.get('bgcolor_', '')
+                return self.send(200, 'ok')
             if path == '/api/tree.json':   # PRTG sends the Root group as one item with its children
                 return self.send(200, json.dumps(TREE), 'application/json')
             if path == '/api/table.json' and q.get('content') in ('devices', 'groups', 'probenodes'):
@@ -93,24 +114,29 @@ class Handler(http.server.BaseHTTPRequestHandler):
                     return self.send(500, 'add failed')
                 sub = str(state['next'])
                 state['next'] += 1
-                state['items'][sub] = {'file': q.get('mapobject_'), 'target': q.get('objectid'), 'left': q.get('left'),
+                store = state['other'].setdefault(q.get('id'), {}) if q.get('id') not in (None, MAIN) else state['items']
+                store[sub] = {'file': q.get('mapobject_'), 'target': q.get('objectid'), 'left': q.get('left'),
                                        'top': q.get('top'), 'width': q.get('width'), 'height': q.get('height')}
                 return self.send(200, '<div class="map_object" subid="%s"></div>' % sub)
             if path == '/api/editmapobject.htm':
                 sub = q.get('subid')
-                if sub not in state['items']:
+                store = state['other'].get(q.get('id'), {}) if q.get('id') not in (None, MAIN) else state['items']
+                if sub not in store:
                     return self.send(404, 'no such item')
                 for k in ('left', 'top', 'width', 'height'):
-                    state['items'][sub][k] = q.get(k)
+                    store[sub][k] = q.get(k)
+                if store is not state['items']:
+                    store[sub]['html'] = q.get('htmlbefore_', '')
                 return self.send(200, 'ok')
             if path == '/api/deletesubobject.htm':
                 if mode.get('delfail'):
                     return self.send(500, 'delete failed')
-                state['items'].pop(q.get('subid'), None)
+                (state['other'].get(q.get('id'), {}) if q.get('id') not in (None, MAIN) else state['items']).pop(q.get('subid'), None)
                 return self.send(200, 'ok')
             if path == '/api/mapsvg.htm':
                 html = ''.join('<div class="map_object" subid="%s" objectid="%s" style="left:%spx;top:%spx;width:%spx;height:%spx;z-index:1"></div>'
-                               % (s, i['target'] or 0, i['left'], i['top'], i['width'], i['height']) for s, i in state['items'].items())
+                               % (s, i['target'] or 0, i['left'], i['top'], i['width'], i['height'])
+                               for s, i in (state['other'].get(q.get('id'), {}) if q.get('id') not in (None, MAIN) else state['items']).items())
                 return self.send(200, '<html><body>' + html + '</body></html>')
             if path.endswith('.json'):
                 return self.send(200, '{}', 'application/json')

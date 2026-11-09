@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.91.
+Last updated at version 1.5.92.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -161,6 +161,29 @@ A full run takes about 5 seconds (16 seconds the very first time).
   bar is HTML like the pill and always shows its word; Beacon's rays blink on alarm states when
   Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
   tile, badge, LED).
+
+## Scaled copy for another screen (1.5.92)
+
+- The owner asked, at push time, for a new map that is a scaled copy of the same map in another size. Owner's choice for a
+  different shape: "spread to fill" (spaces stretch, items keep their shape).
+- `DASHAPI.scaledItems(W,H)` (js/06-dashboard.js, next to `pushItems`): sx=W/D.w, sy=H/D.h, k=min. The map background (`p.mapBg`)
+  fills W x H; frames (not path shapes) and banners stretch (x*sx, y*sy, w*sx, h*sy); everything else keeps its shape (w*k, h*k),
+  centred where it was (centre moves by sx, sy). Lines: ends mapped (a glued end keeps its spot on its item, a free end x*sx, y*sy),
+  then `lnSetAbs` in design units; live connectors only get thickness and label size x k. Pasted pieces are drawn at their size in
+  design units (final / k) and wrapped as `<div style="zoom:k;width;height;position:relative">`, so fonts, borders and padding
+  scale; PRTG objects only get the new box (Flexible files rescale themselves). Every item is restored in place afterwards (JSON per
+  item), and `itemInner` rebuilds the code panel's HTML.
+- js/07-push.js: box `#scbox` at the end of the Push step (`SCSIZES`, `#scsize`, `#scw/#sch` for Another size, `#scname` default
+  "<map> WxH", `#scgo`, `#scmsg`); after a successful push it gets class `ask` and asks. `scMake()`: `scCreate` (addmap2.htm like
+  `createMap`, keeps the selected map), copies the PRTG map's `bgcolor_` from the pushed-to map (`mapForm` + `/editsettings`),
+  adds every item with addobjecttomap + `editCall` (objects whose file PRTG does not list are left out), reads the map back to
+  count, and saves a push-history entry for the new map (Undo last push there removes it). No sync record: not kept in step.
+- Not copied: the PRTG map's own background picture (a PRTG map setting with an uploaded file) and PRTG map items that are not on
+  the canvas (Load and Copy/Paste them onto the canvas first).
+- `tests/mock-prtg.py`: addmap2.htm makes maps (ids 3000+) with their own items, `/controls/objectdata.htm` + `/editsettings`.
+- Checked against the stand-in server: Title and five columns + lines + Neon plum + tiles, label and a gauge, copied to 1280x1024 and
+  3840x2160 (17 items each, background colour copied), drawn and compared by eye; canvas and the pushed map unchanged; 12 tests;
+  22 object files unchanged. Not verified on the real PRTG, including whether PRTG keeps the CSS `zoom` in HTML Before.
 
 ## Animated or still in packs and names (1.5.91)
 
