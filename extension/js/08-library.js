@@ -260,7 +260,7 @@ try{
   try{new MutationObserver(followDownload).observe($('odl'),{attributes:true,attributeFilter:['style']});}catch(e){}
   followDownload();
   refresh();
-  window.LIBAPI={load:load,save:save,parseHead:parseHead,zip:zipStore,refresh:refresh,installScript:installScript};
+  window.LIBAPI={load:load,save:save,parseHead:parseHead,zip:zipStore,refresh:refresh,installScript:installScript,mapDir:mapDir};
 }catch(err){if(window.console)console.error('library module',err);}
 })();
 /* @endregion: library */

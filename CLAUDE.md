@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.89.
+Last updated at version 1.5.90.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -161,6 +161,24 @@ A full run takes about 5 seconds (16 seconds the very first time).
   bar is HTML like the pill and always shows its word; Beacon's rays blink on alarm states when
   Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
   tile, badge, LED).
+
+## Packs (1.5.90)
+
+- The owner asked for predefined objects per object type, in one look/colour set (e.g. PRTG's UI), downloadable together as a script.
+  "Download a pack" (`#opack`, next to Add to this list; hidden for Geo map) opens a dialog (`pkOpen`, `.pkbox`) with the pack's files
+  (checkboxes), and buttons Download install script (`LIBAPI.installScript` + `LIBAPI.mapDir`, new export), Download ZIP (`LIBAPI.zip`)
+  and Add to Your objects (warns when the 60-file list drops old ones). `PACKS` in js/09-objects.js: table 5, gauge 6, graph 8, donut 3,
+  sunburst 3, status 3, icon 8, tile 6, ind 7 (key `ind` = Tile with fam ind), links 8; plus the type's Any object (`anyStart`).
+- `pkBuild()`: per item, start from a copy of the object on screen, make the item's model (blank/template + field changes, with the
+  builder's own helpers: `setFace`, `setGrKind`, `iStyle`, `tileFromPreset`, ...), `lookSet` with the screen's look, the dial background
+  (`nbg`) as on screen, `csetPaint(PS.cur)`, automatic name (`obAutoName`; pack tables get short names of their own because PRTG's
+  templates give names that collide when cut at 64), text from `codeNow()` (render's dispatch, moved into a function; files unchanged).
+  The screen's model is put back afterwards (`pkSet`); render/history are not touched.
+- Icons without a card and Link styles have no look in their names, so icon packs in other status colours give the same file names
+  (the install script backs up a replaced file). Zip/script names: `<pack>-<look>` (icons: colour set; links: none).
+- Checked against the stand-in server: the pack's first item equals the builder's own file for 10 types in PRTG new UI, and for
+  7 types in Neon plum and Corporate blue, and the Wall display gauge with Vivid colours; the object on screen unchanged; names unique;
+  the 22 object files identical to 1.5.89; 12 tests. Not verified on the real PRTG (no pack installed there yet).
 
 ## Plain tile presets (1.5.89)
 

@@ -5258,6 +5258,122 @@ try{
     },true);
   })();
 
+  /* ---------- 1.5.90: packs. A ready-made set of one object type, made in the look and status colours on screen, and installed together.
+     Each item starts from the type's own blank object (or template), gets the look on screen and the chosen colour set, and is named
+     automatically, so a pack in another look gives other file names. The object on screen is put back untouched afterwards. ---------- */
+  function pkSet(k,m){if(k==='table')T=m;else if(k==='gauge')G=m;else if(k==='graph')GR=m;else if(k==='donut')DN=m;else if(k==='sunburst')SB=m;else if(k==='icon')IC=m;else if(k==='status')SC=m;else if(k==='tile')TL=m;else if(k==='links')LK=m;}
+  function pkTable(id){var p=null;PRESETS.forEach(function(x){if(x.id===id)p=x;});return p?fromPreset(p):blankT();}
+  function pkIcon(id){return function(){var m=blankI(), s=iStyle(id);m.style=s.id;m.initW=s.w;m.initH=s.h;m.name='Status '+s.name.toLowerCase();return m;};}
+  function pkFace(f){return function(){G=blankG();setFace(f);return G;};}
+  function pkGraph(o){return function(){GR=blankGR();if(o.kind)setGrKind(o.kind);if(o.period!=null)GR.period=o.period;if(o.cstyle)GR.cstyle=o.cstyle;return GR;};}
+  function pkWith(f,o){return function(){var m=f();for(var k in o)m[k]=o[k];return m;};}
+  function pkLink(look,line){return function(){var m=blankLK();m.lnlook=look;m.line=line;return m;};}
+  var PACKS={
+    /* tables made from PRTG's templates get long automatic names that end the same once cut at 64 characters, so pack tables carry a short name of their own */
+    table:{name:'Tables',items:[['Device status',blankT,'Table - device status'],['Alarms',function(){return pkTable('tableA0');},'Table - alarms'],['Down sensors',function(){return pkTable('tableA1');},'Table - down sensors'],
+      ['Most used CPU',function(){return pkTable('Top10 CPUs Most Used');},'Table - top 10 CPU load'],['Highest bandwidth',function(){return pkTable('Top10 Bandwidth Highest');},'Table - top 10 bandwidth']]},
+    gauge:{name:'Gauges',items:[['Flat minimalist','n-flat'],['PRTG classic','classic'],['Neon glass','n-neon'],['Speedometer','speedo'],['Progress arc','progress'],['Segmented LED','led']].map(function(x){return [x[0],pkFace(x[1])];})},
+    graph:{name:'Graphs',items:[['Live data',pkGraph({period:0})],['Last 2 days',pkGraph({period:1})],['Last 30 days',pkGraph({period:2})],
+      ['Sparkline with value',pkGraph({cstyle:'spark'})],['Stacked area, 2 days',pkGraph({cstyle:'stackarea',period:1})],['Min / max band, 30 days',pkGraph({cstyle:'band',period:2})],
+      ['Heatmap: hour by day',pkGraph({cstyle:'heatmap',period:2})],['Toplist',pkGraph({kind:'toplist'})]]},
+    donut:{name:'Donuts',items:[['All states',blankD],['Alarms only',pkWith(blankD,{mode:'alarms'})],['All states, legend below',pkWith(blankD,{legend:'below'})]]},
+    sunburst:{name:'Sunbursts',items:[['Separated',pkWith(blankSB,{face:'gaps'})],['Solid',pkWith(blankSB,{face:'solid'})],['Soft pastel',pkWith(blankSB,{face:'pastel'})]]},
+    status:{name:'Status counts',items:[['Sensor status',function(){return statusFromPreset('status');}],['Interfaces',function(){return statusFromPreset('interfaces');}],['Availability',function(){return statusFromPreset('availability');}]]},
+    icon:{name:'Status icons',items:[['Dot','dot'],['LED','led'],['Shield','shield'],['Hexagon','hexagon'],['Status bar','sbar'],['Traffic light','traffic'],['Beacon','beacon'],['Signal bars','bars']].map(function(x){return [x[0],pkIcon(x[1])];})},
+    tile:{name:'Tiles',items:[['Stat tile','stat'],['String tile','string'],['Bar gauge','bar'],['Interface traffic tile','interface'],['Channel chips','chips'],['Channel chips (fit)','chipsfit']].map(function(x){return [x[0],function(){return tileFromPreset(x[1]);}];})},
+    ind:{name:'Industrial objects',items:[['State lamps','ind_lamps'],['On/Off indicator','ind_onoff'],['Tank level','ind_tank'],['Silo level','ind_silo'],['Equipment symbol','ind_equip'],['Process value','ind_pv'],['Countdown','ind_count']].map(function(x){return [x[0],function(){return indFromPreset(x[1]);}];})},
+    links:{name:'Link styles',items:[['Plain, curve',pkLink('plain','curve')],['Plain, straight',pkLink('plain','straight')],['Beads, curve',pkLink('beads','curve')],['Beads, straight',pkLink('beads','straight')],
+      ['Chevron, curve',pkLink('chevron','curve')],['Chevron, straight',pkLink('chevron','straight')],['Dash sweep, arc',pkLink('sweep','arc')],['Soft glow, curve',pkLink('glow','curve')]]}
+  };
+  function pkKey(){return (TYPE==='tile'&&tlFam()==='ind')?'ind':TYPE;}
+  function pkOk(){return !!PACKS[pkKey()]&&!isLegacy(TYPE)&&!isPaste()&&!!M();}
+  function pkSync(){var b=document.getElementById('opack');if(b)b.hidden=!pkOk();}
+  function pkLookName(){var L=M().look;return (L&&L.mode==='prtg')?'PRTG default':((L&&L.name)||'');}
+  function pkSetName(){var n='';if(PS.cur)CSETS.forEach(function(x){if(x[0]===PS.cur)n=x[1];});return n;}
+  /* every file of the pack, as {name (file), text, title, label} */
+  function pkBuild(){
+    var k=TYPE, pk=PACKS[pkKey()], cur=M(), saved=JSON.stringify(cur), look=JSON.stringify(cur.look), out=[], seen={}, list=pk.items.slice();
+    if(ANYT[k])list.push(['Any object (probe, group, device or sensor)',function(){anyStart();return M();}]);
+    try{
+      list.forEach(function(it){
+        pkSet(k,JSON.parse(saved));   /* each item starts from the object on screen, so anyStart keeps its look and family */
+        var m=it[1]();
+        pkSet(k,m);
+        if(!m.any)lookSet(m,JSON.parse(look));
+        if(k==='gauge'&&m.engine==='prtg'&&m.nstyle&&cur.engine==='prtg'&&cur.nstyle&&cur.nbg)m.nbg=cur.nbg;   /* PRTG's dial: its background as on screen (picking a look sets it to the look's) */
+        if(PS.cur)csetPaint(PS.cur);
+        m.nameUser=false;m.fname='';
+        if(it[2]){m.name=amLook(m,'Map Studio '+it[2]);m.nameUser=true;}else obAutoName();
+        var fn=fileNameOf(m);
+        if(seen[fn])return;seen[fn]=1;
+        out.push({name:fn,text:codeNow(),title:m.name,label:it[0]});
+      });
+    }finally{pkSet(k,JSON.parse(saved));}
+    return out;
+  }
+  function pkDownload(name,blob){
+    try{var url=URL.createObjectURL(blob), a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(function(){URL.revokeObjectURL(url);},2000);return true;}
+    catch(e){toast('Download blocked here.');return false;}
+  }
+  function pkOpen(){
+    if(!pkOk())return;
+    var files=pkBuild(), pk=PACKS[pkKey()], lk=pkLookName(), cs=pkSetName(), slug=slugOf(pk.name+' '+((pkKey()==='links')?'':(pkKey()==='icon')?cs:lk)).replace(/_/g,'-').replace(/-+$/,'');
+    var ov=h('div','nmov'), box=h('div','nmbox pkbox');
+    ov.setAttribute('role','dialog');ov.setAttribute('aria-modal','true');ov.setAttribute('aria-label','Download a pack');
+    box.appendChild(h('h3',null,pk.name+' pack'));
+    var pk0=pkKey(), csT=cs?'Status colors: '+cs+'. ':'';
+    box.appendChild(h('p','pknote',(pk0==='links')?'Link styles have no look: they draw PRTG\u2019s own lines in a new shape.':
+      (pk0==='icon')?csT+'Status icons take the status colors chosen on screen. A look only shows on an icon with its card on, and these have none. Choose other status colors first for a pack in those.':
+      ('Look: '+lk+'. '+csT+'Every object is made in the look and colors chosen on screen; pick another look first for a pack in that look.')));
+    var all=h('label','pkall'), allc=h('input');allc.type='checkbox';allc.checked=true;all.appendChild(allc);all.appendChild(document.createTextNode(' All '+files.length));box.appendChild(all);
+    var lst=h('div','pklist'), checks=[];
+    files.forEach(function(f){
+      var row=h('label','pkrow'), c=h('input'), t=h('span','pkt'), n=h('span','pkf');
+      c.type='checkbox';c.checked=true;t.textContent=f.label;n.textContent=f.name;
+      row.appendChild(c);row.appendChild(t);row.appendChild(n);lst.appendChild(row);checks.push(c);
+      c.addEventListener('change',sync);
+    });
+    box.appendChild(lst);
+    var st=h('p','pknote pkst');box.appendChild(st);
+    var row=h('div','nmbtns pkbtns'), no=h('button','btn ghost','Close'), add=h('button','btn ghost','Add to Your objects'), zip=h('button','btn ghost','Download ZIP'), ps=h('button','btn primary','Download install script');
+    [no,add,zip,ps].forEach(function(x){x.type='button';row.appendChild(x);});
+    box.appendChild(row);ov.appendChild(box);document.body.appendChild(ov);
+    function picked(){return files.filter(function(f,i){return checks[i].checked;});}
+    function sync(){
+      var n=picked().length;allc.checked=(n===files.length);allc.indeterminate=(n>0&&n<files.length);
+      add.disabled=zip.disabled=ps.disabled=!n;
+      var lib=(window.LIBAPI?LIBAPI.load():{}), have=0;picked().forEach(function(f){if(lib[f.name])have++;});
+      st.textContent=n+' file'+(n===1?'':'s')+' picked.'+(have?' '+have+' of them '+(have===1?'is':'are')+' already in Your objects.':'');
+    }
+    allc.addEventListener('change',function(){checks.forEach(function(c){c.checked=allc.checked;});sync();});
+    sync();
+    function close(){if(ov.parentNode)ov.parentNode.removeChild(ov);document.removeEventListener('keydown',kd,true);document.body.classList.remove('pkopen');}
+    function kd(e){if(e.key==='Escape'){e.preventDefault();close();}}
+    document.body.classList.add('pkopen');   /* the options bar floats above everything: keep it out of the way */
+    no.addEventListener('click',close);
+    ov.addEventListener('pointerdown',function(e){if(e.target===ov)close();});
+    document.addEventListener('keydown',kd,true);
+    ps.addEventListener('click',function(){
+      var fs=picked();if(!fs.length||!window.LIBAPI)return;
+      var text=LIBAPI.installScript(fs.map(function(f){return {name:f.name,text:f.text};}),LIBAPI.mapDir?LIBAPI.mapDir():undefined).replace(/\n/g,'\r\n');
+      if(pkDownload('Install-'+slug+'.ps1',new Blob(['\uFEFF'+text],{type:'text/plain;charset=utf-8'})))toast('Saving Install-'+slug+'.ps1 ('+fs.length+' file'+(fs.length===1?'':'s')+')');
+    });
+    zip.addEventListener('click',function(){
+      var fs=picked();if(!fs.length||!window.LIBAPI)return;
+      if(pkDownload(slug+'.zip',LIBAPI.zip(fs.map(function(f){return {name:f.name,text:f.text};}))))toast('Saving '+slug+'.zip ('+fs.length+' file'+(fs.length===1?'':'s')+')');
+    });
+    add.addEventListener('click',function(){
+      var fs=picked();if(!fs.length||!window.LIBAPI)return;
+      var o=LIBAPI.load(), max=(CFG.library&&CFG.library.max)||60, now=Date.now();
+      fs.forEach(function(f,i){var hd=LIBAPI.parseHead(f.text)||{};o[f.name]={cat:hd.cat,name:hd.name,code:f.text,at:now+i};});
+      var n=Object.keys(o).length;
+      LIBAPI.save(o);LIBAPI.refresh();if(window.PUSHAPI&&PUSHAPI.renderObjList)PUSHAPI.renderObjList();
+      toast('Added '+fs.length+' to Your objects'+(n>max?'. The list keeps '+max+', so the '+(n-max)+' oldest dropped off':''));
+      sync();
+    });
+  }
+  (function(){var b=document.getElementById('opack');if(b)b.addEventListener('click',pkOpen);})();
+
   /* ---------- zoom, pixel grid and the options bar over the preview ---------- */
   var OB={el:null,key:'',syncs:[],sel:true,sty:null,presetSel:null};
   function OZ(){
@@ -6580,16 +6696,21 @@ try{
     obZoom();eoAttach();obRefresh();}
 
   /* ---------- render ---------- */
+  /* the file for the object on screen (1.5.90: also used by packs) */
+  function codeNow(){
+    var text=anyOn()?buildAny(M()):(TYPE==='gauge')?buildGauge(G):(isPaste()?buildPaste(FRc()):(TYPE==='graph'?buildGraph(GR):(TYPE==='donut'?buildDonut(DN):(TYPE==='sunburst'?buildSunburst(SB):(TYPE==='tile'?buildTile(TL):(TYPE==='status'?buildStatus(SC):(TYPE==='icon'?buildIcon(IC):(TYPE==='geomap'?buildGeoMap(GM):(TYPE==='links'?buildLinks(LK):buildTable(T))))))))));
+    return flexAppend(text);
+  }
   function render(){
     if(isLegacy(TYPE))return;
     if(PS.cur&&!isPaste())csetPaint(PS.cur);
     if(TYPE==='table'){T.tOffX=0;T.tOffY=0;}
     if(TYPE==='links')lkDefSync(LK);   /* the Link style object IS the shared map link style; Map designer connectors read it live */
     obAutoName();
-    var text=anyOn()?buildAny(M()):(TYPE==='gauge')?buildGauge(G):(isPaste()?buildPaste(FRc()):(TYPE==='graph'?buildGraph(GR):(TYPE==='donut'?buildDonut(DN):(TYPE==='sunburst'?buildSunburst(SB):(TYPE==='tile'?buildTile(TL):(TYPE==='status'?buildStatus(SC):(TYPE==='icon'?buildIcon(IC):(TYPE==='geomap'?buildGeoMap(GM):(TYPE==='links'?buildLinks(LK):buildTable(T))))))))));
-    text=flexAppend(text);
+    var text=codeNow();
     codeEl.value=text;
     document.getElementById('ofname').textContent=fileNameOf(M());
+    pkSync();
     nameCheckShow();
     document.getElementById('ofnote').textContent=text.length+' characters';
     var inst=document.getElementById('oinstall');

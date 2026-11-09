@@ -985,6 +985,16 @@ body:not(.objs) #obar{display:none!important}
 .nmov{position:fixed;inset:0;z-index:100001;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center}
 .nmbox{width:min(440px,92vw);background:#fff;border-radius:12px;padding:20px 22px;box-shadow:0 10px 40px rgba(15,23,42,.35)}
 .nmbox h3{margin:0 0 8px;font-size:16px;font-weight:500;color:var(--blue)}
+.pkbox{width:min(620px,94vw)}
+.pkbox .pkall{display:flex;align-items:center;gap:6px;font-size:13px;margin:10px 0 6px;cursor:pointer}
+.pkbox .pklist{max-height:min(46vh,380px);overflow:auto;border:1px solid #E3E6EC;border-radius:8px}
+.pkbox .pkrow{display:grid;grid-template-columns:auto minmax(0,1fr) minmax(0,1.4fr);gap:10px;align-items:center;padding:7px 10px;border-top:1px solid #EEF0F4;font-size:13px;cursor:pointer}
+.pkbox .pkrow:first-child{border-top:0}
+.pkbox .pkf{color:#6B7280;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pkbox .pkbtns{flex-wrap:wrap}
+.pkbox .pknote{font-size:12px;color:#6c7183;margin:4px 0 0;line-height:1.55}
+body.pkopen #obar{visibility:hidden!important}
+#opack[hidden]{display:none}
 .nmbtns{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
 
 #obar .fb-shapes{display:inline-flex;gap:2px}
@@ -1561,7 +1571,7 @@ body:not(.objs) #obar{display:none!important}
     <div id="ocanvas"><div id="opreview"></div></div>
     <div class="stage-head" style="margin-top:26px">
       <h2><span id="ofheadtext">File</span> <span id="ofname" style="font-weight:500;color:var(--cyan)"></span> <span id="ofnote" style="font-weight:300;color:#8b90a0;font-size:12px"></span></h2>
-      <div style="display:flex;gap:10px"><button class="btn primary" id="oadd" type="button" title="Keeps this object in Your objects, ready to install">Add to this list</button><button class="btn ghost" id="oshowcode" type="button" aria-expanded="false">Show code</button></div>
+      <div style="display:flex;gap:10px"><button class="btn primary" id="oadd" type="button" title="Keeps this object in Your objects, ready to install">Add to this list</button><button class="btn ghost" id="opack" type="button" title="A ready-made set of this object, in the look and colors on screen, to install in one go">Download a pack</button><button class="btn ghost" id="oshowcode" type="button" aria-expanded="false">Show code</button></div>
     </div>
     <div id="ocodebox" hidden><div class="ocodebar"><button class="btn ghost sm" id="ocopy" type="button">Copy code</button><button class="btn ghost sm" id="odl" type="button">Download .htm</button></div><textarea id="ocode" readonly spellcheck="false"></textarea></div>
     <div class="ocard" id="olistwrap">
