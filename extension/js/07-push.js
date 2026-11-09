@@ -2283,7 +2283,7 @@ try{
   }
   function xeStaged(){
     var n=Object.keys(XE.stage), del=n.filter(function(k){return XE.stage[k].del;}).length, ed=n.length-del;
-    XE.rev=null;$('exrev').hidden=true;$('xeapply').hidden=true;$('xermrow').hidden=true;
+    XE.rev=null;$('exrev').hidden=true;$('xeapply').hidden=true;$('xermrow').hidden=!del;
     $('exchg').hidden=!n.length;
     $('exchgsum').textContent=n.length?((ed?ed+(ed===1?' item':' items')+' changed':'')+((ed&&del)?', ':'')+(del?del+(del===1?' item':' items')+' marked for deletion':'')+'. Nothing has been sent to PRTG.'):'';
     xeDecorate();xeButtons();
@@ -2312,6 +2312,7 @@ try{
     $('exbar').hidden=!n;
     $('exbartext').textContent=n+(n===1?' change':' changes')+' not sent to PRTG yet';
     $('exbarapply').hidden=a.hidden;$('exbarapply').textContent=a.textContent;$('exbarapply').disabled=a.disabled;
+    $('exbarrmrow').hidden=$('xermrow').hidden;$('exbarrm').checked=$('xerm').checked;$('exbarrm').disabled=XE.busy;
   }
   function xeDecorate(){
     var layer=$('dexist'), rows=$('exlist');
@@ -2352,7 +2353,7 @@ try{
       xeLines(sub).forEach(function(l){var s2=document.createElement('div');s2.textContent=l;d.appendChild(s2);});
       box.appendChild(d);
     });
-    box.hidden=false;$('xermrow').hidden=!del.length;
+    box.hidden=false;$('xermrow').hidden=!del.length;   /* 1.5.94: also shown before the review (xeStaged) and in the strip over the canvas (xeBar) */
     n=ed+(del.length&&$('xerm').checked?del.length:0);
     $('xeapply').textContent='Apply '+n+(n===1?' change':' changes')+' to PRTG';
     $('xeapply').hidden=!n;XE.rev=xeSig();
@@ -2457,7 +2458,8 @@ try{
   });
   $('xereset').addEventListener('click',function(){var sub=XE.sel;if(!sub)return;delete XE.stage[sub];xePopulate();xeStaged();});
   $('xereview').addEventListener('click',xeReview);
-  $('xerm').addEventListener('change',function(){if(!$('exrev').hidden)xeReview();});
+  $('xerm').addEventListener('change',function(){if(!$('exrev').hidden)xeReview();xeBar();});
+  $('exbarrm').addEventListener('change',function(){$('xerm').checked=$('exbarrm').checked;if(!$('exrev').hidden)xeReview();xeBar();});
   $('xeapply').addEventListener('click',xeApply);
   $('xeundo').addEventListener('click',xeUndo);
   /* ---- clicking, dragging and keys on the canvas ---- */

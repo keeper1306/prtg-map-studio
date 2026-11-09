@@ -126,6 +126,24 @@ async function waitForServer() {
     r = await push();
     check('full storage gives a red warning', /could not save its record/.test(r.msg) && r.cls.includes('err'), r);
 
+    /* 15. 1.5.94: an item already on the map, marked for deletion, shows the delete box in the strip over the canvas at once;
+       ticking it there ticks the review's box, and Review + Apply from the strip delete the item */
+    await start({ '5': { target: 0, left: 0, top: 0, width: 1920, height: 1080 }, '6': { target: 3001, left: 100, top: 100, width: 300, height: 200 } });
+    await page.evaluate(() => document.getElementById('exload').click());
+    await page.waitForFunction(() => document.querySelectorAll('#exlist .exrow').length >= 2, null, { timeout: 10000 });
+    await page.evaluate(() => document.querySelector('#exlist .exrow[data-sub="5"]').click());
+    await page.waitForFunction(() => document.getElementById('xewidth').value === '1920', null, { timeout: 10000 });
+    await page.evaluate(() => document.getElementById('xedel').click());
+    const shown = await page.evaluate(() => !document.getElementById('exbarrmrow').hidden && !document.getElementById('xermrow').hidden);
+    await page.check('#exbarrm');
+    const synced = await page.evaluate(() => document.getElementById('xerm').checked);
+    await page.click('#exbarrev');
+    await page.waitForFunction(() => !document.getElementById('exbarapply').hidden, null, { timeout: 5000 }).catch(() => {});
+    await page.click('#exbarapply');
+    await page.waitForFunction(() => document.getElementById('exbar').hidden, null, { timeout: 10000 }).catch(() => {});
+    s = await state();
+    check('delete box in the strip over the canvas; the item is deleted', shown && synced && Object.keys(s.items).join() === '6', { shown, synced, items: Object.keys(s.items) });
+
     /* 13-14. 1.5.93: a background picture is cut and placed in the editor, sent at exactly the map's size, then removed */
     await start();
     await mock('/__mode?m=' + encodeURIComponent('{"svg":1}'));

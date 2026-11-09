@@ -269,6 +269,7 @@ body.dash #typegrid,body.editing #typegrid{display:none}
 #exbar[hidden]{display:none!important}
 #exbar .btn{width:auto;padding:6px 12px}
 #exbartext{flex:1 1 auto;color:#92400e;font-weight:600}
+#exbarrmrow{display:inline-flex;align-items:center;gap:6px;color:#78350f;font-size:12.5px;cursor:pointer}#exbarrmrow[hidden]{display:none}#exbarrmrow input{margin:0}
 .exlist{margin-top:8px;border:1px solid var(--g20);border-radius:4px;background:#fff;max-height:260px;overflow:auto}
 .exrow{padding:7px 10px;border-bottom:1px solid var(--g10);font-size:13px;cursor:pointer}
 .exrow:last-child{border-bottom:0}
@@ -1225,9 +1226,9 @@ body.pkopen #obar{visibility:hidden!important}
         </div>
         <div id="exchg" hidden>
           <p class="note pst" id="exchgsum"></p>
+          <div class="inline" id="xermrow" hidden><input type="checkbox" id="xerm"><label for="xerm">Also delete the items marked for deletion (a backup file is saved first)</label></div>
           <div class="row"><button class="btn ghost" id="xereview" type="button">Review changes</button></div>
           <div id="exrev" hidden></div>
-          <div class="inline" id="xermrow" hidden><input type="checkbox" id="xerm"><label for="xerm">Also delete the items marked for deletion (a backup file is saved first)</label></div>
           <div class="row" style="margin-top:8px"><button class="btn" id="xeapply" type="button" hidden>Apply</button></div>
         </div>
         <p class="note pst" id="xemsg"></p>
@@ -1658,7 +1659,7 @@ body.pkopen #obar{visibility:hidden!important}
       <h2>Canvas <span style="font-weight:300;color:#8b90a0;font-size:12px;">&mdash; drag items, drag the square corner to resize, Shift+click to select several</span></h2>
       <div class="undoredo"><button class="ico" id="dundo" type="button" data-tip="Undo (Ctrl+Z)" aria-label="Undo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button><button class="ico" id="dredo" type="button" data-tip="Redo (Ctrl+Y)" aria-label="Redo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button><button class="ico" id="dfit" type="button" data-tip="Fit to window" aria-label="Fit the canvas to the window"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/><rect x="8" y="8" width="8" height="8" rx="1"/></svg></button><button class="ico" id="dgridbtn" type="button" data-tip="Grid and snapping" aria-label="Grid and snapping"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="1.5"/><path d="M4 9.3h16M4 14.7h16M9.3 4v16M14.7 4v16"/></svg></button><button class="ico" id="dlaybtn" type="button" data-tip="Layouts" aria-label="Layouts"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="1.5"/><path d="M12 4v16M12 12h8"/></svg></button><button class="ico" id="dclean" type="button" data-tip="Clean the canvas: remove every item (Undo brings them back)" aria-label="Clean the canvas"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 3.5l6 6"/><path d="M17.5 6.5 9 15"/><path d="M9 15l-4.5 1.5L3 21l4.5-1.5L9 15z"/><path d="M5 20h15"/></svg></button></div>
     </div>
-    <div id="exbar" hidden><span id="exbartext"></span><button class="btn ghost" id="exbarrev" type="button">Review changes</button><button class="btn" id="exbarapply" type="button" hidden>Apply</button><button class="btn ghost" id="exbardisc" type="button">Discard all</button></div>
+    <div id="exbar" hidden><span id="exbartext"></span><label id="exbarrmrow" hidden><input type="checkbox" id="exbarrm"> Also delete the items marked for deletion (a backup file is saved first)</label><button class="btn ghost" id="exbarrev" type="button">Review changes</button><button class="btn" id="exbarapply" type="button" hidden>Apply</button><button class="btn ghost" id="exbardisc" type="button">Discard all</button></div>
     <div id="dalign" hidden><span class="alcount"></span>
       <button type="button" data-al="l" title="Align left edges" aria-label="Align left"><svg viewBox="0 0 24 24"><path d="M4 3v18"/><rect x="7" y="6" width="12" height="4"/><rect x="7" y="14" width="7" height="4"/></svg></button>
       <button type="button" data-al="c" title="Align centres horizontally" aria-label="Align centre"><svg viewBox="0 0 24 24"><path d="M12 3v18"/><rect x="5" y="6" width="14" height="4"/><rect x="8" y="14" width="8" height="4"/></svg></button>

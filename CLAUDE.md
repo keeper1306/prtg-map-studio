@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.93.
+Last updated at version 1.5.94.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -161,6 +161,22 @@ A full run takes about 5 seconds (16 seconds the very first time).
   bar is HTML like the pill and always shows its word; Beacon's rays blink on alarm states when
   Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
   tile, badge, LED).
+
+## Delete box in sight, and choices as pictures in the bars (1.5.94)
+
+- The owner could not delete a map's background item (an item already on the map, at 0,0 1920 x 1080): marking it for deletion staged it
+  ("1 change not sent to PRTG yet"), but nothing could be applied, because the box "Also delete the items marked for deletion" (`#xerm`)
+  only appeared under the list after Review changes in the side panel, and without it a deletion counts for nothing. Now `#xermrow` sits at
+  the top of the review section and shows as soon as an item is marked (`xeStaged`), and the strip over the canvas (`#exbar`) has the same box
+  (`#exbarrmrow`, `#exbarrm`), kept in step by `xeBar` and both change handlers.
+- The owner asked for the table's "Shown as" (status display) in the floating bar with pictures, and the same for similar settings of other
+  objects. `GRPICK` got `tstatus`, `thead`, `scap`, `gcolor`, `ionoff`, `itank`, `ieq`, `icount` and `grPic` their drawings. Bars: the table has a
+  new Status menu (Shown as, Dot size, Tint rows, Header style); Status counts' Tiles menu has the caption; the ring gauge's Gauge menu the
+  colour; the Industrial menu the style of the kind on screen (`obKey` now includes `TL.kind`). Side panel: `inPick(label,g,get,set)` replaces
+  the lists for the same eight choices. Title style and other look settings were left as lists (not asked).
+- `tests/mock-prtg.py` serves `/api/mapsettings.htm?type=objectproperties`; new check 15 (mark, tick in the strip, Review, Apply: the item is
+  gone). Checked: 15 tests; every type's default file byte-identical to 1.5.93 (11 types); Pill chosen in the bar gives the same file as Pill
+  chosen from the 1.5.93 list. Not verified on the real PRTG.
 
 ## Background picture (1.5.93)
 

@@ -1367,7 +1367,16 @@ try{
     bsrc:[['status','Sensor states','The share of sensors in each state. Put it on a device, group or probe.'],['channels','Channels','The channels of one sensor, one bar each. Put it on a sensor.'],['sensors','Sensors by value','The sensors on a device or group, one bar each, by their value.']],
     bdir:[['row','Horizontal','Bars from left to right'],['col','Vertical','Bars from the bottom up']],
     bcolor:[['status','By state','Each bar in the colour of its sensor’s state'],['cat','One per bar','A different colour for each bar'],['one','All the same','Every bar in one colour']],
-    draw:[['own','Modern chart','Drawn by Map Studio from the history; follows the look and the chart styles'],['pic','PRTG’s picture','PRTG’s own graph picture, as on a sensor page']]
+    draw:[['own','Modern chart','Drawn by Map Studio from the history; follows the look and the chart styles'],['pic','PRTG’s picture','PRTG’s own graph picture, as on a sensor page']],
+    /* 1.5.94: choices about how a status or value is drawn, as pictures in the floating bar and the side panel */
+    tstatus:[['dot','Colored dot','A dot in the status colour'],['dottext','Dot and text','A dot and the status word'],['pill','Pill','The status word in a coloured pill'],['text','Text only','The status word in the status colour']],
+    thead:[['fill','Filled','The header row on a filled band'],['line','Underlined','The header row underlined in the accent colour'],['plain','Plain','The header row as plain text']],
+    scap:[['of','of N sensors','A caption under each number: of N sensors'],['none','None','Only the number']],
+    gcolor:[['status','By status','The ring in the colour of the sensor’s state'],['accent','Accent','The ring in the look’s accent colour']],
+    ionoff:[['lamp','Lamp','A lamp that lights up'],['switch','Switch','A switch, on or off'],['word','Word','The word on or off']],
+    itank:[['tank','Tank','A rounded tank'],['silo','Silo','A silo with a cone at the bottom']],
+    ieq:[['stack','Above the text','The symbol above the text'],['row','Beside the text','The symbol beside the text']],
+    icount:[['ring','Ring','A ring that empties as the days run out'],['pill','Small pill','The days left in a small pill']]
   };
   function grPic(g,v){
     var G1='#B8C419',Y='#F5C500',R='#E30613',A='#1f6fe5',P='#8b5cf6',O='#f59e0b',T='#14b8a6',M='#9aa0ad',D='#1d2433',N='#E3E6EC',o='<rect x="1" y="1" width="62" height="42" rx="5" fill="#fff" stroke="#dfe3ea"/>';
@@ -1393,6 +1402,39 @@ try{
       else o+='<rect x="6" y="6" width="52" height="28" fill="#fafafa" stroke="#c8cbd0" stroke-width=".6"/>'+[12,18,24,30].map(function(y){return '<line x1="6" y1="'+y+'" x2="58" y2="'+y+'" stroke="#e1e3e6" stroke-width=".5"/>';}).join('')
         +'<polyline points="6,28 13,24 20,26 27,17 34,20 41,12 48,15 58,11" fill="none" stroke="#0f9d58" stroke-width="1"/><polyline points="6,31 13,29 20,30 27,27 34,28 41,25 48,27 58,24" fill="none" stroke="#db4437" stroke-width="1"/>'
         +'<rect x="6" y="36" width="5" height="3" fill="#0f9d58"/>'+lab(12,36.6,10)+'<rect x="26" y="36" width="5" height="3" fill="#db4437"/>'+lab(32,36.6,10);
+    }
+    if(g==='tstatus'){
+      [G1,Y,R].forEach(function(c,i){var y=10+i*10;o+='<rect x="5" y="'+(y+7)+'" width="54" height=".5" fill="'+N+'"/>'+lab(30,y+2,14)+lab(48,y+2,8);
+        if(v==='dot')o+='<circle cx="11" cy="'+(y+3)+'" r="2.6" fill="'+c+'"/>';
+        else if(v==='dottext')o+='<circle cx="9" cy="'+(y+3)+'" r="2.2" fill="'+c+'"/>'+'<rect x="13" y="'+(y+2.1)+'" width="11" height="1.8" rx=".8" fill="'+D+'"/>';
+        else if(v==='pill')o+='<rect x="5" y="'+(y-.4)+'" width="20" height="6.8" rx="3.4" fill="'+c+'"/><rect x="9" y="'+(y+2.1)+'" width="12" height="1.8" rx=".8" fill="#fff"/>';
+        else o+='<rect x="6" y="'+(y+1.6)+'" width="16" height="2.8" rx="1" fill="'+c+'"/>';});
+    }else if(g==='thead'){
+      if(v==='fill')o+='<rect x="5" y="5" width="54" height="9" rx="1.5" fill="#E8EBF0"/>';
+      if(v==='line')o+='<rect x="5" y="13.2" width="54" height="1.4" fill="'+A+'"/>';
+      o+='<rect x="8" y="8.6" width="12" height="2" rx=".8" fill="'+D+'"/><rect x="26" y="8.6" width="12" height="2" rx=".8" fill="'+D+'"/><rect x="44" y="8.6" width="10" height="2" rx=".8" fill="'+D+'"/>';
+      [0,1,2].forEach(function(i){var y=20+i*7;o+=lab(8,y,12)+lab(26,y,14)+lab(44,y,8)+(v==='plain'||i<2?'':'');});
+    }else if(g==='scap'){
+      o+='<text x="32" y="'+(v==='of'?24:28)+'" text-anchor="middle" font-size="15" font-weight="700" fill="'+G1+'" font-family="Inter,Segoe UI,Arial,sans-serif">12</text>'+lab(18,6,28);
+      if(v==='of')o+='<text x="32" y="35" text-anchor="middle" font-size="6.5" fill="'+M+'" font-family="Inter,Segoe UI,Arial,sans-serif">of 20 sensors</text>';
+    }else if(g==='gcolor'){
+      var cc=v==='status'?G1:A;
+      o+='<path d="M17 33 A16 16 0 1 1 47 33" fill="none" stroke="'+N+'" stroke-width="5" stroke-linecap="round"/><path d="M17 33 A16 16 0 0 1 43 12.5" fill="none" stroke="'+cc+'" stroke-width="5" stroke-linecap="round"/>'+
+        '<text x="32" y="28" text-anchor="middle" font-size="8" font-weight="700" fill="'+D+'" font-family="Inter,Segoe UI,Arial,sans-serif">68%</text>'+(v==='status'?'<circle cx="32" cy="36" r="1.8" fill="'+G1+'"/>':'');
+    }else if(g==='ionoff'){
+      if(v==='lamp')o+='<circle cx="32" cy="19" r="10" fill="'+G1+'" opacity=".22"/><circle cx="32" cy="19" r="6.5" fill="'+G1+'"/>'+lab(22,35,20);
+      else if(v==='switch')o+='<rect x="18" y="12" width="28" height="14" rx="7" fill="'+G1+'"/><circle cx="39" cy="19" r="5" fill="#fff"/>'+lab(22,35,20);
+      else o+='<rect x="16" y="11" width="32" height="15" rx="4" fill="'+G1+'"/><text x="32" y="22" text-anchor="middle" font-size="9" font-weight="700" fill="#fff" font-family="Inter,Segoe UI,Arial,sans-serif">ON</text>'+lab(22,35,20);
+    }else if(g==='itank'){
+      if(v==='tank')o+='<rect x="20" y="6" width="24" height="32" rx="7" fill="#fff" stroke="'+M+'" stroke-width="1.2"/><path d="M21 22 H43 V31 a6 6 0 0 1 -6 6 H27 a6 6 0 0 1 -6 -6 Z" fill="#4F8DDB"/>';
+      else o+='<path d="M20 6 H44 V27 L32 39 L20 27 Z" fill="#fff" stroke="'+M+'" stroke-width="1.2" stroke-linejoin="round"/><path d="M21 18 H43 V26.6 L32 37.6 L21 26.6 Z" fill="#4F8DDB"/>';
+    }else if(g==='ieq'){
+      var sym=function(x,y){return '<circle cx="'+x+'" cy="'+y+'" r="7" fill="none" stroke="'+G1+'" stroke-width="2"/><path d="M'+(x-3)+' '+(y-3)+' L'+(x+4)+' '+y+' L'+(x-3)+' '+(y+3)+' Z" fill="'+G1+'"/>';};
+      if(v==='stack')o+=sym(32,15)+'<rect x="22" y="27" width="20" height="2.4" rx="1" fill="'+D+'"/>'+lab(25,33,14);
+      else o+=sym(15,22)+'<rect x="27" y="18" width="24" height="2.4" rx="1" fill="'+D+'"/>'+lab(27,24,16);
+    }else if(g==='icount'){
+      if(v==='ring')o+='<circle cx="32" cy="21" r="12" fill="none" stroke="'+N+'" stroke-width="3.5"/><path d="M32 9 A12 12 0 1 1 20.6 24.7" fill="none" stroke="'+Y+'" stroke-width="3.5" stroke-linecap="round"/><text x="32" y="24" text-anchor="middle" font-size="8" font-weight="700" fill="'+D+'" font-family="Inter,Segoe UI,Arial,sans-serif">27</text>'+lab(24,37,16);
+      else o+='<rect x="14" y="14" width="36" height="13" rx="6.5" fill="'+Y+'"/><text x="32" y="23.2" text-anchor="middle" font-size="7.5" font-weight="700" fill="'+D+'" font-family="Inter,Segoe UI,Arial,sans-serif">27 days</text>'+lab(24,33,16);
     }
     return '<svg viewBox="0 0 64 44" width="64" height="44" aria-hidden="true">'+o+'</svg>';
   }
@@ -4724,6 +4766,12 @@ try{
     i.addEventListener('change',function(){set(i.value);render();});
     syncs.push(function(){i.value=String(get());});w.appendChild(i);return w;
   }
+  /* 1.5.94: a choice shown as pictures (GRPICK group g) instead of a list of words */
+  function inPick(label,g,get,set){
+    var w=h('div','dfld');w.appendChild(h('label',null,label));
+    var pg=grPicGrid(g,get,set,null,function(fn){fn();refreshUI();render();});
+    syncs.push(function(){pg.syncPick();});w.appendChild(pg);return w;
+  }
   function inChk(label,get,set,after){
     var w=h('div','dfld inline');var i=h('input');i.type='checkbox';
     i.addEventListener('change',function(){set(i.checked);if(after)after();render();});
@@ -5719,6 +5767,14 @@ try{
           function(k,on){var c=M().cols,at=c.indexOf(k);if(on&&at<0)c.push(k);else if(!on&&at>-1){if(c.length<2){toast('A table needs at least one column');return;}c.splice(at,1);}},
           function(k,d){var c=M().cols,i=c.indexOf(k),n=i+d;if(i<0||n<0||n>=c.length)return;c.splice(i,1);c.splice(n,0,k);});
       }));
+      b.appendChild(obMenu('Status','How the status column and the header row look',function(pop){
+        pop.className+=' fb-wide';
+        var pick=function(label,g,get,set){pop.appendChild(h('div','pf-h',label));var pg=grPicGrid(g,get,set,null,obDo);pop.appendChild(pg);OB.syncs.push(function(){pg.syncPick();});};
+        pick('Shown as','tstatus',function(){return L().status;},function(v){L().status=v;});
+        pfNum(pop,'Dot size',function(){return L().dot;},function(v){L().dot=v;},6,40);
+        pfChk(pop,'Tint rows that are down or warning',function(){return L().tint;},function(v){L().tint=v;});
+        pick('Header style','thead',function(){return L().headStyle;},function(v){L().headStyle=v;});
+      }));
       b.appendChild(obMenu('Rows','Which rows, how many, and in what order',function(pop){
         pfNum(pop,'Most rows (0 = all)',function(){return M().count;},function(v){M().count=v;},0,200);
         pfSel(pop,'Sort by',function(){return M().sortBy;},function(v){M().sortBy=v;},SORTS.map(function(k){return [k,colLabel(k)];}));
@@ -5744,6 +5800,8 @@ try{
           pfChk(pop,'Needle',function(){return G.needle;},function(v){G.needle=v;});
           pfChk(pop,'Minimum and maximum',function(){return G.showMinMax;},function(v){G.showMinMax=v;});
           pfChk(pop,'Glow',function(){return !!G.glow;},function(v){G.glow=v;});
+          pop.appendChild(h('div','pf-h','Colour'));
+          var gc=grPicGrid('gcolor',function(){return G.colorMode;},function(v){G.colorMode=v;},null,obDo);pop.appendChild(gc);OB.syncs.push(function(){gc.syncPick();});
         }
       }));
     }else if(TYPE==='graph'){
@@ -5810,12 +5868,17 @@ try{
         pfList(pop,'Tiles shown',function(){return STILES.map(function(k){return [k,SL[k]||k];});},
           function(k){return (SC.tiles||[]).indexOf(k)>-1;},
           function(k,on){var t=SC.tiles=SC.tiles||[],at=t.indexOf(k);if(on&&at<0)t.push(k);else if(!on&&at>-1){if(t.length<2){toast('Keep at least one tile');return;}t.splice(at,1);}});
+        pop.appendChild(h('div','pf-h','Caption under the number'));
+        var cg=grPicGrid('scap',function(){return SC.cap;},function(v){SC.cap=v;},null,obDo);pop.appendChild(cg);OB.syncs.push(function(){cg.syncPick();});
       }));
     }else if(TYPE==='tile'){
       var fam_=tlFam();
       b.appendChild(obMenu(fam_==='ind'?'Industrial':'Tile',fam_==='ind'?'What kind of industrial object this is':'What kind of tile this is',function(pop){
         pop.appendChild(h('div','pf-h','Kind'));
         var kg=tKindGrid(fam_);pop.appendChild(kg);OB.syncs.push(function(){kg.syncKind();});
+        /* 1.5.94: the style of the industrial kind on screen (the bar is rebuilt when the kind changes) */
+        var ik=fam_==='ind'&&({onoff:['Style','ionoff','oStyle'],tank:['Shape','itank','shape'],equip:['Layout','ieq','eLay'],count:['Style','icount','cStyle']})[TL.kind];
+        if(ik){pop.appendChild(h('div','pf-h',ik[0]));var ig=grPicGrid(ik[1],function(){return TL[ik[2]];},function(v){TL[ik[2]]=v;},null,obDo);pop.appendChild(ig);OB.syncs.push(function(){ig.syncPick();});}
       }));
     }else if(TYPE==='icon'&&IC.engine==='custom'){
       b.appendChild(obMenu('Icon','The icon style and the text next to it',function(pop){
@@ -6016,7 +6079,7 @@ try{
     }),function(){return lkAnimOk(LK);}));
     OB.key=obKey();
   }
-  function obKey(){return SCOPE+TYPE+(anyOn()?'any':'')+(TYPE==='tile'?tlFam():'')+(TYPE==='icon'?IC.engine+(iHasBg(IC)?'b':''):(TYPE==='gauge'?G.engine+(G.nstyle?'n':''):(TYPE==='donut'?DN.engine:TYPE==='sunburst'?SB.engine+SB.face:(TYPE==='graph'?GR.draw+GR.kind+(GR.kind==='bars'?GR.bsrc:''):''))));}
+  function obKey(){return SCOPE+TYPE+(anyOn()?'any':'')+(TYPE==='tile'?tlFam()+(tlFam()==='ind'?TL.kind:''):'')+(TYPE==='icon'?IC.engine+(iHasBg(IC)?'b':''):(TYPE==='gauge'?G.engine+(G.nstyle?'n':''):(TYPE==='donut'?DN.engine:TYPE==='sunburst'?SB.engine+SB.face:(TYPE==='graph'?GR.draw+GR.kind+(GR.kind==='bars'?GR.bsrc:''):''))));}
   /* the bar sits on the page (position:fixed), above the object, or under it when there is no room above or a menu needs the room.
      It is kept inside the window, never inside the canvas, so neither the canvas nor the preview edge covers it. */
   function obPlace(){
@@ -6989,7 +7052,7 @@ try{
       }));
     });
     st1.appendChild(inChk('Grey out a tile with nothing in it (except Up)',function(){return !!SC.quiet;},function(v){SC.quiet=v;}));
-    st1.appendChild(inSel('Caption under the number',function(){return SC.cap;},function(v){SC.cap=v;},[['of','of N sensors'],['none','None']]));
+    st1.appendChild(inPick('Caption under the number','scap',function(){return SC.cap;},function(v){SC.cap=v;}));
     var st2=section('Which sensors');secIf(st2,isStatus);
     st2.appendChild(inText('Only sensors with this tag',function(){return SC.reqTag;},function(v){SC.reqTag=v;},'for example: bandwidthsensor'));
     st2.appendChild(inText('Only sensors whose name contains',function(){return SC.nameHas;},function(v){SC.nameHas=v;},'for example: Ethernet'));
@@ -7049,7 +7112,7 @@ try{
     inL.appendChild(inText('Rows under the lamps',function(){return TL.rows;},function(v){TL.rows=v;},'for example: Operating Mode, Cycle Time'));
     showIf(inL,function(){return inKind('lamps');});in1.appendChild(inL);
     var inO=h('div');
-    inO.appendChild(inSel('Style',function(){return TL.oStyle;},function(v){TL.oStyle=v;},[['lamp','Lamp'],['switch','Switch'],['word','Word']]));
+    inO.appendChild(inPick('Style','ionoff',function(){return TL.oStyle;},function(v){TL.oStyle=v;}));
     inO.appendChild(pair(inText('Word when on',function(){return TL.onW;},function(v){TL.onW=v;},'On'),inText('Word when off',function(){return TL.offW;},function(v){TL.offW=v;},'Off')));
     inO.appendChild(inText('On when the value contains',function(){return TL.onIf;},function(v){TL.onIf=v;},'blank = On, Yes, True, Open, Running or a number above 0'));
     inO.appendChild(inSel('Which side is a problem',function(){return TL.bad;},function(v){TL.bad=v;},[['none','Neither'],['on','On is a problem (red)'],['off','Off is a problem (red)']]));
@@ -7060,13 +7123,13 @@ try{
     inS.appendChild(h('p','note','Leave a number blank to use the channel\u2019s own limits and range. Low limits set in PRTG count too.'));
     showIf(inS,function(){return inKind('tank','pv');});in1.appendChild(inS);
     var inT=h('div');
-    inT.appendChild(inSel('Shape',function(){return TL.shape;},function(v){TL.shape=v;},[['tank','Tank'],['silo','Silo']]));
+    inT.appendChild(inPick('Shape','itank',function(){return TL.shape;},function(v){TL.shape=v;}));
     inT.appendChild(inColor('Fill colour',function(){return TL.fill||'#4F8DDB';},function(v){TL.fill=v;}));
     inT.appendChild(inText('Second value under the level',function(){return TL.chan2;},function(v){TL.chan2=v;},'a channel, for example Volume'));
     showIf(inT,function(){return inKind('tank');});in1.appendChild(inT);
     var inE=h('div');
     inE.appendChild(inSel('Equipment',function(){return TL.eq;},function(v){TL.eq=v;},IEQ));
-    inE.appendChild(inSel('Layout',function(){return TL.eLay;},function(v){TL.eLay=v;},[['stack','Symbol above the text'],['row','Symbol beside the text']]));
+    inE.appendChild(inPick('Layout','ieq',function(){return TL.eLay;},function(v){TL.eLay=v;}));
     inE.appendChild(inText('Show the value of',function(){return TL.channel;},function(v){TL.channel=v;},'blank = the status word'));
     inE.appendChild(inText('Word when up',function(){return TL.upW;},function(v){TL.upW=v;},'Up, or for example Running'));
     inE.appendChild(h('p','note','The symbol takes the colour of the sensor\u2019s state.'));
@@ -7077,7 +7140,7 @@ try{
     inP.appendChild(inColor('Trend colour',function(){return TL.fill||'#4F8DDB';},function(v){TL.fill=v;}));
     showIf(inP,function(){return inKind('pv');});in1.appendChild(inP);
     var inD=h('div');
-    inD.appendChild(inSel('Style',function(){return TL.cStyle;},function(v){TL.cStyle=v;},[['ring','Ring'],['pill','Small pill']]));
+    inD.appendChild(inPick('Style','icount',function(){return TL.cStyle;},function(v){TL.cStyle=v;}));
     inD.appendChild(pair(inText('Warning at (days left)',function(){return TL.warn;},function(v){TL.warn=v;},'the channel\u2019s limit, else 30'),inText('Alarm at',function(){return TL.error;},function(v){TL.error=v;},'the channel\u2019s limit, else 7')));
     inD.appendChild(inText('Full ring at',function(){return TL.max;},function(v){TL.max=v;},'365'));
     inD.appendChild(h('p','note','For example the Days to Expiration channel of an OPC UA Certificate sensor. 0 or less shows Expired.'));
@@ -7424,7 +7487,7 @@ try{
     g2x.appendChild(inSel('Zone colours',function(){return G.npal||'prtg';},function(v){G.npal=v;},[['prtg','PRTG\u2019s (or the look\u2019s)'],['cnp','Cyan, navy and pink']]));
     var g2r=h('div');showIf(g2r,isRing);g2.appendChild(g2r);
     g2r.appendChild(pair(inSel('Shape',function(){return G.shape;},function(v){G.shape=v;},[['ring','Ring (270\u00B0)'],['half','Half ring (180\u00B0)']]),inNum('Thickness',function(){return G.thick;},function(v){G.thick=v;},4,40)));
-    g2r.appendChild(inSel('Colour',function(){return G.colorMode;},function(v){G.colorMode=v;},[['status','By status'],['accent','Accent color']]));
+    g2r.appendChild(inPick('Colour','gcolor',function(){return G.colorMode;},function(v){G.colorMode=v;}));
     g2r.appendChild(inChk('Needle (zones style)',function(){return G.needle;},function(v){G.needle=v;}));
     g2r.appendChild(inChk('Glow (LED, gradient, threshold, solid and speedometer)',function(){return !!G.glow;},function(v){G.glow=v;}));
     g2r.appendChild(inChk('Show minimum and maximum',function(){return G.showMinMax;},function(v){G.showMinMax=v;}));
@@ -7503,7 +7566,8 @@ try{
     g.appendChild(pair(inColor('Text color',function(){return Lk().text;},function(v){Lk().text=v;}),inColor('Secondary text',function(){return Lk().muted||Lk().headColor;},function(v){Lk().muted=v;})));
     g=grp('Header row',isTable);
     g.appendChild(pair(inChk('Show it',function(){return Lk().head;},function(v){Lk().head=v;}),inChk('Capitals',function(){return Lk().headUpper;},function(v){Lk().headUpper=v;})));
-    g.appendChild(pair(inSel('Header style',function(){return Lk().headStyle;},function(v){Lk().headStyle=v;},[['fill','Filled'],['line','Underlined in accent'],['plain','Plain']]),inColor('Header text',function(){return Lk().headColor;},function(v){Lk().headColor=v;})));
+    g.appendChild(inPick('Header style','thead',function(){return Lk().headStyle;},function(v){Lk().headStyle=v;}));
+    g.appendChild(inColor('Header text',function(){return Lk().headColor;},function(v){Lk().headColor=v;}));
     g.appendChild(inColor('Header fill (filled style)',function(){return Lk().headBg;},function(v){Lk().headBg=v;}));
     g=grp('Rows',isTable);
     g.appendChild(pair(inColor('Link color',function(){return Lk().link;},function(v){Lk().link=v;}),inColor('Row hover',function(){return Lk().hover;},function(v){Lk().hover=v;})));
@@ -7511,7 +7575,8 @@ try{
     g.appendChild(pair(inNum('Side padding',function(){return Lk().cellX;},function(v){Lk().cellX=v;},0,60),inChk('Striped rows',function(){return Lk().zebra;},function(v){Lk().zebra=v;})));
     g.appendChild(inColor('Stripe',function(){return Lk().zebraBg;},function(v){Lk().zebraBg=v;}));
     g=grp('Status display',isTable);
-    g.appendChild(pair(inSel('Shown as',function(){return Lk().status;},function(v){Lk().status=v;},[['dot','Colored dot'],['dottext','Dot and text'],['pill','Pill'],['text','Text only']]),inNum('Dot size',function(){return Lk().dot;},function(v){Lk().dot=v;},6,40)));
+    g.appendChild(inPick('Shown as','tstatus',function(){return Lk().status;},function(v){Lk().status=v;}));
+    g.appendChild(inNum('Dot size',function(){return Lk().dot;},function(v){Lk().dot=v;},6,40));
     g.appendChild(inChk('Tint rows that are down or warning',function(){return Lk().tint;},function(v){Lk().tint=v;}));
     g=grp('Chart',function(){return TYPE==='graph'&&(GR.kind==='sensor'||GR.kind==='sensors')&&GR.draw!=='pic';});
     g.appendChild(pair(inNum('Line width',function(){return GR.lw;},function(v){GR.lw=v;},1,6),inNum('Fill strength %',function(){return GR.fillA;},function(v){GR.fillA=v;},0,80)));

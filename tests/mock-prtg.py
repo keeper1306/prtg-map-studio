@@ -9,6 +9,7 @@ apart from the test map 2001; /controls/objectdata.htm and /editsettings stand i
 1.5.93: that form also has a background picture (a radio group and a file field, with made-up names: the real names are not
 known, Map Studio finds them by type and label); /controls/mapview.htm shows the picture as PRTG does (background-image).
 /api/mapsvg.htm gives the map's size (1920 x 1080) only when the mode has {"svg":1}, so the older tests are unchanged.
+1.5.94: /api/mapsettings.htm?type=objectproperties gives an item's settings (for editing and deleting items already on a map).
 
 Test-only control addresses:
   /__reset?items=<json>&next=<n>   set the items on the map and the next item id
@@ -174,6 +175,13 @@ class Handler(http.server.BaseHTTPRequestHandler):
                     return self.send(500, 'delete failed')
                 (state['other'].get(q.get('id'), {}) if q.get('id') not in (None, MAIN) else state['items']).pop(q.get('subid'), None)
                 return self.send(200, 'ok')
+            if path == '/api/mapsettings.htm' and q.get('type') == 'objectproperties':   # 1.5.94: an item's settings, as PRTG sends them
+                store = state['other'].get(q.get('id'), {}) if q.get('id') not in (None, MAIN) else state['items']
+                it = store.get(q.get('subid'))
+                if it is None:
+                    return self.send(404, 'no such item')
+                return self.send(200, json.dumps({'top': str(it['top']), 'left': str(it['left']), 'width': str(it['width']), 'height': str(it['height']),
+                                                  'zindex': '1', 'externallink': '', 'htmlbefore': it.get('html', ''), 'htmlafter': ''}), 'application/json')
             if path == '/api/mapsvg.htm':
                 html = ''.join('<div class="map_object" subid="%s" objectid="%s" style="left:%spx;top:%spx;width:%spx;height:%spx;z-index:1"></div>'
                                % (s, i['target'] or 0, i['left'], i['top'], i['width'], i['height'])
