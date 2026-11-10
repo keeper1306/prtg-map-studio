@@ -126,6 +126,17 @@ async function waitForServer() {
     r = await push();
     check('full storage gives a red warning', /could not save its record/.test(r.msg) && r.cls.includes('err'), r);
 
+    /* 16. 1.5.95: Feedback opens GitHub's new-issue form filled in, with the text written in Map Studio, and never the server's address */
+    await start();
+    await page.evaluate(() => { window.__opened = []; window.open = function (u) { window.__opened.push(u); return null; }; });
+    await page.click('#fbopen');
+    await page.fill('#fbtext', 'Test problem text');
+    await page.click('.fbbox .btn.primary');
+    const fbUrl = (await page.evaluate(() => window.__opened[0])) || '';
+    const fbQ = fbUrl ? Object.fromEntries(new URL(fbUrl).searchParams) : {};
+    check('feedback opens a filled-in GitHub issue form', /^https:\/\/github\.com\/keeper1306\/prtg-map-studio\/issues\/new\?/.test(fbUrl) && fbQ.template === 'problem.yml' &&
+      fbQ.what === 'Test problem text' && fbQ['prtg-version'] === '26.3.124.1728' && !!fbQ['ms-version'] && !fbUrl.includes('127.0.0.1'), { fbUrl });
+
     /* 15. 1.5.94: an item already on the map, marked for deletion, shows the delete box in the strip over the canvas at once;
        ticking it there ticks the review's box, and Review + Apply from the strip delete the item */
     await start({ '5': { target: 0, left: 0, top: 0, width: 1920, height: 1080 }, '6': { target: 3001, left: 100, top: 100, width: 300, height: 200 } });

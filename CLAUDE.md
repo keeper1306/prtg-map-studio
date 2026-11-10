@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.94.
+Last updated at version 1.5.95.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -161,6 +161,21 @@ A full run takes about 5 seconds (16 seconds the very first time).
   bar is HTML like the pill and always shows its word; Beacon's rays blink on alarm states when
   Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
   tile, badge, LED).
+
+## Feedback (1.5.95)
+
+- The owner chose option 1 of four (GitHub issue, form, e-mail, posting to a service): a "Feedback" button in the header (`#fbopen`)
+  opens a window (`fbOpen` in js/07-push.js, before `window.PUSHAPI`): Report a problem / Suggest an idea, a text box (the owner asked
+  for it), "Filled in for you" (Map Studio version, PRTG version from the `prtg-version` of the map list read at connect, `S.prtgVersion`,
+  Classic or New PRTG UI, browser from the user agent) and, for a problem, a ticked box with the error message on screen (`fbError`: visible
+  `.pst.err` / `.note.err`, the server's host replaced by `<server>`, other addresses and IPs by `<address>`, at most 1500 characters).
+  "Continue on GitHub" opens `https://github.com/keeper1306/prtg-map-studio/issues/new?template=problem.yml|idea.yml&...` in a new tab;
+  Map Studio sends nothing itself (the README's privacy promise holds). The text goes to `what` (problem) or `idea`.
+- Issue forms: `.github/ISSUE_TEMPLATE/problem.yml` (label bug) and `idea.yml` (label enhancement), text fields with the ids used in the
+  address (`what`, `expected`, `steps`, `error`, `ms-version`, `prtg-version`, `prtg-ui`, `browser`; `idea`, `why`). GitHub fills
+  issue-form text fields from query parameters named after the ids (seen in github/docs#22835, not in GitHub's own docs).
+- `tests/mock-prtg.py` sends `prtg-version` with the map list; check 16 (`window.open` caught: the address, the text, the version, no
+  server address). Checked: 16 tests. Not verified: that github.com fills the fields (needs the forms on main and a signed-in GitHub user).
 
 ## Delete box in sight, and choices as pictures in the bars (1.5.94)
 

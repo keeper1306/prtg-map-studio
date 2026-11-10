@@ -3640,6 +3640,9 @@ try{
       b.addEventListener('click',function(){kind=k[0];sync();});kinds.appendChild(b);
     });
     box.appendChild(kinds);
+    /* what the person writes goes into the form's first box (problem: "What happened?", idea: "What would you like?") */
+    var txl=el('label','fbh'), tx=el('textarea','fbtext');txl.htmlFor='fbtext';tx.id='fbtext';tx.rows=4;tx.maxLength=3000;
+    box.appendChild(txl);box.appendChild(tx);
     box.appendChild(el('div','fbh','Filled in for you'));
     var ul=el('ul','fbinfo');
     [['Map Studio',ver],['PRTG',prtg?prtg+' ('+ui+')':'not connected'],['Browser',br||'unknown']].forEach(function(r){var li=el('li');li.appendChild(el('span',null,r[0]));li.appendChild(el('b',null,r[1]));ul.appendChild(li);});
@@ -3647,12 +3650,17 @@ try{
     var errRow=null, errChk=null;
     if(err){
       errRow=el('label','fberr');errChk=el('input');errChk.type='checkbox';errChk.checked=true;errRow.appendChild(errChk);
-      var tx=el('span');tx.appendChild(el('span',null,'Add the error message on screen:'));tx.appendChild(el('code',null,err));errRow.appendChild(tx);box.appendChild(errRow);
+      var ex=el('span');ex.appendChild(el('span',null,'Add the error message on screen:'));ex.appendChild(el('code',null,err));errRow.appendChild(ex);box.appendChild(errRow);
     }
     box.appendChild(el('p','fbwarn','Issues on GitHub are public. Don\u2019t add server addresses, usernames, passhashes, passwords or customer names, and check screenshots for them.'));
     var btns=el('div','nmbtns'), no=el('button','btn ghost','Cancel'), go=el('button','btn primary','Continue on GitHub');
     no.type=go.type='button';btns.appendChild(no);btns.appendChild(go);box.appendChild(btns);
-    function sync(){[].forEach.call(kinds.children,function(b){var on=b.getAttribute('data-k')===kind;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false');});if(errRow)errRow.hidden=kind!=='problem';}
+    function sync(){
+      [].forEach.call(kinds.children,function(b){var on=b.getAttribute('data-k')===kind;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false');});
+      if(errRow)errRow.hidden=kind!=='problem';
+      txl.textContent=kind==='problem'?'Describe the problem':'Describe your idea';
+      tx.placeholder=kind==='problem'?'What did you do, and what went wrong?':'What would you like Map Studio to do?';
+    }
     function close(){document.removeEventListener('keydown',key,true);if(ov.parentNode)ov.parentNode.removeChild(ov);}
     function key(e){if(e.key==='Escape'){e.stopPropagation();close();}}
     no.addEventListener('click',close);
@@ -3661,11 +3669,12 @@ try{
       var q={template:kind+'.yml','ms-version':ver,browser:br};
       if(prtg){q['prtg-version']=prtg;q['prtg-ui']=ui;}
       if(kind==='problem'&&errChk&&errChk.checked)q.error=err;
+      if(tx.value.trim())q[kind==='problem'?'what':'idea']=tx.value.trim();
       var u=FB.repo+'/issues/new?'+Object.keys(q).map(function(k){return encodeURIComponent(k)+'='+encodeURIComponent(q[k]);}).join('&');
       window.open(u,'_blank','noopener');close();
     });
     ov.appendChild(box);document.body.appendChild(ov);document.addEventListener('keydown',key,true);sync();
-    try{kinds.firstChild.focus();}catch(e){}
+    try{tx.focus();}catch(e){}
   }
   (function(){var b=$('fbopen');if(b)b.addEventListener('click',fbOpen);})();
 

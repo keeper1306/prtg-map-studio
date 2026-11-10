@@ -25,8 +25,8 @@ Map Studio uses parts of PRTG that are not a documented, stable interface: the
 map designer's own requests, the map settings form and the files in
 `webroot\mapobjects`. Paessler can change these in any update, so **a newer (or
 older) PRTG version may break some or all of Map Studio.** If something stops
-working after you update PRTG, please
-[open an issue](https://github.com/keeper1306/prtg-map-studio/issues) and say
+working after you update PRTG, please press **Feedback** in Map Studio (or
+[open an issue](https://github.com/keeper1306/prtg-map-studio/issues)) and say
 which PRTG version you have.
 
 Use it at your own risk, and keep a copy of important maps before changing
@@ -152,6 +152,11 @@ treats them as two servers and cannot undo a push made through the other one.
   items marked for deletion**, then review and apply again.
 - **Something stopped working after a PRTG update** — See
   [Which PRTG versions it works with](#which-prtg-versions-it-works-with).
+
+To report a problem or suggest an idea, press **Feedback** at the top right of
+Map Studio. It opens a new issue on this page with Map Studio's and PRTG's
+versions filled in; you check it and press **Create** on GitHub. Issues are
+public, so leave out server addresses, usernames, passhashes and customer names.
 
 ## Privacy and security
 
