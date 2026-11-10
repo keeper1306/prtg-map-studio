@@ -175,7 +175,8 @@ A full run takes about 5 seconds (16 seconds the very first time).
   address (`what`, `expected`, `steps`, `error`, `ms-version`, `prtg-version`, `prtg-ui`, `browser`; `idea`, `why`). GitHub fills
   issue-form text fields from query parameters named after the ids (seen in github/docs#22835, not in GitHub's own docs).
 - `tests/mock-prtg.py` sends `prtg-version` with the map list; check 16 (`window.open` caught: the address, the text, the version, no
-  server address). Checked: 16 tests. Not verified: that github.com fills the fields (needs the forms on main and a signed-in GitHub user).
+  server address). Checked: 16 tests; on github.com (signed in as keeper1306, 2026-11-10) the problem form opened with the text and all four
+  version fields filled in (closed without creating). Not checked from inside the extension in Chrome, nor the idea form on github.com.
 
 ## Delete box in sight, and choices as pictures in the bars (1.5.94)
 
