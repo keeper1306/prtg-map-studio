@@ -1,0 +1,38 @@
+name: Suggest an idea
+description: Something you would like PRTG Map Studio to do, or to do differently.
+title: "[Idea]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for the idea. Issues on GitHub are public, so please don't write server addresses, usernames,
+        passhashes, passwords or customer names here.
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like?
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: How would it help you?
+  - type: input
+    id: ms-version
+    attributes:
+      label: PRTG Map Studio version
+      description: Filled in by Map Studio.
+  - type: input
+    id: prtg-version
+    attributes:
+      label: PRTG version
+      description: Filled in by Map Studio when it is connected to PRTG.
+  - type: input
+    id: prtg-ui
+    attributes:
+      label: PRTG interface
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and system

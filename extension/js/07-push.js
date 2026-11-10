@@ -458,6 +458,7 @@ try{
       detectUI(rawBase()).then(function(){if(gen!==CONN.gen)throw CONNCANCEL;describeWhere();gloadShow($('prtgpop').querySelector('.lgcard'),'conn','Reading your maps\u2026');return http('GET','/api/table.json',{content:'maps',columns:'name,objid'});}).then(function(t){
         if(gen!==CONN.gen)throw CONNCANCEL;
         var j=parseJson(t,'The list of maps'), maps=(j&&j.maps)||[], sel=$('pushmap');
+        S.prtgVersion=String((j&&j['prtg-version'])||'');   /* 1.5.95: for the feedback form */
         sel.innerHTML='';
         maps.forEach(function(m){var o=document.createElement('option');o.value=String(m.objid);o.textContent=m.name;sel.appendChild(o);});
         S.maps=maps;
@@ -3606,6 +3607,68 @@ try{
       return {ok:true,target:tg.name};
     }).catch(function(e){return {ok:false,why:(e&&e.message)||'no answer'};});
   }
+  /* ---- 1.5.95: Feedback. Opens a new issue on the project's GitHub page in a new tab, with the form (.github/ISSUE_TEMPLATE)
+     filled in through the address: Map Studio's version, PRTG's version and interface (when connected), the browser, and, if the
+     person agrees, the error message on screen with the server's address taken out. Nothing is sent by Map Studio itself: the person
+     reads it on GitHub and presses Create there. GitHub fills a form's text fields from parameters named after their ids. */
+  var FB={repo:'https://github.com/keeper1306/prtg-map-studio'};
+  function fbBrowser(){
+    var u=navigator.userAgent||'', c=/(?:Edg|OPR|Chrome)\/([\d.]+)/.exec(u), n=/Edg\//.test(u)?'Edge':/OPR\//.test(u)?'Opera':'Chrome';
+    var os=/Windows NT 10/.test(u)?'Windows 10/11':/Windows/.test(u)?'Windows':/Mac OS X/.test(u)?'macOS':/Linux/.test(u)?'Linux':'';
+    return (c?n+' '+c[1].split('.')[0]:'')+(os?' on '+os:'');
+  }
+  /* error messages showing now, newest-looking first; the server's address and any other address are taken out */
+  function fbError(){
+    var host='';try{host=new URL(rawBase()).host;}catch(e){}
+    var t=[].filter.call(document.querySelectorAll('.pst.err,.note.err,.err.pst'),function(n){return !n.closest('[hidden]')&&!n.closest('.nmov')&&n.offsetParent&&(n.textContent||'').trim();})
+      .map(function(n){return n.textContent.replace(/\s+/g,' ').trim();});
+    t=t.filter(function(x,i){return t.indexOf(x)===i;}).slice(0,3).join('\n');
+    if(host)t=t.split(host).join('<server>');
+    return t.replace(/https?:\/\/[^\s"')<>]+/g,'<address>').replace(/\b\d{1,3}(?:\.\d{1,3}){3}(?::\d+)?\b/g,'<address>').slice(0,1500);
+  }
+  function fbOpen(){
+    if(document.querySelector('.fbbox'))return;
+    var ver=CFG.version||'', prtg=S.prtgVersion||'', ui=S.prtgVersion?(newUI()?'New PRTG UI':'Classic'):'', br=fbBrowser(), err=fbError(), kind='problem';
+    var ov=document.createElement('div'), box=document.createElement('div');ov.className='nmov';box.className='nmbox fbbox';
+    ov.setAttribute('role','dialog');ov.setAttribute('aria-modal','true');ov.setAttribute('aria-labelledby','fbttl');
+    function el(tag,cls,txt){var n=document.createElement(tag);if(cls)n.className=cls;if(txt!=null)n.textContent=txt;return n;}
+    box.appendChild(el('h3',null,'Send feedback')).id='fbttl';
+    box.appendChild(el('p','fbp','Your feedback goes to PRTG Map Studio\u2019s page on GitHub as a new issue. GitHub opens in a new tab with the form filled in; you read it, add what you want and press Create there. You need a GitHub account.'));
+    var kinds=el('div','fbkinds');
+    [['problem','Report a problem','Something does not work as expected'],['idea','Suggest an idea','Something you would like it to do']].forEach(function(k){
+      var b=el('button','fbkind');b.type='button';b.setAttribute('data-k',k[0]);b.appendChild(el('b',null,k[1]));b.appendChild(el('span',null,k[2]));
+      b.addEventListener('click',function(){kind=k[0];sync();});kinds.appendChild(b);
+    });
+    box.appendChild(kinds);
+    box.appendChild(el('div','fbh','Filled in for you'));
+    var ul=el('ul','fbinfo');
+    [['Map Studio',ver],['PRTG',prtg?prtg+' ('+ui+')':'not connected'],['Browser',br||'unknown']].forEach(function(r){var li=el('li');li.appendChild(el('span',null,r[0]));li.appendChild(el('b',null,r[1]));ul.appendChild(li);});
+    box.appendChild(ul);
+    var errRow=null, errChk=null;
+    if(err){
+      errRow=el('label','fberr');errChk=el('input');errChk.type='checkbox';errChk.checked=true;errRow.appendChild(errChk);
+      var tx=el('span');tx.appendChild(el('span',null,'Add the error message on screen:'));tx.appendChild(el('code',null,err));errRow.appendChild(tx);box.appendChild(errRow);
+    }
+    box.appendChild(el('p','fbwarn','Issues on GitHub are public. Don\u2019t add server addresses, usernames, passhashes, passwords or customer names, and check screenshots for them.'));
+    var btns=el('div','nmbtns'), no=el('button','btn ghost','Cancel'), go=el('button','btn primary','Continue on GitHub');
+    no.type=go.type='button';btns.appendChild(no);btns.appendChild(go);box.appendChild(btns);
+    function sync(){[].forEach.call(kinds.children,function(b){var on=b.getAttribute('data-k')===kind;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false');});if(errRow)errRow.hidden=kind!=='problem';}
+    function close(){document.removeEventListener('keydown',key,true);if(ov.parentNode)ov.parentNode.removeChild(ov);}
+    function key(e){if(e.key==='Escape'){e.stopPropagation();close();}}
+    no.addEventListener('click',close);
+    ov.addEventListener('mousedown',function(e){if(e.target===ov)close();});
+    go.addEventListener('click',function(){
+      var q={template:kind+'.yml','ms-version':ver,browser:br};
+      if(prtg){q['prtg-version']=prtg;q['prtg-ui']=ui;}
+      if(kind==='problem'&&errChk&&errChk.checked)q.error=err;
+      var u=FB.repo+'/issues/new?'+Object.keys(q).map(function(k){return encodeURIComponent(k)+'='+encodeURIComponent(q[k]);}).join('&');
+      window.open(u,'_blank','noopener');close();
+    });
+    ov.appendChild(box);document.body.appendChild(ov);document.addEventListener('keydown',key,true);sync();
+    try{kinds.firstChild.focus();}catch(e){}
+  }
+  (function(){var b=$('fbopen');if(b)b.addEventListener('click',fbOpen);})();
+
   window.PUSHAPI={state:S,connect:connect,review:review,push:push,undo:undo,normalize:normalize,csrf:csrf,renderObjList:renderObjList,livePreview:livePreview};
   updateButtons();
   storageGet(function(items){

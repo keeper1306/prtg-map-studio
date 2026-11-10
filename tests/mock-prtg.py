@@ -112,7 +112,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 state['log'].append({'path': path, 'q': {k: v for k, v in q.items() if k not in ('passhash', 'htmlbefore_', 'htmlafter_', '__files')}})
             mode = state['mode']
             if path == '/api/table.json' and q.get('content') == 'maps':
-                return self.send(200, json.dumps({"maps": state['maps']}), 'application/json')
+                return self.send(200, json.dumps({'prtg-version': '26.3.124.1728', 'treesize': len(state['maps']), 'maps': state['maps']}), 'application/json')   # 1.5.95: the version, as PRTG sends it
             if path == '/addmap2.htm':
                 oid = 3000 + len(state['maps'])
                 state['maps'].append({'objid': oid, 'name': q.get('name_', ''), 'w': q.get('width_'), 'h': q.get('height_')})

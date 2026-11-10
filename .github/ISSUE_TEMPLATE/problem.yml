@@ -1,0 +1,55 @@
+name: Report a problem
+description: Something in PRTG Map Studio does not work as expected.
+title: "[Problem]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for taking the time to report this. Issues on GitHub are public, so please don't write server
+        addresses, usernames, passhashes, passwords or customer names here, and check any screenshot for them too.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did and what went wrong.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to make it happen again
+      placeholder: |
+        1. Open the Object builder
+        2. ...
+  - type: textarea
+    id: error
+    attributes:
+      label: Error message
+      description: Filled in by Map Studio when there was an error message on screen.
+      render: text
+  - type: input
+    id: ms-version
+    attributes:
+      label: PRTG Map Studio version
+      description: Filled in by Map Studio.
+    validations:
+      required: true
+  - type: input
+    id: prtg-version
+    attributes:
+      label: PRTG version
+      description: Filled in by Map Studio when it is connected to PRTG.
+  - type: input
+    id: prtg-ui
+    attributes:
+      label: PRTG interface
+      description: Classic or the new PRTG UI.
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and system
