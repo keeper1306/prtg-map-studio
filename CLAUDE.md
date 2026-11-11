@@ -162,6 +162,26 @@ A full run takes about 5 seconds (16 seconds the very first time).
   Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
   tile, badge, LED).
 
+## SolarWinds-style maps 2229 and 2230 (2026-11-11, no extension change)
+
+- The owner sent two SolarWinds Orion screenshots ("Current Servers": RDS session counts, two server tables, graphs; "East/West Network":
+  utilisation and traffic numbers, peak numbers, line charts) and asked for two maps as close as possible using only Map Studio and PRTG's own
+  objects. Maps: 2229 "Map Studio - Current Servers" (1600 x 1250) and 2230 "Map Studio - East/West Network" (1600 x 1080), background #EFEFEF,
+  "scale to fit" on. Tabs at the top are frames with map links to each other.
+- 10 object files made by the Object builder's own code (a copy of the extension with `window.__OBX=function(s){return eval(s)}` added to the
+  objects module, driven by Playwright: set the model, `codeNow()`, `fileNameOf()`), installed in `mapobjects`, byte-checked. Look PRTG new UI with
+  Open Sans; status counts with the Color-blind safe set. Five were made again after looking at the map (ping table `count` 10, HTTP graphs only
+  `Loading Time`, sparkline titles say bytes/s); the first versions are in `Desktop\PRTG Map Studio\mapobjects-backup-2026-11-11\`.
+- The canvas (frames, banners, objects) was built with `DASHAPI.add`/`addObject` plus the layout data, pushed to a copy of `mock-prtg.py` that also
+  lists the new files and logs every parameter, and the logged addobjecttomap/editmapobject calls were replayed on the real PRTG from a signed-in
+  tab (Custom HTML element there is `x_ownhtmlonly.htm`).
+- Copies of the files, both layouts, pictures and a Spanish LEEME: `Desktop\Map Studio - Current Servers and East-West maps\`.
+- Limits (no data in this lab): no RDS/CPU/memory per server, no utilisation % (a bar against 1 Gbit/s instead), no peak number (sparkline with the
+  latest value), graph periods only 2 h / 2 d / 30 d / 365 d, graph values are raw bytes/s without a unit.
+- Bug seen, not fixed: a graph legend shows a value beginning with "<" as `&lt;` (e.g. "Bytes Received &lt; 0.01 MB").
+- Seen: `mapobjects` no longer holds the earlier kit files or the three mockup dashboard files listed below (cause not checked).
+- Checked in classic View Map (`mapshow.htm`). Not checked: the new UI (`localhost:1616` showed Chrome's certificate warning), the public page.
+
 ## Feedback (1.5.95)
 
 - The owner chose option 1 of four (GitHub issue, form, e-mail, posting to a service): a "Feedback" button in the header (`#fbopen`)
