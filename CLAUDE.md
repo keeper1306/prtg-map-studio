@@ -189,7 +189,8 @@ A full run takes about 5 seconds (16 seconds the very first time).
   table with `anyType` off and count 0 identical to the old blank table. On the real PRTG (test map 2231 "Map Studio test - default
   table", items on Local Probe 1, group 50, device 2095, sensor 2106, file `map-studio-zz-test.htm`, category "Map Studio Tests"): right
   table on all four in `mapobjectpreview`, in the Map Designer, in the object list's hover preview and in classic View Map; unchanged after
-  PRTG's refresh (40 s); paging one table leaves the others alone. Not checked: the new UI (`:1616` asked for a login), the public page.
+  PRTG's refresh (40 s); paging one table leaves the others alone; the new UI (`https://prtg.whatthehelbert.com:1616`, the owner
+  signed in) View Map and Map Designer the same. Not checked: the public page.
   The test map and the test file are still there (no delete through the bridge).
 
 ## SolarWinds-style maps 2229 and 2230 (2026-11-11, no extension change)
