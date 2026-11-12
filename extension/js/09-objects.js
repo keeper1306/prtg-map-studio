@@ -564,8 +564,11 @@ try{
     if(css){o.push('<style>');o.push(css);o.push('</style>');o.push('');}
     /* 1.5.105: a Fixed table's root is overflow:auto, but this box clipped the table at its own width, so a table narrower than
        its columns was cut on the right with no way to scroll there. Letting it overflow hands the root both scrollbars.
-       Flexible tables are laid out by tableFitRuntime, which sets this box's overflow itself; a turned card still has to clip. */
-    o.push('  <div class="'+(T.box||'maptablecontainer')+'" style="overflow:'+((fjs||tableRot(T)!==0)?'hidden':'visible')+'">');
+       Flexible tables are laid out by tableFitRuntime, which sets this box's overflow itself; a turned card still has to clip.
+       1.5.110: width:max-content;min-width:100% makes this box grow to the table's natural width, so the title bar stretches
+       across the full scrollable area rather than stopping at the visible edge. */
+    var _mcov=(fjs||tableRot(T)!==0);
+    o.push('  <div class="'+(T.box||'maptablecontainer')+'" style="overflow:'+(_mcov?'hidden':'visible')+(_mcov?'':';width:max-content;min-width:100%')+'">');
     /* the default table: each of its two tables needs its own PRTG plugin (one plugin with two tables mixes them up when PRTG refreshes);
        the box around them has "prtg-plugin" in its class name, so the Flexible scaling (tableFitRuntime) scales both together */
     if(any)o.push('    <div class="ms-box-prtg-plugin">');
@@ -6463,10 +6466,11 @@ try{
     prevEl.className='';
     var cv=document.getElementById('ocanvas'), avail=Math.max(320,(cv&&cv.clientWidth?cv.clientWidth:900)-2*ED.x);
     var W=(parseInt(T.initW,10)>0)?parseInt(T.initW,10):(w>0?w:avail), Hset=(parseInt(T.initH,10)>0)?parseInt(T.initH,10):0, rot=edRot();
+    var _pvMcov=(tableFits(T)||rot!==0);
     /* the preview turns a wrapper, so its handles turn with it; the file turns the inner container (see tableExtraCss) and looks the same */
     prevEl.innerHTML='<div id="mapshow" style="position:relative"><div class="edwrap'+(edOn()?' edon':'')+'" id="edwrap" style="position:absolute;left:'+Math.round(ED.x)+'px;top:'+Math.round(ED.y)+'px;width:'+W+'px;'+(Hset?'height:'+Hset+'px;':'')+(rot?'transform:rotate('+rot+'deg);transform-origin:50% 50%;':'')+'">'
       +'<div class="map_object map_table '+cls+'" style="position:relative;overflow:auto;width:100%;'+(Hset?'height:100%;':'')+'">'
-      +'<div class="maptablecontainer" style="overflow:'+((tableFits(T)||rot!==0)?'hidden':'visible')+'">'+(any?'<div class="ms-box-prtg-plugin"><div class="ms-sens">':'')+'<div class="prtg-plugin"><div class="table-wrapper"><form class="form-sensors">'
+      +'<div class="maptablecontainer" style="overflow:'+(_pvMcov?'hidden':'visible')+(_pvMcov?'':';width:max-content;min-width:100%')+'">'+(any?'<div class="ms-box-prtg-plugin"><div class="ms-sens">':'')+'<div class="prtg-plugin"><div class="table-wrapper"><form class="form-sensors">'
       +'<div class="tabletitle">'+esc(title)+'</div>'
       +(pvMore&&T.infoheader?'<div class="pagenavigation pagenavigation-header"><div class="itemcount"><span class="table_itemcount_selector">Items: <a class="reloadtablelink selected" href="#">50</a></span></div></div>':'')
       +'<table class="table hoverable sensors"><thead class="headerswithlinks"><tr>'+th+'</tr></thead><tbody>'+tb+'</tbody>'
