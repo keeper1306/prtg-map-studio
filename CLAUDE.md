@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.109.
+Last updated at version 1.5.110.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -148,6 +148,24 @@ A full run takes about 5 seconds (16 seconds the very first time).
   makes Map Studio treat them as two servers: Review shows already-pushed items as new, and Undo
   is not offered. Confirmed on the real PRTG at 1.5.43. Workaround: always use the same address.
   The owner chose to leave this until after `app.js` is split (the split is now done, at 1.5.53).
+
+## Title bar covers full scrollable width (1.5.110)
+
+- The owner saw the table object's title bar stopping at the visible right edge of the preview box
+  when the table content was wider than the box (a horizontal scrollbar visible at the bottom).
+- Root cause: `maptablecontainer` is a standard block element, so its width defaults to 100 % of
+  its parent — the visible-width root `.map_object` div. The 1.5.105 fix gave it `overflow:visible`,
+  which lets the inner `<table>` overflow and triggers the root's horizontal scrollbar, but
+  `maptablecontainer` itself stayed at the visible width, so `.tabletitle` (a block child) matched
+  only the visible width, not the full table width.
+- Fix in `js/09-objects.js`: for the `overflow:visible` case (Fixed, non-rotated tables) the inline
+  style of `maptablecontainer` now also carries `width:max-content;min-width:100%`. `max-content`
+  makes the container grow to fit its widest descendant (the `<table>`); `min-width:100%` prevents
+  it being narrower than the visible box when the table is narrow. Applied in both `buildTable`
+  (the actual object file HTML) and `drawTablePreview` (the in-builder preview), keeping both in
+  sync. The `overflow:hidden` path for Flexible tables and rotated tables is unchanged.
+- 16 tests pass. Not verified on the real PRTG (fix confirmed in the builder preview and test suite
+  only).
 
 ## New toolbar icon, made bigger, then the odd end-blobs removed (1.5.107 to 1.5.109)
 
