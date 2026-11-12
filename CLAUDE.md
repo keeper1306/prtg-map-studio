@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.102.
+Last updated at version 1.5.103.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -161,6 +161,30 @@ A full run takes about 5 seconds (16 seconds the very first time).
   bar is HTML like the pill and always shows its word; Beacon's rays blink on alarm states when
   Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
   tile, badge, LED).
+
+## Row padding for every table, paging in the look's colours (1.5.103)
+
+- The owner asked to fix the row padding for the other tables too, and for the paging parts to be readable and pleasant (a look may be
+  redesigned if needed; none was).
+- Row padding: the `!important` rule moved out of `anyTabCss` into `tableCss`, so every table in a Map Studio look gets the look's padding,
+  middle alignment and line height 1.4. Tables in PRTG's own look (`L.mode==='prtg'`, which `tableCss` returns early for) are untouched, so
+  all 41 compared object files and the three PRTG-look table templates stay byte-identical; 12 template-plus-Map-Studio-look files gain
+  10 lines and lose none.
+- `pagingCss(T,cls)`, next to `pgPx`/`pgHeadH`/`pgFootH`: PRTG paints its "Items" line and page arrows #575756 with #EFEEEE spent arrows,
+  at 11 px, whatever the look. Now, for a Map Studio look: text in `muted`, page sizes and live arrows in `link`, the current size in
+  `text` bold, spent arrows `tint(muted,0.55)`, hover `text` (the accent is only 3.2 to 3.9 against the card on four dark looks), a
+  `line` hairline over the arrows row, and the look's horizontal padding so both line up with the columns. The arrows are glyphs from
+  PRTG's own `prtg-icons` font in `::before`, which take the `color`, so only colours are set, never the glyphs. Contrast against the card
+  for all 13 Map Studio looks: muted 5.3 to 8.8, link 4.3 to 8.3, text 7.9 to 16.3; the lowest is Slate fintech's link at 4.27.
+- Sizes follow the look: `pgPx` = max(11, size x 11/13), `pgHeadH` = pgPx + 5 (12 px of space above), `pgFootH` = pgPx x 2 + 26 (48 at 11,
+  as PRTG lays it out). `tableNeedH` uses the same three, dropping its old 12/15/47 constants, and ends with +4 px of slack (the parts
+  round differently per look; 1 px over would put a scrollbar there).
+- Preview: the paging parts now show for every table with a row limit, not only the default one, and the "Items" line floats right and
+  shows only the current size, as PRTG does. `PRTGBASE` paints them in PRTG's own greys, so the preview shows what a look has to beat.
+- Checked on the real PRTG (map 2231, classic View Map and the new UI at :1616, the owner signed in): PRTG new UI look, content 587 in a
+  588 px box (and 544 with the slack) with no scrollbar; Dark card, content 541, all four items fit 544 with no scrollbar; the colours
+  land (muted #A9B7CA, link #38BDF8, spent arrows at 55 %), row padding 9px 14px, text 13 px. 16 tests; 41 files identical.
+- Not checked: the other 11 looks on the real PRTG (formula and contrast only), the public page, PRTG's own page-size flyout once opened.
 
 ## Default table: preview with PRTG's paging parts, real row height (1.5.102)
 

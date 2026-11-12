@@ -160,9 +160,7 @@ try{
     c.push(r+':has(.ms-ch tbody tr.odd) .ms-ch{display:block;}');
     c.push(r+':has(.ms-ch tbody tr.odd) .ms-sens{display:none;}');
     /* 1.5.99: PRTG's own stylesheet sets table cells to 90 % (13 px came out as 11.7 px on PRTG 26.3), so the look's text size is enforced */
-    if(L.mode!=='prtg'){c.push(r+' tbody td{font-size:'+L.size+'px !important;}');c.push(r+' thead th{font-size:'+thPx(T)+'px !important;}');
-      /* 1.5.102: PRTG's ".table tbody tr td" (padding 12px 10px 3px, baseline) is more specific than the look's rule, so Row padding did nothing in PRTG */
-      c.push(r+' tbody td{padding:'+L.pad+'px '+L.cellX+'px !important;vertical-align:middle !important;line-height:1.4 !important;}');c.push(r+' .tabletitle{line-height:1.4 !important;}');}
+    if(L.mode!=='prtg'){c.push(r+' tbody td{font-size:'+L.size+'px !important;}');c.push(r+' thead th{font-size:'+thPx(T)+'px !important;}');}
     if(!st||L.mode==='prtg')return c;
     var S=[['up','sg'],['warning','sy'],['unusual','so'],['down','sr'],['paused','sb']];
     function rows(k,tail){return r+' tbody tr[class^="'+k+'"] '+tail+','+r+' tbody tr[class*=" '+k+'"] '+tail;}
@@ -237,6 +235,11 @@ try{
     c.push(r+' tbody tr:last-child td{border-bottom:0;}');
     if(L.zebra)c.push(r+' tbody tr:nth-child(even) td{background:'+L.zebraBg+';}');
     c.push(r+' tbody tr:hover td{background:'+L.hover+';}');
+    /* 1.5.103: PRTG's own ".table tbody tr td" rule (padding 12px 10px 3px, baseline) is more specific than the rule above,
+       so the look's Row padding only lands with !important. Without it every table kept PRTG's spacing on a map. */
+    c.push(r+' tbody td{padding:'+L.pad+'px '+L.cellX+'px !important;vertical-align:middle !important;line-height:1.4 !important;}');
+    c.push(r+' .tabletitle{line-height:1.4 !important;}');
+    pagingCss(T,cls).forEach(function(x){c.push(x);});
     if(T.anyType)anyTabCss(T,cls,hasStatus).forEach(function(x){c.push(x);});
     if(L.tint&&hasStatus){
       c.push(r+' tbody tr.rowdown td{background:'+tint(L.c.down,0.12)+';}');
@@ -357,14 +360,33 @@ try{
     var lk=T.links!==false&&T.cols.some(function(k){return k==='sensor'||k==='device'||k==='group';});
     /* 1.5.102: the look's padding, line height 1.4 and the line under the row (39.5 px on PRTG 26.3); PRTG's name links are
        inline blocks with 1 px above and below, which makes a row with them 2 px taller (41.4 px) */
-    var row=2*(parseFloat(L.pad)||9)+1.4*z+1.25+(lk?2:0), h=12+2*ip+n*row;
+    var row=2*(parseFloat(L.pad)||9)+1.4*z+1.25+(lk?2:0), h=2*ip+n*row;
     if(T.showTitle!==false)h+=Math.round((parseFloat(L.titleSize)||z)*1.25)+13+(bar?8:0);
     if(L.head!==false)h+=Math.round(thPx(T)*1.25)+17;
-    if(T.infoheader)h+=15;
-    if(parseInt(T.count,10)>0)h+=47;
-    return Math.max(120,Math.ceil(h));
+    if(T.infoheader)h+=12+pgHeadH(T);            /* the "Items" line, with the space above it */
+    if(parseInt(T.count,10)>0)h+=pgFootH(T);     /* the page arrows */
+    return Math.max(120,Math.ceil(h)+4);   /* 4 px of slack: the parts round differently per look, and 1 px over would put a scrollbar there */
   }
   function tableAutoH(T){if(T.anyType&&T.autoH!==false)T.initH=String(tableNeedH(T));}   /* 1.5.100: Fixed tables too (the default) */
+  /* PRTG's own paging parts: the "Items: 50 100" line over a table with many rows, and the page arrows under it (tfoot).
+     PRTG paints them grey (#575756, arrows #EFEEEE) whatever the look, which is unreadable on a dark card, and writes them
+     at 11 px whatever the text size. These give them the look's colours and a size that follows the look. */
+  function pgPx(T){var z=parseFloat(T.look&&T.look.size)||13;return Math.max(11,Math.round(z*11/13));}
+  function pgHeadH(T){return pgPx(T)+5;}          /* the line itself; 12 px of space sits above it */
+  function pgFootH(T){return pgPx(T)*2+26;}       /* 48 px at 11 px, as PRTG lays it out */
+  function pagingCss(T,cls){
+    var r='.'+cls, L=T.look, c=[], z=pgPx(T), soft=(L.muted||L.headColor||L.text), faint=tint(soft,0.55);
+    if(L.mode==='prtg')return c;
+    c.push(r+' .pagenavigation,'+r+' .pagenavigation *{font-size:'+z+'px !important;color:'+soft+' !important;letter-spacing:0;text-transform:none;}');
+    c.push(r+' .pagenavigation-header{margin:12px 0 0 !important;padding:0 '+L.cellX+'px !important;height:'+pgHeadH(T)+'px !important;line-height:'+pgHeadH(T)+'px !important;}');
+    c.push(r+' tfoot.pagenavigation th{height:'+pgFootH(T)+'px !important;box-sizing:border-box;padding:0 '+L.cellX+'px !important;vertical-align:middle !important;background:transparent !important;border-bottom:0 !important;border-top:1px solid '+L.line+' !important;}');
+    c.push(r+' .pagenavigation a,'+r+' .pagenavigation a::before{color:'+L.link+' !important;text-decoration:none;}');
+    c.push(r+' .pagenavigation a:hover,'+r+' .pagenavigation a:hover::before{color:'+L.text+' !important;}');
+    c.push(r+' .pagenavigation a.selected,'+r+' .pagenavigation a.selected::before{color:'+L.text+' !important;font-weight:700;}');
+    c.push(r+' .pagenavigation a.disabled,'+r+' .pagenavigation a.disabled::before{color:'+faint+' !important;}');
+    c.push(r+' .pagenavigation a.arrow{padding:0 4px !important;}');
+    return c;
+  }
   /* 1.5.100: the header labels of the default table keep their proportion to the text (10 px for 13 px); other tables keep size - 3 */
   function thPx(T){var z=parseFloat(T.look&&T.look.size)||13;return T.anyType?Math.round(z*10/13*10)/10:Math.max(9,z-3);}
   function tableFitScript(T,cls){
@@ -5056,14 +5078,16 @@ try{
     +':where(#opreview) .table td .parentItem,:where(#opreview) .table td .parentItem *{color:#9a9b9b;font-size:.78rem;}'
     +':where(#opreview) .map_table{line-height:normal;}'
     +':where(#opreview) .table tbody tr td a{display:inline-block;max-width:100%;padding-top:1px;padding-bottom:1px;vertical-align:bottom;}'   /* PRTG's map page: the builder's own 1.5 line height made every preview row taller */
-    /* the "Items" line and the page arrows, measured on PRTG 26.3: 12 px above and 16 px tall, and 48 px tall; 11.7 px and 10.4 px text */
-    +':where(#opreview) .pagenavigation-header{margin-top:12px;height:16px;font-size:11.7px;line-height:16px;}'
-    +':where(#opreview) .pagenavigation-header a{color:inherit;text-decoration:none;margin-right:4px;}'
+    /* PRTG's own paging parts as PRTG itself paints them (measured on PRTG 26.3), so the preview shows what a look has to beat:
+       grey text at 11.7 px, arrows 10.4 px in #EFEEEE / #575756, the "Items" line 16 px tall under 12 px of space, the arrows' row 48 px */
+    +':where(#opreview) .pagenavigation-header{margin-top:12px;height:16px;font-size:11.7px;line-height:16px;color:#575756;}'
+    +':where(#opreview) .pagenavigation-header .itemcount{float:right;}'
+    +':where(#opreview) .pagenavigation-header a{color:#575756;text-decoration:none;}'
     +':where(#opreview) .pagenavigation-header a.selected{font-weight:700;}'
     +':where(#opreview) .table tfoot.pagenavigation th{height:48px;box-sizing:border-box;padding:16px 10px 15px;vertical-align:middle;border-bottom:0;}'
     +':where(#opreview) .tablenavigation{font-size:11px;color:#575756;font-weight:400;text-transform:none;letter-spacing:0;}'
-    +':where(#opreview) .tablenavigation a{padding:0 4px;color:#575756;text-decoration:none;font-size:12px;}'
-    +':where(#opreview) .tablenavigation a.disabled{color:#c8c8c8;}';
+    +':where(#opreview) .tablenavigation a{padding:0 4px;color:#575756;text-decoration:none;font-size:10.4px;}'
+    +':where(#opreview) .tablenavigation a.disabled{color:#EFEEEE;}';
   /* ---------- editing in the preview: resize, rotate, edit and move the title (tables first) ---------- */
   var edBusy=false;
   var ED={on:true,x:120,y:80,sel:null};   /* the box starts well in from the edge: room to grow to the left and above, and for the rotate handle */
@@ -6372,7 +6396,7 @@ try{
     if(onS)rows=[];   /* on a sensor PRTG's sensors table has one empty row, as below */
     /* the default table's preview stands for a group with more sensors than the table shows, as its height does (tableNeedH):
        fill up to the row limit with more sample rows, and show the two parts PRTG adds there, the "Items" line and the page arrows */
-    var pvN=parseInt(T.count,10), pvMore=any&&!onS&&pvN>0&&rows.length>0&&!T.status.length&&!T.onlyValue;
+    var pvN=parseInt(T.count,10), pvMore=!onS&&pvN>0&&rows.length>0&&!T.status.length&&!T.onlyValue&&L.mode!=='prtg';
     if(pvMore)for(i=rows.length;i<pvN;i++)rows.push({g:'up',status:'Up',sensor:'Ping',device:'host-'+(i+1<10?'0':'')+(i+1),path:'Local Probe > Lab > host-'+(i+1),group:'Lab',message:'OK',lastvalue:(4+i)+' msec',down:'',uptime:'100 %'});
     rows.forEach(function(r,ri){
       tb+='<tr class="'+(ri%2?'even':'odd')+' '+(any?(SCL[r.g]||''):'sg')+'">';
@@ -6400,7 +6424,7 @@ try{
       +'<div class="map_object map_table '+cls+'" style="position:relative;overflow:auto;width:100%;'+(Hset?'height:100%;':'')+'">'
       +'<div class="maptablecontainer" style="overflow:hidden">'+(any?'<div class="ms-box-prtg-plugin"><div class="ms-sens">':'')+'<div class="prtg-plugin"><div class="table-wrapper"><form class="form-sensors">'
       +'<div class="tabletitle">'+esc(title)+'</div>'
-      +(pvMore&&T.infoheader?'<div class="pagenavigation pagenavigation-header"><div class="itemcount"><span class="table_itemcount_selector">Items: <a class="reloadtablelink selected" href="#">50</a> <a class="reloadtablelink" href="#">100</a></span></div></div>':'')
+      +(pvMore&&T.infoheader?'<div class="pagenavigation pagenavigation-header"><div class="itemcount"><span class="table_itemcount_selector">Items: <a class="reloadtablelink selected" href="#">50</a></span></div></div>':'')
       +'<table class="table hoverable sensors"><thead class="headerswithlinks"><tr>'+th+'</tr></thead><tbody>'+tb+'</tbody>'
       +(pvMore?'<tfoot class="pagenavigation"><tr><th colspan="'+T.cols.length+'"><span class="tablenavigation">1 to '+pvN+' of '+Math.max(71,pvN+1)+' <a class="reloadtablelink disabled arrow">\u00AB</a><a class="reloadtablelink disabled arrow">\u2039</a><a class="reloadtablelink arrow">\u203A</a><a class="reloadtablelink arrow">\u00BB</a></span></th></tr></tfoot>':'')
       +'</table>'
