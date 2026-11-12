@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.107.
+Last updated at version 1.5.108.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -149,7 +149,7 @@ A full run takes about 5 seconds (16 seconds the very first time).
   is not offered. Confirmed on the real PRTG at 1.5.43. Workaround: always use the same address.
   The owner chose to leave this until after `app.js` is split (the split is now done, at 1.5.53).
 
-## New toolbar icon (1.5.107)
+## New toolbar icon, then made bigger (1.5.107, 1.5.108)
 
 - The owner sent a picture (a traffic-style gauge: green-to-yellow-to-red dial, a needle pointing
   into the yellow at "62.4 Mbit/s", labelled "Traffic In", 0 to 100) and asked for it to replace
@@ -163,10 +163,18 @@ A full run takes about 5 seconds (16 seconds the very first time).
   16 px. `extension/icons/icon16.png`, `icon32.png`, `icon48.png`, `icon128.png` replaced;
   `manifest.json`'s `icons` and `action.default_icon` blocks already pointed at these same four
   files, so nothing else needed to change there.
-- Checked: all four sizes looked at after shrinking (16 px zoomed back up to check it stays
-  readable); 16 tests; nothing else in `extension/js` touched, so no object file is affected.
-- Not checked: how the icon looks in Chrome's toolbar and the extensions page themselves (only
-  the PNG files were checked here).
+- 1.5.108: the owner saw it next to the other toolbar buttons and said to make it bigger and
+  easier to identify. The 1.5.107 drawing was a half-circle (180°) centred in a square canvas with
+  room around it, so it only filled the square sideways, not up and down, and looked small next to
+  the square Chrome icons either side of it. Redrawn as a 270° ring (bottom-left, over the top, to
+  bottom-right) with a thicker ring and needle, cropped close to the drawing: it now fills nearly
+  the whole square.
+- Checked: all four sizes looked at after shrinking (16 px and 32 px zoomed back up to check they
+  stay readable - the 16 px one in particular, since that is what shows in the toolbar); 16 tests;
+  nothing else in `extension/js` touched, so no object file is affected.
+- Not checked: how the icon looks in Chrome's own toolbar and the extensions page (only the PNG
+  files were checked here; the owner's screenshot of the old, smaller icon in the toolbar is what
+  prompted 1.5.108).
 
 ## Status icon toolbar (1.5.56)
 
