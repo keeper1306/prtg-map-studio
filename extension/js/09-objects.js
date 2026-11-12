@@ -5620,9 +5620,15 @@ try{
     var need=pop.offsetHeight, bh=b.offsetHeight, rr=root?root.getBoundingClientRect():b.getBoundingClientRect();
     /* room for the menu above a bar that sits above the object, and below a bar that sits under it */
     var upRoom=rr.top-10-bh-6-8, downRoom=wh-(rr.bottom+10+bh+6)-8;
-    var up=(need<=upRoom)||(need>downRoom&&upRoom>=downRoom);
+    var up=(need<=upRoom)||(need>downRoom&&upRoom>=downRoom), stay=false;
     if(upRoom<=0&&downRoom<=0)up=(b.getAttribute('data-pos')==='above');   /* no room either way: the bar stays where it is */
-    if(up!==(b.getAttribute('data-pos')==='above')){OB.flip=!up;obPlace();}
+    /* a tall object leaves little room above and below it: when the menu fits neither side, the bar stays where it is and the menu
+       opens over the object, on the side of the bar with the most room, rather than squeezed into a thin strip */
+    if(need>upRoom&&need>downRoom){
+      var bt=b.getBoundingClientRect(), overDn=wh-bt.bottom-6-8, overUp=bt.top-6-8;
+      if(Math.max(overDn,overUp)>Math.max(upRoom,downRoom)){up=overUp>overDn;stay=true;}
+    }
+    if(!stay&&up!==(b.getAttribute('data-pos')==='above')){OB.flip=!up;obPlace();}
     if(up)pop.classList.add('up');
     var room=up?(b.getBoundingClientRect().top-6-8):(wh-b.getBoundingClientRect().bottom-6-8);
     if(need>room)pop.style.maxHeight=Math.max(80,Math.floor(room))+'px';

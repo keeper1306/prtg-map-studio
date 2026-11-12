@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.100.
+Last updated at version 1.5.101.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -161,6 +161,15 @@ A full run takes about 5 seconds (16 seconds the very first time).
   bar is HTML like the pill and always shows its word; Beacon's rays blink on alarm states when
   Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
   tile, badge, LED).
+
+## Bar menus over a tall object (1.5.101)
+
+- The owner saw the table's Looks menu squeezed into a thin strip over the page header. Cause: `obOpenAway` opens a menu on the side of the
+  bar away from the object; the 1.5.99/1.5.100 default table (600 x 541) fills the preview, so above it there was about 150 px and every
+  table menu opened upward at that height (reproduced at 1918 x 950: Looks 156 px of 920). Now, when the menu fits neither above nor below
+  the object, the bar stays where it is and the menu opens over the object on the side of the bar with the most room (`stay`).
+- Checked against the stand-in server: all nine table menus open downward at their normal height; gauge, graph, tile and donut menus
+  placed exactly as in 1.5.100; 16 tests. Not checked in the owner's Chrome.
 
 ## Fixed tables by default, titles in proportion (1.5.100)
 
