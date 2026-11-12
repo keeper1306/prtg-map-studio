@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.105.
+Last updated at version 1.5.106.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -166,6 +166,20 @@ A full run takes about 5 seconds (16 seconds the very first time).
   bar is HTML like the pill and always shows its word; Beacon's rays blink on alarm states when
   Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
   tile, badge, LED).
+
+## Colors menu on top, preview starts on Fit (1.5.106)
+
+- The owner: the Colors menu must sit over any menu open at that moment, and the table preview must not be cut off.
+- `.csp-pop` (the shared colour-set picker, `PMSSETS.picker` in js/06-dashboard.js) and `#obar` both had `z-index:100000`, so the bar
+  won by being added to the page later. `.csp-pop` is now 100010. Checked with the two forced to overlap: `elementFromPoint` in the
+  overlap lands inside the popup.
+- `#ozoom` starts on Fit instead of 100 %. `obZoom` already only shrinks when the object is wider than the canvas (`z=1` otherwise),
+  so small objects are unchanged and the box still lets you pick 50/75/100/150/200 % by hand. The 1400 px default table comes out at
+  zoom 0.72 in a 1162 px canvas, fully inside, canvas `scrollWidth` = `clientWidth`. Dragging to resize already divides by `OZ()`
+  (the measured zoom), so handles still track the pointer at any zoom.
+- No object file changes at all (compared against 1.5.105: 0 of 41 differ) - this is the builder's own UI. 16 tests.
+- Not checked: the owner's own Chrome, and Fit on the other object types (the rule is shared, and only objects wider than the canvas
+  are affected).
 
 ## A shrunk table can be scrolled sideways (1.5.105)
 
