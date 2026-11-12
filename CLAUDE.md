@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.104.
+Last updated at version 1.5.105.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -166,6 +166,22 @@ A full run takes about 5 seconds (16 seconds the very first time).
   bar is HTML like the pill and always shows its word; Beacon's rays blink on alarm states when
   Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
   tile, badge, LED).
+
+## A shrunk table can be scrolled sideways (1.5.105)
+
+- The owner, with a screenshot of a narrow table cut off at the Group column: "I cannot move to the right if the table is shrunk".
+  A Fixed table's root is `overflow:auto`, but `buildTable` wrote the box inside it (`maptablecontainer` / `top10listcontainer`) as
+  `overflow:hidden`. That box is as wide as the root, so it clipped the table at its own width and the root never saw anything wider
+  than itself: the vertical bar appeared, the horizontal one never did, and the right-hand columns were unreachable.
+- Now that box is `overflow:visible` for a Fixed table, so the root takes both bars. It stays `hidden` for a Flexible table
+  (`tableFitRuntime` sets its overflow itself at runtime) and for a turned card (the card moves onto that box in `tableExtraCss` and
+  has to clip its rounded corners). `drawTablePreview` writes the same rule, so the builder behaves like PRTG.
+- Checked on the real PRTG (map 2231, classic View Map, the default table): at 430 x 300 the content is 795 px wide, it scrolls to the
+  end and the last column is reachable; at 700 x 400 it scrolls 105 px; from 1000 px up nothing to scroll. 16 tests.
+  27 table files change by exactly one attribute (`overflow:hidden` -> `overflow:visible`, nothing else); the 14 non-table object
+  files are untouched.
+- Watch out: `device_commit_files` wrote a stale copy again when the same `stagedPath` was reused (the file on disk kept the old
+  byte count). Staging under a fresh name fixed it. Always read the file back and compare before trusting a write.
 
 ## The owner's own default table, five more status shapes (1.5.104)
 
