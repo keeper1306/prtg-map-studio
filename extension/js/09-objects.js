@@ -159,6 +159,8 @@ try{
     c.push(r+' .ms-ch{display:none;}');
     c.push(r+':has(.ms-ch tbody tr.odd) .ms-ch{display:block;}');
     c.push(r+':has(.ms-ch tbody tr.odd) .ms-sens{display:none;}');
+    /* 1.5.99: PRTG's own stylesheet sets table cells to 90 % (13 px came out as 11.7 px on PRTG 26.3), so the look's text size is enforced */
+    if(L.mode!=='prtg')c.push(r+' tbody td{font-size:'+L.size+'px !important;}');
     if(!st||L.mode==='prtg')return c;
     var S=[['up','sg'],['warning','sy'],['unusual','so'],['down','sr'],['paused','sb']];
     function rows(k,tail){return r+' tbody tr[class^="'+k+'"] '+tail+','+r+' tbody tr[class*=" '+k+'"] '+tail;}
@@ -319,14 +321,18 @@ try{
       root.style.overflow='hidden';
       var aw=root.clientWidth-pw, ah=root.clientHeight-ph;
       if(aw<10||ah<10)return;
-      var base=Math.max(40,(Number(C.w)||600)-pw), hi=aw/base, lo=0.08, s=hi, i, m;
-      pl.style.transformOrigin='0 0';pl.style.boxSizing='border-box';
+      var base=Math.max(40,(Number(C.w)||600)-pw), hi=aw/base, lo=0.08, s=hi, i, m, mn=Math.min(1,Number(C.min)||0), cut;
+      pl.style.transformOrigin='0 0';pl.style.boxSizing='border-box';pl.style.marginBottom='';
       function tall(k){pl.style.width=(aw/k)+'px';return pl.offsetHeight*k;}   /* offsetHeight is the height before the scale */
       if(tall(hi)>ah+0.5){
         if(tall(lo)>ah)s=lo;
         else{for(i=0;i<14;i++){m=(lo+hi)/2;if(tall(m)<=ah+0.5)lo=m;else hi=m;}s=lo;}
         tall(s);
       }
+      if(mn&&s<mn){s=mn;tall(s);}   /* the text never gets smaller than the minimum: the box scrolls instead */
+      cut=tall(s)>ah+0.5;
+      cont.style.overflowX='hidden';cont.style.overflowY=cut?'auto':'hidden';
+      if(cut)pl.style.marginBottom=(pl.offsetHeight*(s-1))+'px';   /* the scroll ends where the scaled table ends */
       pl.style.transform='scale('+s.toFixed(4)+')';
       root.setAttribute('data-scale',s.toFixed(3));
     }
@@ -339,9 +345,24 @@ try{
     if(document.fonts&&document.fonts.ready)document.fonts.ready.then(later);
   }
   function tableFits(T){return !!T.fit&&parseInt(T.initW,10)>0&&parseInt(T.initH,10)>0;}
+  /* 1.5.99: the height a table needs to show its rows at full size, from parts measured on PRTG 26.3 (PRTG new UI look, 600 px wide,
+     text 13 px: title 33, "Items" line 15, header 29, rows about 36.7, page arrows 47, spaces 12, card padding 17 + 17; ten rows 537 px) */
+  var TABLE_MIN_PX=12;
+  function tableMinScale(T){var z=parseFloat(T.look&&T.look.size)||13;return Math.min(1,TABLE_MIN_PX/z);}
+  function tableNeedH(T){
+    var L=T.look, z=parseFloat(L.size)||13, n=parseInt(T.count,10), bar=(L.titleStyle==='bar'), ip=(bar?0:(L.cardPad||0))+((L.card&&L.bw>0)?L.bw:0);
+    if(!(n>0))n=10;   /* every row: the height for ten, the page arrows are not there */
+    var row=2*((parseFloat(L.pad)||9)+2)+Math.round(z), h=12+2*ip+n*row;
+    if(T.showTitle!==false)h+=Math.round((parseFloat(L.titleSize)||z)*1.25)+13+(bar?8:0);
+    if(L.head!==false)h+=Math.round(Math.max(9,z-3)*1.25)+17;
+    if(T.infoheader)h+=15;
+    if(parseInt(T.count,10)>0)h+=47;
+    return Math.max(120,Math.ceil(h));
+  }
+  function tableAutoH(T){if(T.anyType&&T.autoH!==false&&T.fit)T.initH=String(tableNeedH(T));}
   function tableFitScript(T,cls){
     if(!tableFits(T))return '';
-    return '(function(){\n  var F='+tableFitRuntime.toString()+';\n  var C={w:'+Math.max(40,parseInt(T.fitW,10)||parseInt(T.initW,10)||600)+'};\n'
+    return '(function(){\n  var F='+tableFitRuntime.toString()+';\n  var C={w:'+Math.max(40,parseInt(T.fitW,10)||parseInt(T.initW,10)||600)+',min:'+tableMinScale(T).toFixed(4)+'};\n'
       +'  function all(){[].forEach.call(document.querySelectorAll(".'+cls+'"),function(r){F(r,C);});}\n'
       +'  all();setTimeout(all,400);setTimeout(all,2000);\n})();';
   }
@@ -464,6 +485,7 @@ try{
     return f;
   }
   function buildTable(T){
+    tableAutoH(T);
     var cls=classOf(T), css=tableCss(T,cls), js=tableScript(T,cls), fjs=tableFitScript(T,cls), o=[];
     if(fjs)js=js?js+'\n'+fjs:fjs;
     var useCls=!!(css||js), any=!!T.anyType;
@@ -515,7 +537,7 @@ try{
     return {id:'',cat:'Data Tables',name:'Site status',title:'Site status',titleObj:false,showTitle:true,
       cols:['status','device'],sortBy:'status',sortDir:'asc',count:10,status:[],mapTags:true,reqTag:'',nameContains:'',onlyValue:false,onlyFav:false,extra:[],
       links:true,sortable:true,refreshable:true,infoheader:true,box:'maptablecontainer',checks:'probenode,group,device',initW:600,initH:330,
-      rot:0,tOffX:0,tOffY:0,tAlign:'',fit:true,fitW:600,anyType:true,pvOn:'group',
+      rot:0,tOffX:0,tOffY:0,tAlign:'',fit:true,fitW:600,anyType:true,pvOn:'group',autoH:true,
       look:lookOf('PRTG new UI'),fname:''};
   }
   function fromPreset(p){
@@ -5085,7 +5107,7 @@ try{
       var f=[-sx*S.W/2,-sy*S.H/2], f2=[-sx*nw/2,-sy*nh/2], dd=rotXY(f[0]-f2[0],f[1]-f2[1],S.rot);   // the opposite edge stays where it is on screen
       ED.x=S.cx+dd[0]-nw/2;ED.y=S.cy+dd[1]-nh/2;
       wr.style.width=nw+'px';wr.style.height=nh+'px';if(root)root.style.height='100%';
-      edApplyBox(wr);T.initW=nw;T.initH=nh;edLiveCode();
+      edApplyBox(wr);T.initW=nw;T.initH=nh;if(sy)T.autoH=false;edLiveCode();
     },function(){refreshUI();render();});
   }
   function edStartRotate(ev){
@@ -5882,6 +5904,7 @@ try{
       }));
       b.appendChild(obMenu('Rows','Which rows, how many, and in what order',function(pop){
         pfNum(pop,'Most rows (0 = all)',function(){return M().count;},function(v){M().count=v;},0,200);
+        if(T.fit)pfChk(pop,'Height follows the number of rows',function(){return T.autoH!==false;},function(v){T.autoH=v;});
         pfSel(pop,'Sort by',function(){return M().sortBy;},function(v){M().sortBy=v;},SORTS.map(function(k){return [k,colLabel(k)];}));
         pfSel(pop,'Order',function(){return M().sortDir;},function(v){M().sortDir=v;},[['asc','Ascending'],['desc','Descending']]);
         pfList(pop,'Only these states (none ticked = all)',function(){return STATUSDEF.map(function(d){return [d[0],d[1]];});},
@@ -6299,7 +6322,7 @@ try{
   }
 
   function drawTablePreview(){
-    edInput=null;
+    edInput=null;tableAutoH(T);
     var cls=classOf(T), css=tableCss(T,cls,{preview:true}), js=tableScript(T,cls), L=T.look;
     var st=document.getElementById('opstyle');
     if(!st){st=h('style');st.id='opstyle';document.head.appendChild(st);}
@@ -6361,7 +6384,7 @@ try{
       }
     }catch(err){if(window.console)console.error('preview editing',err);}
     if(tableFits(T)){
-      try{var _fr=prevEl.querySelector('.map_object');if(_fr)tableFitRuntime(_fr,{w:Math.max(40,parseInt(T.fitW,10)||parseInt(T.initW,10)||600)});}
+      try{var _fr=prevEl.querySelector('.map_object');if(_fr)tableFitRuntime(_fr,{w:Math.max(40,parseInt(T.fitW,10)||parseInt(T.initW,10)||600),min:tableMinScale(T)});}
       catch(err){if(window.console)console.error('table scale',err);}
     }
     if(js){
@@ -7154,7 +7177,7 @@ try{
     s2.appendChild(inText('Object name',function(){return M().name;},function(v){M().name=v;M().nameUser=(String(v).trim()!=='');}));
     s2.appendChild(inText('File name',function(){return M().fname;},function(v){M().fname=v;},'automatic'));
     var dz=h('div');
-    dz.appendChild(pair(inNum('Size when dropped: width',function(){return M().initW;},function(v){M().initW=v;},0,4000),inNum('Height',function(){return M().initH;},function(v){M().initH=v;},0,4000)));
+    dz.appendChild(pair(inNum('Size when dropped: width',function(){return M().initW;},function(v){M().initW=v;},0,4000),inNum('Height',function(){return M().initH;},function(v){M().initH=v;if(TYPE==='table')T.autoH=false;},0,4000)));
     dz.appendChild(h('p','note','PRTG drops every new object at 200 \u00D7 200. These numbers go in the file so it arrives at a useful size. Set either to 0 to keep PRTG\u2019s default.'));
     s2.appendChild(dz);
     var tT=h('div');
@@ -7588,6 +7611,13 @@ try{
     s4.appendChild(pair(inSel('Sort by',function(){return T.sortBy;},function(v){T.sortBy=v;},SORTS.map(function(k){return [k,colLabel(k)];})),
       inSel('Direction',function(){return T.sortDir;},function(v){T.sortDir=v;},[['asc','Ascending'],['desc','Descending']])));
     s4.appendChild(inNum('Maximum rows (0 = no limit)',function(){return T.count;},function(v){T.count=v;},0,1000));
+    var s4a=h('div');
+    s4a.appendChild(inChk('Height follows the number of rows',function(){return T.autoH!==false;},function(v){T.autoH=v;}));
+    var s4n=h('p','note');s4a.appendChild(s4n);
+    syncs.push(function(){var need=tableNeedH(T), hh=parseInt(T.initH,10)||0, n=parseInt(T.count,10);
+      s4n.textContent=(n>0?n+' rows':'Ten rows')+' need about '+need+' px of height at full size (text '+T.look.size+' px). '
+        +(hh&&hh<need-4?'This table is '+hh+' px tall: in PRTG its text stays at '+TABLE_MIN_PX+' px or more and the rest scrolls.':'Text never gets smaller than '+TABLE_MIN_PX+' px in PRTG; a box that is too small scrolls instead.');});
+    showIf(s4a,function(){return !!T.fit;});s4.appendChild(s4a);
 
     var s5=section('Filters');secIf(s5,isTable);
     s5.appendChild(h('label',null,'Show only these statuses'));

@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.98.
+Last updated at version 1.5.99.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -161,6 +161,24 @@ A full run takes about 5 seconds (16 seconds the very first time).
   bar is HTML like the pill and always shows its word; Beacon's rays blink on alarm states when
   Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
   tile, badge, LED).
+
+## Readable tables: height from the rows, text never under 12 px (1.5.99)
+
+- The owner: tables must be readable; at least a 12 px font. Before, a Flexible table shrank everything until all rows fitted the box
+  (the 1.5.96 default, 10 rows in 600 x 330, came out at scale 0.605, about 7 px).
+- Measured on the real PRTG (map 2231, PRTG new UI look, 600 px wide): title 33, "Items" line (info header) 15, header 29, rows 35.4
+  (36.7 once the text is really 13 px), page arrows (tfoot) 47, spaces 12, card padding 17 + 17. PRTG's stylesheet sets table cells to
+  90 %: the look's 13 px came out as 11.7 px. `anyTabCss` now adds `tbody td{font-size:<size>px !important}` (default table only).
+- `tableNeedH(T)` (formula from those parts and the look: pad, size, titleSize, head, infoheader, count; count 0 counts ten rows),
+  `tableAutoH(T)` (default table with `T.autoH` and Flexible: `initH` = the need; run in `buildTable` and `drawTablePreview`). A height
+  set by hand (dragging the bottom/top edge, or the Height box) turns `autoH` off; "Height follows the number of rows" in Sorting and
+  rows and in the bar's Rows menu, with a note of the height needed.
+- `tableFitRuntime`: `C.min` = `tableMinScale(T)` = min(1, 12 / text size) (`TABLE_MIN_PX`). Below it the scale stays at the minimum,
+  the container scrolls (`overflowY:auto`) and the plugin gets a negative bottom margin so the scroll ends where the scaled table ends.
+  This runtime is in every Flexible table file (templates are Fixed, so unchanged).
+- Checked: 16 tests; the 41 other files identical; on the real PRTG (test file `map-studio-zz-test.htm`, map 2231): 600 x 531 -> scale
+  0.989 (so the formula went to 541), 600 x 330 -> scale 0.923, text 12.0 px, scrolls (498 / 330); device and sensor tables at 1.0,
+  13 px. Not checked: other looks' heights (formula only), the header labels (look size - 3, so 10 px), the new UI for the scroll.
 
 ## Map designer zoom bar (1.5.98)
 
