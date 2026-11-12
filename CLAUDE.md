@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.96.
+Last updated at version 1.5.97.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -161,6 +161,23 @@ A full run takes about 5 seconds (16 seconds the very first time).
   bar is HTML like the pill and always shows its word; Beacon's rays blink on alarm states when
   Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
   tile, badge, LED).
+
+## Behaviour on by default, Look details in the bar (1.5.97)
+
+- The owner asked for every Behaviour option on by default and every Look details setting in the floating bar "in an intuitive way"
+  (the header fill was missing). `blankT`: `links`, `sortable`, `refreshable`, `infoheader` all true (templates keep their own).
+  Seen on the real PRTG (test map 2231): links in the link colour, sort arrows that re-sort, and the info header is PRTG's
+  "Items: 50" page-size picker over tables with many rows.
+- Bar (js/09-objects.js): `pfColor(pop,label,get,set)` (a colour row in a menu, the existing `.pf-col` style; `.pf-cols` lays them out
+  two per row) and `lkEd(fn)` (switches PRTG's own look to custom first, like `obSet`). New: "Title style" menu next to the title size
+  (`GRPICK.ttl` pictures: bar, heading, divider, accent; Heading colour, or Bar and Bar text colours for the bar style); a Secondary text
+  colour swatch after Text colour; for tables a "Header" menu (show, capitals, style pictures moved here from Status, Header text, Header
+  fill, which also switches the style to Filled) and a "Row style" menu (stripes, stripe, row line, row hover, links, row and side padding);
+  Colors gets "Or each color on its own" (six colours, `PS.over` as the side panel); the Graph menu gets Line width, Fill strength, Grid
+  lines, Bar corner radius. The Status menu keeps Shown as, Dot size and Tint.
+- Checked against the stand-in server: 16 tests; the 41 other files still identical to 1.5.95; a Header fill pick lands in the file
+  (`background:#123456`, style Filled, look custom); pictures of the menus looked at. Not verified on the real PRTG: the bar itself
+  (it is the builder); the default file's new Behaviour lines were checked there as above.
 
 ## The default Table works on all four object types (1.5.96)
 

@@ -514,7 +514,7 @@ try{
   function blankT(){
     return {id:'',cat:'Data Tables',name:'Site status',title:'Site status',titleObj:false,showTitle:true,
       cols:['status','device'],sortBy:'status',sortDir:'asc',count:10,status:[],mapTags:true,reqTag:'',nameContains:'',onlyValue:false,onlyFav:false,extra:[],
-      links:false,sortable:false,refreshable:true,infoheader:false,box:'maptablecontainer',checks:'probenode,group,device',initW:600,initH:330,
+      links:true,sortable:true,refreshable:true,infoheader:true,box:'maptablecontainer',checks:'probenode,group,device',initW:600,initH:330,
       rot:0,tOffX:0,tOffY:0,tAlign:'',fit:true,fitW:600,anyType:true,pvOn:'group',
       look:lookOf('PRTG new UI'),fname:''};
   }
@@ -1432,7 +1432,9 @@ try{
     ionoff:[['lamp','Lamp','A lamp that lights up'],['switch','Switch','A switch, on or off'],['word','Word','The word on or off']],
     itank:[['tank','Tank','A rounded tank'],['silo','Silo','A silo with a cone at the bottom']],
     ieq:[['stack','Above the text','The symbol above the text'],['row','Beside the text','The symbol beside the text']],
-    icount:[['ring','Ring','A ring that empties as the days run out'],['pill','Small pill','The days left in a small pill']]
+    icount:[['ring','Ring','A ring that empties as the days run out'],['pill','Small pill','The days left in a small pill']],
+    /* 1.5.97: the look's title style */
+    ttl:[['bar','Colored bar','The title on a coloured bar across the top'],['heading','Heading','The title as a heading'],['divider','Heading with line','A heading with a line under it'],['accent','Heading with accent','A heading with an accent mark on its left']]
   };
   function grPic(g,v){
     var G1='#B8C419',Y='#F5C500',R='#E30613',A='#1f6fe5',P='#8b5cf6',O='#f59e0b',T='#14b8a6',M='#9aa0ad',D='#1d2433',N='#E3E6EC',o='<rect x="1" y="1" width="62" height="42" rx="5" fill="#fff" stroke="#dfe3ea"/>';
@@ -1465,6 +1467,14 @@ try{
         else if(v==='dottext')o+='<circle cx="9" cy="'+(y+3)+'" r="2.2" fill="'+c+'"/>'+'<rect x="13" y="'+(y+2.1)+'" width="11" height="1.8" rx=".8" fill="'+D+'"/>';
         else if(v==='pill')o+='<rect x="5" y="'+(y-.4)+'" width="20" height="6.8" rx="3.4" fill="'+c+'"/><rect x="9" y="'+(y+2.1)+'" width="12" height="1.8" rx=".8" fill="#fff"/>';
         else o+='<rect x="6" y="'+(y+1.6)+'" width="16" height="2.8" rx="1" fill="'+c+'"/>';});
+    }else if(g==='ttl'){
+      if(v==='bar')o+='<rect x="1.5" y="1.5" width="61" height="11" rx="4" fill="'+A+'"/><rect x="7" y="6" width="22" height="2.2" rx="1" fill="#fff"/>';
+      else{
+        if(v==='accent')o+='<rect x="6" y="4.5" width="2" height="7" rx=".8" fill="'+A+'"/>';
+        o+='<rect x="'+(v==='accent'?11:7)+'" y="6.5" width="22" height="2.6" rx="1" fill="'+D+'"/>';
+        if(v==='divider')o+='<rect x="7" y="13" width="50" height="1" fill="#C9CED8"/>';
+      }
+      [0,1,2].forEach(function(i){var y=21+i*7;o+=lab(7,y,20)+lab(34,y,14);});
     }else if(g==='thead'){
       if(v==='fill')o+='<rect x="5" y="5" width="54" height="9" rx="1.5" fill="#E8EBF0"/>';
       if(v==='line')o+='<rect x="5" y="13.2" width="54" height="1.4" fill="'+A+'"/>';
@@ -5615,6 +5625,13 @@ try{
     sl.addEventListener('change',function(){obDo(function(){set(sl.value);});});
     OB.syncs.push(function(){sl.value=String(get());});w.appendChild(sl);pop.appendChild(w);return sl;
   }
+  /* 1.5.97: a colour in a bar menu; lkEd makes PRTG's own look editable first, as the bar's other look buttons do (obSet) */
+  function pfColor(pop,label,get,set){
+    var w=h('div','pf pf-col'), i=h('input');i.type='color';w.appendChild(h('label',null,label));
+    i.addEventListener('input',function(){obDo(function(){set(i.value);});});
+    OB.syncs.push(function(){var v=get();if(/^#[0-9a-f]{6}$/i.test(v))i.value=v;});w.appendChild(i);pop.appendChild(w);return w;
+  }
+  function lkEd(fn){return function(v){var l=M().look;if(l.mode==='prtg')l.mode='custom';fn(l,v);};}
   function pfNum(pop,label,get,set,min,max){
     var w=h('div','pf'), i=h('input');i.type='number';i.min=min;i.max=max;w.appendChild(h('label',null,label));
     i.addEventListener('input',function(){var v=parseFloat(i.value);if(!isNaN(v))obDo(function(){set(Math.max(min,Math.min(max,v)));});});
@@ -5814,6 +5831,12 @@ try{
         q.addEventListener('click',function(){obDo(function(){csetApply(x[0]);});});g.appendChild(q);
       });
       OB.syncs.push(function(){var cur=csetOf(L());[].forEach.call(g.children,function(q){q.classList.toggle('on',q.getAttribute('data-set')===cur);});});
+      if(!notFrame())return;
+      pop.appendChild(h('div','pf-h','Or each color on its own'));
+      var cg=h('div','pf-cols');pop.appendChild(cg);
+      [['up','Up'],['warning','Warning'],['down','Down'],['unusual','Unusual'],['paused','Paused'],['unknown','Unknown']].forEach(function(x){
+        pfColor(cg,x[1],function(){return L().c[x[0]];},lkEd(function(l,v){l.c[x[0]]=v;PS.over[x[0]]=v;}));
+      });
     }));
     /* what is specific to each kind of object */
     if(anyOn()){
@@ -5826,13 +5849,36 @@ try{
           function(k,d){var c=M().cols,i=c.indexOf(k),n=i+d;if(i<0||n<0||n>=c.length)return;c.splice(i,1);c.splice(n,0,k);});
         if(T.anyType)pfSel(pop,'Preview it on',function(){return T.pvOn||'group';},function(v){T.pvOn=v;},[['group','A probe, group or device (these columns)'],['sensor','A sensor (its channels)']]);
       }));
-      b.appendChild(obMenu('Status','How the status column and the header row look',function(pop){
+      b.appendChild(obMenu('Status','How the status column looks',function(pop){
         pop.className+=' fb-wide';
         var pick=function(label,g,get,set){pop.appendChild(h('div','pf-h',label));var pg=grPicGrid(g,get,set,null,obDo);pop.appendChild(pg);OB.syncs.push(function(){pg.syncPick();});};
-        pick('Shown as','tstatus',function(){return L().status;},function(v){L().status=v;});
-        pfNum(pop,'Dot size',function(){return L().dot;},function(v){L().dot=v;},6,40);
-        pfChk(pop,'Tint rows that are down or warning',function(){return L().tint;},function(v){L().tint=v;});
-        pick('Header style','thead',function(){return L().headStyle;},function(v){L().headStyle=v;});
+        pick('Shown as','tstatus',function(){return L().status;},lkEd(function(l,v){l.status=v;}));
+        pfNum(pop,'Dot size',function(){return L().dot;},lkEd(function(l,v){l.dot=v;}),6,40);
+        pfChk(pop,'Tint rows that are down or warning',function(){return L().tint;},lkEd(function(l,v){l.tint=v;}));
+      }));
+      /* 1.5.97: the rest of Look details for tables: the header row and the rows */
+      b.appendChild(obMenu('Header','How the header row looks',function(pop){
+        pop.className+=' fb-wide';
+        pfChk(pop,'Show the header row',function(){return L().head;},lkEd(function(l,v){l.head=v;}));
+        pfChk(pop,'Capitals',function(){return L().headUpper;},lkEd(function(l,v){l.headUpper=v;}));
+        pop.appendChild(h('div','pf-h','Style'));
+        var hg=grPicGrid('thead',function(){return L().headStyle;},lkEd(function(l,v){l.headStyle=v;}),null,obDo);pop.appendChild(hg);OB.syncs.push(function(){hg.syncPick();});
+        var hc=h('div','pf-cols');pop.appendChild(hc);
+        pfColor(hc,'Header text',function(){return L().headColor;},lkEd(function(l,v){l.headColor=v;}));
+        var hf=pfColor(hc,'Header fill',function(){return L().headBg;},lkEd(function(l,v){l.headBg=v;if(l.headStyle!=='fill')l.headStyle='fill';}));
+        hf.title='The band behind the header row (the Filled style)';
+        hc.appendChild(h('span','pf-note','Picking a fill switches the header to the Filled style.'));
+      }));
+      b.appendChild(obMenu('Row style','How the rows look: stripes, lines, hover, links and spacing',function(pop){
+        pop.className+=' fb-wide';
+        pfChk(pop,'Striped rows',function(){return L().zebra;},lkEd(function(l,v){l.zebra=v;}));
+        var rc=h('div','pf-cols');pop.appendChild(rc);
+        pfColor(rc,'Stripe',function(){return L().zebraBg;},lkEd(function(l,v){l.zebraBg=v;l.zebra=true;}));
+        pfColor(rc,'Row line',function(){return L().line;},lkEd(function(l,v){l.line=v;}));
+        pfColor(rc,'Row hover',function(){return L().hover;},lkEd(function(l,v){l.hover=v;}));
+        pfColor(rc,'Links',function(){return L().link;},lkEd(function(l,v){l.link=v;}));
+        pfNum(pop,'Row padding (top and bottom)',function(){return L().pad;},lkEd(function(l,v){l.pad=v;}),0,40);
+        pfNum(pop,'Side padding',function(){return L().cellX;},lkEd(function(l,v){l.cellX=v;}),0,60);
       }));
       b.appendChild(obMenu('Rows','Which rows, how many, and in what order',function(pop){
         pfNum(pop,'Most rows (0 = all)',function(){return M().count;},function(v){M().count=v;},0,200);
@@ -5890,6 +5936,10 @@ try{
             [].forEach.call(gsg.children,function(q){var k2=q.getAttribute('data-cs');q.querySelector('.grpic').innerHTML=sh[k2]||grStyleSvg(k2);});
           });
           pfChk(pop,'Dots',function(){return GR.dots;},function(v){GR.dots=v;});
+          pfNum(pop,'Line width',function(){return GR.lw;},function(v){GR.lw=v;},1,6);   /* 1.5.97: Look details' Chart group */
+          pfNum(pop,'Fill strength %',function(){return GR.fillA;},function(v){GR.fillA=v;},0,80);
+          pfChk(pop,'Grid lines',function(){return GR.gridOn!==false;},function(v){GR.gridOn=v;});
+          pfNum(pop,'Bar corner radius',function(){return GR.bradius;},function(v){GR.bradius=v;},0,12);
         }
           pfChk(pop,'Legend',function(){return GR.legend;},function(v){GR.legend=v;});
           pfChk(pop,'Axis',function(){return GR.axis;},function(v){GR.axis=v;});
@@ -5956,7 +6006,19 @@ try{
     /* fonts, colours and corners */
     sty.appendChild(fs);
     /* two sizes: the title's and the text inside the object */
-    if(TYPE==='table'||('titleMode' in M()))sty.appendChild(obLab('Title',obNum('Title size',function(){return L().titleSize;},function(v){obSet(function(l){l.titleSize=v;});},8,60)));
+    if(TYPE==='table'||('titleMode' in M())){
+      sty.appendChild(obLab('Title',obNum('Title size',function(){return L().titleSize;},function(v){obSet(function(l){l.titleSize=v;});},8,60)));
+      /* 1.5.97: Look details' Title group */
+      sty.appendChild(obMenu('Title style','How the title looks: a coloured bar or a heading, and its colours',function(pop){
+        pop.className+=' fb-wide';
+        var tg=grPicGrid('ttl',function(){return L().titleStyle;},lkEd(function(l,v){l.titleStyle=v;}),null,obDo);pop.appendChild(tg);OB.syncs.push(function(){tg.syncPick();});
+        var tc=h('div','pf-cols');pop.appendChild(tc);
+        var hcol=pfColor(tc,'Heading',function(){return L().titleText||L().text;},lkEd(function(l,v){l.titleText=v;}));
+        var bcol=pfColor(tc,'Bar',function(){return L().titleBg;},lkEd(function(l,v){l.titleBg=v;}));
+        var btc=pfColor(tc,'Bar text',function(){return L().titleColor;},lkEd(function(l,v){l.titleColor=v;}));
+        OB.syncs.push(function(){var bar=L().titleStyle==='bar';hcol.hidden=bar;bcol.hidden=!bar;btc.hidden=!bar;});
+      }));
+    }
     sty.appendChild(obLab('Text',obNum('Text size',function(){return L().size;},function(v){obSet(function(l){l.size=v;});},8,40)));
     sty.appendChild(obSep());
     /* bold, italic, underline and UPPERCASE for the object's text, the same four as the Map designer's bar */
@@ -5968,6 +6030,7 @@ try{
     });
     sty.appendChild(obSep());
     sty.appendChild(obColor('Text color',function(){return L().text;},function(v){obSet(function(l){l.text=v;});}));
+    sty.appendChild(obColor('Secondary text color (smaller labels and captions)',function(){return L().muted||L().headColor;},function(v){obSet(function(l){l.muted=v;});}));
     sty.appendChild(obColor('Fill color',function(){return L().cardBg;},function(v){obSet(function(l){l.card=true;l.cardBg=v;});}));
     sty.appendChild(obColor('Border color',function(){return L().border;},function(v){obSet(function(l){l.card=true;l.border=v;if(!(l.bw>0))l.bw=1;});}));
     sty.appendChild(obNum('Corner radius',function(){return L().radius;},function(v){obSet(function(l){l.card=true;l.radius=v;});},0,40));
@@ -7661,7 +7724,8 @@ try{
     g.appendChild(pair(inColor('Up',function(){return Lk().c.up;},function(v){Lk().c.up=v;PS.over.up=v;}),inColor('Warning',function(){return Lk().c.warning;},function(v){Lk().c.warning=v;PS.over.warning=v;})));
     g.appendChild(pair(inColor('Down',function(){return Lk().c.down;},function(v){Lk().c.down=v;PS.over.down=v;}),inColor('Unusual',function(){return Lk().c.unusual;},function(v){Lk().c.unusual=v;PS.over.unusual=v;})));
     g.appendChild(pair(inColor('Paused',function(){return Lk().c.paused;},function(v){Lk().c.paused=v;PS.over.paused=v;}),inColor('Unknown',function(){return Lk().c.unknown;},function(v){Lk().c.unknown=v;PS.over.unknown=v;})));
-    var n1=h('p','note','Dots, pills and tinted rows use a small script in the file. It runs only on View Map.');showIf(n1,isTable);D.appendChild(n1);
+    var n1=h('p','note','Dots, pills and tinted rows use a small script in the file. It runs only on View Map.');showIf(n1,function(){return isTable()&&!T.anyType;});D.appendChild(n1);
+    var n1b=h('p','note','Dots and tinted rows show everywhere, in PRTG\u2019s Map Designer too. Pills use a small script in the file, which runs only on View Map.');showIf(n1b,function(){return isTable()&&!!T.anyType;});D.appendChild(n1b);
     var n2=h('p','note','The ring gauge draws itself with a small script in the file. It runs only on View Map.');showIf(n2,isRing);D.appendChild(n2);
     hostEl.appendChild(s7.parentNode);   /* Look presets is the last section: moving the node puts it after Look details */
     var rsb=h('div','objreset');
