@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.103.
+Last updated at version 1.5.104.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -161,6 +161,30 @@ A full run takes about 5 seconds (16 seconds the very first time).
   bar is HTML like the pill and always shows its word; Beacon's rays blink on alarm states when
   Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
   tile, badge, LED).
+
+## The owner's own default table, five more status shapes (1.5.104)
+
+- The owner asked for Corporate blue as the default look of a new table, for the nine columns of their own table to be the default, and
+  for more status shapes in the bar's Status menu. They confirmed "a la tabla" when asked whether Corporate blue meant the table or the
+  graph (the screenshot showed a table but the message said graph).
+- `blankT`: `look` Corporate blue, `cols` status, device, sensor, group, message, lastvalue, minigraph, downtimesince, uptime,
+  `initW`/`fitW` 1400. Width measured on the real PRTG (map 2231, four items): at 900 px the group and message columns wrap and rows go
+  to 60 to 81 px; at 1100 px three of the four objects settle at 44 px; at 1400 px all four do, including Local Probe with its 71 sensors.
+  Narrower than that is not wrong, it just scrolls, as before.
+- `tableNeedH`: the row's content is `max(1.4 x size + links, 1.8 x size when the Mini graph column is shown)` - PRTG draws that column
+  as its own block (`div.sensorgraph` with a sparkline canvas and two labels), which makes a 41.4 px row 44 px. Row heights still depend
+  on the data: a long message in a narrow table wraps and the box scrolls.
+- Five shapes added to `GRPICK.tstatus` (after the four that were there, so nothing moved): square, diamond, ring, bar, and
+  `rowbar` "Stripe on the row". `TSHAPES`, `stDot`, `stShape(L,how)`, `stProp(how)` (a ring is drawn by its border, the rest by their
+  fill) and `stStripe(L)` give both paths the same geometry: `anyTabCss` colours from PRTG's row classes with no script (the default
+  table), `tableCss` plus `tableScript`/`tablePaintOnce` for the others. The script now also sets `dot.style.color`, which is where a
+  ring's border takes its colour from. The stripe reads the row's class, so it is emitted before the "is there a status column" gate and
+  works with the column dropped; on the default table it is scoped to `.ms-sens`, because a channels table's rows carry no state.
+- Checked on the real PRTG (map 2231, classic View Map): all nine columns arrive; at 1400 x 598 every one of the four objects has content
+  exactly 598 and no scrollbar, rows 44 px, dots in the look's green; the row stripe takes PRTG's own row classes (sg green, sy, sr).
+  16 tests; the 41 object files still identical; pictures of all nine shapes and of the Status menu.
+- Not checked on the real PRTG: square, diamond, ring and bar there (the stripe and the dot were, and all nine in the preview); the new UI;
+  the public page; a table whose look is not Corporate blue at the new default size.
 
 ## Row padding for every table, paging in the look's colours (1.5.103)
 

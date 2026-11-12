@@ -153,6 +153,21 @@ try{
   /* the default table (anyType): which of its two tables shows, and the status column drawn from PRTG's row classes
      (sg up, sy warning, so unusual, sr down, sb paused) with CSS only, so it looks the same in PRTG's map designer,
      the designer's preview list and View Map. Pills still need the script, which runs on View Map only. */
+  /* 1.5.104: the shapes the status column can take. Each is drawn from one colour, so the same geometry serves both the
+     CSS-only default table (anyTabCss, which colours from PRTG's row classes) and the script-driven tables (tableCss). */
+  var TSHAPES={dot:1,dottext:1,square:1,diamond:1,ring:1,bar:1};
+  function stDot(L){return Math.max(6,parseInt(L.dot,10)||12);}
+  function stShape(L,how){
+    var d=stDot(L), s='display:inline-block;vertical-align:middle;box-sizing:border-box;';
+    if(how==='square')return s+'width:'+d+'px;height:'+d+'px;border-radius:'+Math.max(2,Math.round(d*0.22))+'px;';
+    if(how==='diamond'){var q=Math.round(d*0.78);return s+'width:'+q+'px;height:'+q+'px;border-radius:'+Math.max(1,Math.round(d*0.1))+'px;transform:rotate(45deg);';}
+    if(how==='ring')return s+'width:'+d+'px;height:'+d+'px;border-radius:50%;border:'+Math.max(2,Math.round(d/5))+'px solid transparent;background:transparent !important;';
+    if(how==='bar')return s+'width:'+Math.max(3,Math.round(d/3))+'px;height:'+Math.round(d*1.3)+'px;border-radius:999px;';
+    return s+'width:'+d+'px;height:'+d+'px;border-radius:50%;';   /* dot and dottext */
+  }
+  /* a ring is drawn by its border, every other shape by its fill */
+  function stProp(how){return how==='ring'?'border-color':'background';}
+  function stStripe(L){return Math.max(3,Math.round(stDot(L)/3));}
   function anyTabCss(T,cls,st){
     var r='.'+cls, L=T.look, c=[];
     if(!T.anyType)return c;
@@ -161,14 +176,22 @@ try{
     c.push(r+':has(.ms-ch tbody tr.odd) .ms-sens{display:none;}');
     /* 1.5.99: PRTG's own stylesheet sets table cells to 90 % (13 px came out as 11.7 px on PRTG 26.3), so the look's text size is enforced */
     if(L.mode!=='prtg'){c.push(r+' tbody td{font-size:'+L.size+'px !important;}');c.push(r+' thead th{font-size:'+thPx(T)+'px !important;}');}
-    if(!st||L.mode==='prtg')return c;
+    if(L.mode==='prtg')return c;
     var S=[['up','sg'],['warning','sy'],['unusual','so'],['down','sr'],['paused','sb']];
     function rows(k,tail){return r+' tbody tr[class^="'+k+'"] '+tail+','+r+' tbody tr[class*=" '+k+'"] '+tail;}
-    if(L.status==='dot'||L.status==='dottext'){
-      if(L.status==='dot')c.push(r+' td.col-status{width:44px;text-align:center;white-space:nowrap;line-height:1;font-size:0 !important;}');
-      else c.push(r+' td.col-status{white-space:nowrap;}');
-      c.push(r+' td.col-status::before{content:"";display:inline-block;width:'+L.dot+'px;height:'+L.dot+'px;border-radius:50%;background:'+L.c.unknown+';vertical-align:middle;'+(L.status==='dot'?'':'margin-right:8px;')+'}');
-      S.forEach(function(x){c.push(rows(x[1],'td.col-status::before')+'{background:'+L.c[x[0]]+';}');});
+    /* the stripe needs no status column of its own: it reads the row's class, so it works with the column dropped */
+    if(L.status==='rowbar'){
+      var sw=stStripe(L), sens=T.anyType?(r+' .ms-sens'):r;   /* a channels table's rows carry no state, so it gets no stripe */
+      c.push(sens+' tbody td:first-child{box-shadow:inset '+sw+'px 0 0 0 '+L.c.unknown+';}');
+      S.forEach(function(x){c.push(rows(x[1],'td:first-child')+'{box-shadow:inset '+sw+'px 0 0 0 '+L.c[x[0]]+';}');});
+    }
+    if(!st)return c;
+    if(TSHAPES[L.status]){
+      if(L.status==='dottext')c.push(r+' td.col-status{white-space:nowrap;}');
+      else c.push(r+' td.col-status{width:44px;text-align:center;white-space:nowrap;line-height:1;font-size:0 !important;}');
+      var pp=stProp(L.status);
+      c.push(r+' td.col-status::before{content:"";'+stShape(L,L.status)+pp+':'+L.c.unknown+';'+(L.status==='dottext'?'margin-right:8px;':'')+'}');
+      S.forEach(function(x){c.push(rows(x[1],'td.col-status::before')+'{'+pp+':'+L.c[x[0]]+';}');});
     }else if(L.status==='pill'){
       S.forEach(function(x){c.push(rows(x[1],'td.col-status')+'{color:'+L.c[x[0]]+' !important;font-weight:600;}');});
     }
@@ -247,18 +270,19 @@ try{
       c.push(r+' tbody tr.rowwarn td{background:'+tint(L.c.warning,0.14)+';}');
       c.push(r+' tbody tr.rowwarn:hover td{background:'+tint(L.c.warning,0.22)+';}');
     }
-    if(hasStatus&&L.status!=='text'&&!(T.anyType&&L.status!=='pill')){
-      if(L.status==='dot'){
-        c.push(r+' td.col-status{width:44px;text-align:center;white-space:nowrap;line-height:1;}');
-        c.push(r+' td.col-status .txt{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);}');
+    if(hasStatus&&L.status!=='text'&&L.status!=='rowbar'&&!(T.anyType&&L.status!=='pill')){
+      if(L.status==='dottext'){
+        c.push(r+' td.col-status{white-space:nowrap;}');
+        c.push(r+' td.col-status .dot{margin-right:8px;}');
       }else if(L.status==='pill'){
         c.push(r+' td.col-status{white-space:nowrap;}');
         c.push(r+' td.col-status .pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:'+Math.max(9,L.size-2)+'px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;line-height:1.3;white-space:nowrap;}');
       }else{
-        c.push(r+' td.col-status{white-space:nowrap;}');
-        c.push(r+' td.col-status .dot{margin-right:8px;}');
+        c.push(r+' td.col-status{width:44px;text-align:center;white-space:nowrap;line-height:1;}');
+        c.push(r+' td.col-status .txt{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);}');
       }
-      if(L.status==='dot'||L.status==='dottext')c.push(r+' td.col-status .dot{display:inline-block;width:'+L.dot+'px;height:'+L.dot+'px;border-radius:50%;background:'+L.c.unknown+';vertical-align:middle;}');
+      /* the script paints the shape's colour on the span: its fill, or, for a ring, the colour its border takes from currentColor */
+      if(TSHAPES[L.status])c.push(r+' td.col-status .dot{'+stShape(L,L.status)+(L.status==='ring'?'border-color:currentColor;':'background:'+L.c.unknown+';')+'}');
     }
     c.push(r+' td.col-device img,'+r+' td.col-probegroupdevice img{vertical-align:middle;margin-right:7px;opacity:.6;}');
     tableExtraCss(T,cls,o).forEach(function(x){c.push(x);});
@@ -269,7 +293,7 @@ try{
      without starting a real repeating timer in that preview. tableScript() itself
      is unchanged below: it still emits a source string embedded in exported PRTG
      map-object files, which run later under PRTG's own page, not this extension. */
-  function tablePaintOnce(cls,colors,dots,pills,tn){
+  function tablePaintOnce(cls,colors,dots,pills,tn,stripe){
     function rgba(h,a){var x=h.replace('#','');return 'rgba('+parseInt(x.substr(0,2),16)+','+parseInt(x.substr(2,2),16)+','+parseInt(x.substr(4,2),16)+','+a+')';}
     var cells=document.querySelectorAll('.'+cls+' td.col-status'), i;
     for(i=0;i<cells.length;i++){
@@ -297,7 +321,8 @@ try{
         full=(c.textContent||'').replace(/\s+/g,' ').trim();
       }
       var word=full.toLowerCase().split(' ')[0];
-      if(dots){dot.style.background=colors[word]||colors.unknown;dot.title=full;}
+      if(dots){var dc=colors[word]||colors.unknown;dot.style.background=dc;dot.style.color=dc;dot.title=full;}
+      if(stripe){var sr=c.parentNode, sc=sr&&sr.cells&&sr.cells[0];if(sc)sc.style.boxShadow='inset '+stripe+'px 0 0 0 '+(colors[word]||colors.unknown);}
       if(pills){var col=colors[word]||colors.unknown;pill.style.setProperty('color',col,'important');pill.style.background=rgba(col,0.16);}
       if(tn){
         var row=c.parentNode;
@@ -359,8 +384,11 @@ try{
     if(!(n>0))n=10;   /* every row: the height for ten, the page arrows are not there */
     var lk=T.links!==false&&T.cols.some(function(k){return k==='sensor'||k==='device'||k==='group';});
     /* 1.5.102: the look's padding, line height 1.4 and the line under the row (39.5 px on PRTG 26.3); PRTG's name links are
-       inline blocks with 1 px above and below, which makes a row with them 2 px taller (41.4 px) */
-    var row=2*(parseFloat(L.pad)||9)+1.4*z+1.25+(lk?2:0), h=2*ip+n*row;
+       inline blocks with 1 px above and below, which makes a row with them 2 px taller (41.4 px).
+       1.5.104: PRTG draws the Mini graph column as a block of its own, taller than a line of text (44 px rows, measured on PRTG 26.3). */
+    var line=1.4*z+(lk?2:0);
+    if(T.cols.indexOf('minigraph')>=0)line=Math.max(line,1.8*z);
+    var row=2*(parseFloat(L.pad)||9)+line+1.25, h=2*ip+n*row;
     if(T.showTitle!==false)h+=Math.round((parseFloat(L.titleSize)||z)*1.25)+13+(bar?8:0);
     if(L.head!==false)h+=Math.round(thPx(T)*1.25)+17;
     if(T.infoheader)h+=12+pgHeadH(T);            /* the "Items" line, with the space above it */
@@ -398,9 +426,9 @@ try{
   function tableScript(T,cls){
     var L=T.look;
     if(L.mode==='prtg'||T.cols.indexOf('status')<0)return '';
-    if(T.anyType&&L.status!=='pill')return '';   /* dots and tint are CSS in the default table (anyTabCss) */
-    var dots=(L.status==='dot'||L.status==='dottext'), pills=(L.status==='pill'), tn=!!L.tint;
-    if(!dots&&!pills&&!tn)return '';
+    if(T.anyType&&L.status!=='pill')return '';   /* the shapes, the stripe and tint are CSS in the default table (anyTabCss) */
+    var dots=!!TSHAPES[L.status], pills=(L.status==='pill'), tn=!!L.tint, stripe=(L.status==='rowbar')?stStripe(L):0;
+    if(!dots&&!pills&&!tn&&!stripe)return '';
     var j=[];
     j.push('(function(){');
     j.push('  var colors={up:"'+L.c.up+'",warning:"'+L.c.warning+'",down:"'+L.c.down+'",unusual:"'+L.c.unusual+'",paused:"'+L.c.paused+'",unknown:"'+L.c.unknown+'"};');
@@ -433,10 +461,17 @@ try{
     }else{
       j.push('      full=(c.textContent||"").replace(/\\s+/g," ").trim();');
     }
+
     j.push('      var word=full.toLowerCase().split(" ")[0];');
     if(dots){
-      j.push('      dot.style.background=colors[word]||colors.unknown;');
+      j.push('      var dc=colors[word]||colors.unknown;');
+      j.push('      dot.style.background=dc;');
+      j.push('      dot.style.color=dc;');   /* a ring takes its border from currentColor */
       j.push('      dot.title=full;');
+    }
+    if(stripe){
+      j.push('      var sr=c.parentNode, sc=sr&&sr.cells&&sr.cells[0];');
+      j.push('      if(sc)sc.style.boxShadow="inset '+stripe+'px 0 0 0 "+(colors[word]||colors.unknown);');
     }
     if(pills){
       j.push('      var col=colors[word]||colors.unknown;');
@@ -564,10 +599,11 @@ try{
   }
   function blankT(){
     return {id:'',cat:'Data Tables',name:'Site status',title:'Site status',titleObj:false,showTitle:true,
-      cols:['status','device'],sortBy:'status',sortDir:'asc',count:10,status:[],mapTags:true,reqTag:'',nameContains:'',onlyValue:false,onlyFav:false,extra:[],
-      links:true,sortable:true,refreshable:true,infoheader:true,box:'maptablecontainer',checks:'probenode,group,device',initW:600,initH:330,
-      rot:0,tOffX:0,tOffY:0,tAlign:'',fit:false,fitW:600,anyType:true,pvOn:'group',autoH:true,
-      look:lookOf('PRTG new UI'),fname:''};
+      cols:['status','device','sensor','group','message','lastvalue','minigraph','downtimesince','uptime'],
+      sortBy:'status',sortDir:'asc',count:10,status:[],mapTags:true,reqTag:'',nameContains:'',onlyValue:false,onlyFav:false,extra:[],
+      links:true,sortable:true,refreshable:true,infoheader:true,box:'maptablecontainer',checks:'probenode,group,device',initW:1400,initH:330,
+      rot:0,tOffX:0,tOffY:0,tAlign:'',fit:false,fitW:1400,anyType:true,pvOn:'group',autoH:true,
+      look:lookOf('Corporate blue'),fname:''};   /* 1.5.104: the owner's own default table */
   }
   function fromPreset(p){
     var T=blankT();
@@ -1476,7 +1512,7 @@ try{
     bcolor:[['status','By state','Each bar in the colour of its sensor’s state'],['cat','One per bar','A different colour for each bar'],['one','All the same','Every bar in one colour']],
     draw:[['own','Modern chart','Drawn by Map Studio from the history; follows the look and the chart styles'],['pic','PRTG’s picture','PRTG’s own graph picture, as on a sensor page']],
     /* 1.5.94: choices about how a status or value is drawn, as pictures in the floating bar and the side panel */
-    tstatus:[['dot','Colored dot','A dot in the status colour'],['dottext','Dot and text','A dot and the status word'],['pill','Pill','The status word in a coloured pill'],['text','Text only','The status word in the status colour']],
+    tstatus:[['dot','Colored dot','A dot in the status colour'],['dottext','Dot and text','A dot and the status word'],['pill','Pill','The status word in a coloured pill'],['square','Square','A rounded square in the status colour'],['diamond','Diamond','A diamond in the status colour'],['ring','Ring','A hollow ring in the status colour'],['bar','Bar','A short upright bar in the status colour'],['rowbar','Stripe on the row','A stripe down the left edge of the row, so the column can be dropped'],['text','Text only','The status word in the status colour']],
     thead:[['fill','Filled','The header row on a filled band'],['line','Underlined','The header row underlined in the accent colour'],['plain','Plain','The header row as plain text']],
     scap:[['of','of N sensors','A caption under each number: of N sensors'],['none','None','Only the number']],
     gcolor:[['status','By status','The ring in the colour of the sensor’s state'],['accent','Accent','The ring in the look’s accent colour']],
@@ -1517,6 +1553,11 @@ try{
         if(v==='dot')o+='<circle cx="11" cy="'+(y+3)+'" r="2.6" fill="'+c+'"/>';
         else if(v==='dottext')o+='<circle cx="9" cy="'+(y+3)+'" r="2.2" fill="'+c+'"/>'+'<rect x="13" y="'+(y+2.1)+'" width="11" height="1.8" rx=".8" fill="'+D+'"/>';
         else if(v==='pill')o+='<rect x="5" y="'+(y-.4)+'" width="20" height="6.8" rx="3.4" fill="'+c+'"/><rect x="9" y="'+(y+2.1)+'" width="12" height="1.8" rx=".8" fill="#fff"/>';
+        else if(v==='square')o+='<rect x="8.4" y="'+(y+.4)+'" width="5.2" height="5.2" rx="1.3" fill="'+c+'"/>';
+        else if(v==='diamond')o+='<rect x="8.6" y="'+(y+.6)+'" width="4.8" height="4.8" rx=".7" fill="'+c+'" transform="rotate(45 11 '+(y+3)+')"/>';
+        else if(v==='ring')o+='<circle cx="11" cy="'+(y+3)+'" r="2.3" fill="none" stroke="'+c+'" stroke-width="1.5"/>';
+        else if(v==='bar')o+='<rect x="9.8" y="'+(y+.2)+'" width="2.4" height="5.6" rx="1.2" fill="'+c+'"/>';
+        else if(v==='rowbar')o+='<rect x="4.4" y="'+(y-.6)+'" width="2.4" height="7.2" rx="1.2" fill="'+c+'"/><rect x="10" y="'+(y+2.1)+'" width="13" height="1.8" rx=".8" fill="'+D+'"/>';
         else o+='<rect x="6" y="'+(y+1.6)+'" width="16" height="2.8" rx="1" fill="'+c+'"/>';});
     }else if(g==='ttl'){
       if(v==='bar')o+='<rect x="1.5" y="1.5" width="61" height="11" rx="4" fill="'+A+'"/><rect x="7" y="6" width="22" height="2.2" rx="1" fill="#fff"/>';
@@ -6445,9 +6486,9 @@ try{
     }
     if(js){
       try{
-        var _L=T.look, _dots=(_L.status==='dot'||_L.status==='dottext'), _pills=(_L.status==='pill'), _tn=!!_L.tint;
-        if(_L.mode!=='prtg'&&T.cols.indexOf('status')>=0&&(_dots||_pills||_tn)){
-          tablePaintOnce(cls,{up:_L.c.up,warning:_L.c.warning,down:_L.c.down,unusual:_L.c.unusual,paused:_L.c.paused,unknown:_L.c.unknown},_dots,_pills,_tn);
+        var _L=T.look, _dots=!!TSHAPES[_L.status], _pills=(_L.status==='pill'), _tn=!!_L.tint, _st=(_L.status==='rowbar')?stStripe(_L):0;
+        if(_L.mode!=='prtg'&&T.cols.indexOf('status')>=0&&(_dots||_pills||_tn||_st)){
+          tablePaintOnce(cls,{up:_L.c.up,warning:_L.c.warning,down:_L.c.down,unusual:_L.c.unusual,paused:_L.c.paused,unknown:_L.c.unknown},_dots,_pills,_tn,_st);
         }
       }catch(err){if(window.console)console.error('preview script',err);}
     }
