@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.95.
+Last updated at version 1.5.96.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -161,6 +161,36 @@ A full run takes about 5 seconds (16 seconds the very first time).
   bar is HTML like the pill and always shows its word; Beacon's rays blink on alarm states when
   Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
   tile, badge, LED).
+
+## The default Table works on all four object types (1.5.96)
+
+- The owner asked for the Any object table to be the default when the Table button is clicked, to support probe, group, device and
+  sensor, to have exactly the other tables' options, and to show fully in PRTG (the 1.5.71 Any table is drawn by a script, so PRTG's
+  Map Designer and the object list's hover preview showed nothing). Server: `https://prtg.whatthehelbert.com` (valid certificate).
+- Seen on the real PRTG with test files through `/controls/mapobjectpreview.htm` (map 2229, `dependency_` = object): `<#checkobjecttype>`
+  aborts the whole item on any other type ("The selected object cannot be used here."), so it can't be used to branch; `<#sensor
+  type="colorclassofstate">` and `<#objectproperty name="primarychannel">` abort on non-sensors too. `content="sensors"` on a sensor gives one
+  row of "-"; `content="channels"` on a probe, group or device gives one row of "-" (no abort). Data rows: sensors `odd|even` + `sg` up,
+  `sy` warning, `sr` down (also "Down (simulated error)"), `sb` paused (unusual `so` not seen); channels `odd|even`. `<#objectstatus
+  name="type">` gives Group/Probe/Device/the sensor type, `name="sensor"` the sensor's name or nothing (not used).
+- Model: `T.anyType` (true in `blankT`, false in `fromPreset`), `T.pvOn` (preview only), `blankT` count 10 (a table on Root with all 71
+  sensors shrank to unreadable with Flexible). `buildTable` with `anyType`: checks all four types; `.ms-box-prtg-plugin` (has "prtg-plugin"
+  in its class, so `tableFitRuntime` scales it) holding `.ms-sens` (PRTG's sensors table, all the usual parameters) and `.ms-ch` (channels
+  table, `chanParams`: `name,lastvalue_` as PRTG's own Channels template, sort by name or by value when Sort by is Last value, count,
+  title, links/sortable/refreshable). Each table has its own `.prtg-plugin`: with both in one plugin, PRTG's refresh put the sensors rows
+  into the channels table (seen in the designer after a hover).
+- `anyTabCss`: `.ms-ch` hidden unless `:has(.ms-ch tbody tr.odd)`, which hides `.ms-sens`. Status dots and row tint from the row classes
+  with CSS only (no script), so they show in the designer too; pills still need `tableScript` (View Map only), the CSS only colours
+  their text. `tableScript` returns '' for `anyType` unless pills.
+- Builder: the template list's first entry is "Works on a probe, group, device or sensor" (`__blank`); no separate Any group for tables;
+  `anyStart()` for a table gives the same table. Columns section and bar: a note and "Preview it on" (sample channels `SAMPLE_CHANS`);
+  the column editor is off while previewing a sensor. Old Any tables (`m.any`) still load and build as before.
+- Checked: 16 tests; 41 other files identical to 1.5.95 (every other type's default, every PRTG table template, four Any objects) and the
+  table with `anyType` off and count 0 identical to the old blank table. On the real PRTG (test map 2231 "Map Studio test - default
+  table", items on Local Probe 1, group 50, device 2095, sensor 2106, file `map-studio-zz-test.htm`, category "Map Studio Tests"): right
+  table on all four in `mapobjectpreview`, in the Map Designer, in the object list's hover preview and in classic View Map; unchanged after
+  PRTG's refresh (40 s); paging one table leaves the others alone. Not checked: the new UI (`:1616` asked for a login), the public page.
+  The test map and the test file are still there (no delete through the bridge).
 
 ## SolarWinds-style maps 2229 and 2230 (2026-11-11, no extension change)
 

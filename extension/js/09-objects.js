@@ -89,6 +89,19 @@ try{
     req.forEach(function(t){out.push(T.mapTags?'@tag(<@tagfilterstring> %2b'+t+')':'@tag('+t+')');});
     return out;
   }
+  /* the default table also works on a sensor: there PRTG's sensors table has no rows, so the file carries PRTG's channels table too
+     (as PRTG's own Channels template has it) and its CSS shows whichever table has rows (anyTabCss) */
+  function chanParams(T){
+    var p=[['id','<@objectid>'],['content','channels'],['columns','name,lastvalue_'],
+      ['sortby',(T.sortDir==='desc'?'-':'')+(T.sortBy==='lastvalue'?'lastvalue':'name')],
+      ['links',T.links?'true':'false'],['sortable',T.sortable?'true':'false'],['refreshable',T.refreshable?'true':'false']];
+    if(T.showTitle===false){p.push(['tabletitle','']);}
+    else if(T.titleObj){p.push(['varexpand','tabletitle']);p.push(['tabletitle','@tabletitle']);}
+    else p.push(['tabletitle',clean(T.title)]);
+    var n=parseInt(T.count,10);
+    if(n>0)p.push(['count',String(Math.min(n,1000))]);
+    return p;
+  }
   function tableParams(T){
     var p=[['id','<@objectid>'],['content','sensors'],['columns',T.cols.join(',')],
       ['sortby',(T.sortDir==='desc'?'-':'')+T.sortBy],['infoheader',T.infoheader?'true':'false'],
@@ -137,6 +150,32 @@ try{
     var sh=shadowOf(L);if(sh)d+='box-shadow:'+sh+';';
     return d;
   }
+  /* the default table (anyType): which of its two tables shows, and the status column drawn from PRTG's row classes
+     (sg up, sy warning, so unusual, sr down, sb paused) with CSS only, so it looks the same in PRTG's map designer,
+     the designer's preview list and View Map. Pills still need the script, which runs on View Map only. */
+  function anyTabCss(T,cls,st){
+    var r='.'+cls, L=T.look, c=[];
+    if(!T.anyType)return c;
+    c.push(r+' .ms-ch{display:none;}');
+    c.push(r+':has(.ms-ch tbody tr.odd) .ms-ch{display:block;}');
+    c.push(r+':has(.ms-ch tbody tr.odd) .ms-sens{display:none;}');
+    if(!st||L.mode==='prtg')return c;
+    var S=[['up','sg'],['warning','sy'],['unusual','so'],['down','sr'],['paused','sb']];
+    function rows(k,tail){return r+' tbody tr[class^="'+k+'"] '+tail+','+r+' tbody tr[class*=" '+k+'"] '+tail;}
+    if(L.status==='dot'||L.status==='dottext'){
+      if(L.status==='dot')c.push(r+' td.col-status{width:44px;text-align:center;white-space:nowrap;line-height:1;font-size:0 !important;}');
+      else c.push(r+' td.col-status{white-space:nowrap;}');
+      c.push(r+' td.col-status::before{content:"";display:inline-block;width:'+L.dot+'px;height:'+L.dot+'px;border-radius:50%;background:'+L.c.unknown+';vertical-align:middle;'+(L.status==='dot'?'':'margin-right:8px;')+'}');
+      S.forEach(function(x){c.push(rows(x[1],'td.col-status::before')+'{background:'+L.c[x[0]]+';}');});
+    }else if(L.status==='pill'){
+      S.forEach(function(x){c.push(rows(x[1],'td.col-status')+'{color:'+L.c[x[0]]+' !important;font-weight:600;}');});
+    }
+    if(L.tint){
+      c.push(rows('sr','td')+'{background:'+tint(L.c.down,0.12)+';}');
+      c.push(rows('sy','td')+','+rows('so','td')+'{background:'+tint(L.c.warning,0.14)+';}');
+    }
+    return c;
+  }
   function tableExtraCss(T,cls,o){
     var r='.'+cls, c=[], rot=tableRot(T);
     if(rot!==0){
@@ -153,7 +192,7 @@ try{
     return c;
   }
   function tableCss(T,cls,o){
-    var L=T.look;if(L.mode==='prtg')return tableExtraCss(T,cls,o).join('\n');
+    var L=T.look;if(L.mode==='prtg')return anyTabCss(T,cls,false).concat(tableExtraCss(T,cls,o)).join('\n');
     var r='.'+cls, c=[], bar=(L.titleStyle==='bar'), hasStatus=T.cols.indexOf('status')>-1;
     var fillA=(L.cardA==null?100:L.cardA);
     var cardFill=(fillA<100)?tint(L.cardBg,fillA/100):L.cardBg;
@@ -194,13 +233,14 @@ try{
     c.push(r+' tbody tr:last-child td{border-bottom:0;}');
     if(L.zebra)c.push(r+' tbody tr:nth-child(even) td{background:'+L.zebraBg+';}');
     c.push(r+' tbody tr:hover td{background:'+L.hover+';}');
+    if(T.anyType)anyTabCss(T,cls,hasStatus).forEach(function(x){c.push(x);});
     if(L.tint&&hasStatus){
       c.push(r+' tbody tr.rowdown td{background:'+tint(L.c.down,0.12)+';}');
       c.push(r+' tbody tr.rowdown:hover td{background:'+tint(L.c.down,0.2)+';}');
       c.push(r+' tbody tr.rowwarn td{background:'+tint(L.c.warning,0.14)+';}');
       c.push(r+' tbody tr.rowwarn:hover td{background:'+tint(L.c.warning,0.22)+';}');
     }
-    if(hasStatus&&L.status!=='text'){
+    if(hasStatus&&L.status!=='text'&&!(T.anyType&&L.status!=='pill')){
       if(L.status==='dot'){
         c.push(r+' td.col-status{width:44px;text-align:center;white-space:nowrap;line-height:1;}');
         c.push(r+' td.col-status .txt{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);}');
@@ -308,6 +348,7 @@ try{
   function tableScript(T,cls){
     var L=T.look;
     if(L.mode==='prtg'||T.cols.indexOf('status')<0)return '';
+    if(T.anyType&&L.status!=='pill')return '';   /* dots and tint are CSS in the default table (anyTabCss) */
     var dots=(L.status==='dot'||L.status==='dottext'), pills=(L.status==='pill'), tn=!!L.tint;
     if(!dots&&!pills&&!tn)return '';
     var j=[];
@@ -425,17 +466,21 @@ try{
   function buildTable(T){
     var cls=classOf(T), css=tableCss(T,cls), js=tableScript(T,cls), fjs=tableFitScript(T,cls), o=[];
     if(fjs)js=js?js+'\n'+fjs:fjs;
-    var useCls=!!(css||js);
+    var useCls=!!(css||js), any=!!T.anyType;
     o.push('<!'+'--'+clean(T.cat||'Data Tables')+': '+clean(T.name||'Table')+'-->');
     o.push('');
     o.push('<div class="map_object map_table'+(useCls?' '+cls:'')+'" id="<@itemid>" objectid="<@objectid>" subid="<@subid>"'+initAttr(T)+' style="overflow:'+(fjs?'hidden':'auto')+';<#mapobject type="coordinates" subid="<@subid>" mode="<@editmode>">">');
     o.push('  <#mapobject type="objectgrip" mode="<@editmode>">');
     o.push('  <#mapobject type="htmlbefore" subid="<@subid>">');
-    o.push('  <#checkobjecttype objecttype="'+(T.checks||'probenode,group,device')+'" nicemessage="true" id="<@objectid>">');
+    o.push('  <#checkobjecttype objecttype="'+(any?'probenode,group,device,sensor':(T.checks||'probenode,group,device'))+'" nicemessage="true" id="<@objectid>">');
     o.push('');
     if(needsFontLink(T.look))o.push('  '+fontLinkOf(T.look));
     if(css){o.push('<style>');o.push(css);o.push('</style>');o.push('');}
     o.push('  <div class="'+(T.box||'maptablecontainer')+'" style="overflow:hidden">');
+    /* the default table: each of its two tables needs its own PRTG plugin (one plugin with two tables mixes them up when PRTG refreshes);
+       the box around them has "prtg-plugin" in its class name, so the Flexible scaling (tableFitRuntime) scales both together */
+    if(any)o.push('    <div class="ms-box-prtg-plugin">');
+    if(any)o.push('    <div class="ms-sens">');
     o.push('    <div class="prtg-plugin" data-plugin="prtg-table">');
     if(T.showTitle!==false&&T.titleObj){
       o.push('      <#lang key="html.mapobjects.'+cls+'.tabletitle" default="'+clean(T.title)+' (@@@@)" var="tabletitle">');
@@ -445,6 +490,17 @@ try{
     ps.forEach(function(kv){o.push('      '+kv[0]+'="'+kv[1]+'"');});
     o.push('      >');
     o.push('    </div>');
+    if(any){
+      o.push('    </div>');
+      o.push('    <div class="ms-ch">');
+      o.push('    <div class="prtg-plugin" data-plugin="prtg-table">');
+      o.push('      <#table tableid="channeltable_map"');
+      chanParams(T).forEach(function(kv){o.push('      '+kv[0]+'="'+kv[1]+'"');});
+      o.push('      >');
+      o.push('    </div>');
+      o.push('    </div>');
+      o.push('    </div>');
+    }
     o.push('  </div>');
     o.push('  <#mapobject type="htmlafter" subid="<@subid>">');
     o.push('</div>');
@@ -457,9 +513,9 @@ try{
   }
   function blankT(){
     return {id:'',cat:'Data Tables',name:'Site status',title:'Site status',titleObj:false,showTitle:true,
-      cols:['status','device'],sortBy:'status',sortDir:'asc',count:0,status:[],mapTags:true,reqTag:'',nameContains:'',onlyValue:false,onlyFav:false,extra:[],
+      cols:['status','device'],sortBy:'status',sortDir:'asc',count:10,status:[],mapTags:true,reqTag:'',nameContains:'',onlyValue:false,onlyFav:false,extra:[],
       links:false,sortable:false,refreshable:true,infoheader:false,box:'maptablecontainer',checks:'probenode,group,device',initW:600,initH:330,
-      rot:0,tOffX:0,tOffY:0,tAlign:'',fit:true,fitW:600,
+      rot:0,tOffX:0,tOffY:0,tAlign:'',fit:true,fitW:600,anyType:true,pvOn:'group',
       look:lookOf('PRTG new UI'),fname:''};
   }
   function fromPreset(p){
@@ -467,7 +523,7 @@ try{
     ['cat','title','titleObj','cols','sortBy','sortDir','count','status','mapTags','reqTag','nameContains','onlyValue','onlyFav','extra','links','sortable','refreshable','infoheader','box','checks'].forEach(function(k){
       var v=p[k];T[k]=(v instanceof Array)?v.slice():v;
     });
-    T.initW=0;T.initH=0;T.fit=false;T.id=p.id;T.name=p.name+' custom';T.showTitle=!!(p.title||p.titleObj);if(!p.title&&!p.titleObj)T.title='';
+    T.initW=0;T.initH=0;T.fit=false;T.anyType=false;T.id=p.id;T.name=p.name+' custom';T.showTitle=!!(p.title||p.titleObj);if(!p.title&&!p.titleObj)T.title='';
     T.look=lookOf('PRTG default');T.fname='';
     return T;
   }
@@ -2971,6 +3027,7 @@ try{
   function anyEffLook(m){var L=m.look;return (L.mode==='prtg')?lookOf('Light card'):L;}
   function anyStart(){   /* the template: a fresh object of this type that works on anything; the look stays */
     var lk=M().look, v=anyView(), m, sz=ANYSZ[v]||[300,200];
+    if(TYPE==='table'){T=blankT();T.look=(lk.mode==='prtg')?lookOf('PRTG new UI'):lk;return;}   /* the default table works on all four (anyType) */
     if(TYPE==='table')T=blankT();else if(TYPE==='gauge')G=blankG();else if(TYPE==='graph')GR=blankGR();else if(TYPE==='donut')DN=blankD();
     else if(TYPE==='sunburst')SB=blankSB();else if(TYPE==='status')SC=statusFromPreset('');else if(TYPE==='icon')IC=blankI();
     else if(TYPE==='tile')TL=(v==='ind')?blankInd():blankTL();
@@ -4934,6 +4991,7 @@ try{
     if(k==='uptime')return r.uptime;
     return '';
   }
+  var SAMPLE_CHANS=[['Response Time','12 msec'],['Packet Loss','0 %'],['Minimum','10 msec'],['Maximum','15 msec'],['Downtime','']];
   function previewRows(){
     var rows=SAMPLE.filter(function(r){
       if(T.status.length&&T.status.indexOf(r.g)<0)return false;
@@ -4960,7 +5018,7 @@ try{
   /* ---------- editing in the preview: resize, rotate, edit and move the title (tables first) ---------- */
   var edBusy=false;
   var ED={on:true,x:120,y:80,sel:null};   /* the box starts well in from the edge: room to grow to the left and above, and for the rotate handle */
-  function edOn(){return TYPE==='table'&&ED.on&&!anyOn();}   /* the Any object table has no column editor */
+  function edOn(){return TYPE==='table'&&ED.on&&!anyOn()&&!(T.anyType&&T.pvOn==='sensor');}   /* the Any object table has no column editor */
   function rotXY(dx,dy,deg){var a=deg*Math.PI/180,c=Math.cos(a),s=Math.sin(a);return [dx*c-dy*s,dx*s+dy*c];}
   function edRot(){return tableRot(T);}
   function edCursor(sx,sy){
@@ -5766,6 +5824,7 @@ try{
           function(k){return M().cols.indexOf(k)>-1;},
           function(k,on){var c=M().cols,at=c.indexOf(k);if(on&&at<0)c.push(k);else if(!on&&at>-1){if(c.length<2){toast('A table needs at least one column');return;}c.splice(at,1);}},
           function(k,d){var c=M().cols,i=c.indexOf(k),n=i+d;if(i<0||n<0||n>=c.length)return;c.splice(i,1);c.splice(n,0,k);});
+        if(T.anyType)pfSel(pop,'Preview it on',function(){return T.pvOn||'group';},function(v){T.pvOn=v;},[['group','A probe, group or device (these columns)'],['sensor','A sensor (its channels)']]);
       }));
       b.appendChild(obMenu('Status','How the status column and the header row look',function(pop){
         pop.className+=' fb-wide';
@@ -6198,23 +6257,36 @@ try{
       if(k==='probegroupdevice')return '<span class="parentItem">'+t+'</span>';
       return t;
     }
-    var tb='';
+    var tb='', any=!!T.anyType, onS=any&&T.pvOn==='sensor', SCL={up:'sg',warning:'sy',down:'sr',downack:'sr',unusual:'so',paused:'sb',unknown:''};
+    if(onS)rows=[];   /* on a sensor PRTG's sensors table has one empty row, as below */
     rows.forEach(function(r,ri){
-      tb+='<tr class="'+(ri%2?'even':'odd')+' sg">';
+      tb+='<tr class="'+(ri%2?'even':'odd')+' '+(any?(SCL[r.g]||''):'sg')+'">';
       T.cols.forEach(function(k){tb+='<td class="col-'+k+'">'+cellHtml(k,r)+'</td>';});
       tb+='</tr>';
     });
-    if(!rows.length)tb='<tr><td colspan="'+T.cols.length+'">No sample sensors match these filters.</td></tr>';
+    if(onS)tb='<tr>'+T.cols.map(function(){return '<td>-</td>';}).join('')+'</tr>';
+    else if(!rows.length)tb='<tr><td colspan="'+T.cols.length+'">No sample sensors match these filters.</td></tr>';
+    var ch='';
+    if(any){   /* the channels table the file also carries: rows only on a sensor */
+      var CR=onS?SAMPLE_CHANS.slice(0,(parseInt(T.count,10)>0)?parseInt(T.count,10):99):[];
+      if(T.sortBy==='lastvalue')CR=CR.slice().sort(function(a,b){return (parseFloat(a[1])||0)-(parseFloat(b[1])||0);});
+      else CR=CR.slice().sort(function(a,b){return a[0]<b[0]?-1:(a[0]>b[0]?1:0);});
+      if(T.sortDir==='desc')CR.reverse();
+      ch='<div class="ms-ch"><div class="prtg-plugin"><div class="table-wrapper"><form class="form-channels"><div class="tabletitle">'+esc(title)+'</div>'
+        +'<table class="table hoverable channels"><thead class="headerswithlinks"><tr><th class="col-name">Channel</th><th class="col-lastvalue">Last Value</th></tr></thead><tbody>'
+        +(CR.length?CR.map(function(c,i){return '<tr class="'+(i%2?'even':'odd')+'"><td class="col-name">'+esc(c[0])+'</td><td class="col-lastvalue">'+esc(c[1])+'</td></tr>';}).join(''):'<tr><td>-</td><td>-</td></tr>')
+        +'</tbody></table></form></div></div></div>';
+    }
     prevEl.className='';
     var cv=document.getElementById('ocanvas'), avail=Math.max(320,(cv&&cv.clientWidth?cv.clientWidth:900)-2*ED.x);
     var W=(parseInt(T.initW,10)>0)?parseInt(T.initW,10):(w>0?w:avail), Hset=(parseInt(T.initH,10)>0)?parseInt(T.initH,10):0, rot=edRot();
     /* the preview turns a wrapper, so its handles turn with it; the file turns the inner container (see tableExtraCss) and looks the same */
     prevEl.innerHTML='<div id="mapshow" style="position:relative"><div class="edwrap'+(edOn()?' edon':'')+'" id="edwrap" style="position:absolute;left:'+Math.round(ED.x)+'px;top:'+Math.round(ED.y)+'px;width:'+W+'px;'+(Hset?'height:'+Hset+'px;':'')+(rot?'transform:rotate('+rot+'deg);transform-origin:50% 50%;':'')+'">'
       +'<div class="map_object map_table '+cls+'" style="position:relative;overflow:auto;width:100%;'+(Hset?'height:100%;':'')+'">'
-      +'<div class="maptablecontainer" style="overflow:hidden"><div class="prtg-plugin"><div class="table-wrapper"><form class="form-sensors">'
+      +'<div class="maptablecontainer" style="overflow:hidden">'+(any?'<div class="ms-box-prtg-plugin"><div class="ms-sens">':'')+'<div class="prtg-plugin"><div class="table-wrapper"><form class="form-sensors">'
       +'<div class="tabletitle">'+esc(title)+'</div>'
       +'<table class="table hoverable sensors"><thead class="headerswithlinks"><tr>'+th+'</tr></thead><tbody>'+tb+'</tbody></table>'
-      +'</form></div></div></div></div></div></div>';
+      +'</form></div></div>'+(any?'</div>'+ch+'</div>':'')+'</div></div></div></div>';
     applyBg(L);
     try{
       prevEl.style.minHeight='';
@@ -6913,12 +6985,12 @@ try{
   function buildPresetOptions(){
     if(!presetSel)return;
     presetSel.innerHTML='';
-    var blank=h('option');blank.value='__blank';blank.textContent=(TYPE==='gauge')?'Blank gauge':(TYPE==='frame'?'Blank frame':(TYPE==='graph'?'Blank graph':(TYPE==='tile'?(tlFam()==='ind'?'Blank industrial object':'Blank tile'):(TYPE==='status'?'Blank status card':(TYPE==='sunburst'?'Blank sunburst':(TYPE==='donut'?'Blank donut':(TYPE==='icon'?'Blank status icon':'Blank table')))))));presetSel.appendChild(blank);
+    var blank=h('option');blank.value='__blank';blank.textContent=(TYPE==='gauge')?'Blank gauge':(TYPE==='frame'?'Blank frame':(TYPE==='graph'?'Blank graph':(TYPE==='tile'?(tlFam()==='ind'?'Blank industrial object':'Blank tile'):(TYPE==='status'?'Blank status card':(TYPE==='sunburst'?'Blank sunburst':(TYPE==='donut'?'Blank donut':(TYPE==='icon'?'Blank status icon':'Works on a probe, group, device or sensor')))))));presetSel.appendChild(blank);
     var src=(TYPE==='tile')?TLPRESETS.filter(function(p){return (p.fam||'tile')===tlFam();}):(TYPE==='status')?SPRESETS.map(function(x){return {id:x.id,name:x.name,cat:'Built in'};}):((TYPE==='gauge')?GPRESETS:(TYPE==='graph'?GRPRESETS:(TYPE==='donut'?DPRESETS:(TYPE==='sunburst'?SBPRESETS:(TYPE==='icon'?ICPRESETS:PRESETS))))), cats={},order=[];
     src.forEach(function(p){if(!cats[p.cat]){cats[p.cat]=h('optgroup');cats[p.cat].label=p.cat+((TYPE==='status'||TYPE==='tile')?'':' (PRTG stock)');order.push(p.cat);}
       var op=h('option');op.value=p.id;op.textContent=p.name;cats[p.cat].appendChild(op);});
     order.forEach(function(c){presetSel.appendChild(cats[c]);});
-    if(ANYT[TYPE]){var ag=h('optgroup');ag.label='Any object';var ao=h('option');ao.value='any';ao.textContent='Works on a probe, group, device or sensor';ag.appendChild(ao);presetSel.appendChild(ag);if(anyOn())presetSel.value='any';}
+    if(ANYT[TYPE]&&TYPE!=='table'){var ag=h('optgroup');ag.label='Any object';var ao=h('option');ao.value='any';ao.textContent='Works on a probe, group, device or sensor';ag.appendChild(ao);presetSel.appendChild(ag);if(anyOn())presetSel.value='any';}
   }
   var isTable=function(){return TYPE==='table';};
   var isPaste=function(){return TYPE==='frame'||TYPE==='bg'||TYPE==='shape';};
@@ -7443,6 +7515,10 @@ try{
     edr.appendChild(b1);ed1.appendChild(edr);
     ed1.appendChild(h('p','note','Rotation turns the card inside the object. PRTG\u2019s own selection box and resize handle stay upright where they are, so the object can still be moved and resized in the designer. Leave the rotated card room: it is not clipped.'));
     var s3=section('Columns');secIf(s3,isTable);
+    var s3a=h('div');
+    s3a.appendChild(h('p','note','This table works on a probe, group, device or sensor. On a probe, group or device it lists the sensors below it with these columns. On a sensor it lists the sensor\u2019s channels (Channel and Last value), with the same look, title, row limit and order (by name, or by value when Sort by is Last value).'));
+    s3a.appendChild(inSel('Preview it on',function(){return T.pvOn||'group';},function(v){T.pvOn=v;},[['group','A probe, group or device'],['sensor','A sensor']]));
+    showIf(s3a,function(){return !!T.anyType;});s3.appendChild(s3a);
     colsBody=h('div','drows');s3.appendChild(colsBody);
 
     var s4=section('Sorting and rows');secIf(s4,isTable);
