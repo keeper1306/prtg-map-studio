@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.108.
+Last updated at version 1.5.109.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -149,7 +149,7 @@ A full run takes about 5 seconds (16 seconds the very first time).
   is not offered. Confirmed on the real PRTG at 1.5.43. Workaround: always use the same address.
   The owner chose to leave this until after `app.js` is split (the split is now done, at 1.5.53).
 
-## New toolbar icon, then made bigger (1.5.107, 1.5.108)
+## New toolbar icon, made bigger, then the odd end-blobs removed (1.5.107 to 1.5.109)
 
 - The owner sent a picture (a traffic-style gauge: green-to-yellow-to-red dial, a needle pointing
   into the yellow at "62.4 Mbit/s", labelled "Traffic In", 0 to 100) and asked for it to replace
@@ -172,9 +172,14 @@ A full run takes about 5 seconds (16 seconds the very first time).
 - Checked: all four sizes looked at after shrinking (16 px and 32 px zoomed back up to check they
   stay readable - the 16 px one in particular, since that is what shows in the toolbar); 16 tests;
   nothing else in `extension/js` touched, so no object file is affected.
+- 1.5.109: the owner found round blobs at the two open ends of the ring (bottom-left and
+  bottom-right) odd-looking. They were round end-caps drawn on purpose at 1.5.108 so the ring's
+  flat-cut ends wouldn't look chopped off; with a 270° ring instead of the old half-circle they sit
+  low on the icon and read as two stray dots rather than part of the dial. Removed; PIL's own arc
+  drawing already gives each end a flat cut, which looks right without them.
 - Not checked: how the icon looks in Chrome's own toolbar and the extensions page (only the PNG
-  files were checked here; the owner's screenshot of the old, smaller icon in the toolbar is what
-  prompted 1.5.108).
+  files were checked here; the owner's screenshots of the icon in the toolbar are what prompted
+  both 1.5.108 and 1.5.109).
 
 ## Status icon toolbar (1.5.56)
 
