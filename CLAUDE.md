@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.106.
+Last updated at version 1.5.107.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -148,6 +148,25 @@ A full run takes about 5 seconds (16 seconds the very first time).
   makes Map Studio treat them as two servers: Review shows already-pushed items as new, and Undo
   is not offered. Confirmed on the real PRTG at 1.5.43. Workaround: always use the same address.
   The owner chose to leave this until after `app.js` is split (the split is now done, at 1.5.53).
+
+## New toolbar icon (1.5.107)
+
+- The owner sent a picture (a traffic-style gauge: green-to-yellow-to-red dial, a needle pointing
+  into the yellow at "62.4 Mbit/s", labelled "Traffic In", 0 to 100) and asked for it to replace
+  the extension's icon.
+- The picture had a plain white background and small text that would not survive shrinking to
+  16 px, so only the dial itself (the coloured arc, the needle and the centre dot) was kept, with
+  the background made transparent; it was then redrawn clean at high resolution (same colours,
+  measured from the picture: green `#B8C419`, yellow `#F5C500`, navy needle `#2B3A55`; a small red
+  wedge added at the end, matching what the picture showed) so the thin needle would not fade to a
+  grey blur once shrunk - the first attempt (just resizing the sent picture) did exactly that at
+  16 px. `extension/icons/icon16.png`, `icon32.png`, `icon48.png`, `icon128.png` replaced;
+  `manifest.json`'s `icons` and `action.default_icon` blocks already pointed at these same four
+  files, so nothing else needed to change there.
+- Checked: all four sizes looked at after shrinking (16 px zoomed back up to check it stays
+  readable); 16 tests; nothing else in `extension/js` touched, so no object file is affected.
+- Not checked: how the icon looks in Chrome's toolbar and the extensions page themselves (only
+  the PNG files were checked here).
 
 ## Status icon toolbar (1.5.56)
 
