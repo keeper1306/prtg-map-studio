@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.97.
+Last updated at version 1.5.98.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -161,6 +161,18 @@ A full run takes about 5 seconds (16 seconds the very first time).
   bar is HTML like the pill and always shows its word; Beacon's rays blink on alarm states when
   Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
   tile, badge, LED).
+
+## Map designer zoom bar (1.5.98)
+
+- The owner asked for the zoom bar's number to be editable and the zoom to be less abrupt. `#dzval` is now a label holding `#dzin`
+  (text input, 10 to 400; Enter or leaving applies, Esc restores, Up/Down step to the next multiple of 5) and a "%".
+- `#dzslider` runs 0 to 1000 (`step="any"`) on a log scale: `zoomToPos(z)` / `posToZoom(p)` = 10 % x 40^(p/1000), so each pixel
+  changes the zoom by the same share (~1.5 %); it snaps to 100 % within 3 %; arrow keys x/÷ 1.1. Before it was linear 10..400
+  (1.6 points per pixel, very jumpy at small zooms). `zoomMid(z)` zooms around the middle of the visible canvas.
+- Wheel: lines/pages turned into pixels (`deltaMode`); plain wheel `exp(-clamp(d,±100)*0.0005)` (about 5 % per notch), Ctrl or pinch
+  `exp(-clamp(d,±25)*0.004)` (about 10 % per notch; a pinch sends many small deltas). Before: up to 12 % per notch, and Ctrl up to x2.
+- Checked against the stand-in server (Playwright): typed 150 / 1000 (-> 400) / 37 (leave), arrow, one notch 100 -> 105, Ctrl notch
+  105 -> 116, slider ends 10 % and 400 %, 620 -> 100 %; 16 tests. Not verified by the owner's hand on a real mouse or trackpad.
 
 ## Behaviour on by default, Look details in the bar (1.5.97)
 

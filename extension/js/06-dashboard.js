@@ -2350,10 +2350,14 @@ try{
   if(gridBtn)gridBtn.addEventListener('click',function(e){e.stopPropagation();railOpen('grid');});
   bgPopBuild();
   /* the zoom bar under the canvas, the Zoom list in Canvas size and grid, and the fit button all show the same zoom */
+  /* 1.5.98: the zoom bar's slider runs 0 to 1000 on a log scale from 10 % to 400 %, so a move anywhere on it changes the zoom by the
+     same share (about 1.5 % per pixel), not by 1.6 points, which made small zooms jump */
+  function zoomToPos(z){return Math.round(Math.log(Math.max(0.1,Math.min(4,z))/0.1)/Math.log(40)*1000);}
+  function posToZoom(p){return 0.1*Math.pow(40,Math.max(0,Math.min(1000,p))/1000);}
   function zoomSync(){
     var zs=document.getElementById('dzslider'), zl=document.getElementById('dzval'), zsel=document.getElementById('dzoom'), pc=Math.round(scale*100), o, i;
-    if(zs){zs.value=String(pc);zs.style.setProperty('--p',((pc-10)/390*100)+'%');}
-    if(zl)zl.textContent=pc+'%';
+    if(zs){var zp=zoomToPos(scale);zs.value=String(zp);zs.style.setProperty('--p',(zp/10)+'%');}
+    var zi=document.getElementById('dzin');if(zi&&document.activeElement!==zi)zi.value=String(pc);else if(!zi&&zl)zl.textContent=pc+'%';
     if(zsel){
       o=null;for(i=0;i<zsel.options.length;i++)if(zsel.options[i].value===String(D.zoom))o=zsel.options[i];
       if(!o){o=zsel.querySelector('option[data-custom]');if(!o){o=document.createElement('option');o.setAttribute('data-custom','1');zsel.appendChild(o);}o.value=String(D.zoom);}
@@ -3315,15 +3319,35 @@ try{
   });
   document.getElementById('dzoom').addEventListener('change',function(){D.zoom=this.value;applyScale();});
   document.getElementById('dfit').addEventListener('click',function(){setZoom('fit');});
+  function zoomMid(z){var r=document.getElementById('dscroll').getBoundingClientRect();setZoom(z,r.left+r.width/2,Math.max(r.top,0)+Math.min(r.height,window.innerHeight)/2);}
   document.getElementById('dzslider').addEventListener('input',function(){
-    var r=document.getElementById('dscroll').getBoundingClientRect();
-    setZoom(parseInt(this.value,10)/100,r.left+r.width/2,Math.max(r.top,0)+Math.min(r.height,window.innerHeight)/2);
+    var z=posToZoom(parseFloat(this.value));
+    if(Math.abs(z-1)<0.03)z=1;   /* it rests on 100 % when passing close by */
+    zoomMid(z);
   });
-  /* the wheel zooms the canvas around the pointer; Ctrl and the trackpad pinch do the same */
+  document.getElementById('dzslider').addEventListener('keydown',function(e){   /* arrows: 10 % more or less of the current zoom */
+    var k=e.key, up=(k==='ArrowRight'||k==='ArrowUp'), dn=(k==='ArrowLeft'||k==='ArrowDown');
+    if(!up&&!dn)return;e.preventDefault();zoomMid(scale*(up?1.1:1/1.1));
+  });
+  /* 1.5.98: the zoom typed in per cent (10 to 400): Enter or leaving the box applies it, Esc puts the current zoom back, arrows step by 5 */
+  (function(){
+    var zi=document.getElementById('dzin');if(!zi)return;
+    function apply(){var v=parseFloat(String(zi.value).replace(',','.').replace(/[^0-9.]/g,''));if(!(v>0)){zoomSync();return;}zoomMid(Math.max(10,Math.min(400,v))/100);zoomSync();}
+    zi.addEventListener('focus',function(){zi.select();});
+    zi.addEventListener('keydown',function(e){
+      if(e.key==='Enter'){e.preventDefault();apply();zi.blur();}
+      else if(e.key==='Escape'){e.preventDefault();zoomSync();zi.blur();}
+      else if(e.key==='ArrowUp'||e.key==='ArrowDown'){e.preventDefault();var c=Math.round(scale*100), n=(e.key==='ArrowUp')?(Math.floor(c/5)+1)*5:(Math.ceil(c/5)-1)*5;zoomMid(Math.max(10,Math.min(400,n))/100);zi.value=String(Math.round(scale*100));zi.select();}
+    });
+    zi.addEventListener('change',apply);
+  })();
+  /* the wheel zooms the canvas around the pointer; Ctrl and the trackpad pinch do the same.
+     1.5.98: gentler: about 5 % per mouse-wheel notch, 10 % per notch with Ctrl; a pinch sends many small steps and stays smooth */
   document.getElementById('dscroll').addEventListener('wheel',function(e){
     if(!DASHAPI.active||editing!==null)return;
     e.preventDefault();
-    var f=Math.exp(-Math.max(-60,Math.min(60,e.deltaY))*(e.ctrlKey?0.012:0.0022));
+    var d=e.deltaY*(e.deltaMode===1?33:(e.deltaMode===2?400:1));   /* lines and pages into pixels (Firefox counts lines) */
+    var f=e.ctrlKey?Math.exp(-Math.max(-25,Math.min(25,d))*0.004):Math.exp(-Math.max(-100,Math.min(100,d))*0.0005);
     setZoom(scale*f,e.clientX,e.clientY);
   },{passive:false});
   document.getElementById('ddark').addEventListener('change',function(){canvas.classList.toggle('dark',this.checked);});
