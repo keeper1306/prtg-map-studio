@@ -82,7 +82,12 @@ How it was done, stage by stage:
 2. Ask for access instead of working around it.
 3. Never type the owner's PRTG username, passhash or password.
 4. After every change, update both GitHub and the VM extension folder:
-   - Bump `"version"` in `extension/manifest.json`.
+   - Bump `"version"` in `extension/manifest.json`. Which part (the owner set this rule on 2026-11-12, after asking what
+     1.5.104 meant): the **last** part for a fix or a small touch; the **middle** part, starting a new line at `.0`, for
+     something new the owner would tell someone about (a new object type, a new way of working) - this is what the project did
+     at 1.1.0 "new Link style object" and 1.2.0 "lines are now connectors", and then stopped doing, which is how the 1.5 line
+     came to hold 105 entries including the Industrial object, packs, the background picture editor and the `app.js` split;
+     **2.0** is saved for the first public release. Nothing technical forces this: Chrome allows up to 65535 per part.
    - Add a changelog entry at the start of `CFG.changelog` in `extension/js/01-config.js`
      (it was in `app.js` before 1.5.44). It is one
      string, newest first, in the form `'1.5.41: What changed. 1.5.40: ...'`. Write apostrophes
