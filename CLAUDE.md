@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.110.
+Last updated at version 1.5.112.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -148,6 +148,34 @@ A full run takes about 5 seconds (16 seconds the very first time).
   makes Map Studio treat them as two servers: Review shows already-pushed items as new, and Undo
   is not offered. Confirmed on the real PRTG at 1.5.43. Workaround: always use the same address.
   The owner chose to leave this until after `app.js` is split (the split is now done, at 1.5.53).
+
+## 1.5.111 (the Any gauge as the default) reverted (1.5.112)
+
+- 1.5.111 made the gauge follow the table's lead: an Any gauge (works on a probe, group, device or
+  sensor) as the default instead of a named preset, drawing a complete dial (backdrop zones, a
+  needle) instead of a flat colour fill. The owner chose, when asked, to keep Map Studio's own
+  drawn dial rather than switch to PRTG's native "channelgauges" widget, accepting that it would
+  stay blank in PRTG's Map Designer canvas and the hover preview (same as before 1.5.111), the way
+  every other Any object already does except the table.
+- The owner then said this "messed up" something, with no detail given, and asked for it to be
+  reverted. Done with `git revert` of commit `fd93303` (not a reset, so the 1.5.111 history stays
+  visible) on `connectors`, pushed to `connectors` and `main`, redeployed to both VM locations.
+  The gauge is back to exactly how it worked at 1.5.110: `blankG()` defaults to the named
+  "Bandwidth gauge" preset again, picked from the Templates list, not an Any object; `setFace()`
+  and `gaugeFromPreset()` are back to their 1.5.110 bodies; the `sector()` helper and the
+  Any-gauge drawing branch in `anyRuntime` are gone again.
+- **What specifically broke was not identified before the revert** - the owner did not say, and
+  the session that made 1.5.111 was interrupted before it could ask. Whoever picks this up next:
+  ask the owner what went wrong before trying anything like this again (a different default, a
+  different gauge drawing, or giving the Any gauge PRTG's native "channelgauges" widget after
+  all). Everything 1.5.111 tried, and why, is still in this file's git history (`git show fd93303`
+  and the 1.5.111 section it added to this file, both still reachable even though reverted) in
+  case the next session wants to understand the earlier approach without redoing the analysis.
+- Checked: `tests/run-tests.js` after the revert; the four changed files (`manifest.json`,
+  `js/01-config.js`, `js/09-objects.js`, this file) match 1.5.110 apart from the version number
+  and this changelog/notes entry; redeployed and hash-checked against both VM locations.
+- Not checked: the real PRTG (nothing here needed checking there; the revert undoes a change that
+  itself was only checked in the builder and the stand-in server).
 
 ## Title bar covers full scrollable width (1.5.110)
 
