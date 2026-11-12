@@ -634,6 +634,7 @@ try{
   var NFACE_DEF={flat:{nline:'full',nscale:'inside'},cyber:{nline:'full',nscale:'inside'},clean:{nline:'full',nscale:'inside'}};   /* these start with the complete value line and the numbers inside */
   function gFace(){return G.engine==='prtg'?(G.nstyle?'n-'+G.nstyle:'classic'):(G.style||'progress');}
   function setFace(k){
+    G.any=false;   /* 1.5.111: choosing a face/style is choosing a concrete single-object gauge, so it leaves the Any gauge (as picking a table preset leaves the default table) */
     if(k==='classic'||k.indexOf('n-')===0){var was=gFace();G.engine='prtg';G.nstyle=(k==='classic')?'':k.slice(2);if(!G.nbg)G.nbg='light';G.initW=0;G.initH=0;
       if(was!==k){var d=NFACE_DEF[G.nstyle]||{};G.nline=d.nline||'off';G.nscale=d.nscale||'off';}   /* each face starts from its own value line and scale */
       return;}   /* PRTG's own dial, plain or with a modern style */
@@ -688,17 +689,18 @@ try{
     {name:'Response Time',info:{data:[{id:2,name:'Response Time',primary:false,show:1,status:3,lastvalueraw:12,lastvalue:'12 msec',graphminraw:0,graphmaxraw:200,limitmode:1,limitminwarning:'',limitmaxwarning:100,limitminerror:'',limitmaxerror:150}]},minimum:0,maximum:200,condition:true,lastvalue:'12 msec'}
   ]}};
   function blankG(){
-    return {type:'gauge',engine:'prtg',nstyle:'flat',nbg:'light',nline:'full',nscale:'inside',cat:'Gauges',name:'Bandwidth gauge',fname:'',titleMode:'object',title:'',
+    return {type:'gauge',engine:'prtg',nstyle:'flat',nbg:'light',nline:'full',nscale:'inside',cat:'Any object',name:'',nameUser:false,fname:'',titleMode:'object',title:'',
       kind:'sensor-primary',small:false,prio:3,plgPrio:false,mapTags:true,reqTag:'',count:0,hideSettings:true,strip:'thin',scale:1,
       channel:'primary',channelName:'',rangeMode:'channel',min:0,max:100,limits:'channel',dir:'above',warn:70,err:90,
-      shape:'ring',thick:14,style:'progress',colorMode:'status',needle:true,showMinMax:true,glow:false,label:'channel',labelText:'',initW:0,initH:0,
-      look:lookOf('PRTG new UI')};   /* a new gauge starts as Flat minimalist on white, with the complete value line and the numbers inside */
+      shape:'ring',thick:14,style:'progress',colorMode:'status',needle:true,showMinMax:true,glow:false,label:'channel',labelText:'',
+      any:true,anyPv:'group',initW:String(ANYSZ.gauge[0]),initH:String(ANYSZ.gauge[1]),fit:true,fitW:String(ANYSZ.gauge[0]),fitH:String(ANYSZ.gauge[1]),
+      look:lookOf('PRTG new UI')};   /* 1.5.111: a new gauge starts as the Any gauge (works on a probe, group, device or sensor), matching the default table since 1.5.96 */
   }
   function gaugeFromPreset(p){
     var G=blankG();
     /* PRTG files its own gauge templates under Status Icons and Device Tree Views; every gauge Map Studio builds goes under Gauges */
     G.engine='prtg';G.nstyle='';G.nline='off';G.nscale='off';G.cat='Gauges';G.name=p.name+' custom';G.kind=p.kind;G.small=!!p.small;
-    G.initW=0;G.initH=0;G.prio=(p.prio==null?3:p.prio);G.plgPrio=!!p.plgPrio;G.mapTags=!!p.mapTags;G.look=lookOf('PRTG default');
+    G.any=false;G.fit=false;G.initW=0;G.initH=0;G.prio=(p.prio==null?3:p.prio);G.plgPrio=!!p.plgPrio;G.mapTags=!!p.mapTags;G.look=lookOf('PRTG default');
     return G;
   }
   function gEffLook(G){
@@ -3232,10 +3234,11 @@ try{
     function comments(){var out=[];(function walk(n){for(var c=n.firstChild;c;c=c.nextSibling){if(c.nodeType===8){var t=(c.nodeValue||'').replace(/^\s+|\s+$/g,'');if(t.charAt(0)==='{')out.push(t);}else if(c.nodeType===1)walk(c);}})(root);return out;}
     function parse(t){try{return JSON.parse(t);}catch(e){try{return JSON.parse(t.replace(/,\s*([\]}])/g,'$1'));}catch(e2){return null;}}}
     function svgEl(tag,a,parent){var e=document.createElementNS(NS,tag);for(var k in a)e.setAttribute(k,a[k]);if(parent)parent.appendChild(e);return e;}
-    function sector(g,cx,cy,r0,r1,a0,a1,fill,tip){   /* a ring piece from angle a0 to a1 (radians, 0 = top, clockwise) */
-      if(a1-a0>=Math.PI*2-1e-6){var mid=a0+Math.PI;sector(g,cx,cy,r0,r1,a0,mid,fill,tip);sector(g,cx,cy,r0,r1,mid,a1,fill,tip);return;}
+    function sector(g,cx,cy,r0,r1,a0,a1,fill,tip,op){   /* a ring piece from angle a0 to a1 (radians, 0 = top, clockwise); op (1.5.111) is an optional fill-opacity, for a faint backdrop band */
+      if(a1-a0>=Math.PI*2-1e-6){var mid=a0+Math.PI;sector(g,cx,cy,r0,r1,a0,mid,fill,tip,op);sector(g,cx,cy,r0,r1,mid,a1,fill,tip,op);return;}
       var p=function(r,a){return (cx+r*Math.sin(a)).toFixed(2)+' '+(cy-r*Math.cos(a)).toFixed(2);}, lg=(a1-a0)>Math.PI?1:0;
       var e=svgEl('path',{d:'M'+p(r1,a0)+'A'+r1+' '+r1+' 0 '+lg+' 1 '+p(r1,a1)+'L'+p(r0,a1)+'A'+r0+' '+r0+' 0 '+lg+' 0 '+p(r0,a0)+'Z',fill:fill},g);
+      if(op!=null)e.setAttribute('fill-opacity',op);
       if(tip){var t=svgEl('title',{},e);t.textContent=tip;}
     }
     function say(t){body.innerHTML='<div class="anone">'+esc(t)+'</div>';root.setAttribute('data-any','message');}
@@ -3278,9 +3281,19 @@ try{
       }
       body.innerHTML=h+'</tbody></table>';
     }else if(V==='gauge'){
-      var svg=svgEl('svg',{'class':'asvg',viewBox:'0 0 200 150',preserveAspectRatio:'xMidYMid meet'},body), A0=-Math.PI*2/3, A1=Math.PI*2/3, frac=isS?1:upPct, col=P[me];
-      sector(svg,100,100,64,86,A0,A1,C.track);
+      /* 1.5.111: a complete dial (a fixed red-to-green backdrop, the live reading over it, and a needle), not just a flat color fill.
+         For a probe, group or device, the reading is the share up (0 = none up, 1 = all up). For a sensor, there is no numeric scale
+         to read from, so the needle takes the same worst-to-best rank used everywhere else in this file (down..up), so it still moves. */
+      var svg=svgEl('svg',{'class':'asvg',viewBox:'0 0 200 150',preserveAspectRatio:'xMidYMid meet'},body), A0=-Math.PI*2/3, A1=Math.PI*2/3,
+          third=(A1-A0)/3, frac=isS?RANK[me]/5:upPct, col=P[me], pt=function(r,a){return [100+r*Math.sin(a),100-r*Math.cos(a)];}, tip;
+      sector(svg,100,100,64,86,A0,A0+third,P.down,null,0.25);
+      sector(svg,100,100,64,86,A0+third,A0+third*2,P.warning,null,0.25);
+      sector(svg,100,100,64,86,A0+third*2,A1,P.up,null,0.25);
       if(frac>0)sector(svg,100,100,64,86,A0,A0+(A1-A0)*frac,col,isS?WORD[me]:(cnt.up+' of '+tot+' sensors up'));
+      tip=pt(90,A0+(A1-A0)*frac);
+      svgEl('line',{x1:100,y1:100,x2:tip[0].toFixed(1),y2:tip[1].toFixed(1),stroke:col,'stroke-width':3,'stroke-linecap':'round'},svg);
+      svgEl('circle',{cx:100,cy:100,r:6,fill:col},svg);
+      svgEl('circle',{cx:100,cy:100,r:2.2,fill:'#fff'},svg);
       var big=isS?(lv||WORD[me]):Math.round(upPct*100)+'%', fs=Math.max(14,Math.min(34,190/Math.max(3,big.length)));
       svgEl('text',{x:100,y:104,'text-anchor':'middle','font-size':fs.toFixed(1),'font-weight':700,fill:C.text},svg).textContent=big;
       svgEl('text',{x:100,y:126,'text-anchor':'middle','font-size':12,fill:C.muted},svg).textContent=isS?WORD[me]:(cnt.up+' of '+tot+' sensors up');
@@ -7175,12 +7188,12 @@ try{
   function buildPresetOptions(){
     if(!presetSel)return;
     presetSel.innerHTML='';
-    var blank=h('option');blank.value='__blank';blank.textContent=(TYPE==='gauge')?'Blank gauge':(TYPE==='frame'?'Blank frame':(TYPE==='graph'?'Blank graph':(TYPE==='tile'?(tlFam()==='ind'?'Blank industrial object':'Blank tile'):(TYPE==='status'?'Blank status card':(TYPE==='sunburst'?'Blank sunburst':(TYPE==='donut'?'Blank donut':(TYPE==='icon'?'Blank status icon':'Works on a probe, group, device or sensor')))))));presetSel.appendChild(blank);
+    var blank=h('option');blank.value='__blank';blank.textContent=(TYPE==='frame'?'Blank frame':(TYPE==='graph'?'Blank graph':(TYPE==='tile'?(tlFam()==='ind'?'Blank industrial object':'Blank tile'):(TYPE==='status'?'Blank status card':(TYPE==='sunburst'?'Blank sunburst':(TYPE==='donut'?'Blank donut':(TYPE==='icon'?'Blank status icon':'Works on a probe, group, device or sensor')))))));presetSel.appendChild(blank);   /* 1.5.111: Blank is gauge's default too now, same wording as the default table */
     var src=(TYPE==='tile')?TLPRESETS.filter(function(p){return (p.fam||'tile')===tlFam();}):(TYPE==='status')?SPRESETS.map(function(x){return {id:x.id,name:x.name,cat:'Built in'};}):((TYPE==='gauge')?GPRESETS:(TYPE==='graph'?GRPRESETS:(TYPE==='donut'?DPRESETS:(TYPE==='sunburst'?SBPRESETS:(TYPE==='icon'?ICPRESETS:PRESETS))))), cats={},order=[];
     src.forEach(function(p){if(!cats[p.cat]){cats[p.cat]=h('optgroup');cats[p.cat].label=p.cat+((TYPE==='status'||TYPE==='tile')?'':' (PRTG stock)');order.push(p.cat);}
       var op=h('option');op.value=p.id;op.textContent=p.name;cats[p.cat].appendChild(op);});
     order.forEach(function(c){presetSel.appendChild(cats[c]);});
-    if(ANYT[TYPE]&&TYPE!=='table'){var ag=h('optgroup');ag.label='Any object';var ao=h('option');ao.value='any';ao.textContent='Works on a probe, group, device or sensor';ag.appendChild(ao);presetSel.appendChild(ag);if(anyOn())presetSel.value='any';}
+    if(ANYT[TYPE]&&TYPE!=='table'&&TYPE!=='gauge'){var ag=h('optgroup');ag.label='Any object';var ao=h('option');ao.value='any';ao.textContent='Works on a probe, group, device or sensor';ag.appendChild(ao);presetSel.appendChild(ag);if(anyOn())presetSel.value='any';}
   }
   var isTable=function(){return TYPE==='table';};
   var isPaste=function(){return TYPE==='frame'||TYPE==='bg'||TYPE==='shape';};
