@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.101.
+Last updated at version 1.5.102.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -161,6 +161,25 @@ A full run takes about 5 seconds (16 seconds the very first time).
   bar is HTML like the pill and always shows its word; Beacon's rays blink on alarm states when
   Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
   tile, badge, LED).
+
+## Default table: preview with PRTG's paging parts, real row height (1.5.102)
+
+- The owner asked about the empty space at the bottom of the default table's preview. It was the room `tableNeedH` keeps for the two parts PRTG
+  adds to a group with more sensors than the table shows, which the preview did not draw. Seen on the real PRTG (map 2231, file
+  `map-studio-zz-test.htm`): the `div.pagenavigation.pagenavigation-header` "Items: 50 100" line (12 px margin above, 16 px) shows on Local Probe
+  and group 50 but not on device 2095 (empty, 0 px; rule not checked, perhaps more than 50 sensors), and `tfoot.pagenavigation` (48 px,
+  "1 to 10 of 71" and four arrows) shows when there are more rows than the limit; a sensor's channels table (4 rows) has neither.
+- Preview (`drawTablePreview`, default table on a group, no status/value filters): fills the rows up to the limit (`host-NN`), draws that line
+  (when `T.infoheader`) and the page arrows with PRTG's class names; `PRTGBASE` styles them as measured, and now has PRTG's `line-height:normal`
+  and PRTG's link box (`.table tbody tr td a`: inline-block, 1 px above and below, bottom) for every table preview.
+- Found: PRTG's `.table tbody tr td, form .table tbody tr td` (padding 12px 10px 3px, baseline) beats the look's `.ptbl_x tbody td` rule, so Row padding
+  did nothing in PRTG. `anyTabCss` (default table only) now forces the look's padding, middle alignment, line height 1.4 on cells and the title.
+  Other tables still have this (not changed: their files stay identical).
+- `tableNeedH` row = 2 x pad + 1.4 x size + 1.25, + 2 when name links are shown (sensor, device or group column; PRTG's links are inline blocks).
+  Real: rows 41.4 (39.5 without links), content 584 px; formula 586. Preview content ends about 3 px above real.
+- Checked: 16 tests; 41 other files identical; preview pictures. Not checked: other looks on the real PRTG (Wall display 699 from the formula),
+  the group column's links, Links off, the new UI. PRTG's paging text is grey (#575756, arrows #EFEEEE/#575756) on every look, so it is hard
+  to read on dark looks; the preview shows that as PRTG does (not styled by Map Studio).
 
 ## Bar menus over a tall object (1.5.101)
 

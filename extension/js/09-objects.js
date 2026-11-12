@@ -160,7 +160,9 @@ try{
     c.push(r+':has(.ms-ch tbody tr.odd) .ms-ch{display:block;}');
     c.push(r+':has(.ms-ch tbody tr.odd) .ms-sens{display:none;}');
     /* 1.5.99: PRTG's own stylesheet sets table cells to 90 % (13 px came out as 11.7 px on PRTG 26.3), so the look's text size is enforced */
-    if(L.mode!=='prtg'){c.push(r+' tbody td{font-size:'+L.size+'px !important;}');c.push(r+' thead th{font-size:'+thPx(T)+'px !important;}');}
+    if(L.mode!=='prtg'){c.push(r+' tbody td{font-size:'+L.size+'px !important;}');c.push(r+' thead th{font-size:'+thPx(T)+'px !important;}');
+      /* 1.5.102: PRTG's ".table tbody tr td" (padding 12px 10px 3px, baseline) is more specific than the look's rule, so Row padding did nothing in PRTG */
+      c.push(r+' tbody td{padding:'+L.pad+'px '+L.cellX+'px !important;vertical-align:middle !important;line-height:1.4 !important;}');c.push(r+' .tabletitle{line-height:1.4 !important;}');}
     if(!st||L.mode==='prtg')return c;
     var S=[['up','sg'],['warning','sy'],['unusual','so'],['down','sr'],['paused','sb']];
     function rows(k,tail){return r+' tbody tr[class^="'+k+'"] '+tail+','+r+' tbody tr[class*=" '+k+'"] '+tail;}
@@ -352,7 +354,10 @@ try{
   function tableNeedH(T){
     var L=T.look, z=parseFloat(L.size)||13, n=parseInt(T.count,10), bar=(L.titleStyle==='bar'), ip=(bar?0:(L.cardPad||0))+((L.card&&L.bw>0)?L.bw:0);
     if(!(n>0))n=10;   /* every row: the height for ten, the page arrows are not there */
-    var row=2*((parseFloat(L.pad)||9)+2)+Math.round(z), h=12+2*ip+n*row;
+    var lk=T.links!==false&&T.cols.some(function(k){return k==='sensor'||k==='device'||k==='group';});
+    /* 1.5.102: the look's padding, line height 1.4 and the line under the row (39.5 px on PRTG 26.3); PRTG's name links are
+       inline blocks with 1 px above and below, which makes a row with them 2 px taller (41.4 px) */
+    var row=2*(parseFloat(L.pad)||9)+1.4*z+1.25+(lk?2:0), h=12+2*ip+n*row;
     if(T.showTitle!==false)h+=Math.round((parseFloat(L.titleSize)||z)*1.25)+13+(bar?8:0);
     if(L.head!==false)h+=Math.round(thPx(T)*1.25)+17;
     if(T.infoheader)h+=15;
@@ -5048,7 +5053,17 @@ try{
     +':where(#opreview) form .table .headerswithlinks th{padding-top:25px;border-bottom:1px solid #efeeee;}'
     +':where(#opreview) .table td{padding:9px 10px;border-bottom:1px solid #ececec;font-size:12.5px;}'
     +':where(#opreview) .table td a{color:#575756;text-decoration:none;}'
-    +':where(#opreview) .table td .parentItem,:where(#opreview) .table td .parentItem *{color:#9a9b9b;font-size:.78rem;}';
+    +':where(#opreview) .table td .parentItem,:where(#opreview) .table td .parentItem *{color:#9a9b9b;font-size:.78rem;}'
+    +':where(#opreview) .map_table{line-height:normal;}'
+    +':where(#opreview) .table tbody tr td a{display:inline-block;max-width:100%;padding-top:1px;padding-bottom:1px;vertical-align:bottom;}'   /* PRTG's map page: the builder's own 1.5 line height made every preview row taller */
+    /* the "Items" line and the page arrows, measured on PRTG 26.3: 12 px above and 16 px tall, and 48 px tall; 11.7 px and 10.4 px text */
+    +':where(#opreview) .pagenavigation-header{margin-top:12px;height:16px;font-size:11.7px;line-height:16px;}'
+    +':where(#opreview) .pagenavigation-header a{color:inherit;text-decoration:none;margin-right:4px;}'
+    +':where(#opreview) .pagenavigation-header a.selected{font-weight:700;}'
+    +':where(#opreview) .table tfoot.pagenavigation th{height:48px;box-sizing:border-box;padding:16px 10px 15px;vertical-align:middle;border-bottom:0;}'
+    +':where(#opreview) .tablenavigation{font-size:11px;color:#575756;font-weight:400;text-transform:none;letter-spacing:0;}'
+    +':where(#opreview) .tablenavigation a{padding:0 4px;color:#575756;text-decoration:none;font-size:12px;}'
+    +':where(#opreview) .tablenavigation a.disabled{color:#c8c8c8;}';
   /* ---------- editing in the preview: resize, rotate, edit and move the title (tables first) ---------- */
   var edBusy=false;
   var ED={on:true,x:120,y:80,sel:null};   /* the box starts well in from the edge: room to grow to the left and above, and for the rotate handle */
@@ -6355,6 +6370,10 @@ try{
     }
     var tb='', any=!!T.anyType, onS=any&&T.pvOn==='sensor', SCL={up:'sg',warning:'sy',down:'sr',downack:'sr',unusual:'so',paused:'sb',unknown:''};
     if(onS)rows=[];   /* on a sensor PRTG's sensors table has one empty row, as below */
+    /* the default table's preview stands for a group with more sensors than the table shows, as its height does (tableNeedH):
+       fill up to the row limit with more sample rows, and show the two parts PRTG adds there, the "Items" line and the page arrows */
+    var pvN=parseInt(T.count,10), pvMore=any&&!onS&&pvN>0&&rows.length>0&&!T.status.length&&!T.onlyValue;
+    if(pvMore)for(i=rows.length;i<pvN;i++)rows.push({g:'up',status:'Up',sensor:'Ping',device:'host-'+(i+1<10?'0':'')+(i+1),path:'Local Probe > Lab > host-'+(i+1),group:'Lab',message:'OK',lastvalue:(4+i)+' msec',down:'',uptime:'100 %'});
     rows.forEach(function(r,ri){
       tb+='<tr class="'+(ri%2?'even':'odd')+' '+(any?(SCL[r.g]||''):'sg')+'">';
       T.cols.forEach(function(k){tb+='<td class="col-'+k+'">'+cellHtml(k,r)+'</td>';});
@@ -6381,7 +6400,10 @@ try{
       +'<div class="map_object map_table '+cls+'" style="position:relative;overflow:auto;width:100%;'+(Hset?'height:100%;':'')+'">'
       +'<div class="maptablecontainer" style="overflow:hidden">'+(any?'<div class="ms-box-prtg-plugin"><div class="ms-sens">':'')+'<div class="prtg-plugin"><div class="table-wrapper"><form class="form-sensors">'
       +'<div class="tabletitle">'+esc(title)+'</div>'
-      +'<table class="table hoverable sensors"><thead class="headerswithlinks"><tr>'+th+'</tr></thead><tbody>'+tb+'</tbody></table>'
+      +(pvMore&&T.infoheader?'<div class="pagenavigation pagenavigation-header"><div class="itemcount"><span class="table_itemcount_selector">Items: <a class="reloadtablelink selected" href="#">50</a> <a class="reloadtablelink" href="#">100</a></span></div></div>':'')
+      +'<table class="table hoverable sensors"><thead class="headerswithlinks"><tr>'+th+'</tr></thead><tbody>'+tb+'</tbody>'
+      +(pvMore?'<tfoot class="pagenavigation"><tr><th colspan="'+T.cols.length+'"><span class="tablenavigation">1 to '+pvN+' of '+Math.max(71,pvN+1)+' <a class="reloadtablelink disabled arrow">\u00AB</a><a class="reloadtablelink disabled arrow">\u2039</a><a class="reloadtablelink arrow">\u203A</a><a class="reloadtablelink arrow">\u00BB</a></span></th></tr></tfoot>':'')
+      +'</table>'
       +'</form></div></div>'+(any?'</div>'+ch+'</div>':'')+'</div></div></div></div>';
     applyBg(L);
     try{
