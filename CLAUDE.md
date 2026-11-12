@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.111.
+Last updated at version 1.5.110.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -148,46 +148,6 @@ A full run takes about 5 seconds (16 seconds the very first time).
   makes Map Studio treat them as two servers: Review shows already-pushed items as new, and Undo
   is not offered. Confirmed on the real PRTG at 1.5.43. Workaround: always use the same address.
   The owner chose to leave this until after `app.js` is split (the split is now done, at 1.5.53).
-
-## The Any gauge is now the default, and draws a complete dial (1.5.111)
-
-- The owner asked for the gauge to follow the Any table's lead: support a probe, group, device or sensor by default
-  (not a template to pick from the list), draw completely rather than a stripped-down version, and show its preview in
-  PRTG the moment it's selected.
-- Chose to keep Map Studio's own drawn dial for the Any gauge rather than switch it to PRTG's native "channelgauges"
-  plugin (the mechanism that already lets a normal `engine:'prtg'` gauge show PRTG's own widget for a device's
-  sensors or a sensor's channels). The native widget would have let the Any gauge show in the Map Designer canvas and
-  the object list's hover preview, the way `<#table>` tags let the Any table do that at 1.5.96 - but it would mean
-  giving up Map Studio's own look (faces, zones, colours) for PRTG's fixed one, and splitting one file into the two
-  PRTG-tag blocks (one for a probe/group/device's sensors, one for a sensor's channels) the way the table's `.ms-sens`/
-  `.ms-ch` pair does, untested for a dial. The owner chose to keep the custom drawn dial: it still only draws on
-  View Map (where its script runs), and stays blank in the Designer canvas and the hover preview, same as before.
-- Default: `blankG()` now starts with `any:true` (plus `cat:'Any object'`, a blank auto-filled name, and a real
-  300x260 box) instead of a named "Bandwidth gauge" preset, the same way `blankT()` already does for the table since
-  1.5.96. The preset list's blank entry now reads "Works on a probe, group, device or sensor", like the table's, and
-  gauge no longer has a separate "Any object" entry further down the list - picking a face or a named preset (which
-  sets `G.any=false`) is how you leave it, the same way picking a table preset leaves the default table.
-- `setFace()` now clears `G.any` too: choosing a face/style is choosing a concrete single-object gauge. This also
-  fixes the Gauges pack (`PACKS.gauge`, "Download a pack"), whose six named items (`pkFace`) start from a fresh
-  `blankG()` and would otherwise all have come out as Any gauges once `blankG()` defaulted to `any:true`.
-- The dial itself (`anyRuntime`'s gauge branch, shared by every "Any" object type, not only the gauge): a fixed
-  red-to-green backdrop across the sweep, the live reading drawn over it in the current status colour, and a needle -
-  instead of the previous flat colour fill with no needle. For a probe, group or device the reading is the share up
-  (0 = none up, 1 = all up); a sensor has no numeric scale to read from, so its needle takes the same worst-to-best
-  rank (`RANK`, down..up) already used elsewhere in the file, so it still moves rather than always sitting at one end
-  as it effectively did before (the old code filled the whole arc for a sensor regardless of its state).
-- No part of this touches the table, or any other type's own build function (`buildTable`, `buildDonut`, `buildTile`,
-  ...): checked, all seven byte-identical. The shared `anyRuntime` function is serialized whole into every "Any"
-  object's file (table's own Any variant excepted, which doesn't use it), so the donut/sunburst/status/icon/tile Any
-  files do change by a few lines of text (the `sector()` helper gained an optional fill-opacity parameter, used only
-  by the gauge branch) - checked line by line: nothing else in their own drawing differs.
-- Checked: 15 checks against a Playwright-driven copy of the builder (not part of `tests/`, built for this): a fresh
-  gauge defaults to Any; the preset list's wording and the missing "Any object" entry; the live preview actually
-  draws one needle line, two hub circles and three translucent backdrop sectors for both a sample sensor and a
-  sample group; picking a named preset or a face clears `any`; all six Gauges pack items come out as concrete gauges
-  plus one correct extra Any item. Plus `tests/run-tests.js` (16/16) and the byte-identical check above.
-- Not checked on the real PRTG: nothing new to check there, since the Any gauge only ever draws on View Map, same as
-  before.
 
 ## Title bar covers full scrollable width (1.5.110)
 
