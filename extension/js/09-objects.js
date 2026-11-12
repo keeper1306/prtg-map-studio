@@ -160,7 +160,7 @@ try{
     c.push(r+':has(.ms-ch tbody tr.odd) .ms-ch{display:block;}');
     c.push(r+':has(.ms-ch tbody tr.odd) .ms-sens{display:none;}');
     /* 1.5.99: PRTG's own stylesheet sets table cells to 90 % (13 px came out as 11.7 px on PRTG 26.3), so the look's text size is enforced */
-    if(L.mode!=='prtg')c.push(r+' tbody td{font-size:'+L.size+'px !important;}');
+    if(L.mode!=='prtg'){c.push(r+' tbody td{font-size:'+L.size+'px !important;}');c.push(r+' thead th{font-size:'+thPx(T)+'px !important;}');}
     if(!st||L.mode==='prtg')return c;
     var S=[['up','sg'],['warning','sy'],['unusual','so'],['down','sr'],['paused','sb']];
     function rows(k,tail){return r+' tbody tr[class^="'+k+'"] '+tail+','+r+' tbody tr[class*=" '+k+'"] '+tail;}
@@ -221,7 +221,7 @@ try{
     c.push(r+' table{width:100%;border-collapse:collapse;}');
     if(L.head){
       var hs=L.headStyle||'fill';
-      var th='font-size:'+Math.max(9,L.size-3)+'px;font-weight:'+(hs==='fill'?500:600)+';letter-spacing:.8px;'+(L.headUpper?'text-transform:uppercase;':'')+'color:'+L.headColor+';text-align:left;padding:8px '+L.cellX+'px !important;';
+      var th='font-size:'+thPx(T)+'px;font-weight:'+(hs==='fill'?500:600)+';letter-spacing:.8px;'+(L.headUpper?'text-transform:uppercase;':'')+'color:'+L.headColor+';text-align:left;padding:8px '+L.cellX+'px !important;';
       if(hs==='fill')th+='background:'+L.headBg+';border-bottom:1px solid '+L.line+' !important;';
       else if(hs==='line')th+='background:transparent;border-bottom:2px solid '+L.accent+' !important;';
       else th+='background:transparent;border-bottom:1px solid '+L.line+' !important;';
@@ -354,12 +354,14 @@ try{
     if(!(n>0))n=10;   /* every row: the height for ten, the page arrows are not there */
     var row=2*((parseFloat(L.pad)||9)+2)+Math.round(z), h=12+2*ip+n*row;
     if(T.showTitle!==false)h+=Math.round((parseFloat(L.titleSize)||z)*1.25)+13+(bar?8:0);
-    if(L.head!==false)h+=Math.round(Math.max(9,z-3)*1.25)+17;
+    if(L.head!==false)h+=Math.round(thPx(T)*1.25)+17;
     if(T.infoheader)h+=15;
     if(parseInt(T.count,10)>0)h+=47;
     return Math.max(120,Math.ceil(h));
   }
-  function tableAutoH(T){if(T.anyType&&T.autoH!==false&&T.fit)T.initH=String(tableNeedH(T));}
+  function tableAutoH(T){if(T.anyType&&T.autoH!==false)T.initH=String(tableNeedH(T));}   /* 1.5.100: Fixed tables too (the default) */
+  /* 1.5.100: the header labels of the default table keep their proportion to the text (10 px for 13 px); other tables keep size - 3 */
+  function thPx(T){var z=parseFloat(T.look&&T.look.size)||13;return T.anyType?Math.round(z*10/13*10)/10:Math.max(9,z-3);}
   function tableFitScript(T,cls){
     if(!tableFits(T))return '';
     return '(function(){\n  var F='+tableFitRuntime.toString()+';\n  var C={w:'+Math.max(40,parseInt(T.fitW,10)||parseInt(T.initW,10)||600)+',min:'+tableMinScale(T).toFixed(4)+'};\n'
@@ -537,7 +539,7 @@ try{
     return {id:'',cat:'Data Tables',name:'Site status',title:'Site status',titleObj:false,showTitle:true,
       cols:['status','device'],sortBy:'status',sortDir:'asc',count:10,status:[],mapTags:true,reqTag:'',nameContains:'',onlyValue:false,onlyFav:false,extra:[],
       links:true,sortable:true,refreshable:true,infoheader:true,box:'maptablecontainer',checks:'probenode,group,device',initW:600,initH:330,
-      rot:0,tOffX:0,tOffY:0,tAlign:'',fit:true,fitW:600,anyType:true,pvOn:'group',autoH:true,
+      rot:0,tOffX:0,tOffY:0,tAlign:'',fit:false,fitW:600,anyType:true,pvOn:'group',autoH:true,
       look:lookOf('PRTG new UI'),fname:''};
   }
   function fromPreset(p){
@@ -5653,6 +5655,8 @@ try{
     i.addEventListener('input',function(){obDo(function(){set(i.value);});});
     OB.syncs.push(function(){var v=get();if(/^#[0-9a-f]{6}$/i.test(v))i.value=v;});w.appendChild(i);pop.appendChild(w);return w;
   }
+  /* 1.5.100: on a table the title keeps its proportion to the text when the text size changes */
+  function tableTitleFollows(l,v){var o=parseFloat(l.size)||13;if(TYPE==='table'&&v>0&&o>0&&Math.abs(v-o)>0.01)l.titleSize=Math.max(8,Math.round((parseFloat(l.titleSize)||o)*v/o));}
   function lkEd(fn){return function(v){var l=M().look;if(l.mode==='prtg')l.mode='custom';fn(l,v);};}
   function pfNum(pop,label,get,set,min,max){
     var w=h('div','pf'), i=h('input');i.type='number';i.min=min;i.max=max;w.appendChild(h('label',null,label));
@@ -5904,7 +5908,7 @@ try{
       }));
       b.appendChild(obMenu('Rows','Which rows, how many, and in what order',function(pop){
         pfNum(pop,'Most rows (0 = all)',function(){return M().count;},function(v){M().count=v;},0,200);
-        if(T.fit)pfChk(pop,'Height follows the number of rows',function(){return T.autoH!==false;},function(v){T.autoH=v;});
+        if(T.anyType)pfChk(pop,'Height follows the number of rows',function(){return T.autoH!==false;},function(v){T.autoH=v;});
         pfSel(pop,'Sort by',function(){return M().sortBy;},function(v){M().sortBy=v;},SORTS.map(function(k){return [k,colLabel(k)];}));
         pfSel(pop,'Order',function(){return M().sortDir;},function(v){M().sortDir=v;},[['asc','Ascending'],['desc','Descending']]);
         pfList(pop,'Only these states (none ticked = all)',function(){return STATUSDEF.map(function(d){return [d[0],d[1]];});},
@@ -6042,7 +6046,7 @@ try{
         OB.syncs.push(function(){var bar=L().titleStyle==='bar';hcol.hidden=bar;bcol.hidden=!bar;btc.hidden=!bar;});
       }));
     }
-    sty.appendChild(obLab('Text',obNum('Text size',function(){return L().size;},function(v){obSet(function(l){l.size=v;});},8,40)));
+    sty.appendChild(obLab('Text',obNum('Text size',function(){return L().size;},function(v){obSet(function(l){tableTitleFollows(l,v);l.size=v;});},8,40)));
     sty.appendChild(obSep());
     /* bold, italic, underline and UPPERCASE for the object's text, the same four as the Map designer's bar */
     [['tBold','Bold','<path d="M7 5h6a3.5 3.5 0 0 1 0 7H7zM7 12h7a3.5 3.5 0 0 1 0 7H7z"/>'],['tItal','Italic','<path d="M10 5h8M6 19h8M15 5l-6 14"/>'],['tUnder','Underline','<path d="M7 4v7a5 5 0 0 0 10 0V4M5 20h14"/>'],['tUpper','UPPERCASE','']].forEach(function(d){
@@ -7616,8 +7620,9 @@ try{
     var s4n=h('p','note');s4a.appendChild(s4n);
     syncs.push(function(){var need=tableNeedH(T), hh=parseInt(T.initH,10)||0, n=parseInt(T.count,10);
       s4n.textContent=(n>0?n+' rows':'Ten rows')+' need about '+need+' px of height at full size (text '+T.look.size+' px). '
-        +(hh&&hh<need-4?'This table is '+hh+' px tall: in PRTG its text stays at '+TABLE_MIN_PX+' px or more and the rest scrolls.':'Text never gets smaller than '+TABLE_MIN_PX+' px in PRTG; a box that is too small scrolls instead.');});
-    showIf(s4a,function(){return !!T.fit;});s4.appendChild(s4a);
+        +(T.fit?(hh&&hh<need-4?'This table is '+hh+' px tall: in PRTG its text stays at '+TABLE_MIN_PX+' px or more and the rest scrolls.':'Flexible: the text grows and shrinks with the box, never under '+TABLE_MIN_PX+' px; a box that is too small scrolls instead.')
+          :(hh&&hh<need-4?'This table is '+hh+' px tall: the rest scrolls in PRTG.':'Fixed: the text keeps its size; a box that is too small scrolls.'));});
+    showIf(s4a,function(){return !!T.anyType;});s4.appendChild(s4a);
 
     var s5=section('Filters');secIf(s5,isTable);
     s5.appendChild(h('label',null,'Show only these statuses'));
@@ -7726,7 +7731,7 @@ try{
     var D=lookDetail;
     function grp(label,fn){var b=h('div');if(label)b.appendChild(h('label',null,label));D.appendChild(b);if(fn)showIf(b,fn);return b;}
     var g=grp('');
-    g.appendChild(pair(inSel('Font',function(){return Lk().font;},function(v){Lk().font=v;},famOptions),inNum('Size',function(){return Lk().size;},function(v){Lk().size=v;},8,40)));
+    g.appendChild(pair(inSel('Font',function(){return Lk().font;},function(v){Lk().font=v;},famOptions),inNum('Size',function(){return Lk().size;},function(v){tableTitleFollows(Lk(),v);Lk().size=v;},8,40)));
     g=grp('Title');
     g.appendChild(pair(inSel('Title style',function(){return Lk().titleStyle;},function(v){Lk().titleStyle=v;},[['bar','Colored bar'],['heading','Heading'],['divider','Heading with line'],['accent','Heading with accent']]),inNum('Title size',function(){return Lk().titleSize;},function(v){Lk().titleSize=v;},8,60)));
     g.appendChild(pair(inColor('Heading color',function(){return Lk().titleText;},function(v){Lk().titleText=v;}),inColor('Bar color',function(){return Lk().titleBg;},function(v){Lk().titleBg=v;})));

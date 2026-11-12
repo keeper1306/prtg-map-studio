@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.99.
+Last updated at version 1.5.100.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -161,6 +161,17 @@ A full run takes about 5 seconds (16 seconds the very first time).
   bar is HTML like the pill and always shows its word; Beacon's rays blink on alarm states when
   Animate is on. Existing styles were checked pixel-identical to 1.5.57 (traffic, dot, pill,
   tile, badge, LED).
+
+## Fixed tables by default, titles in proportion (1.5.100)
+
+- The owner: tables Fixed by default; titles must grow in proportion to the rest. `blankT` `fit:false` (Flexible is the bar's button);
+  `tableAutoH` no longer needs Flexible, so a Fixed default table still arrives at the height its rows need (541 for ten rows in
+  PRTG new UI). A Fixed file has no script; the root's `overflow:auto` makes a too-small box scroll.
+- `thPx(T)`: the default table's header labels are 10/13 of the text size (10 px at 13, 13.8 at 18); other tables keep size - 3.
+  `anyTabCss` also forces that size on `thead th` (`!important`, PRTG's 90 %). `tableTitleFollows(l,v)`: changing the text size of a
+  table (bar's Text size, side panel's Size) scales the title size by the same ratio (13 -> 18 takes 16 -> 22).
+- Checked: 16 tests; 41 other files identical; the default file 600 x 541, `overflow:auto`, no script, header 10 px. Not checked on the
+  real PRTG yet: Chrome's PRTG session had ended (login page), and Claude does not sign in.
 
 ## Readable tables: height from the rows, text never under 12 px (1.5.99)
 
