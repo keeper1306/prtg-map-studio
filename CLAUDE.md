@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.10.1.
+Last updated at version 1.10.2.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -215,6 +215,21 @@ still aborts the whole item on a type it does not list.
 
 Watch out: PRTG's own stylesheet already styles class names like `sensg` (it adds a tick glyph), so
 a Map Studio object must put the state into its **own** prefixed class, via `prefix="..."`.
+
+## "CONTAINMENT BREACH" sensor; String tile strip removes every match (1.10.2, 2026-11-13)
+
+- The owner asked how to change the alarm banner's text ("The host "google-kukui" could not be resolved." is the ping's real error).
+  Answer: a sensor whose message we control. First tried an HTTP Push Data sensor (2235 "T-Rex fence" on Probe Device 40, still there,
+  Unknown/"No data yet"; owner not yet asked whether to delete it): pushing needs its identification token in a URL, which Claude does
+  not handle, so it was dropped. Instead, with the owner's folder approval, `Custom Sensors\EXE\map-studio-t-rex-fence.bat`
+  (`echo 0:CONTAINMENT BREACH - T-Rex fence down`, `exit /b 2`) and an EXE/Script sensor 2236 "T-Rex fence" on Probe Device 40.
+  PRTG shows it Down with "System Error: CONTAINMENT BREACH - T-Rex fence down (code: PE022)". Green again: `exit /b 0`.
+- The String tile's "Remove this text first" (`strip`) used `new RegExp(C.strip,'i')`, removing only the first match; now `'gi'` (one
+  changed line in the tile runtime, so every tile file built from now differs in that line). The alarm banner file now has
+  strip `^System Error:\s*|\s*\(code: PE\d+\)$` and shows "CONTAINMENT BREACH - T-Rex fence down". Old copy in
+  `Desktop\PRTG Map Studio\mapobjects-backup-2026-11-13\`.
+- Map 2234: the T-Rex fence, beacon, alarm banner and T-Rex power lamp now point at 2236 (added new, old items deleted). Desktop folder
+  updated (layout targets, READ ME, the .bat, picture). Checked on the real PRTG, classic View Map. 16 tests.
 
 ## Isla Nublar wall screen, map 2234 (2026-11-13, built)
 

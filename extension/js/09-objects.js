@@ -3704,7 +3704,7 @@ try{
     /* ----- string tile: the sensor's message ----- */
     else if(K==='string'){
       var me=root.querySelector('.tmsg'), msg=me?(me.textContent||'').replace(/\s+/g,' ').trim():'';
-      if(C.strip){try{msg=msg.replace(new RegExp(C.strip,'i'),'').trim();}catch(e1){}}
+      if(C.strip){try{msg=msg.replace(new RegExp(C.strip,'gi'),'').trim();}catch(e1){}}
       var lc=msg.toLowerCase(), stS=sensorState;
       var hit=function(list){return String(list||'').toLowerCase().split(',').map(function(x){return x.replace(/^\s+|\s+$/g,'');}).filter(Boolean).some(function(w){return lc.indexOf(w)>=0;});};
       if(hit(C.okW))stS='up';
