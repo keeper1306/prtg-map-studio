@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.7.0.
+Last updated at version 1.8.0.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -215,6 +215,42 @@ still aborts the whole item on a type it does not list.
 
 Watch out: PRTG's own stylesheet already styles class names like `sensg` (it adds a tick glyph), so
 a Map Studio object must put the state into its **own** prefixed class, via `prefix="..."`.
+
+## Every gauge face is a style of the Any gauge (1.8.0)
+
+- The owner: "all gauges should be available with the any option ... the gauges option more kind of a look and not individual objects".
+  Asked about the six faces that were PRTG's own dial (PRTG draws it only for a sensor): "imitate them, what matters most is that they
+  work and that the previews work both in Map Studio and in PRTG".
+- `G.aface` (default `'dial'`, the 1.7.0 Status dial) holds the face of an Any gauge; `gFace()` returns it when `G.any`. `setFace(k)` on an
+  Any gauge only sets `aface` and stays Any (it no longer calls `gLeaveAny`; templates still do, and `gLeaveAny` drops `aface`).
+  `AGFACES` = Status dial + `GFACES`; `gFaceGrid(after,true)` shows them in the bar's Gauge menu and the side panel's Any object section.
+  Old (non-Any) saved gauges keep `GFACES`, `buildGauge` and their files. The Gauges pack (`pkFace`: `blankG()` then `setFace()`) now
+  makes Any gauges, one per face.
+- Drawing (js/09-objects.js, before `anyCss`): `AFDRAW[face]()` builds static SVG in a 200 x 170 box (centre `AF` 100,94, sweep -135 to
+  135 degrees) from shared parts: track, reading arc (`.agact`, `pathLength=100`, dasharray from `--p`), empty zone arcs (`.agzn`, own
+  `data-r`), needle (`.agnd` rotated by `--p`), ticks, scale numbers (`.agsl[data-f]`), lit segments (`.agseg`, `opacity:clamp(...)` from
+  `--p`, `--i`, `--n`), words in a `foreignObject`. `afCss` writes the colours and the `ISTATES` rules (same `--p/--c/--w` as the
+  dial). The Status dial still uses `anyGaugeHtml`/`anyGaugeCss`, so its file is byte-identical to 1.7.0 apart from `anyRuntime`.
+  Names: "Map Studio Any gauge - <look> - <face>" (the dial keeps "Map Studio Gauge - <look> - any object"); 196 face x look names unique.
+- `anyRuntime` (View Map) refines every face: geometry from the svg's `data-cx/cy/a0/a1` (the dial has none: 100, 100, -120, 120),
+  zone arcs at each `.agzn`'s radius (only the dial's `.agzone` gets opacity .28), scale numbers rewritten in the channel's own units
+  (factor from the shown maximum or value, as the Tile does: sensor 2106 showed 0 to 43 Mbit/s), lit segments coloured by zone.
+- **Found on the real PRTG: a very long line stops PRTG filling in any tag of the file.** A face file whose markup was on one 5061-character
+  line came back with every `<#...>` as text; the same markup split into lines of at most 425 characters worked (the 1.7.0 file's longest
+  line, 899, works; the limit is somewhere between). `afHtml` now puts one element per line. Keep every line of an object file under
+  900 characters. A 119 KB file worked, so size is not the problem.
+- Also fixed after seeing it on View Map: the scale numbers' font sizes are `calc(9px)`/`calc(7.5px)`, else Flexible's rewrite doubled
+  them on a 600 px item.
+- Checked on the real PRTG: all 14 faces script-free in one test sheet (`map-studio-zz-gauge-static.htm`, the real markup and CSS of each
+  face) through `mapobjectpreview` on sensor 2106 (green, live value), Root and device 2095 (red, "Down"); with the script, map 2231's four
+  items swapped to Cyber tech and to Speedometer (View Map: 79 % / 56 of 71, 52 of 66, sensor 0.21 Mbit/s with zones and 0 to 43 scale)
+  and the Map Designer canvas; `map-studio-zz-test.htm` restored byte-identical. Builder: every face on a group and a sensor, with and
+  without the script; 29 files (13 old faces, 8 templates, 8 defaults) byte-identical to 1.7.0; the other 7 Any objects differ only in
+  `anyRuntime` and their previews are pixel-identical (14 compared); 16 tests.
+- Left in `mapobjects` (no delete through the bridge): `map-studio-zz-probe-a/b/c/d.htm` now hold test sheets and two face files
+  (originals copied to the session's outputs), `map-studio-zz-gauge-static.htm` the 14-face sheet.
+- **Not checked**: the faces in looks other than Corporate blue on the real PRTG; the new UI (:1616); the public page; Wall display's size;
+  each face individually on View Map (only Cyber tech and Speedometer were, the sheet covers the static drawing of all).
 
 ## The default gauge works on all four object types and shows inside PRTG (1.7.0)
 
