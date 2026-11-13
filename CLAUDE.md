@@ -249,7 +249,11 @@ a Map Studio object must put the state into its **own** prefixed class, via `pre
   The two fence-power files were replaced once; the first copies are in `Desktop\PRTG Map Studio\mapobjects-backup-2026-11-13\`.
 - Checked on the real PRTG, classic View Map: the fence draws red with the gap, sparks and label on 2144, the raptor fence green, stripes
   on the alarm items, live values in tiles, lamps and graph, counts 57/3/10/1. Not checked: Map Designer canvas, hover preview, new UI, public page.
-- Seen: "CONTAINMENT BREACH" label overlaps the poster's "Visitors center" text a little.
+- Fixed 2026-11-13 after the owner's feedback: the break moved to side 5 (bottom; the label sat over the poster's "Visitors center"
+  on side 7; sides 3 to 6 compared on a stand-in page, 4 covered the T-Rex). Status counts were unreadable at 844 x 96 with a title
+  (labels 10 px, number over caption): now no title, built at fit 420 x 100 and placed at 844 x 134 (Flexible scale 1.34), so labels
+  ~13 px, numbers ~40 px. Graph and lamps moved down to 388 (lamps 410 x 108). Old files in `mapobjects-backup-2026-11-13`.
+  The owner said to leave the unused HTTP Push Data sensor 2235.
 
 ## Fence files keep short lines (1.10.1)
 
