@@ -637,16 +637,8 @@ try{
      every other face is drawn by Map Studio from the same data, so the look can change everything */
   var GFACES=[['classic','PRTG classic'],['n-neon','Neon glass'],['n-flat','Flat minimalist'],['n-cyber','Cyber tech'],['n-amb','Ambient glow'],['n-clean','Clean'],['progress','Progress arc'],['zones','Zones and needle'],['threshold','Threshold arc'],['gradient','Gradient arc'],['led','Segmented LED'],['solid','Solid arc'],['speedo','Speedometer']];   /* Glass & metallic is no longer offered; objects saved with it still draw */
   var NFACE_DEF={flat:{nline:'full',nscale:'inside'},cyber:{nline:'full',nscale:'inside'},clean:{nline:'full',nscale:'inside'}};   /* these start with the complete value line and the numbers inside */
-  function gFace(){if(G.any)return agFace(G);return G.engine==='prtg'?(G.nstyle?'n-'+G.nstyle:'classic'):(G.style||'progress');}   /* 1.8.0: the Any gauge keeps its face in aface */
-  /* 1.7.0: leaving the default Any gauge (a face, a named template) gives back exactly what a new gauge was before 1.7.0, so those files
-     are unchanged: the Gauges category and name, no size, no Flexible. The Gauges pack starts each item from blankG() then setFace(). */
-  function gLeaveAny(g){
-    if(!g.any)return;
-    g.cat='Gauges';if(!g.nameUser)g.name='Bandwidth gauge';g.initW=0;g.initH=0;
-    delete g.any;delete g.anyPv;delete g.aface;delete g.fit;delete g.fitW;delete g.fitH;
-  }
+  function gFace(){return G.engine==='prtg'?(G.nstyle?'n-'+G.nstyle:'classic'):(G.style||'progress');}
   function setFace(k){
-    if(G.any){G.aface=k;return;}   /* 1.8.0: a face is a style of the Any gauge, which keeps working on all four object types */
     if(k==='classic'||k.indexOf('n-')===0){var was=gFace();G.engine='prtg';G.nstyle=(k==='classic')?'':k.slice(2);if(!G.nbg)G.nbg='light';G.initW=0;G.initH=0;
       if(was!==k){var d=NFACE_DEF[G.nstyle]||{};G.nline=d.nline||'off';G.nscale=d.nscale||'off';}   /* each face starts from its own value line and scale */
       return;}   /* PRTG's own dial, plain or with a modern style */
@@ -674,7 +666,6 @@ try{
       if(!ex&&(ns==='clean'||ns==='neon')){for(var tk=0;tk<=8;tk++){var ta=(135+tk*33.75)*Math.PI/180;o+='<path d="M'+(31+8.6*Math.cos(ta)).toFixed(1)+' '+(27+8.6*Math.sin(ta)).toFixed(1)+'L'+(31+7*Math.cos(ta)).toFixed(1)+' '+(27+7*Math.sin(ta)).toFixed(1)+'" stroke="'+(ns==='neon'?Y:'#9aa3b4')+'" stroke-width=".8"/>';}}
       o+='<path d="M31 27l5.5-5.5" stroke="'+(ns==='cyber'?'#1b9fd6':ink)+'" stroke-width="1.3" stroke-linecap="round"/><circle cx="31" cy="27" r="'+(ns==='glass'?2.6:1.6)+'" fill="'+(ns==='glass'?'#c9ced8':ink)+'"/>';
     }
-    else if(k==='dial'){o=s(a(17,150,390),N,6)+s(a(17,150,330),G1,6)+'<path d="M32 26l9-7" stroke="'+D+'" stroke-width="2.2" stroke-linecap="round"/><circle cx="32" cy="26" r="2.8" fill="'+D+'"/>';}
     else if(k==='classic'){o='<path d="'+a(17,135,405)+'L32 26Z" fill="'+G1+'"/><path d="'+a(17,315,360)+'L32 26Z" fill="'+Y+'"/><path d="'+a(17,360,405)+'L32 26Z" fill="'+R+'"/><circle cx="31" cy="27" r="10" fill="#fff"/><path d="M32 26l9-9" stroke="'+D+'" stroke-width="2.4" stroke-linecap="round"/>';}
     else if(k==='progress')o=s(a(15,135,405),N,5,'round')+s(a(15,135,300),G1,5,'round');
     else if(k==='zones')o=s(a(15,135,320),G1,5)+s(a(15,320,370),Y,5)+s(a(15,370,405),R,5)+'<path d="M32 26l-8-8" stroke="'+D+'" stroke-width="2.2" stroke-linecap="round"/><circle cx="32" cy="26" r="2.6" fill="'+D+'"/>';
@@ -686,9 +677,9 @@ try{
     return '<svg viewBox="0 0 64 44" width="64" height="44" aria-hidden="true">'+o+'</svg>';
   }
   /* a grid of face pictures; one click changes how the gauge is drawn */
-  function gFaceGrid(after,anyG){   /* anyG: the Any gauge's faces (the Status dial first) */
+  function gFaceGrid(after){
     var g=h('div','presetgrid');
-    (anyG?AGFACES:GFACES).forEach(function(x){
+    GFACES.forEach(function(x){
       var q=h('button','lookchip');q.type='button';q.setAttribute('data-face',x[0]);q.title=x[1];
       q.innerHTML=gFaceSvg(x[0])+'<span class="pname">'+x[1]+'</span>';
       q.addEventListener('click',function(){setFace(x[0]);if(after)after();refreshUI();render();});g.appendChild(q);
@@ -702,16 +693,14 @@ try{
     {name:'Response Time',info:{data:[{id:2,name:'Response Time',primary:false,show:1,status:3,lastvalueraw:12,lastvalue:'12 msec',graphminraw:0,graphmaxraw:200,limitmode:1,limitminwarning:'',limitmaxwarning:100,limitminerror:'',limitmaxerror:150}]},minimum:0,maximum:200,condition:true,lastvalue:'12 msec'}
   ]}};
   function blankG(){
-    return {type:'gauge',engine:'prtg',nstyle:'flat',nbg:'light',nline:'full',nscale:'inside',cat:'Any object',name:'',nameUser:false,fname:'',titleMode:'object',title:'',
+    return {type:'gauge',engine:'prtg',nstyle:'flat',nbg:'light',nline:'full',nscale:'inside',cat:'Gauges',name:'Bandwidth gauge',fname:'',titleMode:'object',title:'',
       kind:'sensor-primary',small:false,prio:3,plgPrio:false,mapTags:true,reqTag:'',count:0,hideSettings:true,strip:'thin',scale:1,
       channel:'primary',channelName:'',rangeMode:'channel',min:0,max:100,limits:'channel',dir:'above',warn:70,err:90,
-      shape:'ring',thick:14,style:'progress',colorMode:'status',needle:true,showMinMax:true,glow:false,label:'channel',labelText:'',
-      any:true,anyPv:'group',aface:'dial',initW:'300',initH:'260',fit:true,fitW:'300',fitH:'260',
-      look:lookOf('Corporate blue')};   /* 1.7.0: a new gauge is the Any gauge (works on a probe, group, device or sensor), as the default table is since 1.5.96;
-                                          a face or a named template leaves it (setFace, gaugeFromPreset). The face fields stay for when one is picked. */
+      shape:'ring',thick:14,style:'progress',colorMode:'status',needle:true,showMinMax:true,glow:false,label:'channel',labelText:'',initW:0,initH:0,
+      look:lookOf('Corporate blue')};   /* a new gauge starts as Flat minimalist on white, with the complete value line and the numbers inside */
   }
   function gaugeFromPreset(p){
-    var G=blankG();gLeaveAny(G);
+    var G=blankG();
     /* PRTG files its own gauge templates under Status Icons and Device Tree Views; every gauge Map Studio builds goes under Gauges */
     G.engine='prtg';G.nstyle='';G.nline='off';G.nscale='off';G.cat='Gauges';G.name=p.name+' custom';G.kind=p.kind;G.small=!!p.small;
     G.initW=0;G.initH=0;G.prio=(p.prio==null?3:p.prio);G.plgPrio=!!p.plgPrio;G.mapTags=!!p.mapTags;G.look=lookOf('PRTG default');
@@ -3142,7 +3131,7 @@ try{
      the object's channels (only a sensor has channels), and the object's own name, status and last value.
      On a sensor it draws that sensor (its state, its value, its channels); on a probe, group or device it draws the sensors below it.
      Each object type draws the same data its own way (anyRuntime, C.view). The Industrial object is a Tile underneath (TL.fam). */
-  var ANYT={table:1,gauge:1,graph:1,donut:1,sunburst:1,status:1,icon:1,tile:1};
+  var ANYT={table:1,graph:1,donut:1,sunburst:1,status:1,icon:1,tile:1};   /* 1.8.1: no Any gauge - a gauge shows one sensor’s value, which a probe, group or device does not have (the owner’s decision) */
   var ANYSZ={table:[520,300],gauge:[300,260],graph:[460,260],donut:[380,240],sunburst:[380,400],status:[420,200],icon:[280,56],tile:[300,170],ind:[320,190]};
   var ANYSEC={'Object':1,'Any object':1,'Name and title':1,'Looks':1,'Look details':1,'Appearance':1,'Flexible or fixed':1};
   var ANYLAB={table:'Table',gauge:'Gauge',graph:'Graph',donut:'Donut',sunburst:'Sunburst',status:'Status counts',icon:'Icon',tile:'Tile',ind:'Industrial'};
@@ -3161,178 +3150,6 @@ try{
     var zk=(parseFloat(m.look.size)||13)/13;   /* Wall display's bigger text gets a bigger box, as when the look is picked */
     m.initW=String(Math.round(sz[0]*zk));m.initH=String(Math.round(sz[1]*zk));
     m.fit=(TYPE!=='table'&&!!FLEXT[TYPE]);m.fitW=m.initW;m.fitH=m.initH;
-  }
-  /* 1.7.0: the Any gauge's dial is plain markup that PRTG fills in on its own side, so it draws with no script at all: in the Map
-     Designer canvas, in the object list's hover preview and on View Map (measured 2026-11-12, see CLAUDE.md). The state comes from
-     <#sensor type="colorclassofstate"> as classes on .agz (a sensor gets one, e.g. msgs-sensg; a probe, group or device gets PRTG's
-     rollup flags, e.g. msgs-hasred msgs-hasgreen ...); CSS written in ISTATES order (rising severity) lets the worst state win and sets
-     --p (where the needle and the coloured arc stop, 0..1) and --c (that state's colour). PRTG has no raw number to give, so this is a
-     status position. On View Map, anyRuntime then moves the same needle to the exact value: a sensor's primary channel on its own
-     range and limits, or the share of sensors up below a probe, group or device. */
-  var AGPOS={up:0.833,unknown:0,paused:0,unusual:0.42,warning:0.5,ack:0.167,down:0.167};
-  var AGWORD={up:'Up',unknown:'Unknown',paused:'Paused',unusual:'Unusual',warning:'Warning',ack:'Acknowledged',down:'Down'};
-  function agArc(a,b){   /* an arc of the dial from angle a to b (degrees, 0 = top, clockwise), radius 75 round (100,100) */
-    var q=function(d){var t=d*Math.PI/180;return (100+75*Math.sin(t)).toFixed(2)+' '+(100-75*Math.cos(t)).toFixed(2);};
-    return 'M'+q(a)+' A75 75 0 '+((b-a)>180?1:0)+' 1 '+q(b);
-  }
-  function anyGaugeHtml(stateCls,val,st,ty){
-    return '<div class="agz '+stateCls+'"><svg class="asvg agsvg" viewBox="0 0 200 150" preserveAspectRatio="xMidYMid meet">'
-      +'<path class="agtrack" d="'+agArc(-120,120)+'"/><path class="agzone agz0" d=""/><path class="agzone agz1" d=""/><path class="agzone agz2" d=""/>'
-      +'<path class="agact" pathLength="100" d="'+agArc(-120,120)+'"/>'
-      +'<line class="agnd" x1="100" y1="100" x2="100" y2="40"/><circle class="aghub" cx="100" cy="100" r="6.5"/>'
-      +'<foreignObject x="30" y="108" width="140" height="40"><div xmlns="http://www.w3.org/1999/xhtml" class="agtx">'
-      +'<b class="agv">'+val+'</b><span class="agst">'+st+'</span><span class="agty">'+ty+'</span></div></foreignObject></svg></div>';
-  }
-  function anyGaugeCss(r,L){
-    var P=donutPalette(L), muted=(L.muted||L.headColor||'#6B7280'), c=[];
-    c.push(r+' .agz{position:absolute;left:0;top:0;right:0;bottom:0;--p:0;--c:'+P.unknown+';--w:"Unknown";}');
-    var cardHex=(L.card&&String(L.cardBg).charAt(0)==='#')?L.cardBg:'#FFFFFF';
-    c.push(r+' .agtrack{fill:none;stroke:'+blend(cardHex,L.text,0.12)+';stroke-width:18;}');   /* the track; zones are drawn over it only where a sensor has limits (View Map) */
-    c.push(r+' .agzone{fill:none;stroke-width:18;stroke-opacity:.28;}');
-    c.push(r+' .agz0{stroke:'+P.down+';}'+r+' .agz1{stroke:'+P.warning+';}'+r+' .agz2{stroke:'+P.up+';}');
-    c.push(r+' .agact{fill:none;stroke:var(--c);stroke-width:18;stroke-dasharray:calc(var(--p) * 100) 200;}');
-    c.push(r+' .agnd{stroke:'+L.text+';stroke-width:3.5;stroke-linecap:round;transform-origin:100px 100px;transform:rotate(calc(-120deg + var(--p) * 240deg));}');
-    c.push(r+' .aghub{fill:'+L.text+';}');
-    /* the dial's text sits inside the svg, which already scales it with the box; calc() keeps Flexible's font-size rewrite (flexCss) off it,
-       which on a box twice the normal size doubled it again (seen in PRTG's Map Designer on map 2231) */
-    c.push(r+' .agtx{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;font-family:'+familyStack(L.font)+';line-height:1.2;text-align:center;color:'+L.text+';}');
-    /* the needle runs under the text near the ends of the scale (seen on View Map at 0.2 %); the words sit on a patch of the card's colour */
-    c.push(r+' .agv,'+r+' .agst{background:'+cardHex+';border-radius:4px;padding:0 4px;}');
-    c.push(r+' .agv,'+r+' .agv:empty+.agst{font-size:calc(19px);font-weight:700;color:'+L.text+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}');
-    c.push(r+' .agst,'+r+' .agty{font-size:calc(10.5px);color:'+muted+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}');
-    c.push(r+' .agv:empty{display:none;}'+r+' .agv:not(:empty)~.agty{display:none;}');
-    /* a probe, group or device (no value of its own): the big word is the worst state below it, from the same classes as the dial, not the
-       object's own status (Root said "Up" under a red dial on the real PRTG). PRTG's word stays in the file for the script; only the box shows --w. */
-    c.push(r+' .agv:empty+.agst{font-size:0;}'+r+' .agv:empty+.agst::after{content:var(--w);font-size:calc(19px);}');
-    /* the state: rising severity, so the worst class an object carries wins */
-    ISTATES.forEach(function(x){
-      var sel=x.sens.concat(x.has).map(function(k){return r+' .agz.msgs-'+k;}).join(',');
-      c.push(sel+'{--p:'+AGPOS[x.id]+';--c:'+(x.id==='ack'?P.ack:P[x.id])+';--w:"'+AGWORD[x.id]+'";}');
-    });
-    return c;
-  }
-  /* 1.8.0: every gauge face is a style of the Any gauge. The Status dial above (anyGaugeHtml/anyGaugeCss as at 1.7.0) is the default;
-     the faces below are drawn the same way: plain markup PRTG fills in, read through --p (0..1), --c (state colour) and --w (state word),
-     which the state classes on .agz set without any script, so each face draws in PRTG's Map Designer, its hover preview and on View Map.
-     PRTG classic and the five modern dials (Neon glass ... Clean) were PRTG's own dial, which PRTG draws only for a sensor; here Map Studio
-     imitates them, so they work on a probe, group or device too. On View Map anyRuntime refines every face: the exact value, zone arcs
-     from the channel's limits (every .agzn, at its own radius), the scale numbers (data-f) and the lit segments (.agseg) in zone colours.
-     Angles in degrees, 0 = top, clockwise; every face sweeps AF.a0 to AF.a1 round (AF.cx, AF.cy) in a 200 x 170 box. */
-  var AF={cx:100,cy:94,a0:-135,a1:135};
-  var AGFACES=[['dial','Status dial']].concat(GFACES);   /* what the Any gauge offers: the Status dial, then the faces a gauge always had */
-  function agFace(m){return (m&&m.aface)||'dial';}
-  function afPt(cx,cy,r,a){var t=a*Math.PI/180;return [cx+r*Math.sin(t),cy-r*Math.cos(t)];}
-  function afArc(cx,cy,r,a,b){
-    var p=afPt(cx,cy,r,a), q=afPt(cx,cy,r,b);
-    return 'M'+p[0].toFixed(2)+' '+p[1].toFixed(2)+' A'+r+' '+r+' 0 '+((b-a)>180?1:0)+' 1 '+q[0].toFixed(2)+' '+q[1].toFixed(2);
-  }
-  function afTrack(cls,r,w,cap){return '<path class="'+cls+'" d="'+afArc(AF.cx,AF.cy,r,AF.a0,AF.a1)+'" stroke-width="'+w+'" fill="none"'+(cap?' stroke-linecap="'+cap+'"':'')+'/>';}
-  function afRead(r,w,cap,extra){return '<path class="agact'+(extra?' '+extra:'')+'" pathLength="100" d="'+afArc(AF.cx,AF.cy,r,AF.a0,AF.a1)+'" stroke-width="'+w+'" fill="none"'+(cap?' stroke-linecap="'+cap+'"':'')+'/>';}
-  function afZones(r,w,cls){var o='';for(var i=0;i<3;i++)o+='<path class="agzn'+(cls?' '+cls:'')+' agz'+i+'" data-r="'+r+'" d="" stroke-width="'+w+'" fill="none"/>';return o;}   /* empty until the script has a channel's limits */
-  function afNeedle(inner){return '<g class="agnd" style="transform-origin:'+AF.cx+'px '+AF.cy+'px">'+inner+'</g>';}   /* drawn pointing up, turned by CSS */
-  function afTicks(n,r0,r1,cls){var o='';for(var i=0;i<=n;i++){var a=AF.a0+(AF.a1-AF.a0)*i/n,p=afPt(AF.cx,AF.cy,r0,a),q=afPt(AF.cx,AF.cy,r1,a);o+='<line class="'+cls+'" x1="'+p[0].toFixed(1)+'" y1="'+p[1].toFixed(1)+'" x2="'+q[0].toFixed(1)+'" y2="'+q[1].toFixed(1)+'"/>';}return o;}
-  function afNums(list,r,cls,dy){var o='';list.forEach(function(f){var a=AF.a0+(AF.a1-AF.a0)*f,p=afPt(AF.cx,AF.cy,r,a);o+='<text class="agsl'+(cls?' '+cls:'')+'" data-f="'+f+'" x="'+p[0].toFixed(1)+'" y="'+(p[1]+(dy||0)).toFixed(1)+'" text-anchor="middle" dominant-baseline="central">'+Math.round(f*100)+'</text>';});return o;}
-  function afSegs(n,r0,r1,wdeg,cls){var o='';for(var i=0;i<n;i++){var a=AF.a0+(AF.a1-AF.a0)*(i+0.5)/n,
-      A=afPt(AF.cx,AF.cy,r0,a-wdeg/2),B=afPt(AF.cx,AF.cy,r1,a-wdeg/2),C=afPt(AF.cx,AF.cy,r1,a+wdeg/2),D=afPt(AF.cx,AF.cy,r0,a+wdeg/2),
-      d='M'+A[0].toFixed(1)+' '+A[1].toFixed(1)+'L'+B[0].toFixed(1)+' '+B[1].toFixed(1)+'L'+C[0].toFixed(1)+' '+C[1].toFixed(1)+'L'+D[0].toFixed(1)+' '+D[1].toFixed(1)+'Z';
-      o+='<path class="'+cls+'0" d="'+d+'"/><path class="'+cls+' agseg" data-f="'+((i+0.5)/n).toFixed(4)+'" style="--i:'+i+';--n:'+n+'" d="'+d+'"/>';}return o;}   /* segment i is lit while --p x n > i */
-  function afText(x,y,w,h,cls){return '<foreignObject x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'"><div xmlns="http://www.w3.org/1999/xhtml" class="agtx'+(cls?' '+cls:'')+'"><b class="agv">%V</b><span class="agst">%S</span><span class="agty">%T</span></div></foreignObject>';}
-  function afHub(r,cls){return '<circle class="aghub'+(cls?' '+cls:'')+'" cx="'+AF.cx+'" cy="'+AF.cy+'" r="'+r+'"/>';}
-  var AFDRAW={
-    progress:function(){return afTrack('agtk',70,14,'round')+afRead(70,14,'round')+afNums([0,1],70,'agsl-end',20)+afText(30,72,140,46,'');},
-    solid:function(){return afTrack('agtk agtint',68,26,'round')+afRead(68,26,'round')+afNums([0,1],68,'agsl-end',24)+afText(30,72,140,46,'');},
-    zones:function(){return afTrack('agband',70,20)+afZones(70,20)+afNums([0,1],70,'agsl-end',22)
-      +afNeedle('<path class="agnp" d="M96.5 '+AF.cy+' L100 '+(AF.cy-62)+' L103.5 '+AF.cy+' Z"/>')+afHub(6,'')+afText(30,110,140,46,'');},
-    threshold:function(){return afTrack('agtk',68,6,'round')+afRead(68,12,'round')+afTrack('agtk agthin',82,1.4)+afZones(82,3,'')+afNums([0,1],68,'agsl-end',20)
-      +afNeedle('<circle class="agdot" cx="'+AF.cx+'" cy="'+(AF.cy-68)+'" r="4.5"/>')+afText(30,72,140,46,'');},
-    gradient:function(){return '<defs><linearGradient id="%Gg" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="%UP"/><stop offset=".5" stop-color="%WARN"/><stop offset="1" stop-color="%DOWN"/></linearGradient></defs>'
-      +afTrack('agtk',68,13,'round')+afRead(68,13,'round','aggrad')+'<path class="aggline" d="'+afArc(AF.cx,AF.cy,82,AF.a0,AF.a1)+'" stroke-width="2.4" fill="none"/>'+afNums([0,1],68,'agsl-end',20)+afText(30,72,140,46,'');},
-    led:function(){return afSegs(24,58,80,7.4,'agled')+afNums([0,1],69,'agsl-end',22)+afText(30,72,140,46,'agt-led');},
-    speedo:function(){return afTrack('agtk agthin',84,1.6)+afZones(84,3,'')+afTicks(50,77,81,'agtick-mn')+afTicks(10,72,81,'agtick-mj')
-      +afNums([0,.1,.2,.3,.4,.5,.6,.7,.8,.9,1],63,'agsl-in')
-      +afNeedle('<line class="agnl" x1="'+AF.cx+'" y1="'+(AF.cy+10)+'" x2="'+AF.cx+'" y2="'+(AF.cy-68)+'"/>')+afHub(6,'agring')+afText(40,118,120,40,'');},
-    classic:function(){return afTrack('agband',62,26)+afZones(62,26)
-      +'<circle class="agcut" cx="'+(AF.cx-6)+'" cy="'+(AF.cy+6)+'" r="44"/>'
-      +afNeedle('<path class="agnp agnp-cl" d="M95.5 '+AF.cy+' L100 '+(AF.cy-70)+' L104.5 '+AF.cy+' Z"/>')+afHub(7,'agcl')
-      +afNums([0,1],62,'agsl-end',26)+afText(40,112,120,46,'');},
-    'n-neon':function(){return '<defs><radialGradient id="%Gd" cx=".5" cy=".4" r=".65"><stop offset="0" stop-color="%CARD"/><stop offset="1" stop-color="%TRACK"/></radialGradient>'
-        +'<filter id="%Gf" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3.5"/></filter></defs>'
-      +'<g filter="url(#%Gf)" class="agglow">'+afTrack('agband',72,16)+'</g>'+afTrack('agband',72,14)+afZones(72,14,'')
-      +'<circle class="agdisc" cx="'+AF.cx+'" cy="'+AF.cy+'" r="58" fill="url(#%Gd)"/>'
-      +afTicks(40,52,55,'agtick-mn')+afTicks(4,48,55,'agtick-mj')+afNums([.25,.5,.75],42,'agsl-in')
-      +afNeedle('<line class="agnl agnl-acc" x1="'+AF.cx+'" y1="'+AF.cy+'" x2="'+AF.cx+'" y2="'+(AF.cy-48)+'"/>')+afHub(5.5,'agring agring-acc')+afText(44,108,112,44,'agt-dial');},
-    'n-flat':function(){return afTrack('agouter',84,2)+afZones(84,2.4,'')+afTrack('agband',70,14)+afZones(70,14,'')
-      +'<circle class="agdisc" cx="'+AF.cx+'" cy="'+AF.cy+'" r="57"/>'
-      +afTicks(40,50,53,'agtick-mn')+afTicks(5,47,53,'agtick-mj')+afNums([.2,.4,.6,.8],39,'agsl-in')
-      +afNeedle('<line class="agnl" x1="'+AF.cx+'" y1="'+AF.cy+'" x2="'+AF.cx+'" y2="'+(AF.cy-47)+'"/>')+afHub(5,'agring')+afText(44,108,112,46,'agt-dial');},
-    'n-clean':function(){return afTrack('agouter',85,1.4)+afZones(85,1.8,'')+afTrack('agband',72,11)+afZones(72,11,'')
-      +'<circle class="agdisc agdisc-clean" cx="'+AF.cx+'" cy="'+AF.cy+'" r="60"/>'
-      +afTicks(40,53,56,'agtick-mn')+afTicks(5,50,56,'agtick-mj')+afNums([.2,.4,.6,.8],41,'agsl-in')
-      +afNeedle('<line class="agnl" x1="'+AF.cx+'" y1="'+AF.cy+'" x2="'+AF.cx+'" y2="'+(AF.cy-49)+'"/><circle class="agdot" cx="'+AF.cx+'" cy="'+(AF.cy-85)+'" r="3.4"/>')
-      +afHub(5,'agring')+afText(44,108,112,46,'agt-dial');},
-    'n-cyber':function(){return '<defs><pattern id="%Gp" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M10 0H0V10" fill="none" class="aggrid"/></pattern></defs>'
-      +'<rect x="0" y="0" width="200" height="170" fill="url(#%Gp)"/>'
-      +afSegs(54,60,84,2.2,'agbar')
-      +'<circle class="agdisc agdisc-cy" cx="'+AF.cx+'" cy="'+AF.cy+'" r="53"/>'
-      +afTicks(40,46,49,'agtick-mn')+afTicks(5,43,49,'agtick-mj')+afNums([.2,.4,.6,.8],35,'agsl-in')
-      +afNeedle('<line class="agnl agnl-acc" x1="'+AF.cx+'" y1="'+AF.cy+'" x2="'+AF.cx+'" y2="'+(AF.cy-44)+'"/>')+afHub(5,'agring agring-acc')+afText(42,106,116,44,'agt-dial agt-cy');},
-    'n-amb':function(){return '<defs><filter id="%Gf" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="8"/></filter></defs>'
-      +'<g filter="url(#%Gf)" class="agglow">'+afTrack('agband',68,30)+'</g>'+afTrack('agband agsoft',68,16)+afZones(68,16,'agsoft')
-      +'<circle class="agdisc" cx="'+AF.cx+'" cy="'+AF.cy+'" r="52"/>'
-      +afNeedle('<line class="agnl agnl-ink" x1="'+AF.cx+'" y1="'+AF.cy+'" x2="'+AF.cx+'" y2="'+(AF.cy-46)+'"/>')+afHub(4.5,'')+afText(44,102,112,44,'agt-dial agt-amb');}
-  };
-  /* the colours a face uses, from the look */
-  function afCols(L){
-    var cardHex=(L.card&&String(L.cardBg).charAt(0)==='#')?L.cardBg:'#FFFFFF',
-        acc=(L.accent&&L.accent!==LOOKBASE.accent)?L.accent:((L.link&&L.link!==LOOKBASE.link)?L.link:(L.accent||'#4F8FC9'));
-    return {P:donutPalette(L),text:L.text,muted:(L.muted||L.headColor||'#6B7280'),card:cardHex,track:blend(cardHex,L.text,0.12),acc:acc,font:familyStack(L.font)};
-  }
-  function afHtml(face,gid,L,stateCls,val,st,ty){
-    var C=afCols(L), s=(AFDRAW[face]||AFDRAW['n-flat'])();
-    s=s.replace(/%G/g,gid).replace(/%UP/g,C.P.up).replace(/%WARN/g,C.P.warning).replace(/%DOWN/g,C.P.down).replace(/%CARD/g,C.card).replace(/%TRACK/g,blend(C.card,C.text,0.07));
-    s=s.split('%V').join(val).split('%S').join(st).split('%T').join(ty);   /* PRTG's tags may hold anything: no replace() patterns */
-    s=s.replace(/(\/>|<\/text>|<\/g>|<\/defs>|<\/linearGradient>|<\/radialGradient>|<\/pattern>)/g,'$1\n');
-    /* one element per line: PRTG fills in no tag at all in a file with a very long line (seen on PRTG 26.3: a 5061-character line left
-       every <#...> of the file as text, the same markup split into lines of at most 425 characters worked; the 1.7.0 file's longest is 899) */
-    return '<div class="agz agf-'+face+' '+stateCls+'"><svg class="asvg agsvg" viewBox="0 0 200 170" preserveAspectRatio="xMidYMid meet" data-cx="'+AF.cx+'" data-cy="'+AF.cy+'" data-a0="'+AF.a0+'" data-a1="'+AF.a1+'">'+s+'</svg></div>';
-  }
-  function agHtml(m,gid,L,stateCls,val,st,ty){var f=agFace(m);return f==='dial'?anyGaugeHtml(stateCls,val,st,ty):afHtml(f,gid,L,stateCls,val,st,ty);}
-  function afCss(face,r,L,gid){
-    var C=afCols(L), P=C.P, z=r+' .agz', c=[];
-    c.push(z+'{position:absolute;left:0;top:0;right:0;bottom:0;--p:0;--c:'+P.unknown+';--w:"Unknown";}');
-    c.push(z+' .agnd{transform:rotate(calc('+AF.a0+'deg + var(--p) * '+(AF.a1-AF.a0)+'deg));}');
-    c.push(z+' .agtk{stroke:'+C.track+';}'+z+' .agtint{stroke:color-mix(in srgb,var(--c) 22%,'+C.card+');}'+z+' .agthin{stroke:'+blend(C.card,C.text,0.3)+';}');
-    c.push(z+' .agact{stroke:var(--c);stroke-dasharray:calc(var(--p) * 100) 200;}'+z+' .agact.aggrad{stroke:url(#'+gid+'g);}');
-    c.push(z+' .aggline{stroke:url(#'+gid+'g);opacity:.55;}');
-    /* a face whose band is its zones shows the state's colour there until the script has the channel's limits */
-    c.push(z+' .agband,'+z+' .agouter{stroke:var(--c);}'+z+' .agsoft{stroke-opacity:.6;}'+z+' .agglow{opacity:.55;}');
-    c.push(z+' .agnp{fill:'+C.text+';}'+z+' .aghub{fill:'+C.text+';}'+z+' .agring{fill:'+C.card+';stroke:'+C.text+';stroke-width:2.5;}'+z+' .agring-acc{stroke:'+C.acc+';}');
-    c.push(z+' .agcut{fill:'+C.card+';}'+z+' .agcl{fill:'+blend(C.card,C.text,0.75)+';}'+z+' .agnp-cl{fill:'+blend(C.card,C.text,0.75)+';}');
-    c.push(z+' .agnl{stroke:var(--c);stroke-width:2.6;stroke-linecap:round;}'+z+' .agnl-acc{stroke:'+C.acc+';}'+z+' .agnl-ink{stroke:'+C.text+';stroke-width:2;}');
-    c.push(z+' .agdot{fill:var(--c);stroke:'+C.card+';stroke-width:1.5;}');
-    c.push(z+' .agtick-mn{stroke:'+C.muted+';stroke-width:.7;}'+z+' .agtick-mj{stroke:'+C.text+';stroke-width:1.4;}');
-    c.push(z+' .agsl{fill:'+C.muted+';font-family:'+C.font+';font-size:calc(9px);}'+z+' .agsl-in{font-size:calc(7.5px);}');   /* calc(): the svg scales them already, Flexible must not */
-    c.push(z+' .agdisc{fill:'+C.card+';stroke:'+C.track+';stroke-width:1;}'+z+' .agdisc-clean{stroke:none;filter:drop-shadow(0 1px 2.5px rgba(0,0,0,.16));}');
-    c.push(z+' .agdisc-cy{stroke:'+C.acc+';stroke-opacity:.45;}'+z+' .aggrid{stroke:'+C.acc+';stroke-opacity:.13;stroke-width:.6;}');
-    c.push(z+' .agled0,'+z+' .agbar0{fill:'+C.track+';}');
-    c.push(z+' .agseg{fill:var(--c);opacity:clamp(0, calc((var(--p) * var(--n) - var(--i)) * 100), 1);}');
-    /* the words, as on the Status dial (calc() keeps Flexible's font-size rewrite off them: the svg already scales them) */
-    c.push(z+' .agtx{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;font-family:'+C.font+';line-height:1.2;text-align:center;color:'+C.text+';}');
-    c.push(z+' .agv,'+z+' .agst{background:'+C.card+';border-radius:4px;padding:0 4px;}');
-    c.push(z+' .agv,'+z+' .agv:empty+.agst{font-size:calc(19px);font-weight:700;color:'+C.text+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}');
-    c.push(z+' .agst,'+z+' .agty{font-size:calc(10px);color:'+C.muted+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}');
-    c.push(z+' .agv:empty{display:none;}'+z+' .agv:not(:empty)~.agty{display:none;}');
-    c.push(z+' .agv:empty+.agst{font-size:0;}'+z+' .agv:empty+.agst::after{content:var(--w);font-size:calc(19px);}');
-    c.push(z+' .agt-dial .agv,'+z+' .agt-dial .agv:empty+.agst::after{font-size:calc(13.5px);}'+z+' .agt-dial .agst,'+z+' .agt-dial .agty{font-size:calc(7.5px);text-transform:uppercase;letter-spacing:.8px;}');
-    c.push(z+' .agt-led .agv,'+z+' .agt-led .agv:empty+.agst::after{font-family:Consolas,"Courier New",monospace;color:var(--c);font-size:calc(16px);}');
-    c.push(z+' .agt-cy .agv{font-family:Consolas,"Courier New",monospace;color:'+C.acc+';}'+z+' .agt-cy .agv,'+z+' .agt-cy .agv:empty+.agst::after{font-size:calc(12.5px);}');
-    c.push(z+' .agt-amb .agv{font-weight:500;}');
-    /* the state: rising severity, so the worst class an object carries wins */
-    ISTATES.forEach(function(x){
-      var sel=x.sens.concat(x.has).map(function(k){return z+'.msgs-'+k;}).join(',');
-      c.push(sel+'{--p:'+AGPOS[x.id]+';--c:'+(x.id==='ack'?P.ack:P[x.id])+';--w:"'+AGWORD[x.id]+'";}');
-    });
-    return c;
   }
   function anyCss(m,cls,L){
     var r='.'+cls, c=gFrameCss({engine:'ring'},cls,L), muted=(L.muted||L.headColor||'#6B7280'), fillA=(L.cardA==null?100:L.cardA),
@@ -3387,7 +3204,6 @@ try{
     c.push(r+' .alamp b{font-size:clamp(12px,min(18cqh,8cqw),40px);font-weight:800;letter-spacing:1px;white-space:nowrap;}');
     c.push(r+' .alamp span{font-size:12px;color:'+muted+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}');
     if(k!==1)for(i=n0;i<c.length;i++)c[i]=tsCss(c[i],k);
-    if(anyView()==='gauge')(agFace(m)==='dial'?anyGaugeCss(r,L):afCss(agFace(m),r,L,cls)).forEach(function(x){c.push(x);});   /* inside the svg it scales with the box already */
     return c.join('\n');
   }
   function anyConfig(m,L){
@@ -3454,9 +3270,9 @@ try{
     function fit(t,h,w){return 'font-size:min('+h+'cqh,'+(Math.round(w/Math.max(2,String(t).length)*10)/10)+'cqw);';}   /* a big number that fits its width: shorter text, bigger letters */
     function summary(){var a=[];['down','warning','unusual','paused','unknown'].forEach(function(k){if(cnt[k])a.push(cnt[k]+' '+WORD[k].toLowerCase());});return a.length?a.join(' · '):'All up';}
     root.setAttribute('data-any',isS?'sensor':'object');
+    body.innerHTML='';
     var V=C.view;
-    if(V!=='gauge')body.innerHTML='';   /* the gauge keeps the dial PRTG drew and only moves it (1.7.0) */
-    if(!isS&&!tot&&V!=='icon'&&V!=='ind'&&V!=='tile'&&V!=='gauge'){say('No sensors');return;}
+    if(!isS&&!tot&&V!=='icon'&&V!=='ind'&&V!=='tile'){say('No sensors');return;}
     if(V==='table'){
       var h='<table class="at"><thead><tr>';
       if(isS){h+='<th>Channel</th><th class="av">Last value</th></tr></thead><tbody>';CH.slice(0,60).forEach(function(c){h+='<tr><td title="'+esc(c.name)+'">'+esc(c.name)+'</td><td class="av">'+esc(c.last)+'</td></tr>';});}
@@ -3468,64 +3284,12 @@ try{
       }
       body.innerHTML=h+'</tbody></table>';
     }else if(V==='gauge'){
-      /* 1.7.0: the dial is PRTG's (anyGaugeHtml), already at the status position; here, on View Map, the needle goes to the exact value */
-      var gz=body.querySelector('.agz');
-      if(!gz)return;
-      /* 1.8.0: every face, not only the Status dial: the geometry is on the svg (data-cx, data-cy, data-a0, data-a1; the Status dial has none:
-         100, 100, -120, 120), each zone arc carries its own radius (data-r; the Status dial's are 75) */
-      var gv=gz.querySelector('.agv'), gs=gz.querySelector('.agst'), gy=gz.querySelector('.agty'), gp=null, gtx=null, gsub=null, gzs=[],
-          gsv=gz.querySelector('svg'), gat=function(k,d){var x=gsv&&gsv.getAttribute(k);return (x===null||x===''||!isFinite(Number(x)))?d:Number(x);},
-          GCX=gat('data-cx',100), GCY=gat('data-cy',100), GA0=gat('data-a0',-120), GA1=gat('data-a1',120);
-      function garc(r,a,b){var q=function(d){var t=d*Math.PI/180;return (GCX+r*Math.sin(t)).toFixed(2)+' '+(GCY-r*Math.cos(t)).toFixed(2);};return 'M'+q(a)+' A'+r+' '+r+' 0 '+((b-a)>180?1:0)+' 1 '+q(b);}
-      function gang(f){return GA0+(GA1-GA0)*Math.max(0,Math.min(1,f));}
-      function gzone(i,f0,f1,col,op){
-        if(f1>f0)gzs.push([f0,f1,col]);
-        [].forEach.call(gz.querySelectorAll('.agz'+i),function(z){
-          if(!(f1>f0)){z.setAttribute('d','');return;}
-          z.setAttribute('d',garc(Number(z.getAttribute('data-r'))||75,gang(f0),gang(f1)));
-          if(col){z.style.stroke=col;if(/\bagzone\b/.test(z.getAttribute('class')||''))z.style.strokeOpacity=op;}
-        });
-      }
-      function gn(x){var n=(x===''||x==null)?NaN:Number(x);return isFinite(n)?n:null;}
-      function gfmt(x){var a=Math.abs(x),u='',d;if(a>=1e9){x/=1e9;u='G';}else if(a>=1e6){x/=1e6;u='M';}else if(a>=1e4){x/=1e3;u='k';}
-        a=Math.abs(x);d=(a>=100||a===Math.round(a))?0:(a>=10?1:2);return String(Number(x.toFixed(d)))+u;}
-      if(isS){
-        var best=null;
-        CH0.forEach(function(c){var d=c&&c.info&&c.info.data&&c.info.data[0];if(!d||c.info.lookups||gn(d.lastvalueraw)===null)return;
-          if(/^downtime$/i.test(strip(c.name))&&CH0.length>1)return;if(!best||(d.primary&&!best.d.primary))best={d:d,c:c};});
-        if(best){
-          var d=best.d, gval=gn(d.lastvalueraw), lo=gn(d.graphminraw), hi=gn(d.graphmaxraw);
-          if(lo===null)lo=gn(best.c.minimum);if(hi===null)hi=gn(best.c.maximum);
-          if(lo===null)lo=0;if(hi===null||hi<=lo)hi=Math.max(lo+1,Math.abs(gval)*1.25);
-          var fr=function(x){return (x-lo)/(hi-lo);};
-          gp=fr(gval);
-          var wmax=gn(d.limitmaxwarning), emax=gn(d.limitmaxerror), wmin=gn(d.limitminwarning), emin=gn(d.limitminerror);
-          if(Number(d.limitmode)===1&&(wmax!==null||emax!==null)){   /* limits above: good below them */
-            var a1=fr(wmax!==null?wmax:emax), a2=fr(emax!==null?emax:1e300);
-            gzone(2,0,Math.min(1,a1),P.up,.28);gzone(1,Math.max(0,a1),Math.min(1,a2),P.warning,.28);gzone(0,Math.max(0,a2),1,P.down,.28);
-          }else if(Number(d.limitmode)===1&&(wmin!==null||emin!==null)){   /* limits below: good above them */
-            var b1=fr(emin!==null?emin:-1e300), b2=fr(wmin!==null?wmin:emin);
-            gzone(0,0,Math.min(1,b1),P.down,.28);gzone(1,Math.max(0,b1),Math.min(1,b2),P.warning,.28);gzone(2,Math.max(0,b2),1,P.up,.28);
-          }   /* no limits: the neutral track alone, the state's colour on the reading */
-          gsub=WORD[me]+' \u00b7 '+strip(best.c.name);
-          /* the scale numbers in the channel's own units: PRTG's raw values can be in another scale (bytes for Mbit/s), so the factor
-             comes from the shown maximum or the shown value, as the Tile does */
-          var gmx=num(d.graphmax), glv=String(d.lastvalue!=null?d.lastvalue:(best.c.lastvalue||'')), gls=/^\s*</.test(glv)?null:num(glv), kf=null;
-          if(gmx&&gn(d.graphmaxraw))kf=gmx/gn(d.graphmaxraw);else if(gls&&gval)kf=gls/gval;
-          if(!(kf>0)||!isFinite(kf))kf=1;
-          [].forEach.call(gz.querySelectorAll('.agsl[data-f]'),function(t){t.textContent=gfmt((lo+Number(t.getAttribute('data-f'))*(hi-lo))*kf);});
-        }else gsub=WORD[me];
-        if(lv)gtx=lv;
-      }else if(tot){
-        gp=upPct;gtx=Math.round(upPct*100)+'%';gsub=cnt.up+' of '+tot+' sensors up';
-      }
-      if(gp!==null)gz.style.setProperty('--p',Math.max(0,Math.min(1,gp)).toFixed(4));
-      gz.style.setProperty('--c',P[me]);
-      if(gtx!==null&&gv)gv.textContent=gtx;
-      if(gsub!==null&&gs)gs.textContent=gsub;
-      if(gy&&gtx!==null)gy.style.display='none';
-      if(gzs.length)[].forEach.call(gz.querySelectorAll('.agseg'),function(sg){   /* lit segments take the colour of the zone they sit in */
-        var f=Number(sg.getAttribute('data-f'));gzs.forEach(function(q){if(f>=q[0]&&f<=q[1]&&q[2])sg.style.fill=q[2];});});
+      var svg=svgEl('svg',{'class':'asvg',viewBox:'0 0 200 150',preserveAspectRatio:'xMidYMid meet'},body), A0=-Math.PI*2/3, A1=Math.PI*2/3, frac=isS?1:upPct, col=P[me];
+      sector(svg,100,100,64,86,A0,A1,C.track);
+      if(frac>0)sector(svg,100,100,64,86,A0,A0+(A1-A0)*frac,col,isS?WORD[me]:(cnt.up+' of '+tot+' sensors up'));
+      var big=isS?(lv||WORD[me]):Math.round(upPct*100)+'%', fs=Math.max(14,Math.min(34,190/Math.max(3,big.length)));
+      svgEl('text',{x:100,y:104,'text-anchor':'middle','font-size':fs.toFixed(1),'font-weight':700,fill:C.text},svg).textContent=big;
+      svgEl('text',{x:100,y:126,'text-anchor':'middle','font-size':12,fill:C.muted},svg).textContent=isS?WORD[me]:(cnt.up+' of '+tot+' sensors up');
     }else if(V==='donut'||V==='sunburst'){
       var wrap=document.createElement('div');wrap.className='asplit';body.appendChild(wrap);
       var aw=document.createElement('div');aw.className='aw';wrap.appendChild(aw);
@@ -3580,7 +3344,7 @@ try{
         titleInner=(tm==='custom')?clean(m.title):'<#objectproperty name="Name" id="<@objectid>">', w=parseInt(m.initW,10), h_=parseInt(m.initH,10);
     o.push('<!'+'--'+clean(m.cat||'Any object')+': '+clean(m.name||'Any object')+'-->');
     o.push('');
-    o.push('<div class="map_object map_graph '+cls+'" id="<@itemid>" objectid="<@objectid>" subid="<@subid>"'+((w>0&&h_>0)?' initialwidth="'+Math.min(w,4000)+'" initialheight="'+Math.min(h_,4000)+'"':'')+' data-any="loading" style="overflow:hidden;'+(v==='gauge'?'width:<@width>px;height:<@height>px;':'')+'<#mapobject type="coordinates" subid="<@subid>" mode="<@editmode>">">');   /* 1.7.0: in PRTG's previews the item has no size of its own (no coordinates), so the dial, which fills its box, gets PRTG's <@width>/<@height> (on a map the item's own size, measured on map 2231) */
+    o.push('<div class="map_object map_graph '+cls+'" id="<@itemid>" objectid="<@objectid>" subid="<@subid>"'+((w>0&&h_>0)?' initialwidth="'+Math.min(w,4000)+'" initialheight="'+Math.min(h_,4000)+'"':'')+' data-any="loading" style="overflow:hidden;<#mapobject type="coordinates" subid="<@subid>" mode="<@editmode>">">');
     o.push('<#mapobject type="objectgrip" mode="<@editmode>">');
     o.push('<#mapobject type="htmlbefore" subid="<@subid>">');
     o.push('<#checkobjecttype objecttype="sensor,device,group,probenode" nicemessage="true" id="<@objectid>">');
@@ -3588,9 +3352,7 @@ try{
     o.push('<style>');o.push(css);o.push('</style>');
     o.push('  <div class="gbox">');
     if(tm!=='none')o.push('    <div class="gtitle"><b>'+titleInner+'</b></div>');
-    if(v==='gauge')o.push('    <div class="abody">'+agHtml(m,cls,L,'<#sensor type="colorclassofstate" prefix="msgs-" id="<@objectid>">',
-      '<#objectstatus name="lastvalue" id="<@objectid>">','<#objectstatus name="status" id="<@objectid>">','<#objectstatus name="type" id="<@objectid>">')+'</div>');
-    else o.push('    <div class="abody"></div>');
+    o.push('    <div class="abody"></div>');
     o.push('    <span class="aname" hidden><#objectproperty name="Name" id="<@objectid>"></span>');
     o.push('    <span class="astatus" hidden><#objectstatus name="status" id="<@objectid>"></span>');
     o.push('    <span class="alast" hidden><#objectstatus name="lastvalue" id="<@objectid>"></span>');
@@ -3615,7 +3377,7 @@ try{
     o.push("      content='channels'");
     o.push("      sortby='name'");
     o.push("      count='*'");
-    o.push(v==='gauge'?"      columns='name=textraw,lastvalue,info=treejson,minimum,maximum'>":"      columns='name=textraw,lastvalue'>");   /* the gauge needs each channel's raw value, range and limits */
+    o.push("      columns='name=textraw,lastvalue'>");
     o.push('    }');
     o.push('    -->');
     o.push('  </div>');
@@ -3627,17 +3389,11 @@ try{
   }
   function anySample(kind){
     if(kind==='sensor')return {name:'Core switch uplink',status:'Up',last:'62.4 Mbit/s',sensors:[],
-      channels:[{name:'Traffic In',lastvalue:'62.4 Mbit/s',info:{data:[{primary:true,lastvalueraw:62.4,graphminraw:0,graphmaxraw:100,limitmode:1,limitmaxwarning:70,limitmaxerror:90}]}},{name:'Traffic Out',lastvalue:'17.4 Mbit/s'},{name:'Traffic Total',lastvalue:'79.8 Mbit/s'},{name:'Errors In',lastvalue:'2 #/s'},{name:'Downtime',lastvalue:'0 %'}]};
+      channels:[{name:'Traffic In',lastvalue:'62.4 Mbit/s'},{name:'Traffic Out',lastvalue:'17.4 Mbit/s'},{name:'Traffic Total',lastvalue:'79.8 Mbit/s'},{name:'Errors In',lastvalue:'2 #/s'},{name:'Downtime',lastvalue:'0 %'}]};
     var devs=['core-sw-01','web-01','web-02','fw-02','db-01','file-01'], kinds=[['Ping','12 msec'],['CPU Load','23 %'],['Memory','61 %'],['Disk Free','48 %'],['Traffic','62 Mbit/s']],
         st=[3,3,3,3,4,3,5,3,3,7,3,3,10,3,3,4,3,3,3,3,5,3,1,3,3,3,7,3,3,3], out=[], i=0;
     devs.forEach(function(d){kinds.forEach(function(k){out.push({objid:++i,sensor:k[0],device:d,status:st[(i-1)%st.length],lastvalue:k[1]});});});
     return {name:'Local probe',status:'Down',last:'',sensors:out,channels:[]};
-  }
-  function anyGaugeSampleCls(smp){   /* the classes PRTG's colorclassofstate gives the sample: one for a sensor, the rollup flags for a group */
-    var SC={3:'sensg',4:'sensy',5:'sensr',7:'sensb',10:'sensp',1:'sensx'}, HF={3:'hasgreen',4:'hasyellow',5:'hasred',7:'hasblue',10:'hasorange',1:'hasblack'}, seen={}, out=[];
-    if(!smp.sensors.length)return 'msgs-'+(/down/i.test(smp.status)?'sensr':(/warn/i.test(smp.status)?'sensy':'sensg'));
-    smp.sensors.forEach(function(x){var f=HF[x.status];if(f&&!seen[f]){seen[f]=1;out.push('msgs-'+f);}});
-    return out.join(' ');
   }
   function drawAnyPreview(){
     var m=M(), v=anyView(), L=anyEffLook(m), cls=anyClassOf(m), css=anyCss(m,cls,L), tm=(v==='icon')?'none':(m.titleMode||'object'), smp=anySample(m.anyPv==='sensor'?'sensor':'group'),
@@ -3646,7 +3402,7 @@ try{
     zs=eoSz(m,w,hh);w=zs[0];hh=zs[1];
     prevEl.className='';
     prevEl.innerHTML='<div id="mapshow" class="map-body"><div class="map_object map_graph '+cls+'" id="ptprev_any" style="position:relative;overflow:hidden;width:'+w+'px;height:'+hh+'px;"><div class="gbox">'
-      +(title?'<div class="gtitle"><b>'+esc(title)+'</b></div>':'')+'<div class="abody">'+(v==='gauge'?agHtml(m,cls,L,anyGaugeSampleCls(smp),esc(smp.last),esc(smp.status),smp.sensors.length?'Group':'SNMP Traffic'):'')+'</div></div></div></div>';
+      +(title?'<div class="gtitle"><b>'+esc(title)+'</b></div>':'')+'<div class="abody"></div></div></div></div>';
     root=prevEl.querySelector('.map_object');
     cfg=JSON.parse(JSON.stringify(anyConfig(m,L)));cfg.sample=smp;
     try{anyRuntime(root,cfg);}catch(err){if(window.console)console.error('any preview',err);}
@@ -5642,10 +5398,7 @@ try{
   }
   function amName(m){
     var t=TYPE, p='Map Studio ', x='', n;
-    if(m&&m.any&&ANYT[t]){
-      if(t==='gauge'&&agFace(m)!=='dial')return amCut(amLook(m,p+'Any gauge - '+amLow(amLab(AGFACES,agFace(m)))));   /* 1.8.0: each face its own name and file; the Status dial keeps the 1.7.0 name */
-      return amLook(m,p+ANYLAB[anyView()]+' - any object');
-    }
+    if(m&&m.any&&ANYT[t])return amLook(m,p+ANYLAB[anyView()]+' - any object');
     if(t==='table'){
       n=m.cols.length;x='Table - '+m.cols.slice(0,3).map(colLabel).join(', ')+(n>3?' +'+(n-3):'');
       if(m.status&&m.status.length)x+=' - '+m.status.join(' + ')+' only';
@@ -5680,9 +5433,7 @@ try{
       x='Link style - '+((m.flow&&lkAnimOk(m))?'animated ':'')+lw+', '+String(amLab(LKTYPES,m.line)).replace(/ \(.*$/,'').toLowerCase().replace('rounded elbow','round elbow')
         +((ls||le)?', '+((ls===le)?ls+'s':(!ls?le+' end':(!le?ls+' start':ls+'-'+le))):'');   /* the look first, as an icon's style, so a new look gives a new name and file name */
     }else return null;
-    return amCut(amLook(m,p+x));
-  }
-  function amCut(x){
+    x=amLook(m,p+x);
     if(x.length<=64)return x;
     var cut=x.slice(0,63), sp=cut.lastIndexOf(' ');   /* too long: end on a whole word, not half of one */
     if(sp>40)cut=cut.slice(0,sp);
@@ -6213,11 +5964,6 @@ try{
     }));
     /* what is specific to each kind of object */
     if(anyOn()){
-      if(TYPE==='gauge')b.appendChild(obMenu('Gauge','How the gauge is drawn. Every face works on a probe, group, device or sensor',function(pop){
-        pop.className+=' fb-wide';
-        pop.appendChild(h('div','pf-h','Face'));
-        var afg=gFaceGrid(null,true);pop.appendChild(afg);OB.syncs.push(function(){afg.syncFace();});
-      }));
       b.appendChild(obAnyMenu());
     }else if(TYPE==='table'){
       b.appendChild(obMenu('Columns','Which columns the table shows, and in what order',function(pop){
@@ -7435,12 +7181,12 @@ try{
   function buildPresetOptions(){
     if(!presetSel)return;
     presetSel.innerHTML='';
-    var blank=h('option');blank.value='__blank';blank.textContent=(TYPE==='gauge')?'Works on a probe, group, device or sensor':(TYPE==='frame'?'Blank frame':(TYPE==='graph'?'Blank graph':(TYPE==='tile'?(tlFam()==='ind'?'Blank industrial object':'Blank tile'):(TYPE==='status'?'Blank status card':(TYPE==='sunburst'?'Blank sunburst':(TYPE==='donut'?'Blank donut':(TYPE==='icon'?'Blank status icon':'Works on a probe, group, device or sensor')))))));presetSel.appendChild(blank);
+    var blank=h('option');blank.value='__blank';blank.textContent=(TYPE==='gauge')?'Blank gauge':(TYPE==='frame'?'Blank frame':(TYPE==='graph'?'Blank graph':(TYPE==='tile'?(tlFam()==='ind'?'Blank industrial object':'Blank tile'):(TYPE==='status'?'Blank status card':(TYPE==='sunburst'?'Blank sunburst':(TYPE==='donut'?'Blank donut':(TYPE==='icon'?'Blank status icon':'Works on a probe, group, device or sensor')))))));presetSel.appendChild(blank);
     var src=(TYPE==='tile')?TLPRESETS.filter(function(p){return (p.fam||'tile')===tlFam();}):(TYPE==='status')?SPRESETS.map(function(x){return {id:x.id,name:x.name,cat:'Built in'};}):((TYPE==='gauge')?GPRESETS:(TYPE==='graph'?GRPRESETS:(TYPE==='donut'?DPRESETS:(TYPE==='sunburst'?SBPRESETS:(TYPE==='icon'?ICPRESETS:PRESETS))))), cats={},order=[];
     src.forEach(function(p){if(!cats[p.cat]){cats[p.cat]=h('optgroup');cats[p.cat].label=p.cat+((TYPE==='status'||TYPE==='tile')?'':' (PRTG stock)');order.push(p.cat);}
       var op=h('option');op.value=p.id;op.textContent=p.name;cats[p.cat].appendChild(op);});
     order.forEach(function(c){presetSel.appendChild(cats[c]);});
-    if(ANYT[TYPE]&&TYPE!=='table'&&TYPE!=='gauge'){var ag=h('optgroup');ag.label='Any object';var ao=h('option');ao.value='any';ao.textContent='Works on a probe, group, device or sensor';ag.appendChild(ao);presetSel.appendChild(ag);if(anyOn())presetSel.value='any';}
+    if(ANYT[TYPE]&&TYPE!=='table'){var ag=h('optgroup');ag.label='Any object';var ao=h('option');ao.value='any';ao.textContent='Works on a probe, group, device or sensor';ag.appendChild(ao);presetSel.appendChild(ag);if(anyOn())presetSel.value='any';}
   }
   var isTable=function(){return TYPE==='table';};
   var isPaste=function(){return TYPE==='frame'||TYPE==='bg'||TYPE==='shape';};
@@ -7518,7 +7264,7 @@ try{
         if(v==='__blank'){GR=blankGR();GR.look=glk;}
         else{var rp=null;GRPRESETS.forEach(function(x){if(x.id===v)rp=x;});GR=graphFromPreset(rp);}
       }else if(TYPE==='gauge'){
-        if(v==='__blank'){var lk=G.look;G=blankG();G.look=(lk.mode==='prtg')?lookOf('Corporate blue'):lk;}
+        if(v==='__blank'){var lk=G.look,eng=G.engine;G=blankG();G.look=lk;G.engine=eng;}
         else{var gp=null;GPRESETS.forEach(function(x){if(x.id===v)gp=x;});G=gaugeFromPreset(gp);}
       }else if(TYPE==='tile'){
         var tlk=TL.look;TL=(TL.fam==='ind')?indFromPreset(v==='__blank'?'':v):tileFromPreset(v==='__blank'?'':v);TL.look=tlk;
@@ -7536,9 +7282,6 @@ try{
     var sany=section('Any object');secIf(sany,function(){return anyOn();});
     sany.appendChild(h('p','note',anyNote()));
     sany.appendChild(inSel('Preview it on',function(){return M().anyPv||'group';},function(v){M().anyPv=v;},[['group','A probe, group or device'],['sensor','A sensor']]));
-    var safw=h('div');showIf(safw,function(){return TYPE==='gauge';});sany.appendChild(safw);   /* 1.8.0: the gauge's face is a style of the Any gauge */
-    safw.appendChild(h('div','pf-h','Face'));
-    var safg=gFaceGrid(null,true);safw.appendChild(safg);syncs.push(function(){safg.syncFace();});
     var s2=section('Name and title');secIf(s2,notPaste);
     s2.appendChild(inText('Category in the designer',function(){return M().cat;},function(v){M().cat=v;},'Data Tables'));
     s2.appendChild(inText('Object name',function(){return M().name;},function(v){M().name=v;M().nameUser=(String(v).trim()!=='');}));

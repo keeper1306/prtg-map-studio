@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.8.0.
+Last updated at version 1.8.1.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -216,7 +216,27 @@ still aborts the whole item on a type it does not list.
 Watch out: PRTG's own stylesheet already styles class names like `sensg` (it adds a tick glyph), so
 a Map Studio object must put the state into its **own** prefixed class, via `prefix="..."`.
 
-## Every gauge face is a style of the Any gauge (1.8.0)
+## Gauges are sensor-only again: 1.7.0 and 1.8.0 undone (1.8.1)
+
+- After 1.8.0 the owner found two things wrong: a probe with one sensor down drew the whole gauge red (the band was painted in the worst
+  state's colour), and the gauges did not look like their face pictures (always a green-yellow-red band and a dark needle). Asked what a
+  green-to-red needle should mean on a probe, group or device, the owner asked whether gauges make sense for anything but a sensor. They
+  don't: a gauge shows one value against a range, only a sensor has one, and PRTG's own gauges are sensor-only too (Status counts or a
+  donut tell a group's story). The owner then said: revert the gauge changes and the Any, "as it does not make any sense".
+- `js/09-objects.js` was taken back to 1.6.2 (`git checkout 171a732`), then `gauge` was taken out of `ANYT`, so no gauge offers "Works on a
+  probe, group, device or sensor" (no Any group in the Templates list, no Any item in the Gauges pack, `anyOn()` false for gauges).
+  `anyRuntime` keeps its 1.6.2 text (its gauge branch is now never used) so the other Any objects' files stay as they were.
+  `01-config.js` keeps the 1.7.0 and 1.8.0 changelog entries and adds 1.8.1's.
+- A gauge saved as an Any gauge in Your objects (1.5.71 to 1.8.0) now opens as a plain gauge and is built by `buildGauge`.
+- Checked: 37 files (13 faces, 8 PRTG templates, the default gauge, 8 other defaults, 7 other Any objects) byte-identical to 1.6.2;
+  a new gauge is Flat minimalist on PRTG's dial, Corporate blue, with no Any group; 16 tests.
+- What 1.7.0/1.8.0 found on the real PRTG stays true and is kept below: the preview facts, the 200 x 200 hover preview, scripts
+  running in the designer, and **the long-line limit** (a line of about 5000 characters makes PRTG fill in no tag of the file; keep
+  every line of an object file under 900). If a script-free gauge is ever wanted again, the two sections below say how it was done.
+- Left in `mapobjects` (no delete through the bridge): `map-studio-gauge-corporate-blue-any-object.htm` (installed at 1.7.0, not used on
+  any map Claude knows of), and the test files `map-studio-zz-probe-a/b/c/d.htm` and `map-studio-zz-gauge-static.htm`.
+
+## (Undone at 1.8.1) Every gauge face is a style of the Any gauge (1.8.0)
 
 - The owner: "all gauges should be available with the any option ... the gauges option more kind of a look and not individual objects".
   Asked about the six faces that were PRTG's own dial (PRTG draws it only for a sensor): "imitate them, what matters most is that they
@@ -252,7 +272,7 @@ a Map Studio object must put the state into its **own** prefixed class, via `pre
 - **Not checked**: the faces in looks other than Corporate blue on the real PRTG; the new UI (:1616); the public page; Wall display's size;
   each face individually on View Map (only Cyber tech and Speedometer were, the sheet covers the static drawing of all).
 
-## The default gauge works on all four object types and shows inside PRTG (1.7.0)
+## (Undone at 1.8.1) The default gauge works on all four object types and shows inside PRTG (1.7.0)
 
 - The owner asked for the default of every object to work like the default table: on a probe, group, device or sensor, drawn
   completely by Map Studio in every look if that is what it takes, and visible in PRTG (Map Designer, hover preview) as well as in Map
