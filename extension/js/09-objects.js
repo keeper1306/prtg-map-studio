@@ -939,7 +939,8 @@ try{
     c.push(r+' [class*="prtg-plugin"] .centered>div[style*="clear"]{display:none;}');
     c.push(r+' .achannel{float:none !important;margin:0 !important;position:relative !important;}');
     c.push(r+' .achannel.primary{width:214px !important;height:206px !important;}');
-    if(!C.look)c.push(r+' .gtitle,'+r+' .gtitle b,'+r+'>p b,'+r+' .gbox>p b{color:'+ink+' !important;}');   /* with a look, the look styles its own title */
+    /* with a look, the look styles its own title; so does a look's title bar (1.6.2: Corporate blue's navy bar had dark ink on it) */
+    if(!C.look&&!(G.look&&G.look.titleStyle==='bar'))c.push(r+' .gtitle,'+r+' .gtitle b,'+r+'>p b,'+r+' .gbox>p b{color:'+ink+' !important;}');
     c.push(r+' .achannel{background:transparent !important;border-bottom:0 !important;color:'+ink+' !important;}');
     c.push(r+' .achannel:before{display:none !important;}');
     c.push(r+' .achannel .channelname,'+r+' .achannel .channelvalue,'+r+' .achannel .channelmessage,'+r+' .achannel .channelsubname,'+r+' .achannel>a{color:'+ink+' !important;}');

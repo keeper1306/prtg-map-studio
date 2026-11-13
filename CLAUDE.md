@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.6.1.
+Last updated at version 1.6.2.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -214,6 +214,21 @@ still aborts the whole item on a type it does not list.
 
 Watch out: PRTG's own stylesheet already styles class names like `sensg` (it adds a tick glyph), so
 a Map Studio object must put the state into its **own** prefixed class, via `prefix="..."`.
+
+## Gauge title readable on a title bar (1.6.2)
+
+- The owner (screenshot): the new gauge's title "Core switch uplink" was black on Corporate blue's navy bar. Caused by 1.6.0: the
+  gauge's default look became Corporate blue (`titleStyle:'bar'`), and `nativeCss` (gauges on PRTG's dial) forces the title to the
+  dial's ink (`#1d2433` on the white dial background, `nbg:'light'`) whenever the dial background is not "From the look". Its
+  selector `.cls .gtitle b` (0,2,1) beats `titleRules`' `.cls .gtitle *` (0,2,0), both `!important`. Before 1.6.0 the default look's
+  title was a plain heading on white, so it never showed.
+- Fix: that rule is skipped when the look's title is a bar (`G.look.titleStyle==='bar'`); the bar's `titleColor` then applies.
+  Only gauge files on PRTG's dial with a bar look change, by that one CSS line.
+- Checked in the builder (stand-in server, Playwright), every object type's default, lowest-contrast visible text against what is
+  really behind it: gauge title 1.34:1 before, 11.62:1 after (white on #1F3864); table, graph, donut, sunburst, status counts
+  unchanged and fine (the table's lowest is a link on a down row's 12% red tint, 5.41:1 once the tint is blended over white).
+  Status counts' "Paused" box is white on PRTG's paused blue #477EC0, 4.19:1 - PRTG's own colour since 1.6.0, not changed.
+  16 tests. **Not checked on the real PRTG.**
 
 ## New versions arrive with a tab refresh (1.6.1)
 
