@@ -3849,6 +3849,10 @@ try{
     {id:'ind_tank',fam:'ind',cat:'Built in',name:'Tank level',kind:'tank',w:260,h:320},
     {id:'ind_silo',fam:'ind',cat:'Built in',name:'Silo level',kind:'tank',w:260,h:320,set:{shape:'silo'}},
     {id:'ind_equip',fam:'ind',cat:'Built in',name:'Equipment symbol',kind:'equip',w:160,h:170},
+    {id:'ind_plc',fam:'ind',cat:'Built in',name:'PLC state',kind:'equip',w:190,h:220,set:{eq:'plc',ms:true,hb:true}},
+    {id:'ind_vfd',fam:'ind',cat:'Built in',name:'Drive state',kind:'equip',w:190,h:220,set:{eq:'vfd',ms:true,hb:true}},
+    {id:'ind_breaker',fam:'ind',cat:'Built in',name:'Breaker state',kind:'equip',w:190,h:220,set:{eq:'breaker',ms:true,hb:true}},
+    {id:'ind_ups',fam:'ind',cat:'Built in',name:'UPS state',kind:'equip',w:190,h:220,set:{eq:'ups',ms:true,hb:true}},
     {id:'ind_pv',fam:'ind',cat:'Built in',name:'Process value',kind:'pv',w:380,h:250},
     {id:'ind_count',fam:'ind',cat:'Built in',name:'Countdown',kind:'count',w:200,h:230},
     {id:'camera',cat:'Built in',name:'Camera',kind:'camera',w:420,h:300,sub:''},
@@ -3921,7 +3925,7 @@ try{
   function buildTile(S){
     if(isFenceK(S))return buildFence(S);
     if(isCamK(S))return buildCam(S);
-    var ind=(S.fam==='ind'), cls=tClassOf(S), L=tEffLook(S), css=tileCss(S,cls,L)+(ind?'\n'+indCss(S,cls,L):'')+hazardCss(S,cls,L), o=[], tm=S.titleMode||'object';
+    var ind=(S.fam==='ind'), eqs=isEqs(S), cls=tClassOf(S), L=tEffLook(S), css=tileCss(S,cls,L)+(ind?'\n'+indCss(S,cls,L):'')+(eqs?'\n'+eqsCss(S,cls,L):'')+hazardCss(S,cls,L), o=[], tm=S.titleMode||'object';
     var titleInner=(tm==='custom')?clean(S.title):'<#objectproperty name="Name" id="<@objectid>">', w=parseInt(S.initW,10), h_=parseInt(S.initH,10), sub=clean(S.sub);
     o.push('<!'+'--'+clean(S.cat||'Tiles')+': '+clean(S.name||'Tile')+'-->');
     o.push('');
@@ -3936,6 +3940,11 @@ try{
     if(sub)o.push('    <div class="gsub">'+sub+'</div>');
     o.push('    <div class="tbody"></div>');
     if(S.kind==='string')o.push('    <div class="tmsg" style="display:none"><#objectstatus name="message" id="<@objectid>"></div>');
+    if(eqs){   /* 1.12.0: when the sensor last ran, how often it runs, its message (the badge's tooltip) */
+      o.push('    <div class="eqs-lc" style="display:none"><#objectstatus name="lastcheck" id="<@objectid>"></div>');
+      o.push('    <div class="eqs-iv" style="display:none"><#objectproperty name="interval" show="number" id="<@objectid>"></div>');
+      o.push('    <div class="eqs-msg" style="display:none"><#objectstatus name="message" id="<@objectid>"></div>');
+    }
     o.push('    <!'+'--');
     o.push('    {');
     o.push('      "objects":<#table');
@@ -3952,7 +3961,7 @@ try{
     o.push('<#mapobject type="htmlafter" subid="<@subid>">');
     o.push('</div>');
     o.push('');
-    o.push('<scr'+'ipt>');o.push(ind?indScript(S,L):tileScript(S,L));o.push('<\/script>');
+    o.push('<scr'+'ipt>');o.push(ind?(eqs?eqsScript(S,L):indScript(S,L)):tileScript(S,L));o.push('<\/script>');
     return o.join('\n')+'\n';
   }
   /* sample channels for the preview, one set per kind */
@@ -3968,7 +3977,7 @@ try{
   function drawTilePreview(){
     if(isFenceK(TL)){drawFencePreview();return;}
     if(isCamK(TL)){drawCamPreview();return;}
-    var ind=(TL.fam==='ind'), L=tEffLook(TL), cls=tClassOf(TL), css=tileCss(TL,cls,L)+(ind?'\n'+indCss(TL,cls,L):'')+hazardCss(TL,cls,L), tm=TL.titleMode||'object', title=(tm==='none')?'':(tm==='custom'?clean(TL.title):(ind?'Line 3':'Core switch')), sub=clean(TL.sub), root, gb, smp=ind?indSample(TL):tileSample(TL);
+    var ind=(TL.fam==='ind'), eqs=isEqs(TL), L=tEffLook(TL), cls=tClassOf(TL), css=tileCss(TL,cls,L)+(ind?'\n'+indCss(TL,cls,L):'')+(eqs?'\n'+eqsCss(TL,cls,L):'')+hazardCss(TL,cls,L), tm=TL.titleMode||'object', title=(tm==='none')?'':(tm==='custom'?clean(TL.title):(ind?'Line 3':'Core switch')), sub=clean(TL.sub), root, gb, smp=eqs?eqsSample(TL):(ind?indSample(TL):tileSample(TL));
     if(TL.hazard&&FPV[TL.pvState])smp.cls=FPV[TL.pvState];   /* 1.6.0: to see the hazard stripes, the preview can show the tile down */
     setStyle(css);applyFont(L);
     var w=parseInt(document.getElementById('owidth').value,10)||300, hh=parseInt(document.getElementById('oheight').value,10)||150;
@@ -3978,7 +3987,8 @@ try{
       +(title?'<div class="gtitle"><b>'+esc(title)+'</b></div>':'')+(sub?'<div class="gsub">'+esc(sub)+'</div>':'')+'<div class="tbody"></div>'+(TL.kind==='string'?'<div class="tmsg" style="display:none">'+esc(smp.msg)+'</div>':'')+'</div></div></div>';
     root=prevEl.querySelector('.map_object');gb=prevEl.querySelector('.gbox');
     gb.appendChild(document.createComment('\n{"objects":{"prtg-version":"26.3","channels":'+JSON.stringify(smp.chans)+'}}\n'));
-    try{if(ind){var icf=JSON.parse(JSON.stringify(indConfig(TL,L)));icf.sample=true;indRuntime(root,icf);}else tileRuntime(root,JSON.parse(JSON.stringify(tileConfig(TL,L))));}
+    try{if(eqs){var ecf=JSON.parse(JSON.stringify(eqsConfig(TL,L)));ecf.sample=true;ecf.sampleAge=smp.age;eqsRuntime(root,ecf);}
+      else if(ind){var icf=JSON.parse(JSON.stringify(indConfig(TL,L)));icf.sample=true;indRuntime(root,icf);}else tileRuntime(root,JSON.parse(JSON.stringify(tileConfig(TL,L))));}
     catch(err){if(window.console)console.error('tile preview',err);}
     applyBg(L);
   }
@@ -3987,13 +3997,14 @@ try{
      An Industrial object is a Tile underneath (TYPE 'tile', TL.fam 'ind'): the same file shape, channels, looks and Flexible.
      It has its own kinds, its own drawing code (indRuntime, so Tile files stay as they were) and the category Industrial. */
   var IKINDS=[['lamps','State lamps'],['onoff','On/Off'],['tank','Tank / level'],['equip','Equipment'],['pv','Process value'],['count','Countdown'],['fence','Fence'],['line','Line']];
-  var IEQ=[['pump','Pump'],['motor','Motor'],['valve','Valve'],['fan','Fan'],['conveyor','Conveyor']];
+  var IEQ=[['pump','Pump'],['motor','Motor'],['valve','Valve'],['fan','Fan'],['conveyor','Conveyor'],['plc','PLC'],['vfd','Drive'],['breaker','Breaker'],['ups','UPS']];   /* 1.12.0: plc, vfd, breaker, ups (drawn by eqsRuntime) */
   function tlFam(){return (TYPE==='tile'&&TL&&TL.fam==='ind')?'ind':'tile';}
   function blankInd(){
     var T_=blankTL();
     T_.fam='ind';T_.kind='lamps';T_.cat='Industrial';T_.name='State lamps';T_.hide='';
     T_.lamps='RUN, STOP, ERROR, MAINT';T_.rows='';T_.onW='On';T_.offW='Off';T_.onIf='';T_.bad='none';T_.oStyle='lamp';
     T_.shape='tank';T_.fill='#4F8DDB';T_.chan2='';T_.eq='pump';T_.eLay='stack';T_.upW='';T_.sp='';T_.trend=true;T_.cStyle='ring';
+    T_.ms=false;T_.hb=false;T_.hage=true;T_.msch='';T_.fch='';T_.val2='';T_.wRun='';T_.wStop='';T_.wChg='';T_.wFault='';T_.wShow='';T_.stale='';T_.ageCh='';T_.eqPv='run';   /* 1.12.0 */
     T_.initW=280;T_.initH=230;T_.fitW=280;T_.fitH=230;
     return T_;
   }
@@ -4349,6 +4360,198 @@ try{
     if(k==='pv')return {cls:'sensg',chans:[ch(0,'Pressure','4.82 bar',4.82,3,{limitmode:1,limitminerror:2,limitminwarning:3,limitmaxwarning:7,limitmaxerror:8,graphmaxraw:10})]};
     if(k==='count')return {cls:'sensy',chans:[ch(0,'Days to Expiration','23 days',23,4,{limitmode:1,limitminwarning:30,limitminerror:7})]};
     return {cls:'sensg',chans:[]};
+  }
+
+  /* ====================== machine state apart from data health on Equipment, 1.12.0 ======================
+     PRTG's own status mixes the two: a stopped S7 PLC turns its sensor Warning, a UPS on battery turns it Down while readings
+     keep arriving, a faulted drive read over Modbus stays Up. Seen on the lab PRTG with test sensors 2237 to 2240:
+     a lookup alarm leaves the channels' values in place; a lost connection gives every channel "No data" and no raw value.
+     So the machine state comes from a chosen channel's word or number, and the data health from whether that channel has a value
+     and how long ago the sensor last ran (<#objectstatus name="lastcheck">, which PRTG writes as "... [4 m 11 s ago]").
+     Own config, CSS and drawing code (eqsConfig, eqsCss, eqsRuntime), used only when isEqs(): every other Equipment file stays as it was. */
+  var EQNEW={plc:1,vfd:1,breaker:1,ups:1};
+  var EQW={
+    plc:{run:'RUN, RUN-R, RUN REDUNDANT',stop:'STOP',chg:'STARTUP, HOLD, LINK-UP, UPDATE, SELFTEST, SYNCUP, RUN SYNCUP, ERROR SEARCH',fault:'DEFECTIVE, NO POWER, ERROR, Failed',show:'RUN, STOP, STARTUP, FAULT'},
+    vfd:{run:'Running, Run, On',stop:'Stopped, Stop, Off, Ready, Idle',chg:'Starting, Stopping, Ramping, Accelerating, Decelerating',fault:'Fault, Faulted, Trip, Tripped, Alarm, Error',show:'RUNNING, STOPPED, STARTING, FAULT'},
+    breaker:{run:'Closed, On, 1',stop:'Open, Off, 0',chg:'Moving, Racked out',fault:'Tripped, Trip, Fault, 2',show:'CLOSED, OPEN, MOVING, TRIPPED'},
+    ups:{run:'Normal, Battery Normal, Online, On line',stop:'Off, Shut Down, None',chg:'Bypass, Booster, Reducer, Testing, Self test',fault:'Battery, On Battery, Low, Battery Low, Depleted, Battery Depleted, Fault, Failed',show:'NORMAL, OFF, BYPASS, ALARM'},
+    valve:{run:'Open, Opened, On, 1',stop:'Closed, Off, 0',chg:'Opening, Closing, Moving',fault:'Fault, Error, Stuck',show:'OPEN, CLOSED, MOVING, FAULT'},
+    _:{run:'Running, Run, On, 1',stop:'Stopped, Stop, Off, 0',chg:'Starting, Stopping',fault:'Fault, Trip, Tripped, Alarm, Error',show:'RUNNING, STOPPED, STARTING, FAULT'}
+  };
+  function eqW(eq){return EQW[eq]||EQW._;}
+  function isEqs(S){return !!(S&&S.fam==='ind'&&S.kind==='equip'&&(S.ms||S.hb||EQNEW[S.eq]));}
+  function eqsConfig(S,L){
+    var b=indConfig(S,L), d=eqW(b.eq), w=function(v){return clean(v).slice(0,300);};
+    b.ms=!!S.ms;b.hb=!!S.hb;b.hage=S.hage!==false;b.msch=clean(S.msch);b.fch=clean(S.fch);b.val2=clean(S.val2);
+    b.wRun=w(S.wRun)||d.run;b.wStop=w(S.wStop)||d.stop;b.wChg=w(S.wChg)||d.chg;b.wFault=w(S.wFault)||d.fault;b.wShow=w(S.wShow)||d.show;
+    b.stale=clean(S.stale);b.ageCh=clean(S.ageCh);b.accent=(L.accent||L.link||'#007DB8');
+    return b;
+  }
+  function eqsCss(S,cls,L){
+    var r='.'+cls, muted=(L.muted||L.headColor||'#6B7280'), fillA=(L.cardA==null?100:L.cardA),
+        cardFill=(L.card)?((fillA<100)?tint(L.cardBg,fillA/100):L.cardBg):'#FFFFFF', base=(cardFill.charAt(0)==='#'?cardFill:'#FFFFFF'), line=blend(base,L.text,0.16), c=[];
+    c.push(r+' .eqs{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:'+fpx(4)+';}');
+    c.push(r+' .eqs.row{flex-direction:row;justify-content:flex-start;gap:'+fpx(12)+';}');
+    c.push(r+' .eqs svg{flex:1 1 auto;min-height:0;width:100%;}');
+    c.push(r+' .eqs.row svg{flex:none;width:auto;height:100%;max-width:45%;}');
+    c.push(r+' .eqs-t{display:flex;flex-direction:column;align-items:center;min-width:0;max-width:100%;}');
+    c.push(r+' .eqs.row .eqs-t{align-items:flex-start;}');
+    c.push(r+' .eqs-w{font-size:16px;font-weight:700;letter-spacing:.6px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}');
+    c.push(r+' .eqs.row .eqs-w{font-size:20px;}');
+    c.push(r+' .eqs-s{font-size:12px;line-height:1.3;color:'+muted+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}');
+    c.push(r+' .eqs-hb{display:inline-flex;align-items:center;gap:'+fpx(5)+';margin-top:'+fpx(4)+';padding:'+fpx(2)+' '+fpx(8)+';border-radius:999px;border:1px solid '+line+';font-size:11px;line-height:1.3;color:'+muted+';white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;box-sizing:border-box;}');
+    c.push(r+' .eqs-hb i{flex:none;width:'+fpx(7)+';height:'+fpx(7)+';border-radius:50%;}');
+    c.push(r+' .eqs-dim svg{opacity:.45;}');
+    var ik=lookTs(L);if(ik!==1)c=c.map(function(x){return tsCss(x,ik);});
+    return c.join('\n');
+  }
+  /* the drawing code: shipped inside the generated file as its own source text, like indRuntime */
+  function eqsRuntime(root,C){
+    var body=root.querySelector('.tbody');
+    if(!body)return;
+    function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+    function num(v){if(v===''||v===undefined||v===null)return null;var x=+String(v).replace(/,/g,'');return isFinite(x)?x:null;}
+    function hx(c){var x=String(c||'#000000').replace('#','');return [parseInt(x.substr(0,2),16)||0,parseInt(x.substr(2,2),16)||0,parseInt(x.substr(4,2),16)||0];}
+    function mix(a,b,t){var A=hx(a),B=hx(b),i,o='#';for(i=0;i<3;i++){var v=Math.round(A[i]*(1-t)+B[i]*t);o+=(v<16?'0':'')+v.toString(16);}return o;}
+    function lum(c){var A=hx(c);return (0.299*A[0]+0.587*A[1]+0.114*A[2])/255;}
+    function deep(c){return lum(c)>0.62?mix(c,'#000000',0.3):c;}
+    function trim(s){return String(s).replace(/^\s+|\s+$/g,'');}
+    function words(s){return String(s||'').split(',').map(trim).filter(Boolean);}
+    function wre(w){return new RegExp('(^|[^a-z0-9])'+w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'($|[^a-z0-9])','i');}
+    function onish(v){var s=trim(v==null?'':v).toLowerCase(), n;if(s==='')return false;n=parseFloat(s.replace(/,/g,''));if(/^-?[\d.,]+/.test(s)&&isFinite(n))return n!==0;return /^(on|yes|true|open|opened|running|run|active|enabled|lit|flashing|high|started|fault|alarm|tripped)\b/.test(s);}
+    function findJson(){
+      var found=null;
+      (function walk(node){
+        for(var c=node.firstChild;c&&!found;c=c.nextSibling){
+          if(c.nodeType===8){var t=(c.nodeValue||'').replace(/^\s+|\s+$/g,'');if(t.charAt(0)==='{'){found=t;return;}}
+          else if(c.nodeType===1){walk(c);}
+        }
+      })(root);
+      return found;
+    }
+    var chans=[];
+    try{var raw=findJson();if(raw){var data=JSON.parse(raw), box=(data&&data.objects)?data.objects:data;chans=(box&&box.channels)||[];}}catch(e0){chans=[];}
+    var nraw=chans.length;   /* rows as PRTG sent them, Downtime included */
+    chans=chans.map(function(c){
+      var d=(c.info&&c.info.data&&c.info.data[0])||{};
+      d.name=c.name||d.name;
+      if(d.lastvalue===undefined||d.lastvalue==='')d.lastvalue=c.lastvalue;
+      return d;
+    }).filter(function(c){return +c.id!==-4;});
+    /* PRTG's hover preview cuts every embedded table to 5 rows (count=5): there, ask for all the channels once and draw again */
+    if(!C.sample&&!C.full&&nraw>=5&&window.fetch&&root.closest&&root.closest('.previewloading')){
+      var pre=/^\/api\/v1\//.test(location.pathname)?'/api/v1':'';
+      fetch(pre+'/api/table.json?content=channels&count=*&columns=objid,name,lastvalue&id='+encodeURIComponent(root.getAttribute('objectid')),{credentials:'include',headers:{'X-Requested-With':'XMLHttpRequest'}}).then(function(res){if(!res.ok)throw new Error('http');return res.json();}).then(function(j){
+        var all=((j&&j.channels)||[]).map(function(c){return {id:c.objid,name:String(c.name_raw||c.name||'').replace(/<[^>]*>/g,''),lastvalue:c.lastvalue,lastvalueraw:c.lastvalue_raw};}).filter(function(c){return +c.id!==-4;});
+        if(all[0])all[0].primary=true;   /* the first channel after Downtime, as PRTG lists them */
+        var C2={};for(var k in C)C2[k]=C[k];C2.full=all;eqsRuntime(root,C2);
+      }).catch(function(){});
+    }
+    if(C.full)chans=C.full.filter(function(c){return +c.id!==-4;});
+    var m=(root.className.match(/tlst-sens(\w*)/)||[])[1]||'';
+    var ss={g:'up',y:'warning',r:'down',q:'down',o:'ack',b:'paused',p:'unusual'}[m.charAt(0)]||(m?'unknown':'up');
+    if(/^(dr|ra|rp|gr)/.test(m))ss='down';
+    var SW={up:'Up',warning:'Warning',down:'Down',ack:'Down (acknowledged)',unusual:'Unusual',paused:'Paused',unknown:'Unknown'};
+    function find(sel){var s=String(sel).toLowerCase();return chans.filter(function(c){return String(c.id)===s||String(c.name).toLowerCase()===s;})[0]||chans.filter(function(c){return String(c.name).toLowerCase().indexOf(s)>=0;})[0]||null;}
+    function main(){return chans.filter(function(c){return c.primary;})[0]||chans[0]||null;}
+    /* a channel has a reading when PRTG gives it a raw value; a lost connection gives "No data" and none */
+    function has(c){return !!c&&c.lastvalueraw!==undefined&&c.lastvalueraw!==null&&c.lastvalueraw!==''&&!/^no data/i.test(String(c.lastvalueraw))&&!/^no data/i.test(trim(c.lastvalue==null?'':c.lastvalue));}
+    function txt(c){var t=trim(c.lastvalue==null?'':c.lastvalue);return t!==''?t:trim(c.lastvalueraw==null?'':c.lastvalueraw);}
+    function ageOf(t){var mm=String(t||'').match(/\[([^\]]*)\]/), s=0, f=false;if(!mm)return null;mm[1].replace(/(\d+(?:[.,]\d+)?)\s*(d|h|m|s)\b/g,function(_,n,u){s+=parseFloat(n.replace(',','.'))*({d:86400,h:3600,m:60,s:1})[u];f=true;return _;});return f?s:null;}
+    function ago(s){s=Math.max(0,Math.round(s));return s<60?s+' s':(s<3600?Math.round(s/60)+' min':(s<172800?Math.round(s/3600)+' h':Math.round(s/86400)+' days'));}
+    var sc=(C.msch&&!C.sample)?find(C.msch):main(), el=function(k){var e=root.querySelector('.'+k);return e?trim(e.textContent||''):'';};
+    /* ----- data health: live, stale, no data or paused ----- */
+    var hl='live', age=null, iv=num(el('eqs-iv'))||60, lim=(num(C.stale)!==null&&num(C.stale)>0)?num(C.stale)*60:Math.max(180,3*iv);
+    if(ss==='paused')hl='paused';
+    else if(ss==='unknown'||!(C.ms?has(sc):chans.some(has)))hl='nodata';
+    if(C.sample)age=C.sampleAge;
+    else{
+      if(C.ageCh){var ac=find(C.ageCh);if(has(ac))age=num(ac.lastvalueraw);}
+      if(age===null)age=ageOf(el('eqs-lc'));
+    }
+    if(hl==='live'&&age!==null&&age>lim)hl='stale';
+    /* ----- machine state: run, stop, changing, fault, other; or the sensor's state when that option is off ----- */
+    var st, col, label, sub=[], fc=null;
+    var show=words(C.wShow), LBL={run:show[0]||'RUN',stop:show[1]||'STOP',chg:show[2]||'CHANGING',fault:show[3]||'FAULT'};
+    if(C.ms){
+      if(hl==='nodata'||!sc)st='unknown';
+      else{
+        fc=(C.fch&&!C.sample)?find(C.fch):null;
+        if(fc&&has(fc)&&onish(txt(fc)))st='fault';
+        else{
+          var t=txt(sc), rv=num(sc.lastvalueraw), best=null, bl=-1;
+          [['run',C.wRun],['stop',C.wStop],['chg',C.wChg],['fault',C.wFault]].forEach(function(b){
+            words(b[1]).forEach(function(w){
+              if(/^-?\d+(\.\d+)?$/.test(w)){if(rv!==null&&+w===rv&&bl<0.5){best=b[0];bl=0.5;}}
+              else if(wre(w).test(t)&&w.length>bl){best=b[0];bl=w.length;}
+            });
+          });
+          st=best||'other';
+          if(!/^-?[\d.,]+\s*\S{0,2}$/.test(t)&&!/^(on|off|true|false|yes|no)$/i.test(t)&&t.toLowerCase()!==String(LBL[st]||'').toLowerCase())sub.push(t);
+        }
+      }
+      col={run:C.c.up,stop:mix(C.base,C.text,0.62),chg:C.c.warning,fault:C.c.down,other:C.accent,unknown:C.c.unknown}[st];
+      label=(st==='unknown')?'UNKNOWN':(st==='other'?txt(sc).toUpperCase().slice(0,28):LBL[st]);
+      if(fc&&st==='fault')sub.unshift(fc.name);
+    }else{
+      st=(ss==='up')?'run':(ss==='paused'?'stop':(ss==='down'||ss==='ack'?'fault':'other'));
+      col=C.c[ss]||C.c.unknown;
+      var vc=C.channel?find(C.channel):null;
+      label=vc?txt(vc):(ss==='up'?(C.upW||SW.up):SW[ss]);
+    }
+    if(C.val2){var v2=find(C.val2);if(v2&&has(v2))sub.push(txt(v2));}
+    var es=deep(col), et=mix(C.base,col,0.16), s='stroke="'+es+'" stroke-width="3"', inner, eq=C.eq;
+    if(eq==='plc')inner='<rect x="8" y="14" width="68" height="56" rx="5" fill="'+et+'" '+s+'/><path d="M30 14V70M50 14V70" stroke="'+es+'" stroke-width="2" fill="none"/>'
+      +'<circle cx="19" cy="26" r="3.2" fill="'+(st==='run'?C.c.up:es)+'"/><circle cx="19" cy="36" r="3.2" fill="'+(st==='stop'||st==='chg'?C.c.warning:es)+'" opacity="'+(st==='stop'||st==='chg'?1:0.35)+'"/><circle cx="19" cy="46" r="3.2" fill="'+(st==='fault'?C.c.down:es)+'" opacity="'+(st==='fault'?1:0.35)+'"/>'
+      +'<path d="M36 26H44M36 34H44M36 42H44M56 26H69M56 34H69M56 42H69" stroke="'+es+'" stroke-width="2" stroke-linecap="round"/><rect x="13" y="56" width="12" height="8" rx="1.5" fill="'+es+'"/>';
+    else if(eq==='vfd')inner='<rect x="18" y="6" width="48" height="72" rx="6" fill="'+et+'" '+s+'/><rect x="26" y="15" width="32" height="20" rx="2" fill="none" stroke="'+es+'" stroke-width="2"/>'
+      +'<path d="M29 25c3-7 6-7 9 0s6 7 9 0 6-7 9 0" fill="none" stroke="'+es+'" stroke-width="2" stroke-linecap="round"/><circle cx="32" cy="50" r="4" fill="'+es+'"/><circle cx="52" cy="50" r="4" fill="none" stroke="'+es+'" stroke-width="2"/><path d="M28 64H56M28 70H56" stroke="'+es+'" stroke-width="2" stroke-linecap="round"/>';
+    else if(eq==='breaker')inner='<rect x="14" y="6" width="56" height="72" rx="8" fill="'+et+'" stroke="'+es+'" stroke-width="2"/><path d="M42 10V28M42 56V74" fill="none" '+s+' stroke-linecap="round"/><path d="M37 23L47 33M47 23L37 33" stroke="'+es+'" stroke-width="2.5" stroke-linecap="round"/>'
+      +'<path d="'+(st==='run'?'M42 56L42 28':'M42 56L25 35')+'" fill="none" '+s+' stroke-width="4" stroke-linecap="round"/><circle cx="42" cy="56" r="3.5" fill="'+es+'"/>';
+    else if(eq==='ups')inner='<rect x="10" y="12" width="64" height="60" rx="6" fill="'+et+'" '+s+'/><path d="M20 24H34M20 32H34" stroke="'+es+'" stroke-width="2.5" stroke-linecap="round"/><path d="M60 18L52 31H59L54 42" fill="none" stroke="'+es+'" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>'
+      +'<rect x="20" y="46" width="34" height="17" rx="2.5" fill="none" stroke="'+es+'" stroke-width="2.5"/><rect x="54" y="51" width="4" height="7" rx="1" fill="'+es+'"/><rect x="23.5" y="49.5" width="'+(st==='fault'?7:(st==='unknown'?0:27))+'" height="10" rx="1" fill="'+es+'"/>';
+    else if(eq==='motor')inner='<circle cx="42" cy="42" r="28" fill="'+et+'" '+s+'/><path d="M29 54 V31 L42 46 L55 31 V54" fill="none" '+s+' stroke-linejoin="round" stroke-linecap="round"/>';
+    else if(eq==='valve')inner='<path d="M12 36 L42 52 L12 68 Z M72 36 L42 52 L72 68 Z" fill="'+et+'" '+s+' stroke-linejoin="round"/><path d="M42 52 V24 M30 20 H54" fill="none" '+s+' stroke-linecap="round"/>';
+    else if(eq==='fan')inner='<circle cx="42" cy="42" r="28" fill="'+et+'" '+s+'/><path d="M42 42 C38 30 44 22 50 24 C52 32 48 38 42 42 Z M42 42 C54 40 60 46 57 52 C49 53 45 48 42 42 Z M42 42 C34 51 26 50 25 43 C31 38 37 39 42 42 Z" fill="'+es+'"/>';
+    else if(eq==='conveyor')inner='<rect x="6" y="32" width="72" height="22" rx="11" fill="'+et+'" '+s+'/><circle cx="17" cy="43" r="5" fill="'+es+'"/><circle cx="67" cy="43" r="5" fill="'+es+'"/><path d="M32 43 H50 M45 38 L51 43 L45 48" fill="none" stroke="'+es+'" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>';
+    else inner='<circle cx="42" cy="46" r="28" fill="'+et+'" '+s+'/><path d="M42 18 H76 V30" fill="none" '+s+'/><path d="M33 34 L57 46 L33 58 Z" fill="'+es+'"/>';
+    if(C.ms&&st==='fault')inner+='<circle cx="72" cy="12" r="10" fill="'+C.c.down+'" stroke="'+C.base+'" stroke-width="2"/><path d="M72 6.5v7" stroke="#fff" stroke-width="3" stroke-linecap="round"/><circle cx="72" cy="18" r="1.8" fill="#fff"/>';
+    if(C.ms&&st==='unknown')inner+='<circle cx="72" cy="12" r="10" fill="'+C.c.unknown+'" stroke="'+C.base+'" stroke-width="2"/><text x="72" y="16.5" font-size="13" font-weight="700" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif">?</text>';
+    /* ----- the badge ----- */
+    var hb='';
+    if(C.hb){
+      var hc={live:C.c.up,stale:C.c.warning,nodata:C.c.down,paused:C.c.paused}[hl], ht;
+      if(hl==='paused')ht='Paused';
+      else if(hl==='nodata')ht='No data';
+      else if(C.hage&&age!==null)ht=(hl==='stale'?'No update for ':'Updated ')+ago(age)+(hl==='stale'?'':' ago');
+      else ht=(hl==='stale'?'Stale data':'Data OK');
+      var tip=el('eqs-msg');
+      hb='<div class="eqs-hb"'+(tip&&hl!=='live'?' title="'+esc(tip)+'"':'')+'><i style="background:'+hc+'"></i><span>'+esc(ht)+'</span></div>';
+    }
+    var dim=(hl==='stale'||hl==='paused');
+    body.innerHTML='<div class="eqs'+(C.eLay==='row'?' row':'')+(dim?' eqs-dim':'')+'" data-state="'+st+'" data-health="'+hl+'"><svg viewBox="0 0 84 84" preserveAspectRatio="xMidYMid meet" role="img" aria-label="'+esc(eq+', '+label+(C.hb?', data '+hl:''))+'">'+inner+'</svg>'
+      +'<div class="eqs-t"><div class="eqs-w" style="color:'+(dim?C.muted:es)+'">'+esc(label)+'</div>'+(sub.length?'<div class="eqs-s">'+esc(sub.join(' · '))+'</div>':'')+hb+'</div></div>';
+    root.setAttribute('data-status','ok');
+  }
+  function eqsScript(S,L){
+    return '(function(){\n  var root=document.getElementById("<@itemid>");\n  if(!root)return;\n  var CFG='+JSON.stringify(eqsConfig(S,L),null,1)+';\n  ('+eqsRuntime.toString()+')(root,CFG);\n})();';
+  }
+  /* sample channels for the preview: one machine of each kind in the state picked under "Preview it as" */
+  var EQPV=[['run','Running'],['stop','Stopped'],['chg','Changing'],['fault','Fault'],['stale','Stale data'],['nodata','No data']];
+  function eqsSample(S){
+    function ch(id,name,val,raw,st){var d={id:id,name:name,lastvalue:val,status:st,primary:id===0};if(raw!==undefined)d.lastvalueraw=raw;return {name:name,lastvalue:val,info:{data:[d]}};}
+    var pv=S.eqPv||'run', k=(pv==='stale')?'run':pv, eq=S.eq, row;
+    var T={plc:['CPU Status',{run:['RUN (solo mode)',8],stop:['STOP (internal)',4],chg:['STARTUP (warm restart)',6],fault:['DEFECTIVE',13]},['OB1 Cycle Time','4 msec',4]],
+      vfd:['Status',{run:['Running',1],stop:['Stopped',0],chg:['Starting',2],fault:['Fault',3]},['Output Frequency','50 Hz',50]],
+      breaker:['Position',{run:['1 #',1],stop:['0 #',0],chg:['Moving',3],fault:['2 #',2]},['Current','63 A',63]],
+      ups:['Output Source',{run:['Normal',3],stop:['Off',1],chg:['Bypass',4],fault:['Battery',5]},['Charge Remaining','64 %',64]],
+      valve:['Position',{run:['Open',1],stop:['Closed',0],chg:['Moving',2],fault:['Fault',3]},['Flow','12.4 m³/h',12.4]]}[eq]
+      ||['Status',{run:['Running',1],stop:['Stopped',0],chg:['Starting',2],fault:['Fault',3]},['Speed','1480 rpm',1480]];
+    var cls={run:'sensg',stop:'sensy',chg:'sensy',fault:'sensr',nodata:'sensr'}[k]||'sensg';
+    if(!S.ms)cls={run:'sensg',stop:'sensy',chg:'sensy',fault:'sensr',nodata:'sensr'}[k];
+    if(pv==='nodata')row=[ch(0,T[0],'No data',undefined,5),ch(1,T[2][0],'No data',undefined,5)];
+    else row=[ch(0,T[0],T[1][k][0],T[1][k][1],3),ch(1,T[2][0],k==='run'?T[2][1]:'0',k==='run'?T[2][2]:0,3)];
+    return {cls:cls,chans:row,age:pv==='stale'?840:12};
   }
 
   /* ====================== fence and line (Industrial kinds), camera (Tile kind), hazard stripes, 1.6.0 ======================
@@ -6052,7 +6255,7 @@ try{
     }else if(t==='status'){
       x='Status counts - '+(m.tiles||[]).join(', ');
     }else if(t==='tile'&&m.fam==='ind'){
-      x='Industrial - '+({lamps:'state lamps',onoff:'on/off, '+(m.oStyle||'lamp'),tank:(m.shape==='silo'?'silo':'tank')+' level',equip:String(amLab(IEQ,m.eq||'pump')).toLowerCase(),pv:'process value',count:'countdown, '+(m.cStyle||'ring'),fence:'fence, '+amLow((fShapeOf('fence',m.fShape)||['','traced'])[1]),line:'line, '+amLow((fShapeOf('line',m.fShape)||['','traced'])[1])}[m.kind]||String(amLab(IKINDS,m.kind)).toLowerCase());
+      x='Industrial - '+({lamps:'state lamps',onoff:'on/off, '+(m.oStyle||'lamp'),tank:(m.shape==='silo'?'silo':'tank')+' level',equip:String(amLab(IEQ,m.eq||'pump')).toLowerCase()+(m.ms?', machine state':'')+(m.hb&&!m.ms?', health badge':''),pv:'process value',count:'countdown, '+(m.cStyle||'ring'),fence:'fence, '+amLow((fShapeOf('fence',m.fShape)||['','traced'])[1]),line:'line, '+amLow((fShapeOf('line',m.fShape)||['','traced'])[1])}[m.kind]||String(amLab(IKINDS,m.kind)).toLowerCase());
     }else if(t==='tile'){
       x='Tile - '+String(amLab(TKINDS,m.kind)).toLowerCase();
     }else if(t==='icon'){
@@ -6154,7 +6357,7 @@ try{
     status:{name:'Status counts',items:[['Sensor status',function(){return statusFromPreset('status');}],['Interfaces',function(){return statusFromPreset('interfaces');}],['Availability',function(){return statusFromPreset('availability');}]]},
     icon:{name:'Status icons',items:[['Dot','dot'],['LED','led'],['Shield','shield'],['Hexagon','hexagon'],['Status bar','sbar'],['Traffic light','traffic'],['Beacon','beacon'],['Pulse','pulse'],['Signal bars','bars']].map(function(x){return [x[0],pkIcon(x[1])];})},
     tile:{name:'Tiles',items:[['Stat tile','stat'],['String tile','string'],['Bar gauge','bar'],['Interface traffic tile','interface'],['Channel chips','chips'],['Channel chips (fit)','chipsfit'],['Camera','camera']].map(function(x){return [x[0],function(){return tileFromPreset(x[1]);}];})},
-    ind:{name:'Industrial objects',items:[['State lamps','ind_lamps'],['On/Off indicator','ind_onoff'],['Tank level','ind_tank'],['Silo level','ind_silo'],['Equipment symbol','ind_equip'],['Process value','ind_pv'],['Countdown','ind_count'],['Fence','ind_fence'],['Line','ind_line']].map(function(x){return [x[0],function(){return indFromPreset(x[1]);}];})},
+    ind:{name:'Industrial objects',items:[['State lamps','ind_lamps'],['On/Off indicator','ind_onoff'],['Tank level','ind_tank'],['Silo level','ind_silo'],['Equipment symbol','ind_equip'],['PLC state','ind_plc'],['Drive state','ind_vfd'],['Breaker state','ind_breaker'],['UPS state','ind_ups'],['Process value','ind_pv'],['Countdown','ind_count'],['Fence','ind_fence'],['Line','ind_line']].map(function(x){return [x[0],function(){return indFromPreset(x[1]);}];})},
     links:{name:'Link styles',items:[['Plain, curve',pkLink('plain','curve')],['Plain, straight',pkLink('plain','straight')],['Beads, curve',pkLink('beads','curve')],['Beads, straight',pkLink('beads','straight')],
       ['Chevron, curve',pkLink('chevron','curve')],['Chevron, straight',pkLink('chevron','straight')],['Dash sweep, arc',pkLink('sweep','arc')],['Soft glow, curve',pkLink('glow','curve')]]}
   };
@@ -8052,11 +8255,40 @@ try{
     inT.appendChild(inText('Second value under the level',function(){return TL.chan2;},function(v){TL.chan2=v;},'a channel, for example Volume'));
     showIf(inT,function(){return inKind('tank');});in1.appendChild(inT);
     var inE=h('div');
-    inE.appendChild(inSel('Equipment',function(){return TL.eq;},function(v){TL.eq=v;},IEQ));
+    inE.appendChild(inSel('Equipment',function(){return TL.eq;},function(v){var was=!!EQNEW[TL.eq];TL.eq=v;if(EQNEW[v]&&!was){TL.ms=true;TL.hb=true;}refreshUI();},IEQ));   /* 1.12.0: the new symbols start with machine state and the badge on */
     inE.appendChild(inPick('Layout','ieq',function(){return TL.eLay;},function(v){TL.eLay=v;}));
-    inE.appendChild(inText('Show the value of',function(){return TL.channel;},function(v){TL.channel=v;},'blank = the status word'));
-    inE.appendChild(inText('Word when up',function(){return TL.upW;},function(v){TL.upW=v;},'Up, or for example Running'));
-    inE.appendChild(h('p','note','The symbol takes the colour of the sensor\u2019s state.'));
+    /* ---- 1.12.0: machine state apart from data health ---- */
+    var eqOn=function(){return inKind('equip')&&!!TL.ms;};
+    inE.appendChild(inChk('Show the machine\u2019s own state (run, stop, fault)',function(){return !!TL.ms;},function(v){TL.ms=v;},refreshUI));
+    var inEo=h('div');
+    inEo.appendChild(inText('Show the value of',function(){return TL.channel;},function(v){TL.channel=v;},'blank = the status word'));
+    inEo.appendChild(inText('Word when up',function(){return TL.upW;},function(v){TL.upW=v;},'Up, or for example Running'));
+    inEo.appendChild(h('p','note','The symbol takes the colour of the sensor\u2019s state.'));
+    showIf(inEo,function(){return inKind('equip')&&!TL.ms;});inE.appendChild(inEo);
+    var inEm=h('div');
+    inEm.appendChild(h('p','note','PRTG\u2019s own colour mixes two things: a stopped PLC turns its sensor yellow, a UPS on battery turns it red while readings still arrive. Here the symbol shows what the machine is doing, read from one channel, and the badge shows whether readings are arriving.'));
+    inEm.appendChild(inText('State channel',function(){return TL.msch;},function(v){TL.msch=v;},'blank = the sensor\u2019s main channel'));
+    inEm.appendChild(inText('Fault when this channel is on',function(){return TL.fch;},function(v){TL.fch=v;},'blank = none; for example Fault or SF LED'));
+    inEm.appendChild(inText('Second value under the word',function(){return TL.val2;},function(v){TL.val2=v;},'a channel, for example Output Frequency'));
+    var eqPh=function(k){return function(){return eqW(TL.eq)[k];};};
+    var phText=function(label,key,dk){var w=inText(label,function(){return TL[key];},function(v){TL[key]=v;},'');var i=w.querySelector('input');syncs.push(function(){i.placeholder=eqPh(dk)();});return w;};
+    inEm.appendChild(phText('Running when the value says','wRun','run'));
+    inEm.appendChild(phText('Stopped when it says','wStop','stop'));
+    inEm.appendChild(phText('Changing (starting, bypass ...) when it says','wChg','chg'));
+    inEm.appendChild(phText('Fault when it says','wFault','fault'));
+    inEm.appendChild(h('p','note','Words separated by commas, read from the channel\u2019s value (PRTG\u2019s own words for S7, UPS and OPC UA sensors, for example \u201CRUN (solo mode)\u201D). A plain number matches the channel\u2019s raw value, for example 1 for a Modbus register. The longest matching word wins. Blank = the usual words for this symbol, shown in grey.'));
+    inEm.appendChild(phText('Words shown for running, stopped, changing, fault','wShow','show'));
+    showIf(inEm,eqOn);inE.appendChild(inEm);
+    inE.appendChild(inChk('Data health badge',function(){return !!TL.hb;},function(v){TL.hb=v;},refreshUI));
+    var inEh=h('div');
+    inEh.appendChild(inChk('With the time of the last reading',function(){return TL.hage!==false;},function(v){TL.hage=v;}));
+    inEh.appendChild(pair(inText('Stale after (minutes)',function(){return TL.stale;},function(v){TL.stale=v;},'3 sensor scans'),inText('Age from a channel',function(){return TL.ageCh;},function(v){TL.ageCh=v;},'blank = the last scan')));
+    inEh.appendChild(h('p','note','Green: readings are arriving. Yellow: the last one is older than the stale limit (the symbol fades). Red: no reading, for example the connection to the machine is lost. Age from a channel: one that counts seconds, for example an MQTT sensor\u2019s Time Since Last Message.'));
+    showIf(inEh,function(){return inKind('equip')&&!!TL.hb;});inE.appendChild(inEh);
+    var inEp=h('div');
+    inEp.appendChild(inSel('Preview it as',function(){return TL.eqPv||'run';},function(v){TL.eqPv=v;},EQPV));
+    inEp.appendChild(h('p','note','Only for this preview, with sample channels. The file always shows the real state.'));
+    showIf(inEp,function(){return inKind('equip')&&isEqs(TL);});inE.appendChild(inEp);
     showIf(inE,function(){return inKind('equip');});in1.appendChild(inE);
     var inP=h('div');
     inP.appendChild(inText('Setpoint',function(){return TL.sp;},function(v){TL.sp=v;},'blank = none'));

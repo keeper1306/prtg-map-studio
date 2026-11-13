@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.11.1 (2026-11-13). **Read "Start of every session" first.**
+Last updated at version 1.12.0 (2026-11-13). **Read "Start of every session" first.**
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -223,6 +223,7 @@ The owner wants every permission asked for **right away, in one go, at the start
    `C:\Users\Administrator\Desktop` (includes `PRTG Map Studio\extension` and the map folders),
    `C:\Program Files (x86)\PRTG Network Monitor\webroot` (for `mapobjects` and `images`),
    `C:\Program Files (x86)\PRTG Network Monitor\Custom Sensors\EXE` (test script sensors),
+   `C:\Program Files (x86)\PRTG Network Monitor\Custom Sensors\EXEXML` (the 1.12.0 OT test sensors, EXE/Script Advanced),
    `C:\Program Files (x86)\PRTG Network Monitor\lookups` (PRTG's state words; read only).
    (`Documents\prtg-map-studio` is the stale repo: not needed.)
 2. GitHub: `add_repo` keeper1306/prtg-map-studio with push access, clone it, work on `connectors`.
@@ -230,22 +231,62 @@ The owner wants every permission asked for **right away, in one go, at the start
    and the built-in browser if that is what the session offers. Open a tab and check the session is signed in.
 Then say in one line what was granted, and start.
 
-## Next job (agreed in principle, not started): industrial objects with machine state apart from data health, 1.12.0
+## Next job (not started): the rest of the OT plan
 
-Claude asked "Shall I start?"; the owner moved to a new chat instead of answering, so confirm once, then go. Plan (see the next section for data):
-1. Test sensors on the lab PRTG, like the T-Rex fence: EXE/Script Advanced sensors (`Custom Sensors\EXEXML` is a different folder:
-   ask for it, or use plain EXE for one channel each) that pretend to be an S7 PLC (CPU Status 1..15 with PRTG's own lookup
-   `prtg.standardlookups.paessler.s7.cpu_status`, cycle time, LEDs), a UPS (battery status, charge, load, runtime, output source) and a
-   drive (running/fault, Hz, current). The value comes from a small text file the owner can edit to flip RUN/STOP/fault.
-2. Industrial › Equipment: new symbols PLC, drive (VFD), breaker, UPS (`IEQ` in js/09-objects.js; `indRuntime`, `indCss`). The big
-   symbol and word show the machine state read from a chosen channel's value/lookup word (map words -> run/stop/start/fault);
-   a small badge shows data health (sensor Down/Unknown/No data = no data; Up/Warning = data arriving) and, optionally, how old
-   the last reading is ("updated 2 min ago"; a stale limit turns the badge grey). Existing equipment files must stay byte-identical
-   unless the option is switched on (check like 1.10.0 did).
-3. Check on the real PRTG (classic View Map, designer canvas, hover preview), then 2) "last updated" for other objects,
-   3) OT symbols for the Status icon (PLC, RTU, HMI, SCADA server, industrial switch, gateway, robot, CNC, cabinet, firewall,
-   engineering workstation; own drawings), 4) pipe flow direction on Line, instrument symbols on Process value.
-   Geo map markers: not doable (PRTG draws them).
+The owner asked to continue with 1.12.0 (done, below). What is left of the agreed order, ask before starting each:
+1. "Last updated" time for other objects (tiles, process value, lamps): the 1.12.0 badge (`<#objectstatus name="lastcheck">`,
+   see below) can be reused.
+2. OT symbols for the Status icon (PLC, RTU, HMI, SCADA server, industrial switch, gateway, robot, CNC, cabinet, firewall,
+   engineering workstation; own drawings).
+3. Pipe flow direction on Line, instrument symbols on Process value. Geo map markers: not doable (PRTG draws them).
+Also offered, not done: machine state in the floating bar (only the side panel has it), and showing a fault channel on other symbols.
+
+## Machine state apart from data health on Equipment (1.12.0, 2026-11-13)
+
+- Test sensors (owner's standing approval of the plan; folder access to `Custom Sensors\EXEXML` granted this session): EXE/Script
+  Advanced sensors on Probe Device (40), tag `mapstudiotest`: 2237 "Test PLC" (CPU Status with `prtg.standardlookups.paessler.s7.cpu_status`,
+  OB1 Cycle Time, Max), 2238 "Test UPS" (Battery Status `paessler.snmp.ups_battery_status`, Output Source `ups-mib.upsoutput.upsoutputsource`,
+  Charge Remaining %, Current Load %, Estimated Time Remaining s), 2239 "Test drive" (Running and Fault with `paessler.modbus.lookup_boolean`,
+  Output Frequency Hz, Motor Current A), 2240 "Test breaker" (Position 1 closed / 0 open / 2 tripped, no lookup; Current A).
+  Scripts `Custom Sensors\EXEXML\map-studio-test-*.bat` (CRLF) read one word from `Desktop\Map Studio - OT test sensors\<plc|ups|drive|breaker>.txt`
+  (READ ME there lists the words; LOST makes the sensor report `<error>1</error>` "No connection to the ..."). PRTG reads them as LocalSystem.
+  Left in the normal states (RUN, NORMAL, RUN, CLOSED). Sensors were added by posting PRTG's own add-sensor form (`addsensor5.htm`) from the page.
+- **Measured on the real PRTG** with a probe file (`map-studio-zz-probe-e.htm`, left in `mapobjects`) through `mapobjectpreview`:
+  PLC STOP: `tlst-sensy`, message "Warning caused by lookup value 'STOP (internal)' in channel 'CPU Status'", channels keep values.
+  UPS on battery: `tlst-sensr` (Down), message "Error caused by lookup value 'Battery' in channel 'Output Source'", **channels keep values**,
+  lastup old, lastcheck fresh. Drive fault over Modbus: `tlst-sensg` (Up). Lost connection: `tlst-sensr`, every channel's lastvalue
+  "No data" and **no** `lastvalueraw`. Unknown / no data yet (2235): `tlst-sensx`, empty values. Right after a "scan now" a channel's
+  lastvalue can be empty while `lastvalueraw` is there. The channel `status` inside `info=treejson` is the sensor's status, the same on
+  every channel. `<#objectstatus name="lastcheck">` gives e.g. `11/13/2026 3:49:21 PM <span class="percent">[17 s ago]</span>`; the
+  bracket forms seen on the server: `N s ago`, `N m N s ago`, `N d ago`, `N d N h N m ago`. `<#objectproperty name="interval" show="number">`
+  gives `60`. So data health = the state channel has a raw value (and the sensor is not Unknown/Paused), plus the age of the last scan;
+  not PRTG's colour (the plan's "Down = no data" would have been wrong for the UPS).
+- Code (js/09-objects.js, after `indSample`): `EQNEW` (plc, vfd, breaker, ups appended to `IEQ`), `EQW` (per-symbol default words: run,
+  stop, chg, fault, show; `eqW(eq)`), `isEqs(S)` = equip and (`ms` or `hb` or a new symbol), `eqsConfig` (= `indConfig` + ms, hb, hage, msch,
+  fch, val2, wRun/wStop/wChg/wFault/wShow (blank = defaults), stale, ageCh, accent), `eqsCss`, `eqsRuntime`, `eqsScript` (config as
+  pretty JSON so no long line; longest file line ~440), `EQPV`/`eqsSample` (preview states run/stop/chg/fault/stale/nodata, `TL.eqPv`).
+  `buildTile`/`drawTilePreview` branch on `isEqs`; the file then also carries hidden `.eqs-lc` (lastcheck), `.eqs-iv` (interval),
+  `.eqs-msg` (message, the badge's tooltip). Matching: words against the channel's text (`wre`, longest word wins, so "Battery Normal"
+  beats "Battery" and "RUN SYNCUP" beats "RUN"), plain numbers against the raw value (only if no word matched); else "other" (the word
+  itself, accent colour). Fault channel: on (`onish`) = fault. Colours: run up-green, stop grey (`mix(base,text,.62)`), chg warning, fault
+  down + a "!" mark, unknown grey + "?". Health: live (green), stale (yellow; symbol and word fade; limit = minutes or max(180 s, 3 x interval);
+  age from `ageCh` raw seconds or lastcheck), nodata (red), paused (blue). In PRTG's hover preview (`.previewloading`, tables cut to 5 rows,
+  Downtime counted) the runtime asks `/api/table.json?content=channels&count=*&columns=objid,name,lastvalue` once and draws again (`C.full`).
+  Side panel: Equipment list; "Show the machine's own state" (`ms`); State channel, Fault when this channel is on, Second value, the four
+  word lists with the symbol's defaults as placeholders, Words shown; "Data health badge" (`hb`), with the time, Stale after, Age from a
+  channel; Preview it as. Picking a new symbol switches `ms` and `hb` on. Names: "..., machine state" / "..., health badge"
+  (label 'Drive', not 'Drive (VFD)': the longer name was cut at 64). Presets `ind_plc`, `ind_vfd`, `ind_breaker`, `ind_ups` (190 x 220,
+  `set`, so `setTileKind` ignores them) and the same four in `PACKS.ind`.
+- Checked: 440 files (every type's default; every Industrial kind x 14 looks x Flexible/Fixed, equipment x 5 old symbols x both layouts;
+  the Industrial pack) byte-identical to 1.11.1, only the 4 new pack files new; 16 tests; builder previews of 6 symbols x 6 states in
+  Corporate blue, Dark card and Wall display; the side panel. **On the real PRTG** (map 2241 "Map Studio test - machine state", items
+  on 2237 to 2240 with `map-studio-zz-test-<plc|ups|vfd|breaker>-state.htm`, category "Map Studio Tests"): classic View Map with PLC STOP
+  (grey STOP, "STOP (internal) · 0 msec", Updated 50 s ago), UPS BATTERY (red ALARM, "Battery · 64 %", data OK while PRTG says Down),
+  drive FAULT (FAULT, "Fault · 0 Hz", PRTG says Up), breaker LOST (UNKNOWN, No data), then all normal (RUN, NORMAL, RUNNING, CLOSED) and
+  the breaker paused (faded, Paused); Map Designer canvas; the hover preview reproduced as in 1.9.2 (all four right after the full-channel
+  fix). Earlier copies of the test files: `Desktop\PRTG Map Studio\mapobjects-backup-2026-11-13\`.
+- Not checked: stale data on the real PRTG (only the preview; a stopped probe was not simulated), `ageCh` with a real MQTT sensor, the new UI
+  (:1616), the public map page, Flexible at other sizes on the real map, the floating bar (no new menu there).
 
 ## Real OT data, for the planned industrial objects (2026-11-13, no extension change)
 
