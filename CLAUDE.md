@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.8.3.
+Last updated at version 1.8.4.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -215,6 +215,16 @@ still aborts the whole item on a type it does not list.
 
 Watch out: PRTG's own stylesheet already styles class names like `sensg` (it adds a tick glyph), so
 a Map Studio object must put the state into its **own** prefixed class, via `prefix="..."`.
+
+## Graph: no Any version, no Templates menu (1.8.4)
+
+- The owner asked what separated "Graph" from "Works on a probe, group, device or sensor" (same picture). The Any graph (1.5.71) never
+  draws history: on a sensor it draws bars of the channels' current values, on a probe/group/device bars of the sensor states, which
+  the graph's own Bars kind already does (`bsrc` channels / status), only without switching by itself. The owner: then the Templates
+  option is not needed either. `graph` removed from `ANYT` (no Any group, no Any item in the Graph pack, `anyOn()` false for graphs);
+  the bar's Templates menu and the side panel's template list are skipped for graphs. An old Any graph opens as a plain graph.
+- Checked: 36 files byte-identical to 1.8.3 (only the old `any:graph` path differs); the graph's bar has no Templates, gauge and
+  table keep theirs; no page errors; 16 tests.
 
 ## Graph: one starting point instead of 21 templates (1.8.3)
 

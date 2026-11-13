@@ -3131,7 +3131,7 @@ try{
      the object's channels (only a sensor has channels), and the object's own name, status and last value.
      On a sensor it draws that sensor (its state, its value, its channels); on a probe, group or device it draws the sensors below it.
      Each object type draws the same data its own way (anyRuntime, C.view). The Industrial object is a Tile underneath (TL.fam). */
-  var ANYT={table:1,graph:1,donut:1,sunburst:1,status:1,icon:1,tile:1};   /* 1.8.1: no Any gauge - a gauge shows one sensor’s value, which a probe, group or device does not have (the owner’s decision) */
+  var ANYT={table:1,donut:1,sunburst:1,status:1,icon:1,tile:1};   /* no Any gauge (1.8.1) or graph (1.8.4): they show one sensor’s value or its history, which a probe, group or device does not have (the owner’s decision) */
   var ANYSZ={table:[520,300],gauge:[300,260],graph:[460,260],donut:[380,240],sunburst:[380,400],status:[420,200],icon:[280,56],tile:[300,170],ind:[320,190]};
   var ANYSEC={'Object':1,'Any object':1,'Name and title':1,'Looks':1,'Look details':1,'Appearance':1,'Flexible or fixed':1};
   var ANYLAB={table:'Table',gauge:'Gauge',graph:'Graph',donut:'Donut',sunburst:'Sunburst',status:'Status counts',icon:'Icon',tile:'Tile',ind:'Industrial'};
@@ -5936,7 +5936,7 @@ try{
     OB.syncs.push(function(){fs.value=L().font;});
     /* presets and looks first: they change the most */
     obScope(b);
-    b.appendChild(obMenu('Templates','Start from a ready-made '+({table:'table',gauge:'gauge',graph:'graph',donut:'donut',sunburst:'sunburst',status:'status counts',icon:'icon',tile:(tlFam()==='ind'?'industrial object':'tile')}[TYPE]||'object'),function(pop){pop.className+=' fb-wide';},function(pop){obPresetGrid(pop);}));
+    if(TYPE!=='graph')b.appendChild(obMenu('Templates','Start from a ready-made '+({table:'table',gauge:'gauge',graph:'graph',donut:'donut',sunburst:'sunburst',status:'status counts',icon:'icon',tile:(tlFam()==='ind'?'industrial object':'tile')}[TYPE]||'object'),function(pop){pop.className+=' fb-wide';},function(pop){obPresetGrid(pop);}));
     var mLooks=(obMenu('Looks','Change the whole look',function(pop){
       pop.className+=' fb-wide';
       var g=h('div','presetgrid');pop.appendChild(g);
@@ -7278,7 +7278,7 @@ try{
       }
       refreshUI();render();
     });
-    w2.appendChild(presetSel);s1.appendChild(w2);showIf(w2,function(){return notPaste()&&TYPE!=='geomap'&&TYPE!=='links';});
+    w2.appendChild(presetSel);s1.appendChild(w2);showIf(w2,function(){return notPaste()&&TYPE!=='geomap'&&TYPE!=='links'&&TYPE!=='graph';});   /* 1.8.4: a graph has nothing to pick from (1.8.3 and 1.8.4) */
     showIf(s1.appendChild(h('p','note','A table, gauge, graph, donut or icon from PRTG\u2019s own set keeps PRTG\u2019s look until you choose another under Looks. Tables, gauges, graphs, donuts and status icons share the same looks, so a dashboard of them stays consistent.')),function(){return notPaste()&&TYPE!=='links';});
 
     var sany=section('Any object');secIf(sany,function(){return anyOn();});
