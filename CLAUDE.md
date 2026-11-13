@@ -216,6 +216,22 @@ still aborts the whole item on a type it does not list.
 Watch out: PRTG's own stylesheet already styles class names like `sensg` (it adds a tick glyph), so
 a Map Studio object must put the state into its **own** prefixed class, via `prefix="..."`.
 
+## Isla Nublar map 2233 (2026-11-12, no extension change)
+
+- The owner sent a theme-park island map picture (1119 x 1406) and asked for a map on it with the T-Rex electric fence broken, using only
+  existing Map Studio elements, plus a Desktop folder to rebuild it elsewhere. Map 2233 "Isla Nublar - Park systems", scale to fit on,
+  background #1D5A80. 23 items: fence = 4 Glow lines (#F5C500, 8) under 4 Circuit lines (#FFE45C, 3, the dots read as posts), breach =
+  2 red Tube stubs with a gap; chip "T-REX FENCE DOWN · 0 kV" (danger); Dark banner; Map Studio icons (`map-studio-icon-dot.htm` x9,
+  `map-studio-icon-beacon.htm` animated on Down sensor 2144); status counts `map-studio-status-counts-park-systems.htm` on Local Probe.
+- Built with the builder's own code (hooked copies: `__OBX` in objects, `__DBX` added before `DASHAPI.pushItems` in 06-dashboard),
+  `pushItems()` replayed from a signed-in PRTG tab with addobjecttomap/editmapobject (lines first, then banner/chip, objects on top).
+- Background: PRTG does not serve files from `webroot\mapobjects` (non-200), it does from `webroot\images`. The picture was put there
+  with the owner's OK, fetched in the page and sent to `/editsettings` (`upfile_`, `usebgimage_=1`). Copies left in `webroot\images` and
+  `webroot\mapobjects` (`map-studio-isla-nublar-background.jpg`), safe to delete. Chrome's file_upload tool needs a person's approval.
+- Desktop folder `Map Studio - Isla Nublar map`: READ ME, the three object files, Map Studio's install script, layout data (loads back:
+  23 items, 1119 x 1406), the picture. Checked in classic View Map only (states, counts, picture); not the designer, not the new UI.
+- Seen: a look carried over from one type to the next can be an odd one (icon -> Status counts came out "Minimal").
+
 ## Every default checked on the real PRTG; hover preview counts (1.9.2)
 
 - The owner asked for Corporate blue as every object's default ("corporate dark" was a slip) and for the previews to work in Map
