@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.6.0.
+Last updated at version 1.6.1.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -10,9 +10,16 @@ when they need to do something themselves.
 
 - GitHub: `keeper1306/prtg-map-studio`. Work on the `connectors` branch, then fast-forward
   `main` to it with `git push origin connectors:main`. Never merge into an old local `main`.
-- Repo on the VM: `C:\Users\Administrator\Documents\prtg-map-studio`.
+- GitHub is the master copy. Sessions without a shell on the VM (the bridge only reads and writes files) work in their own
+  clone of GitHub and write releases straight into the extension folder below.
+- Repo on the VM: `C:\Users\Administrator\Documents\prtg-map-studio`. **Stale - do not copy from it.** Found 2026-11-12: its
+  git stopped at 1.5.53 (`54bf5cb`, 3 Nov), 72 commits behind; later sessions committed elsewhere and dropped a few files in by
+  hand, so its working tree is a mix (13 files at 1.5.53, including `app.html`; 9 newer files missing). Nothing in it exists only
+  there (every file checked against GitHub's history; `tests\package-lock.json` is npm's, untracked). To use it again:
+  `git fetch origin`, `git checkout connectors`, `git reset --hard origin/connectors`. The owner chose not to bother; nothing loads it.
 - Extension folder the browser runs: `C:\Users\Administrator\Desktop\PRTG Map Studio\extension`.
-  It is not a git repo. Normally `app.html`, `manifest.json` and the files in `js\` change there.
+  It is not a git repo. Normally `app.html`, `manifest.json` and the files in `js\` change there. Its code was hash-checked
+  identical to GitHub on 2026-11-12; its four `icons\` and two `img\` PNGs differ in bytes but are pixel-identical (re-encoded).
   It still holds the old, unused `app.js` until the owner agrees to delete it.
 - The tool always runs as a chrome-extension page (`background.js` opens `app.html`, which is the
   only thing that loads the scripts). The comment at the top of `js/01-config.js` about being
@@ -98,8 +105,13 @@ How it was done, stage by stage:
    - Commit, push `connectors`, then push `connectors:main`. The owner wants this done directly,
      without pull requests or asking first. GitHub prints "Bypassed rule violations ... Changes
      must be made through a pull request" for `main`; that is expected.
-   - Copy `manifest.json`, `app.html` and the `js` folder into the
-     extension folder, and confirm every copy is byte-identical by hash. This does both and prints
+   - Write every changed file (`manifest.json`, `app.html`, `background.js`, `js\*.js`) from the session's own GitHub clone into
+     the extension folder, read each back and confirm it is byte-identical by hash. Then tell the owner it is ready: **a refresh of
+     the Map Studio tab is all they need** (see 1.6.1). Only a change to `background.js` or to the manifest beyond its version
+     needs a real reload (`chrome://extensions`, the reload arrow) - say so when that happens. The owner hates manual steps:
+     don't ask them to run git or copy anything.
+   - Only for a session with a real shell on the VM, and only after the Documents repo has been reset to `origin/connectors`
+     (it is stale, see "Where things live"): this copies and hash-checks in one go and prints
      SAME or DIFFERENT for each file (every line must say SAME):
      ```powershell
      $src = "C:\Users\Administrator\Documents\prtg-map-studio\extension"
@@ -202,6 +214,25 @@ still aborts the whole item on a type it does not list.
 
 Watch out: PRTG's own stylesheet already styles class names like `sensg` (it adds a tick glyph), so
 a Map Studio object must put the state into its **own** prefixed class, via `prefix="..."`.
+
+## New versions arrive with a tab refresh (1.6.1)
+
+- The owner asked for no manual steps after a release: Claude updates the folder, the owner does at most one thing.
+- Checked in Playwright with the extension really loaded as an extension (`--load-extension`, not the tests' http page): with no
+  extension reload, a refreshed or new tab gets the new `app.html` and `js\` from disk. Only `chrome.runtime.getManifest()` (and
+  `background.js`) stay as Chrome loaded them. So `CFG.version` is now read from `manifest.json` on disk with a synchronous XHR
+  (a tiny local file; falls back to `getManifest()`), and the version shown is always the real one.
+- If a newer `manifest.json` lands while a tab is open, a bar (`#msupd`, bottom centre, Corporate blue) offers "Refresh"
+  (`location.reload()`, the page only) or "Later". It checks when the tab comes back into view, at most every 10 s. Skipped for a
+  Web Store copy (`update_url` in the manifest) and in the tests (no `chrome.runtime`).
+- Tried first and dropped: the page calling `chrome.runtime.reload()` and `background.js` reopening it (`onInstalled`). In this
+  Playwright Chromium an extension that reloads itself never comes back (`ERR_BLOCKED_BY_CLIENT`, no service worker) - even
+  1.6.0's own unchanged code - so it could not be verified, and failing would leave the owner with no Map Studio at all.
+  `background.js` is unchanged from 1.6.0.
+- Checked: 16 tests; the flow above (1.6.0 running, 1.6.1 written, refresh shows 1.6.1; 1.6.2 written with the tab open, bar after
+  focus, page state untouched, Refresh shows 1.6.2; the extension's service worker never restarted; no page errors).
+  **Not checked on the owner's Chrome**: there the extension may have been added with "Load unpacked" rather than the command
+  line; both read from the folder, but that was not seen.
 
 ## Status colours no longer come from the look; Corporate blue is the default (1.6.0)
 
