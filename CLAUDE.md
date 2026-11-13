@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.8.2.
+Last updated at version 1.8.3.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -215,6 +215,19 @@ still aborts the whole item on a type it does not list.
 
 Watch out: PRTG's own stylesheet already styles class names like `sensg` (it adds a tick glyph), so
 a Map Studio object must put the state into its **own** prefixed class, via `prefix="..."`.
+
+## Graph: one starting point instead of 21 templates (1.8.3)
+
+- The owner asked what the Blank graph is and whether it could replace the other templates; they want the tool simpler. Checked: the
+  21 `GRPRESETS` are PRTG's own graph files, each only a mix of kind (sensor graph, every sensor below, toplist), period, text size
+  (12/9/7/0) and legend/axes/tooltips, all of which the graph's own controls already set. `buildPresetOptions` now uses `[]` for graphs
+  and the blank entry is called "Graph"; `GRPRESETS` and `graphFromPreset` stay so nothing else breaks. The Any object entry stays.
+- Checked: the list and the bar's Templates menu show "Graph" and the Any object only; 37 files byte-identical to 1.8.2; 16 tests.
+- Reviewed the other types' template lists for the same question (not changed, reported to the owner): gauge 8 (PRTG's dial with
+  kind/small/priority, all reachable from the gauge's own controls), table 27 (recipes such as "Top 10: Slowest Ping": every setting
+  is reachable, but each template sets several at once), donut 8 (PRTG-drawn with dark/light text and with name: `DN.light` and
+  `DN.withName` have no control of their own, so these are not fully reachable), sunburst 5 (all reachable), stock icons (PRTG's own
+  markup, not reproducible by Map Studio's icon), tile/industrial 13 (the same as the Kind pictures), status counts 3 (small recipes).
 
 ## Group / Device / Sensor / All belongs to each object (1.8.2)
 
