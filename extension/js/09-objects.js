@@ -4449,12 +4449,19 @@ try{
   /* the drawing in the file itself, in % of the box: PRTG's Map designer and the object list's preview show it in the state's colour
      without running any script. On View Map the script draws it again in pixels, with the gap, the sparks and the label. */
   function fenceStatic(C){
-    var o='<svg class="fz-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">', d=fPathD(C.pts,C.closed,C.smooth);
-    if(C.closed&&C.tint)o+='<path class="fz-fill" d="'+d+'"/>';
-    if(C.edge)o+='<path class="fz-case" d="'+d+'"/>';
-    o+='<path class="fz-line" d="'+d+'"/>';
-    if(C.posts)o+='<path class="fz-post" d="'+C.pts.map(function(p){return 'M'+p[0]+' '+p[1]+'h0';}).join('')+'"/>';
-    return o+'</svg>';
+    /* one element per line and one path segment per line: PRTG fills in no tag of a file with a very long line (see the 1.8.0 notes) */
+    var o='<svg class="fz-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">', d=fPathD(C.pts,C.closed,C.smooth).replace(/ (?=[CLZ])/g,'\n');
+    if(C.closed&&C.tint)o+='\n<path class="fz-fill" d="'+d+'"/>';
+    if(C.edge)o+='\n<path class="fz-case" d="'+d+'"/>';
+    o+='\n<path class="fz-line" d="'+d+'"/>';
+    if(C.posts)o+='\n<path class="fz-post" d="'+C.pts.map(function(p){return 'M'+p[0]+' '+p[1]+'h0';}).join('\n')+'"/>';
+    return o+'\n</svg>';
+  }
+  /* the config as text, ten points to a line, so a long traced outline never makes one long line */
+  function fenceCfgText(C){
+    var pj=JSON.stringify(C.pts), rows=[], i;
+    for(i=0;i<C.pts.length;i+=10)rows.push(C.pts.slice(i,i+10).map(function(p){return JSON.stringify(p);}).join(','));
+    return JSON.stringify(C).replace('"pts":'+pj,function(){return '"pts":[\n'+rows.join(',\n')+'\n]';});
   }
   function buildFence(S){
     var cls=tClassOf(S), L=tEffLook(S), C=fenceConfig(S,L), o=[], w=parseInt(S.initW,10), h_=parseInt(S.initH,10);
@@ -4476,7 +4483,7 @@ try{
     o.push('</div>');
     o.push('');
     o.push('<scr'+'ipt>');
-    o.push('(function(){\n  var root=document.getElementById("<@itemid>");\n  if(!root)return;\n  var CFG='+JSON.stringify(C)+';\n  ('+fenceRuntime.toString()+')(root,CFG);\n})();');
+    o.push('(function(){\n  var root=document.getElementById("<@itemid>");\n  if(!root)return;\n  var CFG='+fenceCfgText(C)+';\n  ('+fenceRuntime.toString()+')(root,CFG);\n})();');
     o.push('<\/script>');
     return o.join('\n')+'\n';
   }

@@ -216,6 +216,14 @@ still aborts the whole item on a type it does not list.
 Watch out: PRTG's own stylesheet already styles class names like `sensg` (it adds a tick glyph), so
 a Map Studio object must put the state into its **own** prefixed class, via `prefix="..."`.
 
+## Fence files keep short lines (1.10.1)
+
+- Found while building the striking Isla Nublar map: a fence traced with 8 smooth points wrote its static SVG (fill, edge, line, posts)
+  on one 1095-character line, and 120 points put the config at 1713. PRTG fills in no tag of a file with a very long line (1.8.0 notes).
+  `fenceStatic` now puts each element and each path segment on its own line; `fenceCfgText` writes the points ten to a line.
+  Longest line now 356 for 8, 40 or 120 points. Only fence/line files change. Checked: 16 tests; the T-Rex fence on a stand-in View
+  Map page (tags filled in by hand): red outline, gap on side 7, sparks, "CONTAINMENT BREACH". Not checked on the real PRTG.
+
 ## Fence, Line, Camera and hazard stripes (1.10.0)
 
 - The owner, planning a park map (their own poster picture as the map background, a T-Rex paddock whose electric fence
