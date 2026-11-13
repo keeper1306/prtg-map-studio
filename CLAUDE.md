@@ -216,6 +216,35 @@ still aborts the whole item on a type it does not list.
 Watch out: PRTG's own stylesheet already styles class names like `sensg` (it adds a tick glyph), so
 a Map Studio object must put the state into its **own** prefixed class, via `prefix="..."`.
 
+## Real OT data, for the planned industrial objects (2026-11-13, no extension change)
+
+- The owner suggested PLC/RTU, drive (VFD), breaker and UPS objects, OT symbols for the Status icon, and showing equipment state apart
+  from monitoring health and stale data. Claude's proposed order (not started): 1) state + health badge on Equipment with PLC, drive,
+  breaker (and UPS) symbols, plus test script sensors on the lab PRTG; 2) "last updated" time; 3) OT symbols for the Status icon;
+  4) pipe flow direction, instrument symbols. Geo map markers were advised against (PRTG draws them itself).
+- Read only, on a PRTG demo server the owner signed into (no names or addresses recorded here, the repo is public): ~150 OT sensors.
+  SIMATIC S7-300/400 CPU Status: "CPU Status" (lookup, raw 8 = "RUN (solo mode)"), "Cycle Time Events", "OB1 Cycle Time" / Max / Min
+  (msec). S7-300/400 LED Status: one channel per LED (BUS1F, BUS2F/BUS5F, FRCE, MAINT, RUN, SF, STOP), raw 1 Off / 2 On. S7-1200/1500
+  CPU Status: Operating Mode, Mode Selector, Current/Longest/Shortest Cycle Time, Communication Load, Program Load (all "No data" there).
+  S7-1200/1500 Alarm Status and Hardware Status: alarm counts, per-module status. SNMP UPS Status (NEW): Battery Status (raw 2 "Battery
+  Normal"), Charge Remaining %, Current Load %, Estimated Time Remaining (raw seconds). Modbus TCP / OPC UA Custom / MQTT Subscribe
+  Custom: channel names are whatever the user typed (Voltage, Power, Temperature, "Connected" true, Alarm State, Battery), so objects
+  for them must let the user pick channels. **Stale data seen**: two MQTT sensors Up while their "Time Since Last Message" was 34 d.
+- PRTG's lookup files (lab PRTG `lookups`, folder access granted by the owner 2026-11-13), value=text (state):
+  `paessler.s7.cpu_status` 0 Unknown, 1-4 STOP (update/reset memory/self-initialization/internal) W, 5-7 STARTUP (cold/warm/hot) W,
+  8 RUN (solo mode) OK, 9 RUN-R (redundant mode) OK, 10 HOLD W, 11 LINK-UP W, 12 UPDATE W, 13 DEFECTIVE E, 14 SELFTEST W, 15 NO POWER E.
+  `s7.operating_mode_s7web` 1 RUN OK, 2 STOP E, 3 STARTUP W, 4 HOLD W, 5 RUN REDUNDANT OK, 6 STOP SELF-INITIALIZATION W, 7 SYNCUP W,
+  8 RUN SYNCUP W, 9 REMOTE UNKNOWN W, 10 ERROR SEARCH W. `s7.mode_selector` 1 RUN, 2 STOP W, 3 No Switch, 4 UNKNOWN W.
+  `s7.led_indicates_ok` 1 Off E, 2 On OK, 3/4 Flashing W; `s7.led_indicates_error` 1 Off OK, 2 On / 3,4 Flashing E.
+  `s7.hardware_status` 1 Good, 2 Deactivated W, 3/4 Maintenance W, 5 Unknown W, 6 Error E, 7 Not Reachable E, 8 I/O Not Available E.
+  `s7.alarm_state` 1 Inactive, 2 Active - Acknowledged W, 3 Active - Unacknowledged E. `s7.recent_cycle_time_status` 1 OK,
+  2 Cycle Time Exceeded E, 3 Diagnostic Buffer Overflow W. `snmp.ups_battery_status` 2 Battery Normal, 3 Low W, 4 Depleted E.
+  `ups-mib.upsoutput.upsoutputsource` 3 Normal, 4 Bypass W, 5 Battery E, 6 Booster W, 7 Reducer W. `opcua.server_state` 0 Running,
+  1 Failed E, 2 No Configuration W, 3 Suspended W, 4 Shut Down W, 5 Test, 6 Communication Fault E, 7 Unknown E.
+  `modbus.lookup_boolean` 0 Off, 1 On.
+- So in PRTG a stopped PLC turns its sensor Warning (STOP is a lookup Warning): PRTG's status mixes machine state and data health.
+  A Map Studio object must take the machine state from the channel's value/word and the health from whether data arrives.
+
 ## Fence and Line in the Map designer (1.11.0, 1.11.1)
 
 - The owner asked for the fence to be a Map designer item so it can be shaped over the real map background. Build has two new
