@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.9.1.
+Last updated at version 1.9.2.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -215,6 +215,27 @@ still aborts the whole item on a type it does not list.
 
 Watch out: PRTG's own stylesheet already styles class names like `sensg` (it adds a tick glyph), so
 a Map Studio object must put the state into its **own** prefixed class, via `prefix="..."`.
+
+## Every default checked on the real PRTG; hover preview counts (1.9.2)
+
+- The owner asked for Corporate blue as every object's default ("corporate dark" was a slip) and for the previews to work in Map
+  Studio and PRTG for every object. Every type already started on Corporate blue (Link style has no look; icons start without their
+  card). A look changed by hand is carried to the next type in the session.
+- PRTG's hover preview, read in `_Prtg.Maps.js`: `$.ajax` to `/controls/mapobjectpreview.htm` with `count: 5`, then
+  `$(".previewloading", $this).html(preHtml)` (`.objtitle` hidden) and `_Prtg.initPlugins($(".previewloading", $this))`. So it renders
+  against the object picked in the designer's tree (Root when none), and every embedded table is cut to 5 rows.
+- How it was checked (reuse this): each type's default file swapped into `map-studio-zz-test.htm` (map 2231: Local Probe 1, group 50,
+  device 2095, sensor 2106), the Map Designer canvas looked at, and the hover preview reproduced in the designer page: fetch the same
+  URL per object, put it into a 200 x 200 `div.previewloading` with jQuery, call `_Prtg.initPlugins`, read it after 4 s. One preview
+  at a time: four on one page share `<@itemid>` and the scripts find the wrong copy. Test file restored byte-identical after.
+- Results: table on all four; gauge, graph, tile, Industrial on the sensor (PRTG's "only supports Sensor" on the others, by design);
+  donut and status counts on probe, group and device; sunburst on probe and group; icon on all four (red where sensors are down);
+  Geo map on probe, group, device; Link style shows its chip. Canvas = View Map for all (View Map itself looked at for gauge, graph).
+- Fixed: donut and status counts said "5 sensors" in the hover preview. `donutRuntime` and `statusRuntime`: inside `.previewloading`
+  they fetch `/api/table.json?content=sensors&columns=objid,status_raw&count=*` once and draw again with `C.full`. Checked: 71 / 66 /
+  16 sensors. Only these two types' files changed (runtime text); 35 others identical; 16 tests.
+- Seen, not fixed: a sensor-only object on a probe/group/device shows PRTG's message and an empty card under it (canvas and View Map).
+- Not checked: hovering with the real mouse (the request and insert were reproduced from PRTG's own code instead); the new UI (:1616).
 
 ## No templates for gauges, sunbursts, tiles, Industrial (1.9.1)
 

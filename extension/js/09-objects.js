@@ -2740,11 +2740,17 @@ try{
       return null;
     }
     function polar(a,r){var t=(a-90)*Math.PI/180;return [50+r*Math.cos(t),50+r*Math.sin(t)];}
+    /* 1.9.2: PRTG's hover preview in the map designer asks for 5 rows only (count: 5 in _Prtg.Maps.js), so the counts there were of 5 sensors.
+       Inside that box (.previewloading) the object asks PRTG once for all of them and draws again; maps and the canvas are unchanged. */
+    if(!C.full&&root.closest&&root.closest('.previewloading')&&window.fetch){
+      fetch('/api/table.json?content=sensors&columns=objid,status_raw&count=*&id='+encodeURIComponent(root.getAttribute('objectid')||''),{credentials:'include',headers:{'X-Requested-With':'XMLHttpRequest'}})
+        .then(function(r){return r.json();}).then(function(j){if(j&&j.sensors){var c2={},k;for(k in C)c2[k]=C[k];c2.full=j.sensors;donutRuntime(root,c2);}}).catch(function(){});
+    }
     try{
-      var raw=findJson();
+      var raw=C.full?'{}':findJson();
       if(!raw){say('No sensor data');return;}
       var data=JSON.parse(raw), box=(data&&data.objects)?data.objects:data;
-      var list=box&&box.sensors;
+      var list=C.full||(box&&box.sensors);
       if(!list||typeof list.length!=='number'){say('No sensor data');return;}
       var counts={down:0,ack:0,warning:0,unusual:0,up:0,paused:0,unknown:0}, parsed=0, i;
       for(i=0;i<list.length;i++){var k=classify(list[i]);if(k){counts[k]++;parsed++;}}
@@ -3180,10 +3186,16 @@ try{
       }
       return null;
     }
+    /* 1.9.2: PRTG's hover preview in the map designer asks for 5 rows only (count: 5 in _Prtg.Maps.js), so the counts there were of 5 sensors.
+       Inside that box (.previewloading) the object asks PRTG once for all of them and draws again; maps and the canvas are unchanged. */
+    if(!C.full&&root.closest&&root.closest('.previewloading')&&window.fetch){
+      fetch('/api/table.json?content=sensors&columns=objid,status_raw&count=*&id='+encodeURIComponent(root.getAttribute('objectid')||''),{credentials:'include',headers:{'X-Requested-With':'XMLHttpRequest'}})
+        .then(function(r){return r.json();}).then(function(j){if(j&&j.sensors){var c2={},k;for(k in C)c2[k]=C[k];c2.full=j.sensors;statusRuntime(root,c2);}}).catch(function(){});
+    }
     try{
-      var raw=findJson();
+      var raw=C.full?'{}':findJson();
       if(!raw){say('No sensor data');return;}
-      var data=JSON.parse(raw), box=(data&&data.objects)?data.objects:data, list=box&&box.sensors;
+      var data=JSON.parse(raw), box=(data&&data.objects)?data.objects:data, list=C.full||(box&&box.sensors);
       if(!list||typeof list.length!=='number'){say('No sensor data');return;}
       var counts={down:0,ack:0,warning:0,unusual:0,up:0,paused:0,unknown:0}, parsed=0, i, k;
       for(i=0;i<list.length;i++){k=classify(list[i]);if(k){counts[k]++;parsed++;}}
