@@ -26,7 +26,10 @@ try{
     head:true,headStyle:'fill',headBg:'#F7F8FA',headColor:'#6B7385',muted:'#5F6674',headUpper:true,
     text:'#383B47',link:'#007DB8',line:'#F0F1F4',hover:'#F4F9FC',zebra:false,zebraBg:'#F8FAFC',pad:9,cellX:14,
     status:'dot',dot:12,tint:true,stage:'',align:'',
-    c:{up:'#2FA84F',warning:'#F0AD22',down:'#D8402F',unusual:'#F0AD22',paused:'#8B93A3',unknown:'#9AA0AD'}};
+    /* the status colours are PRTG's own (the "PRTG UI" set in PMSSETS) and are the same whatever look is chosen.
+       A look styles the card, the type and the chrome; it never says what up, warning or down look like.
+       The Colors menu is the one deliberate way to change them, and it still writes straight into look.c. */
+    c:{up:'#B8C419',warning:'#F5C500',down:'#E30613',unusual:'#F59C00',paused:'#477EC0',unknown:'#878787'}};
   function mix(a,b){var o={};for(var k in a)o[k]=a[k];for(var j in b)o[j]=b[j];return o;}
   var LOOKS={
     'PRTG default':{mode:'prtg'},
@@ -69,7 +72,9 @@ try{
       c:{up:'#3CCF8E',warning:'#FFC233',down:'#E60060',unusual:'#FF8A3D',paused:'#00AEEF',unknown:'#6B7699'}}
   };
   var LOOKORDER=['PRTG new UI','Clean card','Corporate blue','Executive dark','Indigo board','Slate fintech','Neon plum','Teal glass','Light card','Dark card','Minimal','Wall display','Brand navy','PRTG default'];
-  function lookOf(name){var l=mix(LOOKBASE,LOOKS[name]||{});l.c=mix(LOOKBASE.c,(LOOKS[name]||{}).c||{});l.name=name;return l;}
+  /* a look never carries status colours: l.c always starts from LOOKBASE.c (PRTG UI). The c:{...} still written in
+     some LOOKS entries below is left in place as a record of what they used to set, but it is deliberately not read. */
+  function lookOf(name){var l=mix(LOOKBASE,LOOKS[name]||{});l.c=mix(LOOKBASE.c,{});l.name=name;return l;}
   function slugOf(s){var t=String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');return t||'table';}
   function clean(s){return String(s==null?'':s).replace(/[<>"]/g,'').replace(/\s+/g,' ').trim();}
   function cleanTag(s){return String(s||'').replace(/[^A-Za-z0-9_\-]/g,'');}
@@ -692,7 +697,7 @@ try{
       kind:'sensor-primary',small:false,prio:3,plgPrio:false,mapTags:true,reqTag:'',count:0,hideSettings:true,strip:'thin',scale:1,
       channel:'primary',channelName:'',rangeMode:'channel',min:0,max:100,limits:'channel',dir:'above',warn:70,err:90,
       shape:'ring',thick:14,style:'progress',colorMode:'status',needle:true,showMinMax:true,glow:false,label:'channel',labelText:'',initW:0,initH:0,
-      look:lookOf('PRTG new UI')};   /* a new gauge starts as Flat minimalist on white, with the complete value line and the numbers inside */
+      look:lookOf('Corporate blue')};   /* a new gauge starts as Flat minimalist on white, with the complete value line and the numbers inside */
   }
   function gaugeFromPreset(p){
     var G=blankG();
@@ -1619,7 +1624,7 @@ try{
   function periodTag(p){return p===0?'<#lang key="html.sensor.livwdata" default="Live Data">':'<#system type="'+(p+1)+'period">';}
   function blankGR(){
     return {type:'graph',kind:'sensor',cat:'Graphs',name:'Sensor graph',fname:'',period:0,fontSize:12,legend:true,axis:true,tooltips:false,check:true,extra:[],
-      layout:'card',titleMode:'object',title:'',invert:'auto',tileW:336,tileH:175,mapTags:true,initW:520,initH:300,fit:true,fitW:520,fitH:300,draw:'own',cstyle:'area',dots:false,maxCh:3,chNames:'',bsrc:'status',bdir:'row',bcolor:'status',bmax:8,lmax:12,lw:2,fillA:28,gridOn:true,bradius:3,look:lookOf('PRTG new UI')};
+      layout:'card',titleMode:'object',title:'',invert:'auto',tileW:336,tileH:175,mapTags:true,initW:520,initH:300,fit:true,fitW:520,fitH:300,draw:'own',cstyle:'area',dots:false,maxCh:3,chNames:'',bsrc:'status',bdir:'row',bcolor:'status',bmax:8,lmax:12,lw:2,fillA:28,gridOn:true,bradius:3,look:lookOf('Corporate blue')};
   }
   function graphFromPreset(p){
     var G=blankGR();
@@ -2452,7 +2457,7 @@ try{
   ];
   function blankSC(){
     return {type:'status',cat:'Status Counts',name:'Sensor status',fname:'',titleMode:'object',title:'',sub:'',tiles:['up','warning','down','paused'],quiet:true,cap:'of',
-      mapTags:true,reqTag:'',nameHas:'',initW:420,initH:200,fit:true,fitW:420,fitH:200,look:lookOf('PRTG new UI')};
+      mapTags:true,reqTag:'',nameHas:'',initW:420,initH:200,fit:true,fitW:420,fitH:200,look:lookOf('Corporate blue')};
   }
   function statusFromPreset(id){
     var S=blankSC(), p=null;
@@ -3135,11 +3140,11 @@ try{
   function anyEffLook(m){var L=m.look;return (L.mode==='prtg')?lookOf('Light card'):L;}
   function anyStart(){   /* the template: a fresh object of this type that works on anything; the look stays */
     var lk=M().look, v=anyView(), m, sz=ANYSZ[v]||[300,200];
-    if(TYPE==='table'){T=blankT();T.look=(lk.mode==='prtg')?lookOf('PRTG new UI'):lk;return;}   /* the default table works on all four (anyType) */
+    if(TYPE==='table'){T=blankT();T.look=(lk.mode==='prtg')?lookOf('Corporate blue'):lk;return;}   /* the default table works on all four (anyType) */
     if(TYPE==='table')T=blankT();else if(TYPE==='gauge')G=blankG();else if(TYPE==='graph')GR=blankGR();else if(TYPE==='donut')DN=blankD();
     else if(TYPE==='sunburst')SB=blankSB();else if(TYPE==='status')SC=statusFromPreset('');else if(TYPE==='icon')IC=blankI();
     else if(TYPE==='tile')TL=(v==='ind')?blankInd():blankTL();
-    m=M();m.any=true;m.anyPv='group';m.look=(lk.mode==='prtg')?lookOf('PRTG new UI'):lk;
+    m=M();m.any=true;m.anyPv='group';m.look=(lk.mode==='prtg')?lookOf('Corporate blue'):lk;
     m.cat='Any object';m.name='';m.nameUser=false;m.fname='';m.titleMode=(v==='icon')?'none':'object';m.title='';m.sub='';
     var zk=(parseFloat(m.look.size)||13)/13;   /* Wall display's bigger text gets a bigger box, as when the look is picked */
     m.initW=String(Math.round(sz[0]*zk));m.initH=String(Math.round(sz[1]*zk));
@@ -3678,7 +3683,7 @@ try{
   function blankTL(){
     return {type:'tile',kind:'stat',cat:'Tiles',name:'Stat tile',fname:'',titleMode:'object',title:'',sub:'',
       channel:'',min:'',max:'',warn:'',error:'',cap:'',hide:'Downtime',only:'',cols:'',ratio:'',chipw:120,strip:'',okW:'',infoW:'',warnW:'',errW:'',
-      initW:260,initH:170,fit:true,fitW:260,fitH:170,look:lookOf('PRTG new UI')};
+      initW:260,initH:170,fit:true,fitW:260,fitH:170,look:lookOf('Corporate blue')};
   }
   function tileFromPreset(id){
     var T_=blankTL(), p=null;

@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.5.112.
+Last updated at version 1.6.0.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -148,6 +148,78 @@ A full run takes about 5 seconds (16 seconds the very first time).
   makes Map Studio treat them as two servers: Review shows already-pushed items as new, and Undo
   is not offered. Confirmed on the real PRTG at 1.5.43. Workaround: always use the same address.
   The owner chose to leave this until after `app.js` is split (the split is now done, at 1.5.53).
+
+## What PRTG renders server-side, measured (2026-11-12, before 1.6.0)
+
+Measured on the real PRTG (26.3.124.1728, `WIN-38LNOU5G6LG`) with four throwaway probe files in
+`mapobjects` (`map-studio-zz-probe-a/b/c/d.htm`, category "Map Studio Tests"), read through
+`/controls/mapobjectpreview.htm` against probe `1` and sensor `2106`, and through map 2231's own
+four items (probe, group, device, sensor) in classic View Map and the Map Designer canvas.
+
+**The preview endpoint.** `_Prtg.Maps.js` calls `/controls/mapobjectpreview.htm` with
+`id` (the map), `count=5`, `dependency_` (the object to render against), `width`, `height`,
+`selected=`, `mapelements=,*<filename>*`, `maptitles=,*<title>*`. This is the same request the
+object list's hover preview makes, so anything that renders here renders in the hover preview.
+New files in `mapobjects` appear in the designer's list without restarting PRTG; an **edited**
+file looked cached, so give a changed probe a new name rather than trusting a reload.
+
+**A complete custom dial renders with no script at all, on all four object types, in all three
+views** (mapobjectpreview/hover, Map Designer canvas, classic View Map). Confirmed with both a CSS
+`conic-gradient` dial and a hand-built SVG one, needle placed by `rotate(calc(...))`. The way in is
+that PRTG substitutes a tag *inside a `style` attribute*, so a tag can set a CSS custom property
+that `calc()` then uses. PRTG's own `trafficlight.htm` is the model: script-free SVG, works on a
+sensor and on a container, branches server-side. `object_circle1.htm` shows one object may declare
+`objecttype="sensor,probenode,group,device"`, and `<@width>`/`<@height>` are usable in styles.
+
+What the tags return (`id="<@objectid>"` on each):
+
+| Tag | Sensor | Probe / group / device |
+|---|---|---|
+| `objectproperty name="Name"` | the name | the name |
+| `objectproperty type="nodename"` | `sensor` | `probenode` |
+| `<#if value="@nodename" is="sensor" then=... else=... varexpand="value">` | branches | branches |
+| `objectstatus name="type"` | the sensor type | `Probe` / `Group` / `Device` |
+| `objectstatus name="status"` | `Up` | `Up` |
+| `objectstatus name="lastvalue"` | `0.23 Mbit/s` | empty |
+| `objectstatus name="uptime"` | `99.3139%` | empty |
+| `objectproperty name="priority" show="number"` | `3` | `3` |
+| `sensor type="colorclassofstate"` | `sensg` | `hasred hasnopartialred hasnoack hasyellow hasnoorange hasnoblack hasblue hasgreen` |
+| `sensor type="colorclassofstate" mode="short"` | `sensg` | `down` |
+| `mapobject showfor="previewonly" content="..."` | shows in the preview only | the same |
+
+**There is no raw number.** `show="raw"`, `mode="raw"` and `show="number"` on
+`objectstatus name="lastvalue"` are all ignored and still give the formatted `0.23 Mbit/s`, which
+cannot feed `calc()`. `lastvalueraw` and `lastvalue_` are "Not found". Containers expose no sensor
+counts (`upsens`, `downsens`, `totalsens`, `warnsens`, `pausedsens` are all "(Property not found)"),
+so a script-free share-up is not available either. A needle can therefore sit at a **status**
+position everywhere, but only script can move it to an exact channel value.
+
+**Two notes in this file were wrong** and are corrected here: `<#sensor type="colorclassofstate">`
+does **not** abort on a non-sensor in this version (the 1.5.96 section says it does) - it returns
+the aggregate `has...` class list above; and nothing in the value/status probe aborted on a
+container at all, unknown properties degrading to "(Property not found)". `<#checkobjecttype>`
+still aborts the whole item on a type it does not list.
+
+Watch out: PRTG's own stylesheet already styles class names like `sensg` (it adds a tick glyph), so
+a Map Studio object must put the state into its **own** prefixed class, via `prefix="..."`.
+
+## Status colours no longer come from the look; Corporate blue is the default (1.6.0)
+
+- The owner asked that the status colours be PRTG's own everywhere and that a look never overwrite
+  them, tables included, and that a new object start on Corporate blue.
+- `LOOKBASE.c` now holds PRTG's set (`up #B8C419`, `warning #F5C500`, `down #E30613`,
+  `unusual #F59C00`, `paused #477EC0`, `unknown #878787`) - the same values as the `prtg` entry in
+  `PMSSETS.sets`, so `csetOf()` reports "PRTG UI" as the chosen set by default.
+- `lookOf()` no longer reads a look's own `c`; every look returns `LOOKBASE.c`. The `c:{...}` blocks
+  still written in `LOOKS` are left as a record of what each look used to set and are deliberately
+  not read. Checked by evaluating the real definitions: all 14 looks return the same six colours.
+- The Colors menu is unchanged and still the one deliberate way to change them: `csetPaint()` and
+  the per-colour editors write into `look.c` after the look is applied.
+- Every `lookOf('PRTG new UI')` default became `lookOf('Corporate blue')` (6 places: gauge, graph,
+  status counts, geomap, and the two `anyStart`/table fallbacks). `blankT` was already Corporate
+  blue from 1.5.104, so the other types now match the table.
+- Checked: 16/16 tests. **Not checked on the real PRTG**: no object files were built or installed
+  from this version; the owner tests the extension by hand.
 
 ## 1.5.111 (the Any gauge as the default) reverted (1.5.112)
 
