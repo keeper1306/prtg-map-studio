@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.11.1.
+Last updated at version 1.11.1 (2026-11-13). **Read "Start of every session" first.**
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -215,6 +215,37 @@ still aborts the whole item on a type it does not list.
 
 Watch out: PRTG's own stylesheet already styles class names like `sensg` (it adds a tick glyph), so
 a Map Studio object must put the state into its **own** prefixed class, via `prefix="..."`.
+
+## Start of every session: ask for all access first (owner's standing request, 2026-11-13)
+
+The owner wants every permission asked for **right away, in one go, at the start**, not in the middle of the work. Before anything else:
+1. Folders on the VM, in one `device_request_folder_access` call (the bridge is the VM `win-38lnou5g6lg`):
+   `C:\Users\Administrator\Desktop` (includes `PRTG Map Studio\extension` and the map folders),
+   `C:\Program Files (x86)\PRTG Network Monitor\webroot` (for `mapobjects` and `images`),
+   `C:\Program Files (x86)\PRTG Network Monitor\Custom Sensors\EXE` (test script sensors),
+   `C:\Program Files (x86)\PRTG Network Monitor\lookups` (PRTG's state words; read only).
+   (`Documents\prtg-map-studio` is the stale repo: not needed.)
+2. GitHub: `add_repo` keeper1306/prtg-map-studio with push access, clone it, work on `connectors`.
+3. Chrome (Claude in Chrome) on `https://prtg.whatthehelbert.com` (the owner is signed in there; Claude never types credentials),
+   and the built-in browser if that is what the session offers. Open a tab and check the session is signed in.
+Then say in one line what was granted, and start.
+
+## Next job (agreed in principle, not started): industrial objects with machine state apart from data health, 1.12.0
+
+Claude asked "Shall I start?"; the owner moved to a new chat instead of answering, so confirm once, then go. Plan (see the next section for data):
+1. Test sensors on the lab PRTG, like the T-Rex fence: EXE/Script Advanced sensors (`Custom Sensors\EXEXML` is a different folder:
+   ask for it, or use plain EXE for one channel each) that pretend to be an S7 PLC (CPU Status 1..15 with PRTG's own lookup
+   `prtg.standardlookups.paessler.s7.cpu_status`, cycle time, LEDs), a UPS (battery status, charge, load, runtime, output source) and a
+   drive (running/fault, Hz, current). The value comes from a small text file the owner can edit to flip RUN/STOP/fault.
+2. Industrial › Equipment: new symbols PLC, drive (VFD), breaker, UPS (`IEQ` in js/09-objects.js; `indRuntime`, `indCss`). The big
+   symbol and word show the machine state read from a chosen channel's value/lookup word (map words -> run/stop/start/fault);
+   a small badge shows data health (sensor Down/Unknown/No data = no data; Up/Warning = data arriving) and, optionally, how old
+   the last reading is ("updated 2 min ago"; a stale limit turns the badge grey). Existing equipment files must stay byte-identical
+   unless the option is switched on (check like 1.10.0 did).
+3. Check on the real PRTG (classic View Map, designer canvas, hover preview), then 2) "last updated" for other objects,
+   3) OT symbols for the Status icon (PLC, RTU, HMI, SCADA server, industrial switch, gateway, robot, CNC, cabinet, firewall,
+   engineering workstation; own drawings), 4) pipe flow direction on Line, instrument symbols on Process value.
+   Geo map markers: not doable (PRTG draws them).
 
 ## Real OT data, for the planned industrial objects (2026-11-13, no extension change)
 
