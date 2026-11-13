@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.6.2.
+Last updated at version 1.7.0.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -172,8 +172,9 @@ four items (probe, group, device, sensor) in classic View Map and the Map Design
 `id` (the map), `count=5`, `dependency_` (the object to render against), `width`, `height`,
 `selected=`, `mapelements=,*<filename>*`, `maptitles=,*<title>*`. This is the same request the
 object list's hover preview makes, so anything that renders here renders in the hover preview.
-New files in `mapobjects` appear in the designer's list without restarting PRTG; an **edited**
-file looked cached, so give a changed probe a new name rather than trusting a reload.
+New files in `mapobjects` appear in the designer's list without restarting PRTG, and an edited file is
+used at once too (corrected at 1.7.0: the "looked cached" seen first was a CSS mistake in the probe itself;
+overwriting `map-studio-zz-test.htm` showed the new content on the very next load, five times).
 
 **A complete custom dial renders with no script at all, on all four object types, in all three
 views** (mapobjectpreview/hover, Map Designer canvas, classic View Map). Confirmed with both a CSS
@@ -214,6 +215,57 @@ still aborts the whole item on a type it does not list.
 
 Watch out: PRTG's own stylesheet already styles class names like `sensg` (it adds a tick glyph), so
 a Map Studio object must put the state into its **own** prefixed class, via `prefix="..."`.
+
+## The default gauge works on all four object types and shows inside PRTG (1.7.0)
+
+- The owner asked for the default of every object to work like the default table: on a probe, group, device or sensor, drawn
+  completely by Map Studio in every look if that is what it takes, and visible in PRTG (Map Designer, hover preview) as well as in Map
+  Studio; status colours from PRTG, Corporate blue by default (1.6.0). Order agreed: the gauge first, then the other types one by one,
+  each verified on the real PRTG before the next. Asked what to do where a script-free preview is impossible: stop and ask for that type.
+  Asked how the needle should behave given there is no raw number: "hybrid" - status position everywhere, exact reading on View Map.
+- Default: `blankG()` is the Any gauge (`any:true`, `cat:'Any object'`, 300 x 260, Flexible, Corporate blue). The template list's
+  first entry reads "Works on a probe, group, device or sensor" (as the table's) and the separate "Any object" group is gone for
+  gauges; picking it turns a PRTG look into Corporate blue (as the table does). `gLeaveAny(g)` (called by `setFace()` and first thing in
+  `gaugeFromPreset()`) gives back exactly the pre-1.7.0 starting values - category Gauges, name "Bandwidth gauge" unless typed, no
+  size, no Flexible - so every face, every PRTG template and the Gauges pack (`pkFace`: `blankG()` then `setFace()`) build the same
+  files as before. This is the trap 1.5.111 fell into with the pack.
+- The dial is plain markup PRTG fills in (`anyGaugeHtml`, inside `.abody`): a track arc, three zone arcs (empty until the script
+  fills them), the reading arc (`.agact`, `pathLength=100`, `stroke-dasharray:calc(var(--p) * 100) 200`), the needle (`.agnd`,
+  `rotate(calc(-120deg + var(--p) * 240deg))` round 100,100), a hub, and a `foreignObject` with the value (`<#objectstatus
+  name="lastvalue">`), the status and the type. The state: `<#sensor type="colorclassofstate" prefix="msgs-">` on `.agz`; `anyGaugeCss`
+  writes one rule per `ISTATES` entry in its rising-severity order (the Icon object's own table), so the worst class wins and sets
+  `--p` (`AGPOS`), `--c` (the state colour, `donutPalette`) and `--w` (`AGWORD`). On a probe, group or device (no value) the big word
+  is `--w` through `::after`, not PRTG's own status: Root said "Up" under a red dial. The dial's root gets `width:<@width>px;
+  height:<@height>px` before PRTG's coordinates: in a preview the item has no size of its own, so a dial that fills its box drew at
+  0 px high. Its two font sizes are written `calc(19px)`/`calc(10.5px)` so Flexible's `flexCss` rewrite leaves them alone (the svg
+  already scales them; on a 600 x 531 item the rewrite had doubled them). The words sit on a patch of the card colour so the needle,
+  near either end of the scale, passes behind them.
+- On View Map (`anyRuntime`, `V==='gauge'`) the same dial is refined, not redrawn (`body.innerHTML` is no longer emptied for it, and
+  "No sensors" is not said). A sensor: its primary channel from the channels table, now asked for with
+  `columns='name=textraw,lastvalue,info=treejson,minimum,maximum'` (gauge only; the other types' files keep `name=textraw,lastvalue`):
+  `--p` = (lastvalueraw - graphminraw) / (graphmaxraw - graphminraw), lookup channels left at the status position; with
+  `limitmode` 1 the zones are drawn from the max limits (good below) or the min limits (good above), otherwise the track alone.
+  A probe, group or device: `--p` = share of sensors up, "52 of 71 sensors up", the reading arc in the worst state's colour; the
+  red/yellow/green thirds of the first draft were dropped because a share has no thresholds.
+- Checked on the real PRTG (map 2231, its four items swapped to the gauge and back, `map-studio-zz-test.htm` restored byte-identical
+  each time): classic View Map, items 600 x 531 and 600 x 330 - Local Probe 73 % (52 of 71), 1st group 73 % (48 of 66), Proxmox 94 %
+  (15 of 16), sensor 2106 0.08 Mbit/s at 0.19 %; the Map Designer canvas the same. Sensor 2106's channel JSON read in the page: primary
+  Traffic Total, raw 876920 on 0 to 319454553 (PRTG labels the range 0 to 43 Mbit/s), limits 37493750 / 74987500 - the needle and
+  the zones match. The script-free path, with a copy of the file without its script (`map-studio-zz-gauge-static.htm`, left in
+  `mapobjects`), through `mapobjectpreview` at the hover preview's own size: Root and Proxmox red "Down", sensor 2106 green with its
+  live value. Builder (stand-in server): every face (13), every PRTG gauge template (8) and every other type's default (8) build
+  byte-identical files to 1.6.2; the seven other Any objects differ only in the shared `anyRuntime` text inside them and draw
+  pixel-identical previews (14 compared, group and sensor); 16 tests; Corporate blue, Executive dark and Wall display looked at.
+- **Corrections to older notes**, seen this time: (1) scripts in object files **do** run in the Map Designer canvas (the canvas
+  showed the refined 73 %; 1.5.65 says they don't). (2) The hover preview (`_Prtg.Maps.js`) asks for **200 x 200**, against the
+  object selected in the designer's device tree or Root (0) when none is, and puts the answer in with jQuery, which runs scripts.
+  (3) `<@width>`/`<@height>` are the item's current size on a map (600 x 531 and 600 x 330 on map 2231) and the requested size in
+  a preview.
+- Installed: `map-studio-gauge-corporate-blue-any-object.htm` (the builder's own file, byte-checked). Left in `mapobjects` (no
+  delete through the bridge): `map-studio-zz-probe-a/b/c/d.htm`, `map-studio-zz-gauge-static.htm`.
+- **Not checked**: hovering the entry in the designer's list by mouse (its request was checked instead: an earlier attempt to
+  select a device-tree node clicked a link off the page); the new UI (:1616); the public map page; a sensor in Warning or Down; a
+  lookup channel; looks other than Corporate blue on the real PRTG.
 
 ## Gauge title readable on a title bar (1.6.2)
 
