@@ -216,6 +216,47 @@ still aborts the whole item on a type it does not list.
 Watch out: PRTG's own stylesheet already styles class names like `sensg` (it adds a tick glyph), so
 a Map Studio object must put the state into its **own** prefixed class, via `prefix="..."`.
 
+## Striking Isla Nublar map: planned, not built (2026-11-13)
+
+- The owner asked for a more striking version of map 2233 (mockup: Design artifact VvACmsttbNYXWhgr5NDL8w), new elements allowed.
+  Prepared in session_01FzAYuK2r2UZhk1eXc7xGSk but not built: the link to the VM stayed down (Chrome worked). Leave 2233 as it is; make a new map.
+- Map 1680 x 1010, scale to fit. Background (to make with PIL, then upload as for 2233 through `webroot\images`): dark vertical gradient
+  #0A1420 to #121E2E; the poster (`Desktop\Map Studio - Isla Nublar map`, 1119 x 1406) scaled to 716 x 900 at 40,80 with 16 px round
+  corners, a #2FA4C8 2 px outline and a soft #1C6E8F glow; a #0F1B2A panel (outline #1F3247) at 776,70 to 1660,990 for the right column.
+  Poster point (x,y) -> map (40 + x*0.6401, 80 + y*0.6401).
+- Object files (builder 1.10.1, look Dark card; hooked builder as for 2233): T-Rex fence = Industrial Fence, custom pts
+  [[25, 6.1], [75.7, 6.1], [89.8, 21.1], [91.3, 52.6], [80.4, 85.4], [32.8, 94.2], [8.6, 79.4], [10.9, 43.8]], smooth, lw 5, brk 7, flabel words "CONTAINMENT BREACH", box 164x234,
+  file `map-studio-fence-t-rex-paddock.htm`; raptor fence = rectangle pts [[7.2, 10.8], [92.5, 10.8], [92.5, 89.4], [7.2, 89.4]], lw 4, box 165x114, `map-studio-fence-raptor-pen.htm`;
+  stat tile with `hazard:'down'` 844x150 (`...-stat-tile-alarm-banner.htm`, title "T-Rex paddock fence") and 206x140; on/off lamp
+  (hazard down, POWER ON/OFF) 420x125; graph default 430x260; table "Needs attention" (status down/warning/downack/downpartial/unusual/
+  paused, 6 rows, columns status device sensor message downtimesince, 860 wide); status counts "Park systems" 844x96. Icons: reuse the
+  installed `map-studio-icon-dot.htm` / `-beacon.htm`.
+- Items (target = object id; banner is Custom HTML, Dark banner 1620x52 "ISLA NUBLAR · PARK SYSTEMS"):
+  - ISLA NUBLAR banner: `x_ownhtmlonly.htm` on 0 at 40,12 1620x52
+  - Fence - T-Rex paddock: `map-studio-fence-t-rex-paddock.htm` on 2144 at 474,277 164x234
+  - Fence - Raptor pen: `map-studio-fence-raptor-pen.htm` on 2096 at 297,293 165x114
+  - Map Studio Icon - beacon: `map-studio-icon-beacon.htm` on 2144 at 476,421 34x34
+  - Map Studio Icon - dot: `map-studio-icon-dot.htm` on 2132 at 344,160 20x20
+  - Map Studio Icon - dot: `map-studio-icon-dot.htm` on 2136 at 504,243 20x20
+  - Map Studio Icon - dot: `map-studio-icon-dot.htm` on 2096 at 401,317 20x20
+  - Map Studio Icon - dot: `map-studio-icon-dot.htm` on 2137 at 454,472 20x20
+  - Map Studio Icon - dot: `map-studio-icon-dot.htm` on 1025 at 447,437 20x20
+  - Map Studio Icon - dot: `map-studio-icon-dot.htm` on 2145 at 454,632 20x20
+  - Map Studio Icon - dot: `map-studio-icon-dot.htm` on 2138 at 359,660 20x20
+  - Map Studio Icon - dot: `map-studio-icon-dot.htm` on 2146 at 601,573 20x20
+  - Map Studio Icon - dot: `map-studio-icon-dot.htm` on 2163 at 444,710 20x20
+  - Alarm banner: `map-studio-tile-dark-card-stat-tile-alarm-banner.htm` on 2144 at 796,90 844x140
+  - Status counts: `map-studio-status-counts-dark-card-park-systems.htm` on 1 at 796,244 844x96
+  - Graph: `map-studio-graph-dark-card-area-live-data.htm` on 2144 at 796,354 420x260
+  - Fence power T-Rex: `map-studio-industrial-dark-card-on-off-lamp.htm` on 2144 at 1230,354 410x125
+  - Fence power Raptor: `map-studio-industrial-dark-card-on-off-lamp.htm` on 2096 at 1230,489 410x125
+  - Stat tile: `map-studio-tile-dark-card-stat-tile.htm` on 2132 at 796,628 202x130
+  - Stat tile: `map-studio-tile-dark-card-stat-tile.htm` on 2136 at 1010,628 202x130
+  - Stat tile: `map-studio-tile-dark-card-stat-tile.htm` on 2137 at 1224,628 202x130
+  - Stat tile: `map-studio-tile-dark-card-stat-tile.htm` on 2138 at 1438,628 202x130
+  - Needs attention: `map-studio-table-dark-card-needs-attention.htm` on 1 at 796,772 844x206
+- Checked only on a stand-in page: the T-Rex fence draws red with the gap on side 7, sparks and the label; the raptor fence green.
+
 ## Fence files keep short lines (1.10.1)
 
 - Found while building the striking Isla Nublar map: a fence traced with 8 smooth points wrote its static SVG (fill, edge, line, posts)
