@@ -5855,42 +5855,44 @@ try{
   }
   /* What the object will be attached to on the map: Group, Device, Sensor, or All (no filter). The bar then offers only what works there. */
   var SCOPES=[['group','Group'],['device','Device'],['sensor','Sensor'],['all','All']];
-  var SCOPE='all';try{SCOPE=localStorage.getItem('pmScope')||'all';}catch(e){}
-  if(!SCOPES.some(function(x){return x[0]===SCOPE;}))SCOPE='all';
+  /* 1.8.2: the choice belongs to each object (m.attachTo, on the object's own model, never written into its file; Your objects keeps files, not models, so it is not saved there), not to the whole
+     builder: a new object starts on All, and nothing carries over to other objects or between visits (the old pmScope is ignored) */
+  function curScope(){var m=M(), v=m&&m.attachTo;return (v&&SCOPES.some(function(x){return x[0]===v;}))?v:'all';}
   var GD=['group','device'], SN=['sensor'], AL=['group','device','sensor'];
   function typeScopes(t){return ({table:GD,donut:GD,status:GD,geomap:GD,tile:SN,ind:SN,icon:AL,sunburst:['group']})[t]||AL;}
   function gaugeKindScopes(k){return k==='device'?GD:SN;}
   function graphScopes(kind,bsrc){if(kind==='sensor'||kind==='toplist')return SN;if(kind==='sensors')return GD;if(kind==='bars')return bsrc==='channels'?SN:GD;return AL;}
-  function fitsScope(list){return SCOPE==='all'||list.indexOf(SCOPE)>-1;}
+  function fitsScope(list){var sc=curScope();return sc==='all'||list.indexOf(sc)>-1;}
   function modelScopes(){return anyOn()?AL:TYPE==='gauge'?gaugeKindScopes(G.kind):(TYPE==='graph'?graphScopes(GR.kind,GR.bsrc||'status'):typeScopes(TYPE));}
   function presetScopes(p){if(!p)return AL;if(TYPE==='gauge')return gaugeKindScopes(p.kind);if(TYPE==='graph')return graphScopes(p.kind,'status');return typeScopes(TYPE);}
   function setGrKind(v){GR.kind=v;grKindSize(v);if(v==='sensors'&&GR.titleMode==='object')GR.titleMode='stock';else if(v!=='sensors'&&GR.titleMode==='stock')GR.titleMode='object';}
   /* after a new choice, an option that does not work there is moved to the nearest one that does */
   function scopeFix(){
-    if(SCOPE==='all')return;
-    var sen=(SCOPE==='sensor');
-    if(TYPE==='gauge'&&!fitsScope(gaugeKindScopes(G.kind)))G.kind=sen?'sensor-primary':'device';
+    if(curScope()==='all')return '';
+    var sen=(curScope()==='sensor'), was;
+    if(TYPE==='gauge'&&!fitsScope(gaugeKindScopes(G.kind))){G.kind=sen?'sensor-primary':'device';return amLab(GKINDS,G.kind);}
     if(TYPE==='graph'&&!fitsScope(graphScopes(GR.kind,GR.bsrc||'status'))){
-      if(GR.kind==='bars')GR.bsrc=sen?'channels':'sensors';
-      else setGrKind(sen?'sensor':'sensors');
+      if(GR.kind==='bars'){GR.bsrc=sen?'channels':'sensors';return sen?'Bars of its channels':'Bars of the sensors below';}
+      setGrKind(sen?'sensor':'sensors');return sen?'A graph of this sensor':'A list of the sensors below';
     }
+    return '';
   }
   function scopeWord(list){return list.length===3?'a group, device or sensor':(list===SN?'a sensor':((list.length===1&&list[0]==='group')?'a group or probe':'a group or device'));}
   function setScope(v){
-    SCOPE=v;try{localStorage.setItem('pmScope',v);}catch(e){}
-    scopeFix();OB.key='';scopeGrid();refreshUI();render();
+    var m=M();if(!m)return;
+    if(v==='all')delete m.attachTo;else m.attachTo=v;
+    var ch=scopeFix();OB.key='';refreshUI();render();
+    if(ch)toast('Changed to \u201C'+ch+'\u201D so it works on '+(v==='sensor'?'a sensor':'a '+v));
   }
-  /* the object types at the top: the ones that do not work on the choice are dimmed */
-  function scopeGrid(){
-    (gridTiles||[]).forEach(function(t){var ty=t.getAttribute('data-t'), ok=(ty==='links')||fitsScope(ty==='gauge'||ty==='graph'?AL:typeScopes(ty));t.classList.toggle('na',!ok);});
-  }
+  /* 1.8.2: the object types at the top are no longer dimmed: the choice belongs to the object on screen, not to the builder */
+  function scopeGrid(){(gridTiles||[]).forEach(function(t){t.classList.remove('na');});}
   function obScope(b){
     var w=h('span','fb-scope');w.setAttribute('role','radiogroup');w.setAttribute('aria-label','Attached to');
     SCOPES.forEach(function(x){
       var q=h('button','fb-t',x[1]);q.type='button';q.setAttribute('role','radio');
       q.title=x[0]==='all'?'Show every option':('Show only what works on '+(x[0]==='sensor'?'a sensor':'a '+x[0]));
       q.addEventListener('click',function(){setScope(x[0]);});
-      OB.syncs.push(function(){var on=(SCOPE===x[0]);q.classList.toggle('on',on);q.setAttribute('aria-checked',on?'true':'false');});
+      OB.syncs.push(function(){var on=(curScope()===x[0]);q.classList.toggle('on',on);q.setAttribute('aria-checked',on?'true':'false');});
       w.appendChild(q);
     });
     b.appendChild(w);
@@ -5918,7 +5920,7 @@ try{
       var fit=function(o){return o.value==='__blank'||o.value===''||fitsScope(presetScopes(presetObj(o.value)));};
       if(c.tagName==='OPTGROUP'){var kids=[].filter.call(c.children,fit);if(kids.length){g.appendChild(h('div','pgroup',c.label));kids.forEach(add);}}else if(fit(c))add(c);
     });
-    if(SCOPE!=='all')pop.appendChild(h('div','pf-h','Showing what works on '+(SCOPE==='sensor'?'a sensor':'a '+SCOPE)+'. Choose All for every template.'));
+    if(curScope()!=='all')pop.appendChild(h('div','pf-h','Showing what works on '+(curScope()==='sensor'?'a sensor':'a '+curScope())+'. Choose All for every template.'));
   }
   function obBuild(){
     if(TYPE==='geomap')return obBuildGeo();
@@ -6326,7 +6328,7 @@ try{
     }),function(){return lkAnimOk(LK);}));
     OB.key=obKey();
   }
-  function obKey(){return SCOPE+TYPE+(anyOn()?'any':'')+(TYPE==='tile'?tlFam()+(tlFam()==='ind'?TL.kind:''):'')+(TYPE==='icon'?IC.engine+(iHasBg(IC)?'b':''):(TYPE==='gauge'?G.engine+(G.nstyle?'n':''):(TYPE==='donut'?DN.engine:TYPE==='sunburst'?SB.engine+SB.face:(TYPE==='graph'?GR.draw+GR.kind+(GR.kind==='bars'?GR.bsrc:''):''))));}
+  function obKey(){return curScope()+TYPE+(anyOn()?'any':'')+(TYPE==='tile'?tlFam()+(tlFam()==='ind'?TL.kind:''):'')+(TYPE==='icon'?IC.engine+(iHasBg(IC)?'b':''):(TYPE==='gauge'?G.engine+(G.nstyle?'n':''):(TYPE==='donut'?DN.engine:TYPE==='sunburst'?SB.engine+SB.face:(TYPE==='graph'?GR.draw+GR.kind+(GR.kind==='bars'?GR.bsrc:''):''))));}
   /* the bar sits on the page (position:fixed), above the object, or under it when there is no room above or a menu needs the room.
      It is kept inside the window, never inside the canvas, so neither the canvas nor the preview edge covers it. */
   function obPlace(){

@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.8.1.
+Last updated at version 1.8.2.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -215,6 +215,22 @@ still aborts the whole item on a type it does not list.
 
 Watch out: PRTG's own stylesheet already styles class names like `sensg` (it adds a tick glyph), so
 a Map Studio object must put the state into its **own** prefixed class, via `prefix="..."`.
+
+## Group / Device / Sensor / All belongs to each object (1.8.2)
+
+- The owner had not realised the bar's Group / Device / Sensor / All was one setting for the whole builder (remembered in
+  `localStorage` `pmScope`): a new gauge's bar said "Group" and "Works on a sensor" without them having chosen anything. Agreed after
+  talking it through: keep it as a filter, but per object. Sensor shows only what works on a sensor, Device what works on a device
+  (whether only there or on several types), Group what works on a group (a probe counts as a group), All everything.
+- `curScope()` reads `M().attachTo` (absent = All) and replaces the old global `SCOPE` everywhere (`fitsScope`, the bar's buttons,
+  the Templates menu's note, `obKey`). `setScope(v)` sets or deletes `attachTo` on the model on screen, then `scopeFix()`; when the
+  object did not fit, `scopeFix` now changes it to the nearest choice that does (as before) and returns its label for a toast
+  ("Changed to ... so it works on a device"). `scopeGrid()` no longer dims object types. `pmScope` is no longer read or written.
+- `attachTo` is not written into any file (checked: the same file with and without it). Your objects keeps files, not models, so it
+  is not saved there; it lives on the model for the session (each object type keeps its own while switching between types).
+- Checked against the stand-in server: new gauge on All even with an old `pmScope=group`; Device turns it into the
+  "sensors by priority" kind with the toast, Sensor back to the main channel; the Templates menu on Sensor lists only the four sensor
+  templates; a table starts on All; back to the gauge keeps Sensor; no dimmed types; 37 files byte-identical to 1.8.1; 16 tests.
 
 ## Gauges are sensor-only again: 1.7.0 and 1.8.0 undone (1.8.1)
 
