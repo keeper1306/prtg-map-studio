@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.9.2.
+Last updated at version 1.10.0.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -215,6 +215,53 @@ still aborts the whole item on a type it does not list.
 
 Watch out: PRTG's own stylesheet already styles class names like `sensg` (it adds a tick glyph), so
 a Map Studio object must put the state into its **own** prefixed class, via `prefix="..."`.
+
+## Fence, Line, Camera and hazard stripes (1.10.0)
+
+- The owner, planning a park map (their own poster picture as the map background, a T-Rex paddock whose electric fence
+  breaks), approved: a Fence object, a Line object (road, pipe, cable), a Camera object, and hazard stripes for alarms.
+  Mockups were images only (scratchpad), not files in the repo. Built in a parallel session first as "1.6.0" on top of 1.5.112, found
+  GitHub already at 1.9.2 when pushing, and moved onto 1.9.2 unchanged (the patch applied cleanly) as 1.10.0. The other session had
+  meanwhile built map 2233 (Isla Nublar) from existing pieces; these objects can replace its fence lines and stubs. "Names inside the status pill" was also asked about: it
+  already exists (Icon, style Status pill, Text next to it: name), so nothing was built for it.
+- Where they live (picked from the Kind pictures: since 1.9.1 tiles and Industrial objects have no template list): Fence and Line are
+  Industrial kinds (`IKINDS` fence, line; `TLPRESETS` `ind_fence`, `ind_line`, used by packs and `indFromPreset`; category
+  Industrial; names "Industrial - fence, octagon" / "..., traced" once points are dragged). Camera is a Tile kind (`TKINDS`
+  camera, `TLPRESETS` `camera`, category Tiles). Hazard stripes are an "Alarm look" section for every tile and industrial
+  object except fence and line (`TL.hazard` '' / 'down' / 'warn'). All three are in the packs (`PACKS.ind`, `PACKS.tile`).
+- Isolation: the new kinds have their own build, runtime and preview (`buildFence`/`fenceRuntime`/`drawFencePreview`,
+  `buildCam`/`camRuntime`/`drawCamPreview`), reached by one test at the top of `buildTile` and `drawTilePreview`;
+  `hazardCss` returns '' when the option is off. So every existing file is byte-identical (checked on 1.9.2: all 375 files the
+  builder makes, every type x every template x 3 looks + packs, before vs after; only the 3 new pack files are new). `setTileKind` fills
+  in a fence/line's or camera's defaults (`fDefaults`, `camDefaults`) when switching to them, and gives a fence/line's
+  title back when leaving.
+- Fence/line model: `pts` (points in % of the box, -20..120), `fShape` (preset id or 'custom'), `smooth` (a curve through
+  the points: Catmull-Rom as cubic Beziers, `fPathD`), `lw`, `dash` never/always/notup, `posts`, `glow`, `edge` (a white
+  edge under the line: without it the look's red vanished on the poster's orange road), `tint` (fence), `hideUp`, `gap`,
+  `brk` (side number, 1-based), `flabel` none/message/value/words + `fwords`, `anim` (sparks flicker, line pulses),
+  `pvState` (preview only), `gx`/`gy` (where the box sits on the map, for the guide picture). `fNorm(S)` fills defaults and
+  is safe on any kind (the side panel's syncs call it while hidden).
+- The file draws twice: a static SVG in % of the box (`fenceStatic`: `viewBox 0 0 100 100`, `preserveAspectRatio=none`,
+  `vector-effect:non-scaling-stroke`, posts as zero-length round-capped paths) coloured by CSS from PRTG's
+  `tlst-sens*` class, so it shows in PRTG's Map designer and hover preview without a script; on View Map `fenceRuntime`
+  replaces it with a pixel drawing (gap at 32-68 % of side `brk`, sparks with a dark edge, label, glow) and sets the root's
+  `pointer-events:none` so clicks reach the objects under the outline. Redrawn on resize (ResizeObserver).
+- Builder: handles over the preview (`fenceEditor`): drag a point, double-click a point to remove (min 3 / 2), double-click a
+  side to add, click a side's number (drawn at 22 % along it, so the gap stays visible) to choose where it breaks.
+  "Trace on a picture of your map": a picture (object URL in `FGUIDE`, never saved) drawn inside the box at -gx,-gy.
+- Camera: `camUrl` (only http/https, no quotes/brackets; the address is in the file, so the note says to use one without a
+  password), `camMode` snap (refreshed every `camSec` s with a cache-buster, swapped on load) / stream (MJPEG), `camFit`,
+  `camRec`, `camClock`, `camLabel`, `camGray`. The `<img>` is in the file, so the designer shows the picture too. While its
+  sensor is down (or acknowledged) it says NO SIGNAL; a picture that fails to load says so. The interval stops when PRTG
+  replaces the map items.
+- Checked: 375 old files identical (and 524 on 1.5.112 before the move); 21 builder checks (drag, add/remove, side number, shape reset, kind switching, typed
+  points, camera address refused/escaped, packs, bars, no page errors); 16 tests; pictures of every new kind in the
+  preview, and the built files on a stand-in View Map page (PRTG's tags filled in by hand) on the owner's poster, with and
+  without scripts. Not checked on the real PRTG (Chrome and the VM were not reachable when this was made): how PRTG's
+  designer draws the static SVG, the label/sparks on a real map, a real camera (and mixed http/https), the stripes in PRTG.
+- Not copied into the VM's extension folder yet at the time of writing (the bridge was down); GitHub has it.
+- Open from the owner: they chose to make a real sensor say "Containment breach" (an HTTP Push Data sensor or a script
+  sensor; not checked which) rather than a "words when down" option on the String tile. Waiting for Chrome or the VM.
 
 ## Isla Nublar map 2233 (2026-11-12, no extension change)
 

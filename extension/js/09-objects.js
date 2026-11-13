@@ -1638,6 +1638,8 @@ try{
       if(v==='lamp')o+='<circle cx="32" cy="19" r="10" fill="'+G1+'" opacity=".22"/><circle cx="32" cy="19" r="6.5" fill="'+G1+'"/>'+lab(22,35,20);
       else if(v==='switch')o+='<rect x="18" y="12" width="28" height="14" rx="7" fill="'+G1+'"/><circle cx="39" cy="19" r="5" fill="#fff"/>'+lab(22,35,20);
       else o+='<rect x="16" y="11" width="32" height="15" rx="4" fill="'+G1+'"/><text x="32" y="22" text-anchor="middle" font-size="9" font-weight="700" fill="#fff" font-family="Inter,Segoe UI,Arial,sans-serif">ON</text>'+lab(22,35,20);
+    }else if(g==='ifence'||g==='iline'){
+      o+=fShapePic(g==='ifence'?'fence':'line',v);
     }else if(g==='itank'){
       if(v==='tank')o+='<rect x="20" y="6" width="24" height="32" rx="7" fill="#fff" stroke="'+M+'" stroke-width="1.2"/><path d="M21 22 H43 V31 a6 6 0 0 1 -6 6 H27 a6 6 0 0 1 -6 -6 Z" fill="#4F8DDB"/>';
       else o+='<path d="M20 6 H44 V27 L32 39 L20 27 Z" fill="#fff" stroke="'+M+'" stroke-width="1.2" stroke-linejoin="round"/><path d="M21 18 H43 V26.6 L32 37.6 L21 26.6 Z" fill="#4F8DDB"/>';
@@ -3789,7 +3791,7 @@ try{
     }
     root.setAttribute('data-status','ok');
   }
-  var TKINDS=[['stat','Stat tile'],['string','String tile'],['bar','Bar gauge'],['interface','Interface traffic tile'],['chips','Channel chips'],['chipsfit','Channel chips (fit the box)']];
+  var TKINDS=[['stat','Stat tile'],['string','String tile'],['bar','Bar gauge'],['interface','Interface traffic tile'],['chips','Channel chips'],['chipsfit','Channel chips (fit the box)'],['camera','Camera']];
   /* a small picture of each tile kind, for the Kind pictures */
   function tKindSvg(k){
     var G1='#B8C419',Y='#F5C500',R='#E30613',N='#E3E6EC',D='#1d2433',M='#9aa0ad',B='#1f6fe5',o='<rect x="1" y="1" width="62" height="42" rx="5" fill="#fff" stroke="#dfe3ea"/>';
@@ -3810,6 +3812,7 @@ try{
     }
     else if(k==='chips'){var cc=[G1,G1,Y,G1,R],i;for(i=0;i<5;i++)o+=chip(6+(i%3)*14,13+Math.floor(i/3)*10,12.5,8.5,cc[i]);}
     else if(k==='chipsfit'){var cf=[G1,G1,Y,G1,R],j;for(j=0;j<5;j++)o+=chip(5+(j%3)*18.2,12+Math.floor(j/3)*15,17,13.5,cf[j],true);}
+    else if(k==='camera')o+='<rect x="6" y="12" width="52" height="27" rx="2" fill="#1d2b22"/><path d="M6 33Q20 28 32 31T58 29V39H6Z" fill="#2c3d31"/><path d="M44 14V38M51 13V38" stroke="#9aa79c" stroke-width="1"/><circle cx="10" cy="16" r="1.6" fill="'+R+'"/><rect x="13" y="15.2" width="7" height="1.6" rx=".6" fill="#fff"/><rect x="45" y="15.2" width="10" height="1.6" rx=".6" fill="#fff"/>';
     return '<svg viewBox="0 0 64 44" width="64" height="44" aria-hidden="true">'+o+'</svg>';
   }
   /* changing the kind: the name and the size follow when they were still the old kind's */
@@ -3817,7 +3820,11 @@ try{
     var old=null,nu=null;
     TLPRESETS.forEach(function(x){if((x.fam||'tile')!==(TL.fam||'tile')||x.set)return;if(x.kind===TL.kind)old=x;if(x.kind===v)nu=x;});
     if(old&&nu){if(TL.name===old.name)TL.name=nu.name;if(+TL.initW===old.w&&+TL.initH===old.h){TL.initW=nu.w;TL.initH=nu.h;}if(+TL.fitW===old.w&&+TL.fitH===old.h){TL.fitW=nu.w;TL.fitH=nu.h;}}
-    TL.kind=v;
+    var was=TL.kind;TL.kind=v;
+    /* 1.6.0: a fence, line or camera starts with its own settings; leaving a fence or line brings the title back */
+    if(TL.fam==='ind'&&FENCEK[v]&&!FENCEK[was])fDefaults(TL);
+    else if(TL.fam==='ind'&&FENCEK[was]&&!FENCEK[v]&&TL.titleMode==='none'){TL.titleMode='object';}
+    if(TL.fam!=='ind'&&v==='camera')camDefaults(TL);
   }
   /* a grid of kind pictures; one click changes the kind */
   function tKindGrid(fam){
@@ -3843,7 +3850,10 @@ try{
     {id:'ind_silo',fam:'ind',cat:'Built in',name:'Silo level',kind:'tank',w:260,h:320,set:{shape:'silo'}},
     {id:'ind_equip',fam:'ind',cat:'Built in',name:'Equipment symbol',kind:'equip',w:160,h:170},
     {id:'ind_pv',fam:'ind',cat:'Built in',name:'Process value',kind:'pv',w:380,h:250},
-    {id:'ind_count',fam:'ind',cat:'Built in',name:'Countdown',kind:'count',w:200,h:230}
+    {id:'ind_count',fam:'ind',cat:'Built in',name:'Countdown',kind:'count',w:200,h:230},
+    {id:'camera',cat:'Built in',name:'Camera',kind:'camera',w:420,h:300,sub:''},
+    {id:'ind_fence',fam:'ind',cat:'Built in',name:'Fence',kind:'fence',w:320,h:240},
+    {id:'ind_line',fam:'ind',cat:'Built in',name:'Line',kind:'line',w:360,h:160}
   ];
   function blankTL(){
     return {type:'tile',kind:'stat',cat:'Tiles',name:'Stat tile',fname:'',titleMode:'object',title:'',sub:'',
@@ -3854,6 +3864,7 @@ try{
     var T_=blankTL(), p=null;
     TLPRESETS.forEach(function(x){if(x.id===id)p=x;});
     if(p){T_.kind=p.kind;T_.name=p.name;T_.initW=p.w;T_.initH=p.h;T_.fitW=p.w;T_.fitH=p.h;T_.sub=p.sub||'';}
+    if(T_.kind==='camera')camDefaults(T_);
     return T_;
   }
   function tEffLook(S){var L=S.look;if(L.mode==='prtg'){return lookOf('Light card');}return L;}
@@ -3908,7 +3919,9 @@ try{
     return '(function(){\n  var root=document.getElementById("<@itemid>");\n  if(!root)return;\n  var CFG='+JSON.stringify(tileConfig(S,L))+';\n  ('+tileRuntime.toString()+')(root,CFG);\n})();';
   }
   function buildTile(S){
-    var ind=(S.fam==='ind'), cls=tClassOf(S), L=tEffLook(S), css=tileCss(S,cls,L)+(ind?'\n'+indCss(S,cls,L):''), o=[], tm=S.titleMode||'object';
+    if(isFenceK(S))return buildFence(S);
+    if(isCamK(S))return buildCam(S);
+    var ind=(S.fam==='ind'), cls=tClassOf(S), L=tEffLook(S), css=tileCss(S,cls,L)+(ind?'\n'+indCss(S,cls,L):'')+hazardCss(S,cls,L), o=[], tm=S.titleMode||'object';
     var titleInner=(tm==='custom')?clean(S.title):'<#objectproperty name="Name" id="<@objectid>">', w=parseInt(S.initW,10), h_=parseInt(S.initH,10), sub=clean(S.sub);
     o.push('<!'+'--'+clean(S.cat||'Tiles')+': '+clean(S.name||'Tile')+'-->');
     o.push('');
@@ -3953,7 +3966,10 @@ try{
     return {cls:'sensg',chans:[ch(0,'CPU Load','23 %',23,3)],msg:''};
   }
   function drawTilePreview(){
-    var ind=(TL.fam==='ind'), L=tEffLook(TL), cls=tClassOf(TL), css=tileCss(TL,cls,L)+(ind?'\n'+indCss(TL,cls,L):''), tm=TL.titleMode||'object', title=(tm==='none')?'':(tm==='custom'?clean(TL.title):(ind?'Line 3':'Core switch')), sub=clean(TL.sub), root, gb, smp=ind?indSample(TL):tileSample(TL);
+    if(isFenceK(TL)){drawFencePreview();return;}
+    if(isCamK(TL)){drawCamPreview();return;}
+    var ind=(TL.fam==='ind'), L=tEffLook(TL), cls=tClassOf(TL), css=tileCss(TL,cls,L)+(ind?'\n'+indCss(TL,cls,L):'')+hazardCss(TL,cls,L), tm=TL.titleMode||'object', title=(tm==='none')?'':(tm==='custom'?clean(TL.title):(ind?'Line 3':'Core switch')), sub=clean(TL.sub), root, gb, smp=ind?indSample(TL):tileSample(TL);
+    if(TL.hazard&&FPV[TL.pvState])smp.cls=FPV[TL.pvState];   /* 1.6.0: to see the hazard stripes, the preview can show the tile down */
     setStyle(css);applyFont(L);
     var w=parseInt(document.getElementById('owidth').value,10)||300, hh=parseInt(document.getElementById('oheight').value,10)||150;
     var zs=eoSz(TL,w,hh);w=zs[0];hh=zs[1];
@@ -3970,7 +3986,7 @@ try{
   /* ====================== industrial (OT) objects, 1.5.68 ======================
      An Industrial object is a Tile underneath (TYPE 'tile', TL.fam 'ind'): the same file shape, channels, looks and Flexible.
      It has its own kinds, its own drawing code (indRuntime, so Tile files stay as they were) and the category Industrial. */
-  var IKINDS=[['lamps','State lamps'],['onoff','On/Off'],['tank','Tank / level'],['equip','Equipment'],['pv','Process value'],['count','Countdown']];
+  var IKINDS=[['lamps','State lamps'],['onoff','On/Off'],['tank','Tank / level'],['equip','Equipment'],['pv','Process value'],['count','Countdown'],['fence','Fence'],['line','Line']];
   var IEQ=[['pump','Pump'],['motor','Motor'],['valve','Valve'],['fan','Fan'],['conveyor','Conveyor']];
   function tlFam(){return (TYPE==='tile'&&TL&&TL.fam==='ind')?'ind':'tile';}
   function blankInd(){
@@ -3985,6 +4001,7 @@ try{
     var T_=blankInd(), p=null;
     TLPRESETS.forEach(function(x){if(x.id===id&&x.fam==='ind')p=x;});
     if(p){T_.kind=p.kind;T_.name=p.name;T_.initW=p.w;T_.initH=p.h;T_.fitW=p.w;T_.fitH=p.h;if(p.set)for(var k in p.set)T_[k]=p.set[k];}
+    if(FENCEK[T_.kind])fDefaults(T_);
     return T_;
   }
   /* a small picture of each industrial kind, for the Kind pictures */
@@ -3996,6 +4013,8 @@ try{
     else if(k==='equip')o+='<circle cx="32" cy="23" r="13" fill="#F2F6DA" stroke="#9AA514" stroke-width="2"/><path d="M32 10H47V16" fill="none" stroke="#9AA514" stroke-width="2"/><path d="M28 17L38 23L28 29Z" fill="#9AA514"/>';
     else if(k==='pv')o+='<rect x="6" y="7" width="20" height="7" rx="1.5" fill="'+D+'"/><rect x="6" y="22" width="10" height="4" fill="#F7B4B7"/><rect x="16" y="22" width="6" height="4" fill="#FCE599"/><rect x="22" y="22" width="20" height="4" fill="#E4EABA"/><rect x="42" y="22" width="6" height="4" fill="#FCE599"/><rect x="48" y="22" width="10" height="4" fill="#F7B4B7"/><path d="M28 30l2.5 3.5h-5z" fill="'+D+'"/><path d="M6 38l8-2 8 1 8-3 8 1 8-2 8 1" fill="none" stroke="'+B+'" stroke-width="1.3"/>';
     else if(k==='count')o+='<circle cx="32" cy="22" r="13" fill="none" stroke="'+N+'" stroke-width="4"/><path d="M32 9a13 13 0 0 1 9.2 3.8" fill="none" stroke="'+Y+'" stroke-width="4" stroke-linecap="round"/><text x="32" y="25.5" font-size="9" font-weight="700" text-anchor="middle" fill="'+D+'" font-family="Inter,Segoe UI,Arial,sans-serif">23</text>';
+    else if(k==='fence')o+='<path d="M14 9H44L56 22L46 36H16L8 22Z" fill="rgba(184,196,25,.14)" stroke="'+G1+'" stroke-width="2" stroke-linejoin="round"/><path d="M8 22L14 9H30" fill="none" stroke="'+R+'" stroke-width="2"/><g fill="'+G1+'"><circle cx="14" cy="9" r="2"/><circle cx="44" cy="9" r="2"/><circle cx="56" cy="22" r="2"/><circle cx="46" cy="36" r="2"/><circle cx="16" cy="36" r="2"/><circle cx="8" cy="22" r="2"/></g><path d="M36 6l-3 4 3 1-3 4" fill="none" stroke="'+Y+'" stroke-width="1.4" stroke-linecap="round"/>';
+    else if(k==='line')o+='<path d="M6 34C18 34 18 10 32 10S46 34 58 34" fill="none" stroke="'+G1+'" stroke-width="4.5" stroke-linecap="round"/><path d="M32 10C40 10 42 22 46 28" fill="none" stroke="'+R+'" stroke-width="4.5" stroke-dasharray="4 3"/>';
     return '<svg viewBox="0 0 64 44" width="64" height="44" aria-hidden="true">'+o+'</svg>';
   }
   function indConfig(S,L){
@@ -4331,6 +4350,419 @@ try{
     if(k==='count')return {cls:'sensy',chans:[ch(0,'Days to Expiration','23 days',23,4,{limitmode:1,limitminwarning:30,limitminerror:7})]};
     return {cls:'sensg',chans:[]};
   }
+
+  /* ====================== fence and line (Industrial kinds), camera (Tile kind), hazard stripes, 1.6.0 ======================
+     Each new kind has its own build, drawing code and preview (buildFence/fenceRuntime/drawFencePreview, buildCam/camRuntime/drawCamPreview),
+     reached by one test at the top of buildTile and drawTilePreview, so the files of every other Tile and Industrial kind stay exactly as they were.
+     The hazard stripes are CSS added only when that option is on. */
+  var FENCEK={fence:1,line:1};
+  function isFenceK(S){return !!(S&&S.fam==='ind'&&FENCEK[S.kind]);}
+  function isCamK(S){return !!(S&&S.fam!=='ind'&&S.kind==='camera');}
+  function fOval(){var o=[],i;for(i=0;i<12;i++){var a=i/12*Math.PI*2;o.push([+(50+46*Math.cos(a)).toFixed(1),+(50+44*Math.sin(a)).toFixed(1)]);}return o;}
+  /* [id, label, tip, points in % of the box, smooth] */
+  var FSHAPES={
+    fence:[['rect','Rectangle','A rectangle',[[5,5],[95,5],[95,95],[5,95]],false],
+      ['hex','Hexagon','Six sides',[[27,4],[73,4],[97,50],[73,96],[27,96],[3,50]],false],
+      ['oct','Octagon','Eight sides',[[30,4],[70,4],[96,30],[96,70],[70,96],[30,96],[4,70],[4,30]],false],
+      ['oval','Oval','A smooth oval',fOval(),true],
+      ['blob','Free form','An uneven outline, to drag into place',[[18,10],[52,4],[86,14],[96,46],[84,84],[50,96],[16,86],[4,50]],true],
+      ['ell','L shape','An L-shaped area',[[5,5],[55,5],[55,50],[95,50],[95,95],[5,95]],false]],
+    line:[['straight','Straight','A straight line',[[3,50],[97,50]],false],
+      ['curve','S curve','A smooth S curve',[[3,85],[35,15],[65,85],[97,15]],true],
+      ['arc','Arc','A smooth arc',[[3,92],[50,8],[97,92]],true],
+      ['corner','Corner','A line with one corner',[[6,6],[6,94],[94,94]],false],
+      ['zigzag','Zigzag','A zigzag',[[3,50],[27,15],[50,85],[73,15],[97,50]],false]]
+  };
+  GRPICK.ifence=FSHAPES.fence.map(function(x){return [x[0],x[1],x[2]];});
+  GRPICK.iline=FSHAPES.line.map(function(x){return [x[0],x[1],x[2]];});
+  function fShapeOf(kind,id){var r=null;(FSHAPES[kind]||[]).forEach(function(x){if(x[0]===id)r=x;});return r;}
+  /* a small picture of a shape: its outline, with posts on a fence */
+  function fShapePic(kind,id){
+    var sh=fShapeOf(kind,id);if(!sh)return '';
+    var P=sh[3].map(function(p){return [8+p[0]*0.48,5+p[1]*0.34];}), d=fPathD(P,kind==='fence',sh[4]);
+    var o='<path d="'+d+'" fill="'+(kind==='fence'?'rgba(184,196,25,.16)':'none')+'" stroke="#9AA514" stroke-width="'+(kind==='fence'?1.6:3)+'" stroke-linecap="round" stroke-linejoin="round"/>';
+    if(kind==='fence')P.forEach(function(p){o+='<circle cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="1.7" fill="#9AA514"/>';});
+    return o;
+  }
+  /* the path through the points: straight, or smooth (a curve through every point) */
+  function fPathD(P,closed,smooth){
+    var n=P.length, i, f=function(v){return (+v).toFixed(2).replace(/\.?0+$/,'');};
+    if(n<2)return '';
+    var d='M'+f(P[0][0])+' '+f(P[0][1]), ns=closed?n:n-1;
+    for(i=0;i<ns;i++){
+      var a=P[i], b=P[(i+1)%n];
+      if(smooth&&n>2){
+        var p0=closed?P[(i-1+n)%n]:P[Math.max(0,i-1)], p3=closed?P[(i+2)%n]:P[Math.min(n-1,i+2)];
+        d+=' C'+f(a[0]+(b[0]-p0[0])/6)+' '+f(a[1]+(b[1]-p0[1])/6)+' '+f(b[0]-(p3[0]-a[0])/6)+' '+f(b[1]-(p3[1]-a[1])/6)+' '+f(b[0])+' '+f(b[1]);
+      }else d+=' L'+f(b[0])+' '+f(b[1]);
+    }
+    return d+(closed?' Z':'');
+  }
+  /* the settings of a fence or line, with the defaults filled in */
+  function fNorm(S){
+    var line=(S.kind==='line'), fk=line?'line':'fence', sh=fShapeOf(fk,S.fShape)||fShapeOf(fk,line?'curve':'oct'), pts=[];   /* also safe on other kinds: the side panel asks before it is shown */
+    (Array.isArray(S.pts)?S.pts:sh[3]).forEach(function(p){var x=+p[0],y=+p[1];if(isFinite(x)&&isFinite(y))pts.push([Math.max(-20,Math.min(120,+x.toFixed(1))),Math.max(-20,Math.min(120,+y.toFixed(1)))]);});
+    if(pts.length<(line?2:3))pts=sh[3].map(function(p){return p.slice();});
+    var lw=+S.lw;if(!(lw>=1&&lw<=40))lw=line?8:4;
+    return {line:line,pts:pts,smooth:(S.smooth==null)?!!sh[4]:!!S.smooth,lw:lw,dash:({never:1,always:1,notup:1}[S.dash])?S.dash:(line?'notup':'never'),
+      posts:(S.posts==null)?!line:!!S.posts,glow:S.glow!==false,tint:(S.tint==null)?true:!!S.tint,hideUp:!!S.hideUp,gap:S.gap!==false,
+      brk:Math.max(1,Math.min(line?pts.length-1:pts.length,parseInt(S.brk,10)||1)),label:({none:1,message:1,value:1,words:1}[S.flabel])?S.flabel:'none',
+      words:clean(S.fwords).slice(0,120),anim:S.anim!==false,edge:S.edge!==false};
+  }
+  /* what a new fence or line starts with (also when the kind is switched to one) */
+  function fDefaults(S){
+    var line=(S.kind==='line'), sh=fShapeOf(S.kind,line?'curve':'oct');
+    S.fShape=sh[0];S.pts=sh[3].map(function(p){return p.slice();});S.smooth=sh[4];S.lw=line?8:4;S.dash=line?'notup':'never';S.posts=!line;S.glow=true;S.tint=true;
+    S.hideUp=false;S.gap=true;S.brk=1;S.flabel='none';S.fwords='';S.anim=true;S.edge=true;S.pvState='up';S.titleMode='none';S.fit=false;S.gx=S.gx||0;S.gy=S.gy||0;
+    return S;
+  }
+  function fApplyShape(id){var sh=fShapeOf(TL.kind,id);if(!sh)return;TL.fShape=id;TL.pts=sh[3].map(function(p){return p.slice();});TL.smooth=sh[4];TL.brk=1;}
+  function fenceConfig(S,L){
+    var F=fNorm(S), P=donutPalette(L);
+    return {kind:S.kind,closed:!F.line,pts:F.pts,smooth:F.smooth,lw:F.lw,dash:F.dash,posts:F.posts,glow:F.glow,tint:F.tint&&!F.line,hideUp:F.hideUp,gap:F.gap,brk:F.brk,
+      label:F.label,words:F.words,anim:F.anim,edge:F.edge,c:{up:P.up,warning:P.warning,down:P.down,ack:P.ack,unusual:P.unusual,paused:P.paused,unknown:P.unknown}};
+  }
+  /* the states in ascending severity, as PRTG's colour classes: CSS in this order lets the worst one win */
+  var FSTATES=[['up',['sensg']],['unknown',['sensx']],['paused',['sensb']],['unusual',['sensp']],['warning',['sensy']],['ack',['senso']],['down',['sensr','sensq']]];
+  function fenceCss(S,cls,L){
+    var r='.'+cls, C=fenceConfig(S,L), lw=C.lw, c=[], post=Math.max(6,Math.round(lw*2.3)), dash=(lw*2.4).toFixed(1)+' '+(lw*1.5).toFixed(1);
+    c.push(r+'{overflow:visible;background:none;}');
+    c.push(r+' .fz-svg{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible;pointer-events:none;z-index:1;}');
+    c.push(r+' .fz-line{fill:none;stroke:'+C.c.up+';stroke-width:'+lw+'px;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke;'+(C.dash==='always'?'stroke-dasharray:'+dash+';':'')+'}');
+    c.push(r+' .fz-case{fill:none;stroke:#FFFFFF;stroke-opacity:.85;stroke-width:'+(lw+4)+'px;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke;}');
+    c.push(r+' .fz-post{fill:none;stroke:'+C.c.up+';stroke-width:'+post+'px;stroke-linecap:round;vector-effect:non-scaling-stroke;}');
+    c.push(r+' .fz-fill{fill:'+C.c.up+';fill-opacity:.1;stroke:none;}');
+    FSTATES.forEach(function(s){
+      if(s[0]==='up')return;
+      var sel=s[1].map(function(k){return r+'[class*="tlst-'+k+'"]';});
+      c.push(sel.map(function(x){return x+' .fz-line,'+x+' .fz-post';}).join(',')+'{stroke:'+C.c[s[0]]+';'+(C.dash==='notup'?'stroke-dasharray:'+dash+';':'')+'}');
+      c.push(sel.map(function(x){return x+' .fz-fill';}).join(',')+'{fill:'+C.c[s[0]]+';}');
+    });
+    if(C.hideUp)c.push(r+'[class*="tlst-sensg"] .fz-svg{display:none;}');
+    c.push(r+' .fz-lab{position:absolute;transform:translateX(-50%);font-family:'+familyStack(L.font)+';font-size:'+Math.max(11,Math.round((Number(L.size)||13)*0.95))+'px;font-weight:700;line-height:1.2;padding:3px 9px;border-radius:6px;white-space:nowrap;box-shadow:0 1px 5px rgba(0,0,0,.35);z-index:2;pointer-events:none;}');
+    c.push('@keyframes msFzFl{0%,100%{opacity:1}28%{opacity:.15}34%{opacity:1}62%{opacity:.45}68%{opacity:1}}');
+    c.push('@keyframes msFzPu{50%{stroke-opacity:.8}}');
+    c.push(r+' .fz-spark{animation:msFzFl 1.3s infinite;}');
+    c.push(r+' .fz-pulse{animation:msFzPu 1.6s ease-in-out infinite;}');
+    return c.join('\n');
+  }
+  /* the drawing in the file itself, in % of the box: PRTG's Map designer and the object list's preview show it in the state's colour
+     without running any script. On View Map the script draws it again in pixels, with the gap, the sparks and the label. */
+  function fenceStatic(C){
+    var o='<svg class="fz-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">', d=fPathD(C.pts,C.closed,C.smooth);
+    if(C.closed&&C.tint)o+='<path class="fz-fill" d="'+d+'"/>';
+    if(C.edge)o+='<path class="fz-case" d="'+d+'"/>';
+    o+='<path class="fz-line" d="'+d+'"/>';
+    if(C.posts)o+='<path class="fz-post" d="'+C.pts.map(function(p){return 'M'+p[0]+' '+p[1]+'h0';}).join('')+'"/>';
+    return o+'</svg>';
+  }
+  function buildFence(S){
+    var cls=tClassOf(S), L=tEffLook(S), C=fenceConfig(S,L), o=[], w=parseInt(S.initW,10), h_=parseInt(S.initH,10);
+    o.push('<!'+'--'+clean(S.cat||'Industrial')+': '+clean(S.name||'Fence')+'-->');
+    o.push('');
+    o.push('<div class="map_object ms-fence '+cls+' <#sensor type="colorclassofstate" prefix="tlst-" id="<@objectid>">" id="<@itemid>" objectid="<@objectid>" subid="<@subid>"'+((w>0&&h_>0)?' initialwidth="'+Math.min(w,4000)+'" initialheight="'+Math.min(h_,4000)+'"':'')+' data-status="loading" style="<#mapobject type="coordinates" subid="<@subid>" mode="<@editmode>">">');
+    o.push('<#mapobject type="objectgrip" mode="<@editmode>">');
+    o.push('<#mapobject type="htmlbefore" subid="<@subid>">');
+    o.push('<#checkobjecttype objecttype="sensor" nicemessage="true" id="<@objectid>">');
+    if(C.label!=='none'&&C.label!=='words'&&needsFontLink(L))o.push(fontLinkOf(L));
+    o.push('<style>');o.push(fenceCss(S,cls,L));o.push('</style>');
+    o.push(fenceStatic(C));
+    if(C.label==='message')o.push('<div class="fz-msg" style="display:none"><#objectstatus name="message" id="<@objectid>"></div>');
+    if(C.label==='value'){
+      o.push('<!'+'--');o.push('{');o.push('  "objects":<#table');o.push('  id="<@objectid>"');o.push("  output='json'");o.push("  noraw='1'");
+      o.push("  content='channels'");o.push("  sortby='name'");o.push("  count='*'");o.push("  columns='name=textraw,info=treejson,lastvalue'>");o.push('}');o.push('-->');
+    }
+    o.push('<#mapobject type="htmlafter" subid="<@subid>">');
+    o.push('</div>');
+    o.push('');
+    o.push('<scr'+'ipt>');
+    o.push('(function(){\n  var root=document.getElementById("<@itemid>");\n  if(!root)return;\n  var CFG='+JSON.stringify(C)+';\n  ('+fenceRuntime.toString()+')(root,CFG);\n})();');
+    o.push('<\/script>');
+    return o.join('\n')+'\n';
+  }
+  /* the drawing code of a fence or line, shipped inside the file as its own source text (self-contained) */
+  function fenceRuntime(root,C){
+    if(!root)return;
+    var NS='http://www.w3.org/2000/svg';
+    function hx(c){var x=String(c||'#000000').replace('#','');return [parseInt(x.substr(0,2),16)||0,parseInt(x.substr(2,2),16)||0,parseInt(x.substr(4,2),16)||0];}
+    function ink(c){var A=hx(c);return (0.299*A[0]+0.587*A[1]+0.114*A[2])/255>0.62?'#1B1E24':'#FFFFFF';}
+    function el(t,a,p){var e=document.createElementNS(NS,t),k;for(k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e;}
+    function f(v){return (+v).toFixed(1);}
+    function d(pts){var s='',i;for(i=0;i<pts.length;i++)s+=(i?' L':'M')+f(pts[i][0])+' '+f(pts[i][1]);return s;}
+    function dist(a,b){var x=b[0]-a[0],y=b[1]-a[1];return Math.sqrt(x*x+y*y);}
+    function bez(a,b,c,e,t){var u=1-t;return [u*u*u*a[0]+3*u*u*t*b[0]+3*u*t*t*c[0]+t*t*t*e[0],u*u*u*a[1]+3*u*u*t*b[1]+3*u*t*t*c[1]+t*t*t*e[1]];}
+    /* the points along one side: two for a straight side, many for a smooth one */
+    function side(P,i,closed,smooth){
+      var n=P.length, a=P[i], b=P[(i+1)%n], out=[], k;
+      if(!smooth)return [a,b];
+      var p0=closed?P[(i-1+n)%n]:P[Math.max(0,i-1)], p3=closed?P[(i+2)%n]:P[Math.min(n-1,i+2)];
+      var c1=[a[0]+(b[0]-p0[0])/6,a[1]+(b[1]-p0[1])/6], c2=[b[0]-(p3[0]-a[0])/6,b[1]-(p3[1]-a[1])/6];
+      for(k=0;k<=20;k++)out.push(bez(a,c1,c2,b,k/20));
+      return out;
+    }
+    function total(pts){var s=0,i;for(i=1;i<pts.length;i++)s+=dist(pts[i-1],pts[i]);return s;}
+    /* the point at a share of the way along, and the direction there */
+    function at(pts,fr){
+      var L=total(pts)*fr, i, run=0;
+      for(i=1;i<pts.length;i++){var s=dist(pts[i-1],pts[i]);if(run+s>=L||i===pts.length-1){var t=s?Math.max(0,Math.min(1,(L-run)/s)):0, a=pts[i-1], b=pts[i];return {p:[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t],t:s?[(b[0]-a[0])/s,(b[1]-a[1])/s]:[1,0],i:i};}run+=s;}
+      return {p:pts[0],t:[1,0],i:1};
+    }
+    /* the part of the points between two shares of the way along */
+    function cut(pts,f0,f1){var A=at(pts,f0), B=at(pts,f1), o=[A.p], i;for(i=A.i;i<B.i;i++)o.push(pts[i]);o.push(B.p);return o;}
+    function join(list){var o=[];list.forEach(function(s,j){o=o.concat(j?s.slice(1):s);});return o;}
+    function message(){var me=root.querySelector('.fz-msg');return me?String(me.textContent||'').replace(/\s+/g,' ').replace(/^\s+|\s+$/g,''):'';}
+    function value(){
+      var found=null;
+      (function walk(node){for(var c=node.firstChild;c&&!found;c=c.nextSibling){if(c.nodeType===8){var t=(c.nodeValue||'').replace(/^\s+|\s+$/g,'');if(t.charAt(0)==='{'){found=t;return;}}else if(c.nodeType===1)walk(c);}})(root);
+      try{var j=JSON.parse(found), box=(j&&j.objects)?j.objects:j, ch=(box&&box.channels)||[], best=null;
+        ch.forEach(function(c){var dd=(c.info&&c.info.data&&c.info.data[0])||{};if(+dd.id===-4)return;if(!best||dd.primary)best=c;});
+        return best?String(best.lastvalue==null?'':best.lastvalue):'';}catch(e){return '';}
+    }
+    var m=(String(root.className).match(/tlst-sens(\w*)/)||[])[1]||'';
+    var st={g:'up',y:'warning',r:'down',q:'down',o:'ack',b:'paused',p:'unusual',x:'unknown'}[m.charAt(0)]||(m?'unknown':'up');
+    if(/^(dr|ra|rp|gr)/.test(m))st='down';
+    var col=C.c[st]||C.c.unknown, notUp=(st!=='up'), broken=(st==='down'||st==='ack');
+    if(!C.preview)root.style.pointerEvents='none';   /* on View Map, clicks go through to the objects under the outline */
+    var uid='fz'+String(root.id||'x').replace(/[^\w]/g,'');
+    function draw(){
+      var W=root.clientWidth, H=root.clientHeight, old=root.querySelectorAll('.fz-svg,.fz-lab'), i;
+      for(i=0;i<old.length;i++)old[i].parentNode.removeChild(old[i]);
+      if(!W||!H)return;
+      root.setAttribute('data-status','ok');
+      if(C.hideUp&&!notUp)return;
+      var P=C.pts.map(function(p){return [p[0]*W/100,p[1]*H/100];}), n=P.length, closed=C.closed&&n>2, ns=closed?n:n-1, segs=[];
+      if(n<2)return;
+      for(i=0;i<ns;i++)segs.push(side(P,i,closed,C.smooth&&n>2));
+      var bi=(broken&&C.gap)?Math.max(0,Math.min(ns-1,(C.brk||1)-1)):-1, lines=[];
+      if(bi<0)lines.push(join(segs));
+      else{
+        var g0=cut(segs[bi],0,0.32), g1=cut(segs[bi],0.68,1);
+        if(closed){var rest=[];for(i=1;i<ns;i++)rest.push(segs[(bi+i)%ns]);lines.push(join([g1].concat(rest).concat([g0])));}
+        else{lines.push(join(segs.slice(0,bi).concat([g0])));lines.push(join([g1].concat(segs.slice(bi+1))));}
+      }
+      var lw=C.lw, svg=el('svg',{'class':'fz-svg','aria-hidden':'true',width:W,height:H,viewBox:'0 0 '+W+' '+H}), fid=uid+'g';
+      if(C.glow){var df=el('defs',{},svg), fl=el('filter',{id:fid,x:'-50%',y:'-50%',width:'200%',height:'200%'},df), mg;
+        el('feGaussianBlur',{stdDeviation:Math.max(2,lw*0.9),result:'b'},fl);mg=el('feMerge',{},fl);el('feMergeNode',{'in':'b'},mg);el('feMergeNode',{'in':'SourceGraphic'},mg);}
+      if(closed&&C.tint)el('path',{d:d(join(segs))+' Z',fill:col,'fill-opacity':broken?0.16:0.1,stroke:'none'},svg);
+      var dash=(C.dash==='always'||(C.dash==='notup'&&notUp))?f(lw*2.4)+' '+f(lw*1.5):null;
+      lines.forEach(function(pts){
+        if(pts.length<2)return;
+        if(C.edge)el('path',{d:d(pts)+((closed&&bi<0)?' Z':''),fill:'none',stroke:'#FFFFFF','stroke-opacity':0.85,'stroke-width':lw+4,'stroke-linecap':'round','stroke-linejoin':'round'},svg);   /* a white edge, so the line stands out on a busy picture */
+        var a={d:d(pts)+((closed&&bi<0)?' Z':''),fill:'none',stroke:col,'stroke-width':lw,'stroke-linecap':'round','stroke-linejoin':'round'};
+        if(dash)a['stroke-dasharray']=dash;if(C.glow)a.filter='url(#'+fid+')';if(broken&&C.anim)a['class']='fz-pulse';
+        el('path',a,svg);
+      });
+      if(C.posts)P.forEach(function(p){el('circle',{cx:f(p[0]),cy:f(p[1]),r:f(Math.max(3,lw*1.15)),fill:col,stroke:'rgba(255,255,255,.85)','stroke-width':1.5},svg);});
+      var la=null;
+      if(bi>=0){
+        la=at(segs[bi],0.5);
+        var gx=la.p[0], gy=la.p[1], tx=la.t[0], ty=la.t[1], nx=-ty, ny=tx, sz=Math.max(12,lw*3.4);
+        var sw=Math.max(2,lw*0.55), sp=el('g',{'class':C.anim?'fz-spark':''},svg), bolts=[];
+        [[-0.6,1],[0.6,-1],[0,1.2]].forEach(function(s){
+          var pts=[], j, ox=gx+tx*s[0]*sz*0.6, oy=gy+ty*s[0]*sz*0.6;
+          for(j=0;j<4;j++){var off=(j%2?1:-1)*sz*0.18;pts.push([ox+nx*s[1]*sz*0.3*j+tx*off,oy+ny*s[1]*sz*0.3*j+ty*off]);}
+          bolts.push(d(pts));
+        });
+        bolts.forEach(function(b){el('path',{d:b,fill:'none',stroke:'#3A2A00','stroke-opacity':0.75,'stroke-width':f(sw+3),'stroke-linecap':'round','stroke-linejoin':'round'},sp);});   /* a dark edge, so the sparks show on light ground too */
+        el('circle',{cx:f(gx),cy:f(gy),r:f(sz*0.45),fill:'#FFFFFF','fill-opacity':0.7,stroke:'none',filter:C.glow?'url(#'+fid+')':''},sp);
+        bolts.forEach(function(b){var e=el('path',{d:b,fill:'none',stroke:'#FFE14D','stroke-width':f(sw),'stroke-linecap':'round','stroke-linejoin':'round'},sp);if(C.glow)e.setAttribute('filter','url(#'+fid+')');});
+      }
+      root.insertBefore(svg,root.firstChild);
+      if(C.label!=='none'&&notUp){
+        var t=(C.label==='words')?C.words:(C.label==='message'?message():value());
+        if(t){
+          if(!la)la=at(join(segs),0.5);
+          var b=document.createElement('div');b.className='fz-lab';b.textContent=t;
+          b.style.left=f(la.p[0])+'px';b.style.top=f(la.p[1]+lw/2+6)+'px';b.style.background=col;b.style.color=ink(col);
+          root.appendChild(b);
+        }
+      }
+    }
+    root.__fzDraw=draw;
+    draw();
+    if(window.ResizeObserver&&!root.__fzRO){root.__fzRO=new ResizeObserver(function(){if(root.__fzDraw)root.__fzDraw();});root.__fzRO.observe(root);}
+  }
+  /* a picture of the map under the preview, to trace the outline on (only in the builder, never saved) */
+  var FGUIDE={url:''};
+  var FPV={up:'sensg',warning:'sensy',down:'sensr'};
+  function drawFencePreview(){
+    var S=TL, L=tEffLook(S), cls=tClassOf(S), C=fenceConfig(S,L), pv=FPV[S.pvState]?S.pvState:'up';
+    setStyle(fenceCss(S,cls,L));applyFont(L);
+    var w=parseInt(document.getElementById('owidth').value,10)||320, hh=parseInt(document.getElementById('oheight').value,10)||240;
+    var zs=eoSz(S,w,hh);w=zs[0];hh=zs[1];
+    prevEl.className='';
+    var msg=(pv==='down')?'Down (simulated error)':(pv==='warning'?'Warning':'OK');
+    prevEl.innerHTML='<div id="mapshow" class="map-body" style="position:relative"><div class="map_object ms-fence '+cls+' tlst-'+FPV[pv]+'" id="ptprev_t" style="position:relative;width:'+w+'px;height:'+hh+'px;">'
+      +fenceStatic(C)+(C.label==='message'?'<div class="fz-msg" style="display:none">'+esc(msg)+'</div>':'')+'</div></div>';
+    var root=prevEl.querySelector('.map_object');
+    if(C.label==='value')root.appendChild(document.createComment('\n{"objects":{"channels":[{"name":"Voltage","lastvalue":"'+(pv==='down'?'0 V':'10,000 V')+'","info":{"data":[{"id":0,"primary":true}]}}]}}\n'));
+    if(FGUIDE.url){
+      var gx=+S.gx||0, gy=+S.gy||0, m=40, gd=h('div','fz-guide');
+      gd.style.cssText='position:absolute;left:'+(-m)+'px;top:'+(-m)+'px;width:'+(w+2*m)+'px;height:'+(hh+2*m)+'px;background:url("'+FGUIDE.url+'") no-repeat '+(-(gx-m))+'px '+(-(gy-m))+'px;pointer-events:none;z-index:0;';
+      root.insertBefore(gd,root.firstChild);root.style.outline='1px dashed rgba(31,111,229,.8)';   /* inside the box, so it moves with it */
+    }
+    try{var cf=JSON.parse(JSON.stringify(C));cf.preview=true;fenceRuntime(root,cf);}catch(err){if(window.console)console.error('fence preview',err);}
+    fenceEditor(root,C);
+    applyBg(L);
+  }
+  /* handles over the preview: drag a point, double-click a point to remove it, double-click a side to add one, click a side's number to break it there */
+  function fenceEditor(root,C){
+    var W=root.clientWidth, H=root.clientHeight;if(!W||!H)return;
+    var NS='http://www.w3.org/2000/svg', line=(TL.kind==='line'), min=line?2:3;
+    function el(t,a,p){var e=document.createElementNS(NS,t),k;for(k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e;}
+    var ov=el('svg',{'class':'fz-edit',width:W,height:H});ov.style.cssText='position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible;z-index:5;';
+    root.appendChild(ov);
+    function pts(){return fNorm(TL).pts;}
+    function px(p){return [p[0]*W/100,p[1]*H/100];}
+    function pct(e){var r=root.getBoundingClientRect();return [Math.round(1000*(e.clientX-r.left)/r.width)/10,Math.round(1000*(e.clientY-r.top)/r.height)/10];}
+    function paint(){
+      while(ov.firstChild)ov.removeChild(ov.firstChild);
+      var P=pts(), n=P.length, ns=line?n-1:n, F=fNorm(TL), i;
+      for(i=0;i<ns;i++)(function(i){
+        var a=px(P[i]), b=px(P[(i+1)%n]);
+        var hit=el('line',{x1:a[0],y1:a[1],x2:b[0],y2:b[1],stroke:'transparent','stroke-width':14},ov);hit.style.cursor='copy';
+        hit.addEventListener('dblclick',function(e){e.preventDefault();var q=pct(e), cur=pts();cur.splice(i+1,0,q);TL.pts=cur;TL.fShape='custom';render();});
+        var dl=el('line',{x1:a[0],y1:a[1],x2:b[0],y2:b[1],stroke:'#1f6fe5','stroke-width':1,'stroke-dasharray':'4 3'},ov);dl.style.pointerEvents='none';
+        var mx=a[0]+(b[0]-a[0])*0.22, my=a[1]+(b[1]-a[1])*0.22, on=(F.brk===i+1), g=el('g',{},ov);g.style.cursor='pointer';   /* near the start of the side, so the gap in the middle stays in view */
+        el('circle',{cx:mx,cy:my,r:9,fill:on?'#E30613':'#FFFFFF',stroke:on?'#FFFFFF':'#1f6fe5','stroke-width':1.5},g);
+        var t=el('text',{x:mx,y:my+3.5,'text-anchor':'middle','font-size':10,'font-weight':700,fill:on?'#FFFFFF':'#1f6fe5','font-family':'Inter,Segoe UI,Arial,sans-serif'},g);t.textContent=String(i+1);
+        var tt=el('title',{},g);tt.textContent='Side '+(i+1)+(on?': it breaks here when the sensor is down':': click to break here when the sensor is down');
+        g.addEventListener('click',function(){TL.brk=i+1;refreshUI();render();});
+      })(i);
+      P.forEach(function(p,j){
+        var q=px(p), c=el('circle',{cx:q[0],cy:q[1],r:7,fill:'#FFFFFF',stroke:'#1f6fe5','stroke-width':2},ov);c.style.cursor='move';
+        var tt=el('title',{},c);tt.textContent='Drag to move. Double-click to remove.';
+        c.addEventListener('pointerdown',function(e){
+          e.preventDefault();e.stopPropagation();try{c.setPointerCapture(e.pointerId);}catch(x){}
+          var moved=false;
+          function mv(ev){var cur=pts();cur[j]=pct(ev);TL.pts=cur;TL.fShape='custom';moved=true;
+            var qq=px(cur[j]);c.setAttribute('cx',qq[0]);c.setAttribute('cy',qq[1]);
+            try{var cf=JSON.parse(JSON.stringify(fenceConfig(TL,tEffLook(TL))));cf.preview=true;fenceRuntime(root,cf);}catch(x){}}
+          function up(){c.removeEventListener('pointermove',mv);c.removeEventListener('pointerup',up);c.removeEventListener('pointercancel',up);if(moved)render();}
+          c.addEventListener('pointermove',mv);c.addEventListener('pointerup',up);c.addEventListener('pointercancel',up);
+        });
+        c.addEventListener('dblclick',function(e){e.preventDefault();e.stopPropagation();var cur=pts();if(cur.length<=min){toast(line?'A line needs at least two points':'A fence needs at least three points');return;}cur.splice(j,1);TL.pts=cur;TL.fShape='custom';render();});
+      });
+    }
+    paint();
+  }
+
+  /* ---- camera: a picture from a camera, refreshed; the tile's sensor (for example the camera's Ping) gives the state ---- */
+  function camUrlOf(S){var u=String(S.camUrl||'').replace(/^\s+|\s+$/g,'');return (/^https?:\/\/[^\s"'<>`]+$/i.test(u))?u:'';}
+  function camNorm(S){
+    var sec=parseInt(S.camSec,10);if(!(sec>=1&&sec<=3600))sec=5;
+    return {url:camUrlOf(S),mode:S.camMode==='stream'?'stream':'snap',sec:sec,fit:S.camFit==='contain'?'contain':'cover',rec:S.camRec!==false,clock:S.camClock!==false,
+      label:clean(S.camLabel).slice(0,60),gray:!!S.camGray};
+  }
+  function camCss(S,cls,L){
+    var r='.'+cls, K=camNorm(S), c=gFrameCss({engine:'ring'},cls,L), P=donutPalette(L), rad=Math.max(2,Math.min(Number(L.radius)||4,12)), fam=familyStack(L.font), n0;
+    c.push(r+' .gsub{flex:0 0 auto;color:'+(L.muted||L.headColor||'#6B7280')+';font-size:12px;line-height:1.3;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}');
+    n0=c.length;
+    c.push(r+' .cam-box{position:relative;flex:1 1 auto;min-height:0;margin-top:6px;border-radius:'+rad+'px;overflow:hidden;background:#05080C;box-shadow:inset 0 0 0 2px '+P.up+';}');
+    c.push(r+' .cam-img{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:'+K.fit+';display:block;}');
+    if(K.gray)c.push(r+' .cam-img{filter:grayscale(1) contrast(1.3) brightness(.95);}');
+    c.push(r+' .cam-rec,'+r+' .cam-clk,'+r+' .cam-lab{position:absolute;color:#FFFFFF;font-family:'+fam+';font-size:12px;font-weight:700;letter-spacing:.06em;text-shadow:0 1px 3px rgba(0,0,0,.9);white-space:nowrap;z-index:1;}');
+    c.push(r+' .cam-rec{left:10px;top:8px;display:flex;align-items:center;gap:6px;}');
+    c.push(r+' .cam-rec i{width:9px;height:9px;border-radius:50%;background:#FF3B30;animation:msCamRec 1.2s steps(2,start) infinite;}');
+    c.push(r+' .cam-clk{right:10px;top:8px;font-variant-numeric:tabular-nums;}');
+    c.push(r+' .cam-lab{left:10px;bottom:8px;}');
+    c.push(r+' .cam-msg{position:absolute;left:0;top:0;right:0;bottom:0;display:none;align-items:center;justify-content:center;text-align:center;padding:10px;background:rgba(5,8,12,.82);color:#FFFFFF;font-family:'+fam+';font-size:14px;font-weight:700;letter-spacing:.08em;z-index:2;}');
+    c.push(r+' .cam-none .cam-msg.cam-empty,'+r+' .cam-bad .cam-msg.cam-err{display:flex;}');
+    FSTATES.forEach(function(s){
+      if(s[0]==='up')return;
+      var sel=s[1].map(function(k){return r+'[class*="tlst-'+k+'"]';});
+      c.push(sel.map(function(x){return x+' .cam-box';}).join(',')+'{box-shadow:inset 0 0 0 2px '+P[s[0]]+';}');
+      if(s[0]==='down'||s[0]==='ack')c.push(sel.map(function(x){return x+' .cam-msg.cam-off';}).join(',')+'{display:flex;color:'+P[s[0]]+';}');
+    });
+    c.push('@keyframes msCamRec{50%{opacity:.15}}');
+    var tk=lookTs(L);if(tk!==1)for(var ti=n0;ti<c.length;ti++)c[ti]=tsCss(c[ti],tk);
+    return c.join('\n');
+  }
+  function camBoxHtml(K,src){
+    return '<div class="cam-box'+(K.url||src?'':' cam-none')+'">'+((K.url||src)?'<img class="cam-img" src="'+esc(src||K.url)+'" alt="">':'')
+      +(K.rec?'<div class="cam-rec"><i></i>REC</div>':'')+(K.clock?'<div class="cam-clk"></div>':'')+(K.label?'<div class="cam-lab">'+esc(K.label)+'</div>':'')
+      +'<div class="cam-msg cam-empty">No camera address yet</div><div class="cam-msg cam-err">The camera picture can’t be reached</div><div class="cam-msg cam-off">NO SIGNAL</div></div>';
+  }
+  function buildCam(S){
+    var cls=tClassOf(S), L=tEffLook(S), K=camNorm(S), o=[], tm=S.titleMode||'object', w=parseInt(S.initW,10), h_=parseInt(S.initH,10), sub=clean(S.sub);
+    var titleInner=(tm==='custom')?clean(S.title):'<#objectproperty name="Name" id="<@objectid>">';
+    o.push('<!'+'--'+clean(S.cat||'Tiles')+': '+clean(S.name||'Camera')+'-->');
+    o.push('');
+    o.push('<div class="map_object map_graph '+cls+' <#sensor type="colorclassofstate" prefix="tlst-" id="<@objectid>">" id="<@itemid>" objectid="<@objectid>" subid="<@subid>"'+((w>0&&h_>0)?' initialwidth="'+Math.min(w,4000)+'" initialheight="'+Math.min(h_,4000)+'"':'')+' data-status="loading" style="overflow:hidden;<#mapobject type="coordinates" subid="<@subid>" mode="<@editmode>">">');
+    o.push('<#mapobject type="objectgrip" mode="<@editmode>">');
+    o.push('<#mapobject type="htmlbefore" subid="<@subid>">');
+    o.push('<#checkobjecttype objecttype="sensor" nicemessage="true" id="<@objectid>">');
+    if(needsFontLink(L))o.push(fontLinkOf(L));
+    o.push('<style>');o.push(camCss(S,cls,L)+hazardCss(S,cls,L));o.push('</style>');
+    o.push('  <div class="gbox">');
+    if(tm!=='none')o.push('    <div class="gtitle"><b>'+titleInner+'</b></div>');
+    if(sub)o.push('    <div class="gsub">'+sub+'</div>');
+    o.push('    '+camBoxHtml(K));
+    o.push('  </div>');
+    o.push('<#mapobject type="htmlafter" subid="<@subid>">');
+    o.push('</div>');
+    o.push('');
+    o.push('<scr'+'ipt>');
+    o.push('(function(){\n  var root=document.getElementById("<@itemid>");\n  if(!root)return;\n  var CFG='+JSON.stringify(K)+';\n  ('+camRuntime.toString()+')(root,CFG);\n})();');
+    o.push('<\/script>');
+    return o.join('\n')+'\n';
+  }
+  /* refreshes the picture (a snapshot every few seconds; a stream refreshes itself) and runs the clock */
+  function camRuntime(root,C){
+    if(!root)return;
+    var box=root.querySelector('.cam-box'), img=root.querySelector('.cam-img'), clk=root.querySelector('.cam-clk'), timer=null, last=0;
+    if(!box)return;
+    root.setAttribute('data-status','ok');
+    function p2(n){return (n<10?'0':'')+n;}
+    function tick(){if(!clk)return;var d=new Date();clk.textContent=p2(d.getHours())+':'+p2(d.getMinutes())+':'+p2(d.getSeconds());}
+    if(img){
+      img.onerror=function(){box.classList.add('cam-bad');};
+      img.onload=function(){box.classList.remove('cam-bad');};
+    }
+    function fresh(){
+      if(!img||C.mode!=='snap'||!C.url)return;
+      var n=new Image(), u=C.url+(C.url.indexOf('?')<0?'?':'&')+'_ms='+Date.now();
+      n.onload=function(){img.src=u;box.classList.remove('cam-bad');};
+      n.onerror=function(){box.classList.add('cam-bad');};
+      n.src=u;
+    }
+    tick();
+    timer=setInterval(function(){
+      if(!document.documentElement.contains(root)){clearInterval(timer);return;}   /* PRTG replaced the map items: stop */
+      tick();
+      if(C.preview)return;
+      var now=Date.now();if(now-last>=C.sec*1000){last=now;fresh();}
+    },1000);
+    last=Date.now();
+  }
+  function drawCamPreview(){
+    var S=TL, L=tEffLook(S), cls=tClassOf(S), K=camNorm(S), tm=S.titleMode||'object', title=(tm==='none')?'':(tm==='custom'?clean(S.title):'Paddock 1 camera'), sub=clean(S.sub), pv=FPV[S.pvState]?S.pvState:'up';
+    setStyle(camCss(S,cls,L)+hazardCss(S,cls,L));applyFont(L);
+    var w=parseInt(document.getElementById('owidth').value,10)||420, hh=parseInt(document.getElementById('oheight').value,10)||300;
+    var zs=eoSz(S,w,hh);w=zs[0];hh=zs[1];
+    /* without an address, a drawn stand-in picture */
+    var ph=K.url?'':'data:image/svg+xml;charset=utf-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240"><defs><radialGradient id="g" cx=".5" cy=".45" r=".7"><stop offset="0" stop-color="#3b4a3f"/><stop offset="1" stop-color="#0b120d"/></radialGradient></defs><rect width="400" height="240" fill="url(#g)"/><path d="M0 190 Q100 160 200 175 T400 165 V240 H0Z" fill="#162019"/><g stroke="#8a9a8c" stroke-width="2"><path d="M300 60V200M350 50V205"/><path d="M200 120L400 95M200 145L400 125M200 170L400 155" stroke-width="1.2"/></g><text x="200" y="128" text-anchor="middle" font-family="Arial" font-size="13" fill="#9fb3a3">Sample picture: your camera shows here</text></svg>');
+    prevEl.className='';
+    prevEl.innerHTML='<div id="mapshow" class="map-body"><div class="map_object map_graph '+cls+' tlst-'+FPV[pv]+'" id="ptprev_t" style="position:relative;overflow:hidden;width:'+w+'px;height:'+hh+'px;"><div class="gbox">'
+      +(title?'<div class="gtitle"><b>'+esc(title)+'</b></div>':'')+(sub?'<div class="gsub">'+esc(sub)+'</div>':'')+camBoxHtml(K,ph)+'</div></div></div>';
+    var root=prevEl.querySelector('.map_object');
+    try{var cf=JSON.parse(JSON.stringify(K));cf.preview=true;camRuntime(root,cf);}catch(err){if(window.console)console.error('camera preview',err);}
+    applyBg(L);
+  }
+
+  /* ---- hazard stripes: a striped band at the top and bottom, and a glow, while the sensor is down (or also in warning) ---- */
+  function hazardCss(S,cls,L){
+    if(S.hazard!=='down'&&S.hazard!=='warn')return '';
+    var r='.'+cls, P=donutPalette(L), c=[], list=[['down',['sensr','sensq']],['ack',['senso']]];
+    if(S.hazard==='warn')list.unshift(['warning',['sensy']]);
+    list.forEach(function(s){
+      var col=P[s[0]], sel=s[1].map(function(k){return r+'[class*="tlst-'+k+'"]';});
+      c.push(sel.join(',')+'{outline:2px solid '+col+' !important;outline-offset:-2px !important;box-shadow:0 0 0 1px '+col+',0 0 18px '+col+' !important;}');
+      c.push(sel.map(function(x){return x+' .gbox';}).join(',')+'{border-top:10px solid transparent;border-bottom:10px solid transparent;border-image:repeating-linear-gradient(-45deg,'+col+' 0 10px,#1B1B1B 10px 20px) 10 0 / 10px 0 / 0 stretch;}');
+    });
+    return '\n'+c.join('\n');
+  }
+  function camDefaults(S){S.camUrl=S.camUrl||'';S.camMode=S.camMode||'snap';S.camSec=S.camSec||5;S.camFit=S.camFit||'cover';if(S.camRec==null)S.camRec=true;if(S.camClock==null)S.camClock=true;S.camLabel=S.camLabel||'';S.fit=false;return S;}
 
   /* ====================== status icons ====================== */
   /* PRTG's own colours for the state classes (main.css, .map_iconcolor_*) */
@@ -5581,7 +6013,7 @@ try{
     }else if(t==='status'){
       x='Status counts - '+(m.tiles||[]).join(', ');
     }else if(t==='tile'&&m.fam==='ind'){
-      x='Industrial - '+({lamps:'state lamps',onoff:'on/off, '+(m.oStyle||'lamp'),tank:(m.shape==='silo'?'silo':'tank')+' level',equip:String(amLab(IEQ,m.eq||'pump')).toLowerCase(),pv:'process value',count:'countdown, '+(m.cStyle||'ring')}[m.kind]||String(amLab(IKINDS,m.kind)).toLowerCase());
+      x='Industrial - '+({lamps:'state lamps',onoff:'on/off, '+(m.oStyle||'lamp'),tank:(m.shape==='silo'?'silo':'tank')+' level',equip:String(amLab(IEQ,m.eq||'pump')).toLowerCase(),pv:'process value',count:'countdown, '+(m.cStyle||'ring'),fence:'fence, '+amLow((fShapeOf('fence',m.fShape)||['','traced'])[1]),line:'line, '+amLow((fShapeOf('line',m.fShape)||['','traced'])[1])}[m.kind]||String(amLab(IKINDS,m.kind)).toLowerCase());
     }else if(t==='tile'){
       x='Tile - '+String(amLab(TKINDS,m.kind)).toLowerCase();
     }else if(t==='icon'){
@@ -5682,8 +6114,8 @@ try{
     sunburst:{name:'Sunbursts',items:[['Separated',pkWith(blankSB,{face:'gaps'})],['Solid',pkWith(blankSB,{face:'solid'})],['Soft pastel',pkWith(blankSB,{face:'pastel'})]]},
     status:{name:'Status counts',items:[['Sensor status',function(){return statusFromPreset('status');}],['Interfaces',function(){return statusFromPreset('interfaces');}],['Availability',function(){return statusFromPreset('availability');}]]},
     icon:{name:'Status icons',items:[['Dot','dot'],['LED','led'],['Shield','shield'],['Hexagon','hexagon'],['Status bar','sbar'],['Traffic light','traffic'],['Beacon','beacon'],['Pulse','pulse'],['Signal bars','bars']].map(function(x){return [x[0],pkIcon(x[1])];})},
-    tile:{name:'Tiles',items:[['Stat tile','stat'],['String tile','string'],['Bar gauge','bar'],['Interface traffic tile','interface'],['Channel chips','chips'],['Channel chips (fit)','chipsfit']].map(function(x){return [x[0],function(){return tileFromPreset(x[1]);}];})},
-    ind:{name:'Industrial objects',items:[['State lamps','ind_lamps'],['On/Off indicator','ind_onoff'],['Tank level','ind_tank'],['Silo level','ind_silo'],['Equipment symbol','ind_equip'],['Process value','ind_pv'],['Countdown','ind_count']].map(function(x){return [x[0],function(){return indFromPreset(x[1]);}];})},
+    tile:{name:'Tiles',items:[['Stat tile','stat'],['String tile','string'],['Bar gauge','bar'],['Interface traffic tile','interface'],['Channel chips','chips'],['Channel chips (fit)','chipsfit'],['Camera','camera']].map(function(x){return [x[0],function(){return tileFromPreset(x[1]);}];})},
+    ind:{name:'Industrial objects',items:[['State lamps','ind_lamps'],['On/Off indicator','ind_onoff'],['Tank level','ind_tank'],['Silo level','ind_silo'],['Equipment symbol','ind_equip'],['Process value','ind_pv'],['Countdown','ind_count'],['Fence','ind_fence'],['Line','ind_line']].map(function(x){return [x[0],function(){return indFromPreset(x[1]);}];})},
     links:{name:'Link styles',items:[['Plain, curve',pkLink('plain','curve')],['Plain, straight',pkLink('plain','straight')],['Beads, curve',pkLink('beads','curve')],['Beads, straight',pkLink('beads','straight')],
       ['Chevron, curve',pkLink('chevron','curve')],['Chevron, straight',pkLink('chevron','straight')],['Dash sweep, arc',pkLink('sweep','arc')],['Soft glow, curve',pkLink('glow','curve')]]}
   };
@@ -6287,8 +6719,10 @@ try{
         pop.appendChild(h('div','pf-h','Kind'));
         var kg=tKindGrid(fam_);pop.appendChild(kg);OB.syncs.push(function(){kg.syncKind();});
         /* 1.5.94: the style of the industrial kind on screen (the bar is rebuilt when the kind changes) */
-        var ik=fam_==='ind'&&({onoff:['Style','ionoff','oStyle'],tank:['Shape','itank','shape'],equip:['Layout','ieq','eLay'],count:['Style','icount','cStyle']})[TL.kind];
-        if(ik){pop.appendChild(h('div','pf-h',ik[0]));var ig=grPicGrid(ik[1],function(){return TL[ik[2]];},function(v){TL[ik[2]]=v;},null,obDo);pop.appendChild(ig);OB.syncs.push(function(){ig.syncPick();});}
+        var ik=fam_==='ind'&&({onoff:['Style','ionoff','oStyle'],tank:['Shape','itank','shape'],equip:['Layout','ieq','eLay'],count:['Style','icount','cStyle'],fence:['Shape','ifence','fShape'],line:['Shape','iline','fShape']})[TL.kind];
+        if(ik){pop.appendChild(h('div','pf-h',ik[0]));var ig=grPicGrid(ik[1],function(){return TL[ik[2]];},function(v){if(FENCEK[TL.kind])fApplyShape(v);else TL[ik[2]]=v;},null,obDo);pop.appendChild(ig);OB.syncs.push(function(){ig.syncPick();});}
+        /* 1.6.0: a fence, a line and a camera can be previewed as up, warning or down */
+        if(isFenceK(TL)||isCamK(TL)||TL.hazard)pfSel(pop,'Preview as',function(){return FPV[TL.pvState]?TL.pvState:'up';},function(v){TL.pvState=v;},[['up','Up'],['warning','Warning'],['down','Down']]);
       }));
     }else if(TYPE==='icon'&&IC.engine==='custom'){
       b.appendChild(obMenu('Icon','The icon style and the text next to it',function(pop){
@@ -7515,7 +7949,7 @@ try{
     tlT.appendChild(inSel('Title',function(){return TL.titleMode;},function(v){TL.titleMode=v;},[['object','The object\u2019s name'],['custom','Custom text'],['none','No title']]));
     tlT.appendChild(inText('Custom title text',function(){return TL.title;},function(v){TL.title=v;}));
     tlT.appendChild(inText('Subtitle',function(){return TL.sub;},function(v){TL.sub=v;},'for example: Uplink to the data center'));
-    showIf(tlT,isTile);s2.appendChild(tlT);
+    showIf(tlT,function(){return isTile()&&!isFenceK(TL);});s2.appendChild(tlT);
     var tl1=section('Tile');secIf(tl1,isTileT);
     var tkg=tKindGrid('tile');tl1.appendChild(tkg);syncs.push(function(){tkg.syncKind();});
     tl1.appendChild(h('p','note','A tile is bound to one sensor and shows what that sensor reports, in the colour of its state. It follows the Look you choose, like the other objects.'));
@@ -7596,6 +8030,56 @@ try{
     inD.appendChild(inText('Full ring at',function(){return TL.max;},function(v){TL.max=v;},'365'));
     inD.appendChild(h('p','note','For example the Days to Expiration channel of an OPC UA Certificate sensor. 0 or less shows Expired.'));
     showIf(inD,function(){return inKind('count');});in1.appendChild(inD);
+    /* ---- 1.6.0: fence and line ---- */
+    var fN=function(){return fNorm(TL);};
+    var inF=h('div');
+    inF.appendChild(showIf(inPick('Shape','ifence',function(){return TL.fShape;},function(v){fApplyShape(v);}),function(){return inKind('fence');}));
+    inF.appendChild(showIf(inPick('Shape','iline',function(){return TL.fShape;},function(v){fApplyShape(v);}),function(){return inKind('line');}));
+    inF.appendChild(h('p','note','Drag the round handles in the preview to trace the outline. Double-click a handle to remove it; double-click a side to add a point there. The numbers mark the sides: click one to choose where it breaks when the sensor is down.'));
+    inF.appendChild(inSel('Preview as',function(){return FPV[TL.pvState]?TL.pvState:'up';},function(v){TL.pvState=v;},[['up','Up'],['warning','Warning'],['down','Down']]));
+    inF.appendChild(inChk('Smooth (a curve through the points)',function(){return fN().smooth;},function(v){TL.smooth=v;}));
+    inF.appendChild(inText('Points, in % of the box',function(){return fN().pts.map(function(p){return p[0]+','+p[1];}).join(' ');},function(v){
+      var a=[];String(v).replace(/(-?[\d.]+)\s*,\s*(-?[\d.]+)/g,function(x,px,py){a.push([+px,+py]);return x;});
+      if(a.length>=(TL.kind==='line'?2:3)){TL.pts=a;TL.fShape='custom';}
+    },'x,y x,y ...'));
+    inF.appendChild(pair(inNum('Line width',function(){return fN().lw;},function(v){TL.lw=v;},1,40),inSel('Dashed',function(){return fN().dash;},function(v){TL.dash=v;},[['never','Never'],['always','Always'],['notup','When not up']])));
+    inF.appendChild(inChk('Posts at the points',function(){return fN().posts;},function(v){TL.posts=v;}));
+    inF.appendChild(inChk('Glow',function(){return fN().glow;},function(v){TL.glow=v;}));
+    inF.appendChild(inChk('White edge, so it stands out on a busy picture',function(){return fN().edge;},function(v){TL.edge=v;}));
+    inF.appendChild(showIf(inChk('Tint the inside',function(){return fN().tint;},function(v){TL.tint=v;}),function(){return inKind('fence');}));
+    inF.appendChild(inChk('Hide it while the sensor is up',function(){return fN().hideUp;},function(v){TL.hideUp=v;}));
+    inF.appendChild(inChk('A gap and sparks when the sensor is down',function(){return fN().gap;},function(v){TL.gap=v;}));
+    inF.appendChild(inNum('It breaks on side',function(){return fN().brk;},function(v){TL.brk=v;},1,99));
+    inF.appendChild(inChk('Flicker while it is down',function(){return fN().anim;},function(v){TL.anim=v;}));
+    inF.appendChild(inSel('Label when it is not up',function(){return fN().label;},function(v){TL.flabel=v;},[['none','No label'],['message','The sensor\u2019s message'],['value','The sensor\u2019s main value'],['words','Your own words']]));
+    inF.appendChild(showIf(inText('Your words',function(){return TL.fwords;},function(v){TL.fwords=v;},'for example: FENCE DOWN'),function(){return isFenceK(TL)&&fN().label==='words';}));
+    inF.appendChild(h('p','note','Colours come from the look\u2019s status colours. In PRTG\u2019s Map designer and the object list\u2019s preview the outline shows in the state\u2019s colour; the gap, the sparks and the label appear on View Map.'));
+    var gdw=h('div','dfld');gdw.appendChild(h('label',null,'Trace on a picture of your map'));
+    var gdi=h('input');gdi.type='file';gdi.accept='image/*';
+    gdi.addEventListener('change',function(){var fl=gdi.files&&gdi.files[0];if(!fl)return;if(FGUIDE.url)try{URL.revokeObjectURL(FGUIDE.url);}catch(e){}FGUIDE.url=URL.createObjectURL(fl);render();});
+    var gdx=h('button','btn ghost','Remove the picture');gdx.type='button';gdx.addEventListener('click',function(){if(FGUIDE.url)try{URL.revokeObjectURL(FGUIDE.url);}catch(e){}FGUIDE.url='';gdi.value='';render();});
+    gdw.appendChild(gdi);gdw.appendChild(gdx);inF.appendChild(gdw);
+    inF.appendChild(pair(inNum('Box from the left of the map',function(){return TL.gx||0;},function(v){TL.gx=v;},0,20000),inNum('from the top',function(){return TL.gy||0;},function(v){TL.gy=v;},0,20000)));
+    inF.appendChild(h('p','note','The picture (for example your map\u2019s background) is only shown here and is not saved. Put the box at the same place and size on your map, and the outline lands where you traced it.'));
+    showIf(inF,function(){return inKind('fence','line');});in1.appendChild(inF);
+    /* ---- 1.6.0: camera ---- */
+    var tlC=h('div');
+    tlC.appendChild(inText('Camera picture address',function(){return TL.camUrl;},function(v){TL.camUrl=v;},'https://camera/snapshot.jpg'));
+    tlC.appendChild(h('p','note','A web address that gives a picture (JPEG or PNG) or a picture stream (MJPEG). The address is stored in the object file, which every PRTG user who can see the map can read: use one that needs no password. PRTG pages on https may block a camera on plain http.'));
+    tlC.appendChild(pair(inSel('Picture',function(){return TL.camMode==='stream'?'stream':'snap';},function(v){TL.camMode=v;},[['snap','A snapshot, refreshed'],['stream','A live stream (MJPEG)']]),inNum('Refresh every (seconds)',function(){return TL.camSec||5;},function(v){TL.camSec=v;},1,3600)));
+    tlC.appendChild(inSel('Fit',function(){return TL.camFit==='contain'?'contain':'cover';},function(v){TL.camFit=v;},[['cover','Fill the box (may crop)'],['contain','The whole picture']]));
+    tlC.appendChild(inChk('REC mark',function(){return TL.camRec!==false;},function(v){TL.camRec=v;}));
+    tlC.appendChild(inChk('Clock',function(){return TL.camClock!==false;},function(v){TL.camClock=v;}));
+    tlC.appendChild(inChk('Night look (black and white)',function(){return !!TL.camGray;},function(v){TL.camGray=v;}));
+    tlC.appendChild(inText('Label on the picture',function(){return TL.camLabel;},function(v){TL.camLabel=v;},'for example: PADDOCK 1'));
+    tlC.appendChild(inSel('Preview as',function(){return FPV[TL.pvState]?TL.pvState:'up';},function(v){TL.pvState=v;},[['up','Up'],['warning','Warning'],['down','Down']]));
+    tlC.appendChild(h('p','note','Put it on the camera\u2019s sensor in PRTG, for example a Ping or HTTP sensor: the frame takes its state\u2019s colour, and while it is down the picture says NO SIGNAL.'));
+    showIf(tlC,function(){return isCamK(TL)&&TYPE==='tile';});tl1.appendChild(tlC);
+    /* ---- 1.6.0: hazard stripes, for every tile and industrial object except fences and lines ---- */
+    var sHz=section('Alarm look');secIf(sHz,function(){return isTile()&&!isFenceK(TL);});
+    sHz.appendChild(inSel('Hazard stripes',function(){return (TL.hazard==='down'||TL.hazard==='warn')?TL.hazard:'';},function(v){TL.hazard=v;},[['','Never'],['down','While the sensor is down'],['warn','While it is in warning or down']]));
+    sHz.appendChild(showIf(inSel('Preview as',function(){return FPV[TL.pvState]?TL.pvState:'up';},function(v){TL.pvState=v;},[['up','Up'],['warning','Warning'],['down','Down']]),function(){return !!TL.hazard&&!isCamK(TL);}));
+    sHz.appendChild(h('p','note','A striped band at the top and bottom and a glow in the state\u2019s colour, only while the sensor is down (or also in warning). Up, it looks as before.'));
 
     /* ---- shape: what it draws ---- */
     var sh1=section('Shape');secIf(sh1,function(){return TYPE==='shape'&&!(FRc()&&FRc().p&&FRc().p.isConnector);});
