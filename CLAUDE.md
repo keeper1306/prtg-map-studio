@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.8.4.
+Last updated at version 1.8.5.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -215,6 +215,18 @@ still aborts the whole item on a type it does not list.
 
 Watch out: PRTG's own stylesheet already styles class names like `sensg` (it adds a tick glyph), so
 a Map Studio object must put the state into its **own** prefixed class, via `prefix="..."`.
+
+## Graph menu: only options that do something; Toplist removed (1.8.5)
+
+- The owner asked why the toplist looked like a ring and what Tooltips does. The toplist is PRTG's `data-plugin="toplist"` (flow
+  sensors); the preview's ring (`mockToplist`) is a guess, never seen on the real PRTG (no flow sensors there). `GR.tooltips` only
+  writes PRTG's `tooltexts` on the picture graph (`draw:'pic'`); Map Studio's own drawing always has hover values (`tips` in the
+  runtime config). Owner's choice: show only what matters, remove the toplist for now.
+- Bar's Graph menu: Period, Legend, Axis only for kinds `sensor`/`sensors`; Tooltips only for `sensor` with `draw==='pic'` (the side
+  panel already did this). Toplist removed from `GRPICK.kind`, `GRKINDS` and the Graph pack; `buildGraph`'s toplist code stays, so an
+  old toplist object still builds.
+- Checked against the stand-in server: menus for sensor/own, sensor/picture, every sensor, bars; Shows has three choices; 36 files
+  byte-identical to 1.8.1's comparison set (the default graph included); 16 tests.
 
 ## Graph: no Any version, no Templates menu (1.8.4)
 

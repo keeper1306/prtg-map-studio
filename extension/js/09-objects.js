@@ -1518,7 +1518,7 @@ try{
 
   /* 1.5.69: the graph's choices as pictures, so each one shows what it gives (the bar's Graph menu and the side panel) */
   var GRPICK={
-    kind:[['sensor','Sensor graph','Graph of a sensor: its channels over time. Put it on a sensor.'],['bars','Bars','Bars of live values or sensor states, now. Put it on a sensor, device or group.'],['sensors','Every sensor','A small graph of every sensor on a device, group or probe.'],['toplist','Toplist','A sensor’s toplist, for example the top talkers of a flow sensor.']],
+    kind:[['sensor','Sensor graph','Graph of a sensor: its channels over time. Put it on a sensor.'],['bars','Bars','Bars of live values or sensor states, now. Put it on a sensor, device or group.'],['sensors','Every sensor','A small graph of every sensor on a device, group or probe.']],   /* 1.8.5: Toplist no longer offered (PRTG draws it; never seen without flow sensors); old toplist objects still build */
     bsrc:[['status','Sensor states','The share of sensors in each state. Put it on a device, group or probe.'],['channels','Channels','The channels of one sensor, one bar each. Put it on a sensor.'],['sensors','Sensors by value','The sensors on a device or group, one bar each, by their value.']],
     bdir:[['row','Horizontal','Bars from left to right'],['col','Vertical','Bars from the bottom up']],
     bcolor:[['status','By state','Each bar in the colour of its sensor’s state'],['cat','One per bar','A different colour for each bar'],['one','All the same','Every bar in one colour']],
@@ -1621,7 +1621,7 @@ try{
     w.syncPick=function(){var cur=String(get());[].forEach.call(w.children,function(q){var on=q.getAttribute('data-v')===cur;q.classList.toggle('on',on);q.setAttribute('aria-pressed',on?'true':'false');});};
     return w;
   }
-  var GRKINDS=[['sensor','Graph of a sensor'],['bars','Bars: live values or sensor states'],['sensors','Graphs of every sensor on a device, group or probe'],['toplist','Toplist of a sensor']];
+  var GRKINDS=[['sensor','Graph of a sensor'],['bars','Bars: live values or sensor states'],['sensors','Graphs of every sensor on a device, group or probe']];
   function periodTag(p){return p===0?'<#lang key="html.sensor.livwdata" default="Live Data">':'<#system type="'+(p+1)+'period">';}
   function blankGR(){
     return {type:'graph',kind:'sensor',cat:'Graphs',name:'Sensor graph',fname:'',period:0,fontSize:12,legend:true,axis:true,tooltips:false,check:true,extra:[],
@@ -5513,7 +5513,7 @@ try{
     gauge:{name:'Gauges',items:[['Flat minimalist','n-flat'],['PRTG classic','classic'],['Neon glass','n-neon'],['Speedometer','speedo'],['Progress arc','progress'],['Segmented LED','led']].map(function(x){return [x[0],pkFace(x[1])];})},
     graph:{name:'Graphs',items:[['Live data',pkGraph({period:0})],['Last 2 days',pkGraph({period:1})],['Last 30 days',pkGraph({period:2})],
       ['Sparkline with value',pkGraph({cstyle:'spark'})],['Stacked area, 2 days',pkGraph({cstyle:'stackarea',period:1})],['Min / max band, 30 days',pkGraph({cstyle:'band',period:2})],
-      ['Heatmap: hour by day',pkGraph({cstyle:'heatmap',period:2})],['Toplist',pkGraph({kind:'toplist'})]]},
+      ['Heatmap: hour by day',pkGraph({cstyle:'heatmap',period:2})]]},
     donut:{name:'Donuts',items:[['All states',blankD],['Alarms only',pkWith(blankD,{mode:'alarms'})],['All states, legend below',pkWith(blankD,{legend:'below'})]]},
     sunburst:{name:'Sunbursts',items:[['Separated',pkWith(blankSB,{face:'gaps'})],['Solid',pkWith(blankSB,{face:'solid'})],['Soft pastel',pkWith(blankSB,{face:'pastel'})]]},
     status:{name:'Status counts',items:[['Sensor status',function(){return statusFromPreset('status');}],['Interfaces',function(){return statusFromPreset('interfaces');}],['Availability',function(){return statusFromPreset('availability');}]]},
@@ -6049,7 +6049,7 @@ try{
             pfText(pop,'Only names containing (comma separated)',function(){return GR.chNames;},function(v){GR.chNames=v;},GR.bsrc==='sensors'?'Ping':'Traffic');
           }
         }else{
-          pfSel(pop,'Period',function(){return GR.period;},function(v){GR.period=parseInt(v,10);},GPERIODS);
+          if(GR.kind==='sensor'||GR.kind==='sensors')pfSel(pop,'Period',function(){return GR.period;},function(v){GR.period=parseInt(v,10);},GPERIODS);   /* 1.8.5: only where it changes something */
           if(GR.kind==='sensor'||GR.kind==='sensors')obPick('Drawing','draw',function(){return GR.draw||'own';},function(v){GR.draw=v;});
           if((GR.kind==='sensor'||GR.kind==='sensors')&&GR.draw!=='pic'){
           pop.appendChild(h('div','pf-h','Chart style'));
@@ -6068,9 +6068,9 @@ try{
           pfChk(pop,'Grid lines',function(){return GR.gridOn!==false;},function(v){GR.gridOn=v;});
           pfNum(pop,'Bar corner radius',function(){return GR.bradius;},function(v){GR.bradius=v;},0,12);
         }
-          pfChk(pop,'Legend',function(){return GR.legend;},function(v){GR.legend=v;});
-          pfChk(pop,'Axis',function(){return GR.axis;},function(v){GR.axis=v;});
-          pfChk(pop,'Tooltips',function(){return GR.tooltips;},function(v){GR.tooltips=v;});
+          if(GR.kind==='sensor'||GR.kind==='sensors'){pfChk(pop,'Legend',function(){return GR.legend;},function(v){GR.legend=v;});
+          pfChk(pop,'Axis',function(){return GR.axis;},function(v){GR.axis=v;});}
+          if(GR.kind==='sensor'&&GR.draw==='pic')pfChk(pop,'Tooltips (PRTG\u2019s hover values)',function(){return GR.tooltips;},function(v){GR.tooltips=v;});   /* 1.8.5: PRTG\u2019s tooltexts; Map Studio\u2019s own drawing always has hover values */
         }
       }));
     }else if(TYPE==='sunburst'){
