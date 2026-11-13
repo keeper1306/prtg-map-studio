@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.9.0.
+Last updated at version 1.9.1.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -215,6 +215,14 @@ still aborts the whole item on a type it does not list.
 
 Watch out: PRTG's own stylesheet already styles class names like `sensg` (it adds a tick glyph), so
 a Map Studio object must put the state into its **own** prefixed class, via `prefix="..."`.
+
+## No templates for gauges, sunbursts, tiles, Industrial (1.9.1)
+
+- The owner agreed after the 1.8.3 review: these templates only repeated the objects' own choices. `buildPresetOptions` uses `[]` for
+  gauge, sunburst and tile (Industrial included); the blank entry reads "Gauge", "Sunburst", "Tile", "Industrial object". Gauges: no bar
+  Templates menu and no side-panel list (no Any gauge). Sunburst and tile keep the menu for blank + their Any object. `GPRESETS`,
+  `SBPRESETS`, `TLPRESETS` and their functions stay (packs use them). Table, donut, status counts and icon templates kept.
+- Checked: 37 files byte-identical to 1.9.0; menus per type; Any sunburst still reachable; 16 tests.
 
 ## Graphs in two levels; All in one chart; Which sensors (1.9.0)
 

@@ -6088,7 +6088,7 @@ try{
     OB.syncs.push(function(){fs.value=L().font;});
     /* presets and looks first: they change the most */
     obScope(b);
-    if(TYPE!=='graph')b.appendChild(obMenu('Templates','Start from a ready-made '+({table:'table',gauge:'gauge',graph:'graph',donut:'donut',sunburst:'sunburst',status:'status counts',icon:'icon',tile:(tlFam()==='ind'?'industrial object':'tile')}[TYPE]||'object'),function(pop){pop.className+=' fb-wide';},function(pop){obPresetGrid(pop);}));
+    if(TYPE!=='graph'&&TYPE!=='gauge')b.appendChild(obMenu('Templates','Start from a ready-made '+({table:'table',gauge:'gauge',graph:'graph',donut:'donut',sunburst:'sunburst',status:'status counts',icon:'icon',tile:(tlFam()==='ind'?'industrial object':'tile')}[TYPE]||'object'),function(pop){pop.className+=' fb-wide';},function(pop){obPresetGrid(pop);}));
     var mLooks=(obMenu('Looks','Change the whole look',function(pop){
       pop.className+=' fb-wide';
       var g=h('div','presetgrid');pop.appendChild(g);
@@ -7352,8 +7352,8 @@ try{
   function buildPresetOptions(){
     if(!presetSel)return;
     presetSel.innerHTML='';
-    var blank=h('option');blank.value='__blank';blank.textContent=(TYPE==='gauge')?'Blank gauge':(TYPE==='frame'?'Blank frame':(TYPE==='graph'?'Graph':(TYPE==='tile'?(tlFam()==='ind'?'Blank industrial object':'Blank tile'):(TYPE==='status'?'Blank status card':(TYPE==='sunburst'?'Blank sunburst':(TYPE==='donut'?'Blank donut':(TYPE==='icon'?'Blank status icon':'Works on a probe, group, device or sensor')))))));presetSel.appendChild(blank);
-    var src=(TYPE==='tile')?TLPRESETS.filter(function(p){return (p.fam||'tile')===tlFam();}):(TYPE==='status')?SPRESETS.map(function(x){return {id:x.id,name:x.name,cat:'Built in'};}):((TYPE==='gauge')?GPRESETS:(TYPE==='graph'?[]:(TYPE==='donut'?DPRESETS:(TYPE==='sunburst'?SBPRESETS:(TYPE==='icon'?ICPRESETS:PRESETS))))), cats={},order=[];
+    var blank=h('option');blank.value='__blank';blank.textContent=(TYPE==='gauge')?'Gauge':(TYPE==='frame'?'Blank frame':(TYPE==='graph'?'Graph':(TYPE==='tile'?(tlFam()==='ind'?'Industrial object':'Tile'):(TYPE==='status'?'Blank status card':(TYPE==='sunburst'?'Sunburst':(TYPE==='donut'?'Blank donut':(TYPE==='icon'?'Blank status icon':'Works on a probe, group, device or sensor')))))));presetSel.appendChild(blank);
+    var src=(TYPE==='gauge'||TYPE==='sunburst'||TYPE==='tile')?[]   /* 1.9.1: their templates only repeated the object’s own choices */:(TYPE==='tile')?TLPRESETS.filter(function(p){return (p.fam||'tile')===tlFam();}):(TYPE==='status')?SPRESETS.map(function(x){return {id:x.id,name:x.name,cat:'Built in'};}):((TYPE==='gauge')?GPRESETS:(TYPE==='graph'?[]:(TYPE==='donut'?DPRESETS:(TYPE==='sunburst'?SBPRESETS:(TYPE==='icon'?ICPRESETS:PRESETS))))), cats={},order=[];
     src.forEach(function(p){if(!cats[p.cat]){cats[p.cat]=h('optgroup');cats[p.cat].label=p.cat+((TYPE==='status'||TYPE==='tile')?'':' (PRTG stock)');order.push(p.cat);}
       var op=h('option');op.value=p.id;op.textContent=p.name;cats[p.cat].appendChild(op);});
     order.forEach(function(c){presetSel.appendChild(cats[c]);});
@@ -7447,7 +7447,7 @@ try{
       }
       refreshUI();render();
     });
-    w2.appendChild(presetSel);s1.appendChild(w2);showIf(w2,function(){return notPaste()&&TYPE!=='geomap'&&TYPE!=='links'&&TYPE!=='graph';});   /* 1.8.4: a graph has nothing to pick from (1.8.3 and 1.8.4) */
+    w2.appendChild(presetSel);s1.appendChild(w2);showIf(w2,function(){return notPaste()&&TYPE!=='geomap'&&TYPE!=='links'&&TYPE!=='graph'&&TYPE!=='gauge';});   /* 1.8.4: a graph has nothing to pick from (1.8.3 and 1.8.4) */
     showIf(s1.appendChild(h('p','note','A table, gauge, graph, donut or icon from PRTG\u2019s own set keeps PRTG\u2019s look until you choose another under Looks. Tables, gauges, graphs, donuts and status icons share the same looks, so a dashboard of them stays consistent.')),function(){return notPaste()&&TYPE!=='links';});
 
     var sany=section('Any object');secIf(sany,function(){return anyOn();});
