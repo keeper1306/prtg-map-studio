@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.8.5.
+Last updated at version 1.9.0.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -215,6 +215,34 @@ still aborts the whole item on a type it does not list.
 
 Watch out: PRTG's own stylesheet already styles class names like `sensg` (it adds a tick glyph), so
 a Map Studio object must put the state into its **own** prefixed class, via `prefix="..."`.
+
+## Graphs in two levels; All in one chart; Which sensors (1.9.0)
+
+- The owner: the graph had no clear structure. Agreed: level 1 is what it is put on (the bar's Sensor / Device / Group / All,
+  `attachTo`), level 2 is Shows, level 3 only the options that do something. Status stays on graphs (owner: "keep it").
+- `GRSHOWS` [key, label, tip, 'sn'|'gd', kind, bsrc]: on a sensor `hist` (kind sensor), `now` (bars/channels); on a device or group
+  `each` (sensors), `multi` (new kind), `snow` (bars/sensors), `status` (bars/status). `grShow(G)` maps a model to its key, `setShow(k)`
+  sets kind/bsrc. `grShowPicker(done)`: one picture grid per group; with All both, under "On a sensor" / "On a device or group".
+  The bar's Graph menu and the side panel both use it; "Bars show" is gone as a step (Direction, Bar colors stay as options).
+- All in one chart (`kind:'multi'`, `GD`, always Map Studio's drawing): `multiSrc(root,C)` asks `/api/table.json` for the sensors below
+  (`objid,sensor,device,tags`, sorted by priority), keeps those passing Which sensors, at most `lmax` (1 to 20), asks each one's
+  `/api/historicdata.json`, takes one channel (`C.mch` part of the name, else the first that is not "(Volume)"), merges the rows by
+  `datetime` and hands `{histdata}` to `graphRuntime`, which got a third argument `src` (one changed line in `load`, plus
+  `src.demo()` for the preview). Live data is averaged to 60 s so the sensors' times line up. Lines are named by sensor, or by
+  device when sensor names repeat (seen: every ping is "Ping v2"). Cost: 1 + one request per sensor each refresh.
+  `multiConfig` sets names '' (series are sensors), no limits, no legend values. File: `buildGraphMulti`, checkobjecttype
+  device,group,probenode. Name "Graph - one chart, <style>, <period>". Added to the Graphs pack.
+- Which sensors: `G.sname` (part of the name, comma list) and `G.stag` (tags), written as `sf`/`st` only when set (`grWho`), checked
+  client-side by `who(r)` in `listRuntime`, `barsRuntime` and `multiSrc`. Bars of sensors keep using `names` (old `chNames`, now
+  `sname` when set). Shown for each (own drawing), multi, snow, status (`grWhoOn`).
+- Checked: 89 graph variants against 1.8.5: 9 files identical, 80 differ only in the runtime text, 0 otherwise; previews identical
+  (glow differs only in random ids, as between two 1.8.5 runs); the other 35 object files identical; 16 tests. On the real PRTG
+  (map 2231 through `map-studio-zz-test.htm`, restored byte-identical): All in one chart with name "Ping" on Local Probe and group 50
+  (8 lines, device names, two axes), Proxmox a flat 0 ms line (its ping really is 0); Status with name "Ping": probe 11 up / 7 down,
+  Proxmox 1 up.
+- Seen, not fixed: on a sensor, PRTG prints "Incompatible object type..." and the card still draws "No data yet" under it.
+- Not checked: tag filters on the real PRTG, Each sensor's history with a filter, the Map Designer canvas and hover preview for
+  All in one chart, the new UI (:1616).
 
 ## Graph menu: only options that do something; Toplist removed (1.8.5)
 
