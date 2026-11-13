@@ -4513,8 +4513,8 @@ try{
   /* the encoded settings are cut into lines of 200 (a very long line stops PRTG filling in a file's tags; the runtime drops the line breaks) */
   function fenceItemBefore(f){var e=encodeURIComponent(JSON.stringify(fenceItemCfg(f))), o=[], i;for(i=0;i<e.length;i+=200)o.push(e.slice(i,i+200));return '<i class="msf-cfg" style="display:none" data-c="'+o.join('\n')+'"></i>';}
   function fenceItemFromBefore(h){
-    var m=/class="msf-cfg"[^>]*data-c="([^"]*)"/.exec(String(h||''));if(!m)return null;
-    var c;try{c=JSON.parse(decodeURIComponent(m[1].replace(/\s+/g,'')));}catch(e){return null;}
+    var m=/class=["']msf-cfg["'][^>]*data-c=(["'])([^"']*)\1/.exec(String(h||''));if(!m)return null;   /* PRTG stores HTML Before with single quotes */
+    var c;try{c=JSON.parse(decodeURIComponent(m[2].replace(/\s+/g,'')));}catch(e){return null;}
     if(!c||!Array.isArray(c.pts))return null;
     return {kind:c.closed===false?'line':'fence',pts:c.pts,smooth:!!c.smooth,lw:c.lw,dash:c.dash,posts:!!c.posts,glow:c.glow!==false,tint:c.tint!==false,hideUp:!!c.hideUp,
       gap:c.gap!==false,brk:c.brk||1,label:c.label||'none',words:c.words||'',anim:c.anim!==false,edge:c.edge!==false};

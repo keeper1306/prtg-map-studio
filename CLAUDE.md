@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.10.2.
+Last updated at version 1.11.1.
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -215,6 +215,32 @@ still aborts the whole item on a type it does not list.
 
 Watch out: PRTG's own stylesheet already styles class names like `sensg` (it adds a tick glyph), so
 a Map Studio object must put the state into its **own** prefixed class, via `prefix="..."`.
+
+## Fence and Line in the Map designer (1.11.0, 1.11.1)
+
+- The owner asked for the fence to be a Map designer item so it can be shaped over the real map background. Build has two new
+  buttons, Fence and Line (`data-add` `fence` / `fline`, icons and names in `10-dashtabs.js`). Each is a `prtgobj` item with
+  `p.fence` (the outline model of `OBJAPI.fence.newItem`: kind, pts in % of the box, smooth, lw, dash, posts, glow, tint, hideUp, gap,
+  brk, label none/words/message, words, anim, edge) and `p.value` = `map-studio-fence.htm`; `fenceSync(it)` writes `p.before` =
+  `OBJAPI.fence.before(f)`, a hidden `<i class="msf-cfg" data-c="...">` (URI-encoded JSON, cut into 200-character lines).
+- One shared file for every fence and line: `OBJAPI.fence.fileText()` = `buildFence(fenceGenModel(),true)`; `gen` adds `FENCE_MERGE`, which
+  reads `.msf-cfg` inside the root (HTML Before is put inside the root by `<#mapobject type="htmlbefore">`) and merges it into CFG.
+  `buildFence` without `gen` is byte-identical to 1.10.2 (checked: fence and line, plain and smooth). Install script: button in the
+  item's settings (`OBJAPI.fence.installScript`). PRTG's designer and hover preview show the file's default octagon (script-free part).
+- Canvas (`06-dashboard.js`): `fenceHTML` (outline, break side marked 32-68 % by `fenceGapPts`, an invisible wide hit path; the item's
+  node is `pointer-events:none` so items inside stay clickable), `fenceHandles` in the selection box (`.dfpt` points, `.dfside` side
+  numbers; rebuilt only when the signature changes so double-clicks work), drag mode `fpt` (`fenceSetAbs` refits the box round the
+  points with padding and rewrites the %), double-click a point removes it (min 3 / 2), double-click the line adds one on the nearest
+  side, click a number sets/clears the break. `fenceForm` in the side panel. Excluded from the live preview (`objectLayout`);
+  `addCopies` restores `p.fence` from HTML Before.
+- **PRTG stores HTML Before with single quotes** (seen: `<i class='msf-cfg' ... data-c='...'>`). The runtime reads it with
+  `getAttribute`, fine; `fromBefore` needed a regex for either quote (1.11.1).
+- Map 2234: the T-Rex fence is now item 37 (map-studio-fence.htm on 2236, 474,277 164x244, z 1) and the raptor fence 38 (on 2096,
+  297,293 165x114, z 2); old items 32 and 3 deleted. Same outlines as the old files (a stand-in render was pixel-identical).
+  Checked on the real PRTG, classic View Map: the shapes, the red T-Rex fence with its label, the green raptor pen. The old files
+  `map-studio-fence-t-rex-paddock.htm` and `-raptor-pen.htm` stay in `mapobjects`, unused.
+- Not checked: dragging points in the owner's own Chrome, a fence loaded back from PRTG into the canvas with the real server
+  (only `fromBefore` on PRTG's stored text), whether Review shows a reloaded fence as changed (quote rewrite), the new UI (:1616).
 
 ## "CONTAINMENT BREACH" sensor; String tile strip removes every match (1.10.2, 2026-11-13)
 
