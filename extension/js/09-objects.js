@@ -4463,7 +4463,7 @@ try{
     for(i=0;i<C.pts.length;i+=10)rows.push(C.pts.slice(i,i+10).map(function(p){return JSON.stringify(p);}).join(','));
     return JSON.stringify(C).replace('"pts":'+pj,function(){return '"pts":[\n'+rows.join(',\n')+'\n]';});
   }
-  function buildFence(S){
+  function buildFence(S,gen){   /* gen: the one shared file for fences drawn in the Map designer (1.11.0) */
     var cls=tClassOf(S), L=tEffLook(S), C=fenceConfig(S,L), o=[], w=parseInt(S.initW,10), h_=parseInt(S.initH,10);
     o.push('<!'+'--'+clean(S.cat||'Industrial')+': '+clean(S.name||'Fence')+'-->');
     o.push('');
@@ -4483,9 +4483,41 @@ try{
     o.push('</div>');
     o.push('');
     o.push('<scr'+'ipt>');
-    o.push('(function(){\n  var root=document.getElementById("<@itemid>");\n  if(!root)return;\n  var CFG='+fenceCfgText(C)+';\n  ('+fenceRuntime.toString()+')(root,CFG);\n})();');
+    o.push('(function(){\n  var root=document.getElementById("<@itemid>");\n  if(!root)return;\n  var CFG='+fenceCfgText(C)+';\n'+(gen?FENCE_MERGE:'')+'  ('+fenceRuntime.toString()+')(root,CFG);\n})();');
     o.push('<\/script>');
     return o.join('\n')+'\n';
+  }
+  /* 1.11.0: fences and lines drawn in the Map designer all use one shared file. Each item on the map carries its own outline and
+     settings in its HTML Before, as a hidden element; the shared file's script reads it and draws that outline instead of its own. */
+  var FENCE_FILE='map-studio-fence.htm';
+  var FENCE_MERGE='  try{var q=root.querySelector(".msf-cfg"),j=q?JSON.parse(decodeURIComponent((q.getAttribute("data-c")||"").replace(/\\s+/g,""))):null,k;if(j)for(k in j)CFG[k]=j[k];}catch(e){}\n';
+  function fenceGenModel(){
+    var S=indFromPreset('ind_fence');
+    S.look=lookOf('Corporate blue');S.cat='Industrial';S.name='Map Studio Fence - drawn in the Map designer';S.nameUser=true;S.fname=FENCE_FILE;
+    S.flabel='message';   /* so the file carries the sensor's message, for items that ask for it */
+    return S;
+  }
+  /* a designer item's settings -> the few things its runtime needs (the colours stay the shared file's own) */
+  function fenceItemCfg(f){
+    var S={kind:(f&&f.kind==='line')?'line':'fence'}, k, F;
+    ['pts','smooth','lw','dash','posts','glow','tint','hideUp','gap','brk','anim','edge'].forEach(function(k){if(f&&f[k]!=null)S[k]=f[k];});
+    S.flabel=f&&f.label;S.fwords=f&&f.words;
+    F=fNorm(S);
+    return {closed:!F.line,pts:F.pts,smooth:F.smooth,lw:F.lw,dash:F.dash,posts:F.posts,glow:F.glow,tint:F.tint&&!F.line,hideUp:F.hideUp,gap:F.gap,brk:F.brk,label:F.label==='value'?'none':F.label,words:F.words,anim:F.anim,edge:F.edge};
+  }
+  function fenceItemNew(kind){
+    var S={kind:kind==='line'?'line':'fence'};fDefaults(S);
+    return {kind:S.kind,pts:S.pts,smooth:S.smooth,lw:S.lw,dash:S.dash,posts:S.posts,glow:S.glow,tint:S.tint,hideUp:false,gap:true,brk:1,
+      label:S.kind==='fence'?'words':'none',words:S.kind==='fence'?'CONTAINMENT BREACH':'',anim:true,edge:true};
+  }
+  /* the encoded settings are cut into lines of 200 (a very long line stops PRTG filling in a file's tags; the runtime drops the line breaks) */
+  function fenceItemBefore(f){var e=encodeURIComponent(JSON.stringify(fenceItemCfg(f))), o=[], i;for(i=0;i<e.length;i+=200)o.push(e.slice(i,i+200));return '<i class="msf-cfg" style="display:none" data-c="'+o.join('\n')+'"></i>';}
+  function fenceItemFromBefore(h){
+    var m=/class="msf-cfg"[^>]*data-c="([^"]*)"/.exec(String(h||''));if(!m)return null;
+    var c;try{c=JSON.parse(decodeURIComponent(m[1].replace(/\s+/g,'')));}catch(e){return null;}
+    if(!c||!Array.isArray(c.pts))return null;
+    return {kind:c.closed===false?'line':'fence',pts:c.pts,smooth:!!c.smooth,lw:c.lw,dash:c.dash,posts:!!c.posts,glow:c.glow!==false,tint:c.tint!==false,hideUp:!!c.hideUp,
+      gap:c.gap!==false,brk:c.brk||1,label:c.label||'none',words:c.words||'',anim:c.anim!==false,edge:c.edge!==false};
   }
   /* the drawing code of a fence or line, shipped inside the file as its own source text (self-contained) */
   function fenceRuntime(root,C){
@@ -8595,6 +8627,17 @@ try{
   };
   /* 1.5.85: a whole-map look for the Map designer's layouts: background, cell frames, title banner and dividing lines in one go,
      from the same Looks as the objects. Dark looks get a soft glow of their accent over the look's page colour; light ones a plain colour. */
+  OBJAPI.fence={
+    file:FENCE_FILE,cat:'Industrial',name:'Map Studio Fence - drawn in the Map designer',
+    fileText:function(){return buildFence(fenceGenModel(),true);},
+    newItem:fenceItemNew,before:fenceItemBefore,fromBefore:fenceItemFromBefore,
+    pathD:function(P,closed,smooth){return fPathD(P,closed,smooth);},
+    installScript:function(){
+      if(!window.LIBAPI)return;
+      var text=LIBAPI.installScript([{name:FENCE_FILE,text:buildFence(fenceGenModel(),true)}],LIBAPI.mapDir?LIBAPI.mapDir():undefined).replace(/\n/g,'\r\n');
+      if(pkDownload('Install-map-studio-fence.ps1',new Blob(['\uFEFF'+text],{type:'text/plain;charset=utf-8'})))toast('Saving Install-map-studio-fence.ps1');
+    }
+  };
   OBJAPI.mapLooks=function(){
     var B={};OBJAPI.bannerLooks().forEach(function(x){B[x[0]]=x[1];});
     var base=LOOKORDER.filter(function(n){return n!=='PRTG default';}).map(function(n){

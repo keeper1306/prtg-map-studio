@@ -770,7 +770,7 @@ try{
     else if(it.type==='tile')n=it.p.caption||'';
     else if(it.type==='banner')n=it.p.title||'';
     else if(it.type==='chip')n=it.p.text||'';
-    else if(it.type==='prtgobj')n=it.p.name||'';
+    else if(it.type==='prtgobj')n=isFence(it)?(it.p.fence.kind==='line'?'Line':'Fence'):(it.p.name||'');
       else n=it.state.v.txt||'';
     n=String(n).split(/\r?\n/)[0];
     if(!n)n=(it.type==='frame'&&it.p.shape)?(it.p.isConnector?'Connector':(SHAPENAME[it.p.shape]||'Shape')):((it.type==='frame'&&it.p.group===false)?'Background':TYPENAME[it.type]);
@@ -779,8 +779,49 @@ try{
 
   /* ---------- rendering ---------- */
   function oe(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+    /* 1.11.0: a fence or a line drawn on the map itself. The outline lives in the item (points in % of its box) and goes to PRTG in
+       HTML Before, where the one shared file map-studio-fence.htm reads it. */
+    function isFence(it){return !!(it&&it.type==='prtgobj'&&it.p&&it.p.fence&&window.OBJAPI&&OBJAPI.fence);}
+    function fenceSync(it){it.p.before=OBJAPI.fence.before(it.p.fence);}
+    function fenceAbs(it){return it.p.fence.pts.map(function(p){return [it.x+p[0]/100*it.w,it.y+p[1]/100*it.h];});}
+    /* the box hugs the points with room for the posts and the glow; the points are then written again in % of the new box */
+    function fenceSetAbs(it,A){
+      var f=it.p.fence, pad=Math.max(12,Math.round((+f.lw||4)*1.5+8)), x0=1e9, y0=1e9, x1=-1e9, y1=-1e9;
+      A.forEach(function(p){x0=Math.min(x0,p[0]);y0=Math.min(y0,p[1]);x1=Math.max(x1,p[0]);y1=Math.max(y1,p[1]);});
+      var x=Math.max(0,Math.floor(x0-pad)), y=Math.max(0,Math.floor(y0-pad)), w=Math.max(24,Math.ceil(x1+pad)-x), h=Math.max(24,Math.ceil(y1+pad)-y);
+      it.x=x;it.y=y;it.w=w;it.h=h;
+      f.pts=A.map(function(p){return [Math.round((p[0]-x)/w*1000)/10,Math.round((p[1]-y)/h*1000)/10];});
+      fenceSync(it);
+    }
+    function fenceSides(f){return f.kind==='line'?f.pts.length-1:f.pts.length;}
+    /* the stretch of side k (0-based) from 32 to 68 % of its length, measured on the map as the file's runtime does; in % of the box */
+    function fenceGapPts(it,k){
+      var f=it.p.fence, P=f.pts, n=P.length, closed=f.kind!=='line', a=P[k], b=P[(k+1)%n], c1=a, c2=b, i, Q=[], L=[0], sx=it.w/100, sy=it.h/100;
+      if(!a||!b)return [];
+      if(f.smooth&&n>2){var p0=closed?P[(k-1+n)%n]:P[Math.max(0,k-1)], p3=closed?P[(k+2)%n]:P[Math.min(n-1,k+2)];
+        c1=[a[0]+(b[0]-p0[0])/6,a[1]+(b[1]-p0[1])/6];c2=[b[0]-(p3[0]-a[0])/6,b[1]-(p3[1]-a[1])/6];}
+      for(i=0;i<=40;i++){var t=i/40, u=1-t;Q.push([u*u*u*a[0]+3*u*u*t*c1[0]+3*u*t*t*c2[0]+t*t*t*b[0],u*u*u*a[1]+3*u*u*t*c1[1]+3*u*t*t*c2[1]+t*t*t*b[1]]);
+        if(i)L.push(L[i-1]+Math.sqrt(Math.pow((Q[i][0]-Q[i-1][0])*sx,2)+Math.pow((Q[i][1]-Q[i-1][1])*sy,2)));}
+      var T=L[40], out=[];
+      for(i=0;i<=40;i++)if(L[i]>=T*0.32&&L[i]<=T*0.68)out.push(Q[i]);
+      return out.length>1?out:[];
+    }
+    function fenceHTML(it){
+      var f=it.p.fence, line=f.kind==='line', P=f.pts, d=OBJAPI.fence.pathD(P,!line,!!f.smooth), lw=+f.lw||(line?8:4), w=Math.round(it.w), h=Math.round(it.h),
+          col=line?'#38BDF8':'#F5C500', ve=' vector-effect="non-scaling-stroke"', s='', n=fenceSides(f);
+      s+='<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'" viewBox="0 0 100 100" preserveAspectRatio="none" style="display:block;overflow:visible">';
+      if(f.edge!==false)s+='<path d="'+d+'" fill="none" stroke="#fff" stroke-opacity=".8" stroke-width="'+(lw+3)+'" stroke-linejoin="round" stroke-linecap="round"'+ve+'/>';
+      s+='<path d="'+d+'" fill="'+((!line&&f.tint!==false)?'rgba(245,197,0,.10)':'none')+'" stroke="'+col+'" stroke-width="'+lw+'" stroke-linejoin="round" stroke-linecap="round"'+(f.dash==='always'?' stroke-dasharray="'+(lw*2)+' '+(lw*1.6)+'"':'')+ve+'/>';
+      if(f.gap!==false&&n>0){   /* the side that breaks, marked where the gap will be (32 to 68 % along it, as on the map) */
+        var g=fenceGapPts(it,Math.max(1,Math.min(n,+f.brk||1))-1);
+        if(g.length)s+='<path d="M'+g.map(function(q){return q[0].toFixed(2)+' '+q[1].toFixed(2);}).join(' L')+'" fill="none" stroke="#E30613" stroke-width="'+(lw+2)+'" stroke-linecap="butt"'+ve+'/>';
+      }
+      s+='<path data-fhit="1" d="'+d+'" fill="none" stroke="transparent" stroke-width="'+Math.max(14,lw+10)+'" pointer-events="stroke" style="cursor:move"'+ve+'/>';
+      return s+'</svg>';
+    }
     /* a PRTG object file is drawn by PRTG, so the canvas shows a labelled box of the right size */
     function objHTML(it){
+      if(isFence(it))return fenceHTML(it);
       if(it.p.raw){
         var doc='<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;overflow:hidden;font:13px Segoe UI,Arial,sans-serif}</style></head><body>'+String(it.p.before||'')+String(it.p.after||'')+'</body></html>';
         return '<iframe sandbox="" scrolling="no" tabindex="-1" aria-hidden="true" title="Custom HTML" style="display:block;border:0;width:'+Math.round(it.w)+'px;height:'+Math.round(it.h)+'px;pointer-events:none;background:transparent" srcdoc="'+doc.replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'"></iframe>';
@@ -820,7 +861,7 @@ try{
     if(isBox(it)||it.type==='prtgobj'){d.style.width=it.w+'px';d.style.height=it.h+'px';}
     else d.style.width='max-content';
     if(it.type==='prtgobj'&&((DASHAPI.pv||{})[it.id]||{}).state==='ok')d.className+=' pvok';
-    if(isLine(it)||(it.type==='frame'&&it.p.mapBg))d.style.pointerEvents='none';   /* the map background lets clicks through to the canvas */   /* only the line itself can be clicked, not the empty corners of its box */
+    if(isLine(it)||(it.type==='frame'&&it.p.mapBg)||isFence(it))d.style.pointerEvents='none';   /* the map background lets clicks through to the canvas */   /* only the line itself can be clicked, not the empty corners of its box */
     d.innerHTML=itemInner(it);
     return d;
   }
@@ -863,7 +904,7 @@ try{
   canvas.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a');if(a&&canvas.contains(a))e.preventDefault();},true);
   function updateSel(){
     var it=byId(D.sel);
-    if(!it){selBox.style.display='none';fbarPlace(null);return;}
+    if(!it){selBox.style.display='none';fbarPlace(null);fenceHandles(null);return;}
     selBox.style.display='block';
     selBox.style.left=it.x+'px';selBox.style.top=it.y+'px';
     selBox.style.width=it.w+'px';selBox.style.height=it.h+'px';
@@ -885,6 +926,7 @@ try{
       HND[k].style.display=ok?'block':'none';
       HND[k].style.cursor=handleCursor(k,rot)+'-resize';
     });
+    fenceHandles(it);
     fbarPlace(it);
   }
   var HND={se:handle}, CUR={nw:'nwse',n:'ns',ne:'nesw',e:'ew',se:'nwse',s:'ns',sw:'nesw',w:'ew'};
@@ -899,6 +941,57 @@ try{
   selBox.appendChild(lnA);selBox.appendChild(lnB);selBox.appendChild(rotH);
   rotH.title='Drag to rotate (Shift snaps to 15\u00B0, double-click to reset)';
   function cvPt(e){var r=canvas.getBoundingClientRect();return [(e.clientX-r.left)/scale,(e.clientY-r.top)/scale];}
+  /* the points of a selected fence or line: drag one to move it, double-click one to remove it; the numbers pick the side that breaks */
+  var fptBox=el_('div','dfpts');selBox.appendChild(fptBox);
+  function fenceHandles(it){
+    if(!isFence(it)){if(fptBox.firstChild){fptBox.innerHTML='';fptBox.removeAttribute('data-sig');}return;}
+    var f=it.p.fence, P=f.pts, n=fenceSides(f), sig=it.id+':'+P.length+':'+f.kind+':'+(f.gap!==false?f.brk:0), i;
+    if(fptBox.getAttribute('data-sig')!==sig){
+      fptBox.innerHTML='';fptBox.setAttribute('data-sig',sig);
+      for(i=0;i<P.length;i++){var h=el_('div','dh dfpt');h.setAttribute('data-i',String(i));h.title='Drag to move this point. Double-click to remove it.';fptBox.appendChild(h);}
+      for(i=0;i<n;i++){var c=el_('div','dfside'+((f.gap!==false&&+f.brk===i+1)?' on':''));c.textContent=String(i+1);c.setAttribute('data-s',String(i+1));
+        c.title=(f.gap!==false&&+f.brk===i+1)?'This side breaks when the sensor is down. Click to have no break.':'Click to make this side the one that breaks.';fptBox.appendChild(c);}
+    }
+    [].forEach.call(fptBox.querySelectorAll('.dfpt'),function(h){var p=P[+h.getAttribute('data-i')];if(p){h.style.left=p[0]+'%';h.style.top=p[1]+'%';}});
+    [].forEach.call(fptBox.querySelectorAll('.dfside'),function(c){var k=+c.getAttribute('data-s')-1, a=P[k], b=P[(k+1)%P.length];if(a&&b){c.style.left=(a[0]+(b[0]-a[0])*0.22)+'%';c.style.top=(a[1]+(b[1]-a[1])*0.22)+'%';}});
+  }
+  fptBox.addEventListener('mousedown',function(e){
+    var it=byId(D.sel);if(!isFence(it))return;
+    var h=e.target.closest&&e.target.closest('.dfpt'), c=e.target.closest&&e.target.closest('.dfside');
+    if(!h&&!c)return;
+    e.preventDefault();e.stopPropagation();
+    if(h)drag={mode:'fpt',it:it,i:+h.getAttribute('data-i'),abs:fenceAbs(it),sx:e.clientX,sy:e.clientY,moved:false};
+  });
+  fptBox.addEventListener('click',function(e){
+    var c=e.target.closest&&e.target.closest('.dfside'), it=byId(D.sel);if(!c||!isFence(it))return;
+    e.stopPropagation();
+    var f=it.p.fence, s=+c.getAttribute('data-s');
+    if(f.gap!==false&&+f.brk===s)f.gap=false;else{f.gap=true;f.brk=s;}
+    fenceSync(it);refreshItem(it);buildForm();commit();
+  });
+  fptBox.addEventListener('dblclick',function(e){
+    var h=e.target.closest&&e.target.closest('.dfpt'), it=byId(D.sel);if(!h||!isFence(it))return;
+    e.preventDefault();e.stopPropagation();
+    var f=it.p.fence, i=+h.getAttribute('data-i'), A=fenceAbs(it);
+    if(A.length<=(f.kind==='line'?2:3)){toast(f.kind==='line'?'A line needs at least 2 points.':'A fence needs at least 3 points.');return;}
+    A.splice(i,1);
+    if(f.brk>i+1||(f.brk===i+1&&i>0))f.brk--;   /* the sides after the point move down by one; the two sides at the point become one */
+    f.brk=Math.max(1,Math.min(fenceSides({kind:f.kind,pts:A}),f.brk));
+    fenceSetAbs(it,A);refreshItem(it);buildForm();buildList();commit();
+  });
+  /* a double-click on the line adds a point on the nearest side */
+  function fenceAddAt(it,Q){
+    var f=it.p.fence, A=fenceAbs(it), n=fenceSides(f), best=-1, bd=1e18, i;
+    for(i=0;i<n;i++){
+      var a=A[i], b=A[(i+1)%A.length], vx=b[0]-a[0], vy=b[1]-a[1], L=vx*vx+vy*vy, t=L?Math.max(0,Math.min(1,((Q[0]-a[0])*vx+(Q[1]-a[1])*vy)/L)):0,
+          dx=a[0]+vx*t-Q[0], dy=a[1]+vy*t-Q[1], dd=dx*dx+dy*dy;
+      if(dd<bd){bd=dd;best=i;}
+    }
+    if(best<0)return;
+    A.splice(best+1,0,[Q[0],Q[1]]);
+    if(f.gap!==false&&f.brk>best+1)f.brk++;   /* the break stays on the same stretch of fence */
+    fenceSetAbs(it,A);refreshItem(it);buildForm();buildList();commit();
+  }
   function normRot(r){return ((((r+180)%360)+360)%360)-180;}
   [[lnA,'a'],[lnB,'b']].forEach(function(x){
     x[0].addEventListener('mousedown',function(e){
@@ -2468,6 +2561,44 @@ try{
     inp.addEventListener('change',function(){commit();buildList();});
     return w;
   }
+  /* the settings of a fence or line drawn on the canvas */
+  function fenceForm(it){
+    var f=it.p.fence, n=fenceSides(f), out=[];
+    function fk(label,key,kind,opts,after){
+      var w=el_('div','dfld'), inp, lab=el_('label');lab.textContent=label;
+      if(kind==='select'){inp=el_('select');opts.forEach(function(o){var op=el_('option');op.value=o[0];op.textContent=o[1];inp.appendChild(op);});inp.value=String(key==='brk'?(f.gap!==false?f.brk:0):f[key]);}
+      else if(kind==='check'){inp=el_('input');inp.type='checkbox';inp.checked=!!f[key];}
+      else{inp=el_('input');inp.type=kind==='number'?'number':'text';inp.value=f[key]==null?'':f[key];if(opts){inp.min=opts.min;inp.max=opts.max;}}
+      if(kind==='check'){w.className='dfld inline';w.appendChild(inp);w.appendChild(lab);}else{w.appendChild(lab);w.appendChild(inp);}
+      function apply(){
+        var v=kind==='check'?inp.checked:inp.value;
+        if(kind==='number'){v=parseFloat(v);if(isNaN(v))return;v=Math.max(opts.min,Math.min(opts.max,v));}
+        if(key==='brk'){v=+v;if(v){f.gap=true;f.brk=v;}else f.gap=false;}
+        else f[key]=v;
+        if(after)after(v);
+        fenceSync(it);refreshItem(it);
+      }
+      inp.addEventListener(kind==='text'||kind==='number'?'input':'change',apply);
+      inp.addEventListener('change',function(){commit();buildList();if(kind==='select')buildForm();});
+      return w;
+    }
+    var brkOpts=[['0','No break']];for(var i=1;i<=n;i++)brkOpts.push([String(i),'Side '+i]);
+    out.push(fk('Kind','kind','select',[['fence','Fence (closed outline)'],['line','Line (road, pipe, cable)']],function(v){
+      if(v==='fence'&&f.pts.length<3){var A=fenceAbs(it), a=A[0], b=A[A.length-1];A.push([(a[0]+b[0])/2+40,(a[1]+b[1])/2+40]);fenceSetAbs(it,A);}
+      if(f.brk>fenceSides(f))f.brk=fenceSides(f);
+    }));
+    out.push(fk('Where it breaks when the sensor is down','brk','select',brkOpts));
+    out.push(fk('Text at the break','label','select',[['none','None'],['words','My own words'],['message','What the sensor says']]));
+    if(f.label==='words')out.push(fk('Words','words','text'));
+    out.push(fk('Line width','lw','number',{min:1,max:40},function(){var A=fenceAbs(it);fenceSetAbs(it,A);}));
+    out.push(pair(fk('Smooth curve','smooth','check'),fk('Posts','posts','check')));
+    out.push(pair(fk('Glow','glow','check'),fk('Animate (sparks, pulse)','anim','check')));
+    out.push(fk('Hide while the sensor is up','hideUp','check'));
+    var nt=el_('p','note');nt.textContent='Drag the round points on the canvas. Double-click a point to remove it, double-click the line to add one. Click a side’s number to make it the side that breaks. The sensor (the Target above) sets the colour: green when up, red when down.';out.push(nt);
+    var nt2=el_('p','note');nt2.textContent='Every fence and line uses one file in PRTG, '+OBJAPI.fence.file+'. Install it once with this script (it needs to be run on the PRTG server).';out.push(nt2);
+    var ib=el_('button','btn ghost');ib.type='button';ib.textContent='Download the install script';ib.addEventListener('click',function(){OBJAPI.fence.installScript();});out.push(ib);
+    return acc(f.kind==='line'?'Line':'Fence',out,true);
+  }
   function pair(a,b){var d=el_('div','dpair');d.appendChild(a);d.appendChild(b);return d;}
   function styleSel(it,table){
     var w=el_('div','dfld'), s=el_('select');
@@ -2789,6 +2920,7 @@ try{
     else if(!(it.type==='frame'&&inlineOk))formEl.appendChild(geoFs);
     if(it.type==='prtgobj'){
         var on=el_('p','note pst');on.textContent='Object file: '+it.p.cat+': '+it.p.name;formEl.appendChild(on);
+        if(isFence(it))formEl.appendChild(fenceForm(it));
         var tw=el_('div','dfld');tw.appendChild(el_('label',null,'Target (PRTG object ID)'));
         var ti=el_('input');ti.type='number';ti.min='0';ti.value=String((it.p.target&&it.p.target.id)||0);ti.id='dtgtid';
         ti.addEventListener('input',function(){var v=parseInt(ti.value,10)||0;it.p.target={id:v,name:(it.p.target&&v===it.p.target.id)?it.p.target.name:''};it.p.targetDefault=false;refreshItem(it);});
@@ -2873,6 +3005,7 @@ try{
       else if(type==='tile'){it.w=230;it.h=112;it.p=newTileP('');}
       else if(type==='banner'){it.w=640;it.h=90;it.p=newBannerP('Info');}
       else if(type==='chip'){it.p=newChipP();}
+        else if(type==='fence'||type==='fline'){it.type='prtgobj';it.w=300;it.h=220;it.p={cat:OBJAPI.fence.cat,name:OBJAPI.fence.name,value:OBJAPI.fence.file,target:{id:0,name:''},fence:OBJAPI.fence.newItem(type==='fline'?'line':'fence')};fenceSync(it);}
         else if(type==='prtgobj'){it.w=(extra&&extra.w)||320;it.h=(extra&&extra.h)||200;it.p={cat:extra.cat,name:extra.name,value:extra.value,target:extra.target?{id:parseInt(extra.target.id,10)||0,name:extra.target.name||''}:{id:0,name:''}};if(extra.target)it.p.targetDefault=true;}   /* a default target, until you choose the real one */
       else{it.state=defaultState(type);}
       var siblings=0;
@@ -3165,6 +3298,7 @@ try{
     var n=e.target.closest?e.target.closest('.ditem'):null;
     if(!n)return;
     var it=byId(parseInt(n.getAttribute('data-id'),10)), h=inlHost();
+    if(it&&isFence(it)&&e.target.getAttribute&&e.target.getAttribute('data-fhit')){fenceAddAt(it,cvPt(e));e.preventDefault();return;}
     var lg=e.target.closest?e.target.closest('[data-lbl]'):null;
     if(it&&lg&&isLine(it)&&it.p&&it.p.labelStyle){lblEdit(it,lg);e.preventDefault();return;}   /* the text on a Connector is typed right on the line */
     if(it&&(it.type==='label'||it.type==='button')&&teStart(it,n)){e.preventDefault();return;}
@@ -3203,6 +3337,11 @@ try{
       drag.hit=hit;connHilite(hit?hit.id:null,hit?hit.s:null);
       if(drag.w==='a')lnSetAbs(drag.it,P,other);else lnSetAbs(drag.it,other,P);
       refreshItem(drag.it);
+    }else if(drag.mode==='fpt'){
+      if(!drag.moved&&(Math.abs(dx)+Math.abs(dy))<2)return;
+      drag.moved=true;
+      var fq=cvPt(e);fq=[Math.max(0,Math.min(D.w,fq[0])),Math.max(0,Math.min(D.h,fq[1]))];
+      drag.abs[drag.i]=fq;fenceSetAbs(drag.it,drag.abs);refreshItem(drag.it);
     }else if(drag.mode==='rot'){
       var pt=cvPt(e), r=drag.r0+(Math.atan2(pt[1]-drag.cy,pt[0]-drag.cx)-drag.a0)*180/Math.PI;
       r=e.shiftKey?Math.round(r/15)*15:Math.round(r);
@@ -3252,6 +3391,7 @@ try{
     if(!drag)return;
     var d=drag, wasFree=FREE;drag=null;FREE=false;guidesOff();
     if(d.mode==='move'&&d.moved){d.it.parent=reparentTarget(d.it);layDrop(d,wasFree);renderAll();buildForm();commit();}
+    else if(d.mode==='fpt'){if(d.moved){buildForm();buildList();commit();}}
     else if(d.mode==='size'||d.mode==='ln'||d.mode==='rot'){
       selBox.removeAttribute('data-rot');
       if(d.mode==='ln'){
@@ -3404,6 +3544,7 @@ try{
         var it={id:D.nextId++,type:'prtgobj',parent:null,x:Math.max(0,Math.round(e.x||0)),y:Math.max(0,Math.round(e.y||0)),w:Math.max(8,Math.round(e.w||320)),h:Math.max(8,Math.round(e.h||200)),state:null,
           p:{cat:e.cat,name:e.name,value:e.value,target:{id:(e.target&&parseInt(e.target.id,10))||0,name:(e.target&&e.target.name)||''},before:e.before||'',after:e.after||'',elink:e.link||'',was:e.was||'',raw:!!e.raw}};
         if(e.sizing)it.p.sizing=e.sizing;
+        if(window.OBJAPI&&OBJAPI.fence&&e.value===OBJAPI.fence.file){var fz=OBJAPI.fence.fromBefore(e.before);if(fz)it.p.fence=fz;}   /* a fence drawn here before: its outline comes back from HTML Before */
         it.ord=layerOf(it)*100000+(++D.ordSeq);
         D.items.push(it);ids.push(it.id);
       });
@@ -3415,7 +3556,7 @@ try{
     DASHAPI.dropObject=function(entry,cx,cy){var r=canvas.getBoundingClientRect(), e={}, k;for(k in entry)e[k]=entry[k];e.at={x:Math.max(0,Math.min(D.w-40,(cx-r.left)/scale)),y:Math.max(0,Math.min(D.h-40,(cy-r.top)/scale))};addItem('prtgobj',e);};
     DASHAPI.add=function(type){addItem(type);};
     DASHAPI.addAt=function(type,cx,cy){var r=canvas.getBoundingClientRect();addItem(type,{at:{x:Math.max(0,Math.min(D.w-40,(cx-r.left)/scale)),y:Math.max(0,Math.min(D.h-40,(cy-r.top)/scale))}});};
-    DASHAPI.objectLayout=function(){var ord=order(), out=[];ord.forEach(function(it,i){if(it.type==='prtgobj'&&!it.p.raw)out.push({id:it.id,file:it.p.value,cat:it.p.cat,name:it.p.name,target:(it.p.target&&it.p.target.id)||0,x:it.x,y:it.y,w:it.w,h:it.h,z:i+1,mode:objMode(it)});});return out;};
+    DASHAPI.objectLayout=function(){var ord=order(), out=[];ord.forEach(function(it,i){if(it.type==='prtgobj'&&!it.p.raw&&!it.p.fence)out.push({id:it.id,file:it.p.value,cat:it.p.cat,name:it.p.name,target:(it.p.target&&it.p.target.id)||0,x:it.x,y:it.y,w:it.w,h:it.h,z:i+1,mode:objMode(it)});});return out;};
     DASHAPI.setNatural=function(id,w,h){var it=byId(id);if(!it||it.type!=='prtgobj'||objMode(it)!=='content')return;w=Math.max(1,Math.round(w));h=Math.max(1,Math.round(h));if(it.w===w&&it.h===h)return;it.w=w;it.h=h;var n=nodeOf(id);if(n){n.style.width=w+'px';n.style.height=h+'px';}var gf={};gf[id]=1;glueFollowers(gf);updateSel();buildList();if(D.sel===id)buildForm();};
     DASHAPI.applyInitial=function(id,w,h){var it=byId(id);if(!it||it.type!=='prtgobj'||objMode(it)!=='box'||!(it.w===320&&it.h===200))return false;it.w=w;it.h=h;renderAll();var gf2={};gf2[id]=1;glueFollowers(gf2);return true;};   /* the size the object file itself asks for, if you have not changed the default */
     DASHAPI.rerender=function(){renderAll();};

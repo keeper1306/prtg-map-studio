@@ -320,6 +320,10 @@ body.dash #typegrid,body.editing #typegrid{display:none}
 #dselbox .dh[data-ax=nw]{left:0;top:0}#dselbox .dh[data-ax=n]{left:50%;top:0}#dselbox .dh[data-ax=ne]{left:100%;top:0}
 #dselbox .dh[data-ax=e]{left:100%;top:50%}#dselbox .dh[data-ax=se]{left:100%;top:100%}#dselbox .dh[data-ax=s]{left:50%;top:100%}
 #dselbox .dh[data-ax=sw]{left:0;top:100%}#dselbox .dh[data-ax=w]{left:0;top:50%}
+#dselbox .dfpts{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
+#dselbox .dfpt{background:#FFF7D6;border-color:#9A6B00;cursor:move}
+#dselbox .dfside{position:absolute;pointer-events:auto;transform:translate(-50%,-50%) scale(var(--ps,1));min-width:18px;height:18px;padding:0 5px;box-sizing:border-box;border-radius:9px;background:#1F3864;color:#fff;font:700 11px/18px Segoe UI,Arial,sans-serif;text-align:center;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.35);user-select:none}
+#dselbox .dfside.on{background:#E30613}
 #dselbox .dh:hover{border-color:var(--cyan2);background:#EAF6FD}
 #dselbox.isln{border-color:transparent}
 #dselbox .dln{display:none;width:calc(var(--hs)*1.2);height:calc(var(--hs)*1.2);border-color:var(--cyan2);cursor:crosshair}
@@ -1266,6 +1270,8 @@ body.pkopen #obar{visibility:hidden!important}
         <button class="btn ghost bgpick" type="button" id="mapbgbtn" aria-expanded="false" aria-controls="bgpanel" data-tip="Change the map’s background color or picture"><span>Background</span><i class="bgnow" id="mapbgnow"></i></button>
         <button class="btn ghost" type="button" data-add="shape" data-tip="An arrow, line or box. Double-click to add it, or drag it onto the canvas.">Shape</button>
         <button class="btn ghost" type="button" data-add="connector" data-tip="A line that glues to two objects and can push to PRTG as a real, self-updating link. Double-click to add it, or drag it onto the canvas.">Connector</button>
+        <button class="btn ghost" type="button" data-add="fence" data-tip="An electric fence drawn right on the map: drag its points over your background picture. It breaks and turns red when its sensor is down. Double-click to add it, or drag it onto the canvas.">Fence</button>
+        <button class="btn ghost" type="button" data-add="fline" data-tip="A road, pipe or cable drawn right on the map: drag its points over your background picture. It changes colour with its sensor. Double-click to add it, or drag it onto the canvas.">Line</button>
         <button class="btn ghost" type="button" id="showexisting" aria-expanded="false" aria-controls="objfs" data-tip="Click to see the object files on the connected PRTG server, then add one to the canvas.">PRTG Server Objects</button>
       </div>
       <p class="note">With a frame selected, new items go inside it.</p>
