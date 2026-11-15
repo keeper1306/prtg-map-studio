@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.12.0 (2026-11-13). **Read "Start of every session" first.**
+Last updated at version 1.13.0 (2026-11-15). **Read "Start of every session" first.**
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -233,13 +233,37 @@ Then say in one line what was granted, and start.
 
 ## Next job (not started): the rest of the OT plan
 
-The owner asked to continue with 1.12.0 (done, below). What is left of the agreed order, ask before starting each:
+The owner asked to continue with 1.12.0 (done, below), then put the Map directory (1.13.0, done, below) first. What is left of the agreed order, ask before starting each:
 1. "Last updated" time for other objects (tiles, process value, lamps): the 1.12.0 badge (`<#objectstatus name="lastcheck">`,
    see below) can be reused.
 2. OT symbols for the Status icon (PLC, RTU, HMI, SCADA server, industrial switch, gateway, robot, CNC, cabinet, firewall,
    engineering workstation; own drawings).
 3. Pipe flow direction on Line, instrument symbols on Process value. Geo map markers: not doable (PRTG draws them).
 Also offered, not done: machine state in the floating bar (only the side panel has it), and showing a fault channel on other symbols.
+
+## Map directory in the Map designer (1.13.0, 2026-11-15)
+
+- The owner asked for a map that links to all other maps; mockups (Design canvas artifact MvGokQYGqczVWMW6mAEfAZ: index page,
+  sidebar, tab bar, wall buttons), then for one designer object that builds them. Build button `data-add="mapdir"` ("Map directory").
+- One shared file `map-studio-map-directory.htm` (category "Map Studio"), built by `buildMapDir()` in 09-objects.js (block before
+  `OBJAPI.fence`). Like the fence: the item's settings go in HTML Before as `<i class="msd-cfg" data-c="...">` (URI-encoded JSON, lines of
+  200), merged by `MD_MERGE`. `mdMarkup(C,maps,cur)` draws (plain function, copied into the file; also the canvas preview, in an iframe
+  srcdoc), `mdRuntime` puts it in a shadow root on `.md-host`, finds the current map id in the address of the page, its parent or top
+  (`[?&]id=` or `/maps/N`), draws the item's copy of the list (`snap`) at once, then `/api/table.json?content=maps&columns=objid,name&count=*`
+  (key `maps`, checked on the real PRTG). Settings (`mdItemNew`/`mdItemCfg`): style index/side/tabs/wall, title, group (text before
+  the separator, default " - "; maps without it come first with no heading), hide (comma words), nav show (default, `/mapshow.htm?id=N`)
+  / map (`/map.htm?id=N`, PRTG's Map Details page, which is why it is not the default) / new (`/maps/N/overview`), colours `MDTHEMES`
+  light/corp/dark/wall + accent, fs, showCur, bgOn, newtab. Links use target `_top`. Tab bar scrolls sideways.
+- 06-dashboard.js: `isMapDir`, `mapdirSync` (copies `PUSHAPI.state.maps` into `snap` when connected), `mapdirForm`, preview in `objHTML`,
+  restored in `addCopies`, excluded from `objectLayout`; Target / Size / preview-status fields removed for it. Plain `p.note` is hidden
+  everywhere (`p.note:not(.pst)`), so the form's notes are `note pst` (the fence form's notes have never shown, not changed).
+- Checked: 444 object files byte-identical to 1.12.0; 16 tests; stand-in View Map page for all 4 styles x light/dark (live list, groups,
+  current marked). **On the real PRTG**: file in `mapobjects` (hash-checked), map 2242 "Map Studio test - map directory" with the four
+  styles (subids 1-4), classic View Map: live list of the 6 maps, groups, current map marked, a click opens the other map
+  (`mapshow.htm?id=2234`).
+- Not checked: the new UI (:1616 asked for a sign-in), the public page (snap fallback; its links need a sign-in), the Map Designer
+  canvas and hover preview in PRTG (the file's script-free part is a dashed "Map directory" box), loading the item back from PRTG
+  (`mdItemFromBefore`, same regex as the fence's), group status colours on wall buttons (offered as a later option), "add to all maps".
 
 ## Machine state apart from data health on Equipment (1.12.0, 2026-11-13)
 

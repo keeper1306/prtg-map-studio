@@ -770,7 +770,7 @@ try{
     else if(it.type==='tile')n=it.p.caption||'';
     else if(it.type==='banner')n=it.p.title||'';
     else if(it.type==='chip')n=it.p.text||'';
-    else if(it.type==='prtgobj')n=isFence(it)?(it.p.fence.kind==='line'?'Line':'Fence'):(it.p.name||'');
+    else if(it.type==='prtgobj')n=isFence(it)?(it.p.fence.kind==='line'?'Line':'Fence'):(isMapDir(it)?'Map directory':(it.p.name||''));
       else n=it.state.v.txt||'';
     n=String(n).split(/\r?\n/)[0];
     if(!n)n=(it.type==='frame'&&it.p.shape)?(it.p.isConnector?'Connector':(SHAPENAME[it.p.shape]||'Shape')):((it.type==='frame'&&it.p.group===false)?'Background':TYPENAME[it.type]);
@@ -783,6 +783,13 @@ try{
        HTML Before, where the one shared file map-studio-fence.htm reads it. */
     function isFence(it){return !!(it&&it.type==='prtgobj'&&it.p&&it.p.fence&&window.OBJAPI&&OBJAPI.fence);}
     function fenceSync(it){it.p.before=OBJAPI.fence.before(it.p.fence);}
+    /* 1.13.0: a map directory. Its settings go to PRTG in HTML Before, with a copy of the map list Map Studio knows (for the public page) */
+    function isMapDir(it){return !!(it&&it.type==='prtgobj'&&it.p&&it.p.mapdir&&window.OBJAPI&&OBJAPI.mapdir);}
+    function mapdirSync(it){
+      var f=it.p.mapdir, S=window.PUSHAPI&&PUSHAPI.state;
+      if(S&&S.maps&&S.maps.length)f.snap=S.maps.map(function(m){return {id:parseInt(m.objid,10)||0,name:String(m.name||'')};});
+      it.p.before=OBJAPI.mapdir.before(f);
+    }
     function fenceAbs(it){return it.p.fence.pts.map(function(p){return [it.x+p[0]/100*it.w,it.y+p[1]/100*it.h];});}
     /* the box hugs the points with room for the posts and the glow; the points are then written again in % of the new box */
     function fenceSetAbs(it,A){
@@ -822,6 +829,7 @@ try{
     /* a PRTG object file is drawn by PRTG, so the canvas shows a labelled box of the right size */
     function objHTML(it){
       if(isFence(it))return fenceHTML(it);
+      if(isMapDir(it))return OBJAPI.mapdir.preview(it.p.mapdir,it.w,it.h);
       if(it.p.raw){
         var doc='<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;overflow:hidden;font:13px Segoe UI,Arial,sans-serif}</style></head><body>'+String(it.p.before||'')+String(it.p.after||'')+'</body></html>';
         return '<iframe sandbox="" scrolling="no" tabindex="-1" aria-hidden="true" title="Custom HTML" style="display:block;border:0;width:'+Math.round(it.w)+'px;height:'+Math.round(it.h)+'px;pointer-events:none;background:transparent" srcdoc="'+doc.replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'"></iframe>';
@@ -2599,6 +2607,42 @@ try{
     var ib=el_('button','btn ghost');ib.type='button';ib.textContent='Download the install script';ib.addEventListener('click',function(){OBJAPI.fence.installScript();});out.push(ib);
     return acc(f.kind==='line'?'Line':'Fence',out,true);
   }
+  /* the settings of a map directory */
+  function mapdirForm(it){
+    var f=it.p.mapdir, out=[];
+    function fk(label,key,kind,opts){
+      var w=el_('div','dfld'), inp, lab=el_('label');lab.textContent=label;
+      if(kind==='select'){inp=el_('select');opts.forEach(function(o){var op=el_('option');op.value=o[0];op.textContent=o[1];inp.appendChild(op);});inp.value=String(f[key]);}
+      else if(kind==='check'){inp=el_('input');inp.type='checkbox';inp.checked=key==='showCur'||key==='bgOn'?f[key]!==false:!!f[key];}
+      else if(kind==='color'){inp=el_('input');inp.type='color';inp.value=f.accent||OBJAPI.mapdir.themes[f.theme].accent;}
+      else{inp=el_('input');inp.type=kind==='number'?'number':'text';inp.value=f[key]==null?'':f[key];if(opts){inp.min=opts.min;inp.max=opts.max;}if(kind==='text'&&opts&&opts.ph)inp.placeholder=opts.ph;}
+      if(kind==='check'){w.className='dfld inline';w.appendChild(inp);w.appendChild(lab);}else{w.appendChild(lab);w.appendChild(inp);}
+      function apply(){
+        var v=kind==='check'?inp.checked:inp.value;
+        if(kind==='number'){v=parseFloat(v);if(isNaN(v))return;v=Math.max(opts.min,Math.min(opts.max,v));}
+        if(key==='theme')f.accent='';
+        f[key]=v;
+        mapdirSync(it);refreshItem(it);
+      }
+      inp.addEventListener(kind==='text'||kind==='number'||kind==='color'?'input':'change',apply);
+      inp.addEventListener('change',function(){commit();buildList();if(kind==='select')buildForm();});
+      return w;
+    }
+    out.push(fk('Style','style','select',OBJAPI.mapdir.styles));
+    out.push(fk('Title (empty: no title)','title','text'));
+    out.push(fk('Group maps by the text before','group','text',{ph:'empty: no groups'}));
+    out.push(fk('Hide maps whose name contains','hide','text',{ph:'for example: test, backup'}));
+    out.push(fk('A click opens','nav','select',[['show','The map itself, full screen'],['map','The map\u2019s page in PRTG (with its tabs)'],['new','The map in the new interface']]));
+    var th=[];for(var k in OBJAPI.mapdir.themes)th.push([k,OBJAPI.mapdir.themes[k].label]);
+    out.push(pair(fk('Colours','theme','select',th),fk('Accent','accent','color')));
+    out.push(fk('Text size','fs','number',{min:8,max:60}));
+    out.push(pair(fk('Mark the map it is on','showCur','check'),fk('Solid background','bgOn','check')));
+    out.push(fk('Open maps in a new tab','newtab','check'));
+    var nt=el_('p','note pst');nt.textContent='The list comes from PRTG each time the map opens, so new maps appear by themselves. The same item works on every map: the map it is on is marked. '+(f.snap&&f.snap.length?('A copy of your '+f.snap.length+' maps is kept in the item for pages that can\u2019t ask PRTG (the public map page).'):'Connect to PRTG to keep a copy of the map list in the item, for pages that can\u2019t ask PRTG (the public map page).')+' The preview shows '+(f.snap&&f.snap.length?'your maps':'sample maps')+'.';out.push(nt);
+    var nt2=el_('p','note pst');nt2.textContent='Every map directory uses one file in PRTG, '+OBJAPI.mapdir.file+'. Install it once with this script (it needs to be run on the PRTG server).';out.push(nt2);
+    var ib=el_('button','btn ghost');ib.type='button';ib.textContent='Download the install script';ib.addEventListener('click',function(){OBJAPI.mapdir.installScript();});out.push(ib);
+    return acc('Map directory',out,true);
+  }
   function pair(a,b){var d=el_('div','dpair');d.appendChild(a);d.appendChild(b);return d;}
   function styleSel(it,table){
     var w=el_('div','dfld'), s=el_('select');
@@ -2921,6 +2965,7 @@ try{
     if(it.type==='prtgobj'){
         var on=el_('p','note pst');on.textContent='Object file: '+it.p.cat+': '+it.p.name;formEl.appendChild(on);
         if(isFence(it))formEl.appendChild(fenceForm(it));
+        if(isMapDir(it))formEl.appendChild(mapdirForm(it));
         var tw=el_('div','dfld');tw.appendChild(el_('label',null,'Target (PRTG object ID)'));
         var ti=el_('input');ti.type='number';ti.min='0';ti.value=String((it.p.target&&it.p.target.id)||0);ti.id='dtgtid';
         ti.addEventListener('input',function(){var v=parseInt(ti.value,10)||0;it.p.target={id:v,name:(it.p.target&&v===it.p.target.id)?it.p.target.name:''};it.p.targetDefault=false;refreshItem(it);});
@@ -2935,6 +2980,7 @@ try{
         var tn=el_('p','note pst');tn.id='dtgtname';tn.textContent=((it.p.target&&it.p.target.name)?('Showing: '+it.p.target.name):((it.p.target&&it.p.target.id)?'Showing the PRTG object with this ID.':'No target chosen yet.'))+(it.p.targetDefault?' This is the preview default: choose the real one under Objects already in PRTG.':'')+(it.p.was?' On the copied map it showed: '+it.p.was+'.':'');formEl.appendChild(tn);
         var ts=el_('p','note pst');ts.id='dtgtstat';ts.setAttribute('data-id',String(it.id));ts.style.cssText='word-break:break-all;user-select:text';ts.textContent=DASHAPI.pvstatText?DASHAPI.pvstatText(it.id):'';formEl.appendChild(ts);
         formEl.appendChild(el_('p','note','The object\u2019s look comes from its file in PRTG, so there is nothing to paste. Choose what it shows under Objects already in PRTG, or type its ID. 0 means none.'));
+        if(isMapDir(it)){[tw,sw,tn,ts,formEl.lastChild].forEach(function(x){if(x&&x.parentNode)x.parentNode.removeChild(x);});}   /* a map directory shows no PRTG object */
       }else if(it.type==='frame'){
       if(!it.p.shape)formEl.appendChild(mk(it,'Move contents with this frame','group','check'));
     }else if(it.type==='tile'){
@@ -3006,6 +3052,7 @@ try{
       else if(type==='banner'){it.w=640;it.h=90;it.p=newBannerP('Info');}
       else if(type==='chip'){it.p=newChipP();}
         else if(type==='fence'||type==='fline'){it.type='prtgobj';it.w=300;it.h=220;it.p={cat:OBJAPI.fence.cat,name:OBJAPI.fence.name,value:OBJAPI.fence.file,target:{id:0,name:''},fence:OBJAPI.fence.newItem(type==='fline'?'line':'fence')};fenceSync(it);}
+        else if(type==='mapdir'){it.type='prtgobj';it.w=560;it.h=300;it.p={cat:OBJAPI.mapdir.cat,name:OBJAPI.mapdir.name,value:OBJAPI.mapdir.file,target:{id:0,name:''},mapdir:OBJAPI.mapdir.newItem()};mapdirSync(it);}
         else if(type==='prtgobj'){it.w=(extra&&extra.w)||320;it.h=(extra&&extra.h)||200;it.p={cat:extra.cat,name:extra.name,value:extra.value,target:extra.target?{id:parseInt(extra.target.id,10)||0,name:extra.target.name||''}:{id:0,name:''}};if(extra.target)it.p.targetDefault=true;}   /* a default target, until you choose the real one */
       else{it.state=defaultState(type);}
       var siblings=0;
@@ -3545,6 +3592,7 @@ try{
           p:{cat:e.cat,name:e.name,value:e.value,target:{id:(e.target&&parseInt(e.target.id,10))||0,name:(e.target&&e.target.name)||''},before:e.before||'',after:e.after||'',elink:e.link||'',was:e.was||'',raw:!!e.raw}};
         if(e.sizing)it.p.sizing=e.sizing;
         if(window.OBJAPI&&OBJAPI.fence&&e.value===OBJAPI.fence.file){var fz=OBJAPI.fence.fromBefore(e.before);if(fz)it.p.fence=fz;}   /* a fence drawn here before: its outline comes back from HTML Before */
+        if(window.OBJAPI&&OBJAPI.mapdir&&e.value===OBJAPI.mapdir.file){var mz=OBJAPI.mapdir.fromBefore(e.before);if(mz)it.p.mapdir=mz;}
         it.ord=layerOf(it)*100000+(++D.ordSeq);
         D.items.push(it);ids.push(it.id);
       });
@@ -3556,7 +3604,7 @@ try{
     DASHAPI.dropObject=function(entry,cx,cy){var r=canvas.getBoundingClientRect(), e={}, k;for(k in entry)e[k]=entry[k];e.at={x:Math.max(0,Math.min(D.w-40,(cx-r.left)/scale)),y:Math.max(0,Math.min(D.h-40,(cy-r.top)/scale))};addItem('prtgobj',e);};
     DASHAPI.add=function(type){addItem(type);};
     DASHAPI.addAt=function(type,cx,cy){var r=canvas.getBoundingClientRect();addItem(type,{at:{x:Math.max(0,Math.min(D.w-40,(cx-r.left)/scale)),y:Math.max(0,Math.min(D.h-40,(cy-r.top)/scale))}});};
-    DASHAPI.objectLayout=function(){var ord=order(), out=[];ord.forEach(function(it,i){if(it.type==='prtgobj'&&!it.p.raw&&!it.p.fence)out.push({id:it.id,file:it.p.value,cat:it.p.cat,name:it.p.name,target:(it.p.target&&it.p.target.id)||0,x:it.x,y:it.y,w:it.w,h:it.h,z:i+1,mode:objMode(it)});});return out;};
+    DASHAPI.objectLayout=function(){var ord=order(), out=[];ord.forEach(function(it,i){if(it.type==='prtgobj'&&!it.p.raw&&!it.p.fence&&!it.p.mapdir)out.push({id:it.id,file:it.p.value,cat:it.p.cat,name:it.p.name,target:(it.p.target&&it.p.target.id)||0,x:it.x,y:it.y,w:it.w,h:it.h,z:i+1,mode:objMode(it)});});return out;};
     DASHAPI.setNatural=function(id,w,h){var it=byId(id);if(!it||it.type!=='prtgobj'||objMode(it)!=='content')return;w=Math.max(1,Math.round(w));h=Math.max(1,Math.round(h));if(it.w===w&&it.h===h)return;it.w=w;it.h=h;var n=nodeOf(id);if(n){n.style.width=w+'px';n.style.height=h+'px';}var gf={};gf[id]=1;glueFollowers(gf);updateSel();buildList();if(D.sel===id)buildForm();};
     DASHAPI.applyInitial=function(id,w,h){var it=byId(id);if(!it||it.type!=='prtgobj'||objMode(it)!=='box'||!(it.w===320&&it.h===200))return false;it.w=w;it.h=h;renderAll();var gf2={};gf2[id]=1;glueFollowers(gf2);return true;};   /* the size the object file itself asks for, if you have not changed the default */
     DASHAPI.rerender=function(){renderAll();};

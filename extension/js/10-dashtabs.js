@@ -76,6 +76,7 @@ try{
       banner:'<rect x="2" y="7" width="20" height="10" rx="2"/><path d="M6 12h12"/>',
       fence:'<path d="M8 3h8l5 5v8l-5 5H8l-5-5V8z"/><path d="M8 3v2M16 3v2M21 8h-2M21 16h-2M3 8h2M3 16h2"/>',
       fline:'<path d="M3 18c4 0 4-6 9-6s5-6 9-6"/>',
+      mapdir:'<rect x="3" y="4" width="7" height="7" rx="1.5"/><rect x="14" y="4" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 17.5h7M18 14.5l3 3-3 3"/>',
       existing:'<rect x="4" y="4" width="16" height="6" rx="1.5"/><rect x="4" y="14" width="16" height="6" rx="1.5"/><path d="M8 7h.01M8 17h.01"/>'
     };
     [].forEach.call(document.querySelectorAll('#dashpanel .addgrid .btn'),function(b){
@@ -99,7 +100,7 @@ try{
   (function(){
     var grid=document.querySelector('#dashpanel .addgrid'), wrapEl=document.getElementById('dwrap');
     if(!grid||!wrapEl||!window.DASHAPI||!DASHAPI.addAt)return;
-    var NAMES={frame:'frame',label:'label',button:'button',banner:'banner',bg:'background',shape:'shape',connector:'connector',fence:'fence',fline:'line'}, armed=null, tiles=[].slice.call(grid.querySelectorAll('[data-add]'));
+    var NAMES={frame:'frame',label:'label',button:'button',banner:'banner',bg:'background',shape:'shape',connector:'connector',fence:'fence',fline:'line',mapdir:'map directory'}, armed=null, tiles=[].slice.call(grid.querySelectorAll('[data-add]'));
     var hint=document.createElement('p');hint.id='addhint';hint.className='note pst';
     var base='';   /* the tiles' own tooltips explain how to add; the line shows only while a tile is armed */
     hint.textContent=base;hint.hidden=true;grid.parentNode.insertBefore(hint,grid.nextSibling);

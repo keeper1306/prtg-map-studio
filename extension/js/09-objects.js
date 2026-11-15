@@ -8859,6 +8859,171 @@ try{
   };
   /* 1.5.85: a whole-map look for the Map designer's layouts: background, cell frames, title banner and dividing lines in one go,
      from the same Looks as the objects. Dark looks get a soft glow of their accent over the look's page colour; light ones a plain colour. */
+  /* 1.13.0: Map directory. One shared file, map-studio-map-directory.htm, that asks PRTG for the list of maps when the map opens and
+     draws links to them in one of four styles (index page, sidebar, tab bar, wall buttons). Each item carries its own settings in
+     HTML Before, as the fence does, plus a copy of the map list taken in Map Studio, used when PRTG can't be asked (the public page). */
+  var MD_FILE='map-studio-map-directory.htm';
+  var MDTHEMES={
+    light:{label:'Light',bg:'#FFFFFF',card:'#F3F5F8',text:'#0F172A',muted:'#64748B',line:'#E2E6EC',accent:'#0F67FF'},
+    corp:{label:'Corporate blue',bg:'#FFFFFF',card:'#FFFFFF',text:'#1F2937',muted:'#5B6B82',line:'#D5DBE5',accent:'#1F3864'},
+    dark:{label:'Dark card',bg:'#0F1B2A',card:'#162538',text:'#E6EDF5',muted:'#A9B7CA',line:'#243448',accent:'#38BDF8'},
+    wall:{label:'Wall display',bg:'#0A1420',card:'#13233A',text:'#F1F5F9',muted:'#A9B7CA',line:'#22364F',accent:'#4CC9F0'}
+  };
+  var MDSTYLES=[['index','Index page'],['side','Sidebar'],['tabs','Tab bar'],['wall','Wall buttons']];
+  /* the drawing: plain text in, HTML (with its own style) out. It runs in PRTG too (its source is copied into the file), so it uses nothing from outside. */
+  function mdMarkup(C,maps,cur){
+    function e(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+    var hide=String(C.hide||'').split(',').map(function(x){return x.trim().toLowerCase();}).filter(Boolean),
+        sep=String(C.group||''), rows=[], any=false, i, m, nm, p, G={}, order=[], st=C.style||'index', o='';
+    for(i=0;i<(maps||[]).length;i++){
+      m=maps[i];nm=String(m.name==null?'':m.name);
+      if(!nm||hide.some(function(w){return nm.toLowerCase().indexOf(w)>=0;}))continue;
+      p=sep?nm.indexOf(sep):-1;
+      if(p>0){any=true;rows.push({id:+m.id,name:nm,g:nm.slice(0,p).trim(),lab:nm.slice(p+sep.length).trim()||nm});}
+      else rows.push({id:+m.id,name:nm,g:'',lab:nm});
+    }
+    rows.sort(function(a,b){return a.name.localeCompare(b.name,undefined,{numeric:true,sensitivity:'base'});});
+    rows.forEach(function(r){   /* maps without a group come first, under no heading */
+      var g=any?r.g:'';
+      if(!G[g]){G[g]=[];if(g)order.push(g);}
+      G[g].push(r);
+    });
+    if(G[''])order.unshift('');
+    function href(id){return C.nav==='new'?'/maps/'+id+'/overview':(C.nav==='show'?'/mapshow.htm?id='+id:'/map.htm?id='+id);}
+    var bg=C.bgOn===false?'transparent':C.bg, ac=C.accent, on=C.onAcc||'#FFFFFF', fs=Math.max(8,Math.min(60,+C.fs||14));
+    var css=[
+      '.md{box-sizing:border-box;width:100%;height:100%;overflow:auto;padding:'+(st==='tabs'?'.45em .6em':'.9em 1em')+';',
+      'font:'+fs+'px/1.3 "Segoe UI",Roboto,Arial,sans-serif;color:'+C.text+';background:'+bg+';border-radius:'+(C.bgOn===false?'0':'.6em')+';}',
+      '.md *{box-sizing:border-box;}',
+      '.t{font-size:1.45em;font-weight:700;margin:0 0 .55em;}',
+      '.gh{font-size:.78em;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:'+C.muted+';margin:.9em 0 .4em;}',
+      '.gh:first-child,.t+.gh{margin-top:0;}',
+      '.i{display:flex;align-items:center;color:'+C.text+';text-decoration:none;font-weight:600;cursor:pointer;}',
+      '.i .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}',
+      '.none{color:'+C.muted+';font-style:italic;}'
+    ];
+    if(st==='side')css.push(
+      '.g{display:flex;flex-direction:column;gap:.15em;}',
+      '.i{padding:.5em .75em;border-radius:.4em;border-left:.25em solid transparent;}',
+      '.i:hover{background:'+C.card+';}',
+      '.i.cur{background:'+C.card+';border-left-color:'+ac+';color:'+ac+';}');
+    else if(st==='tabs')css.push(
+      '.md{display:flex;flex-wrap:nowrap;align-items:center;gap:.35em .5em;overflow-x:auto;overflow-y:hidden;}',
+      '.md>*{flex:none;}',
+      '.t{font-size:1.1em;margin:0 .6em 0 .1em;}',
+      '.gh{margin:0 0 0 .6em;}',
+      '.g{display:flex;flex-wrap:nowrap;gap:.3em;}',
+      '.i{padding:.45em 1em;border-radius:999px;border:1px solid '+C.line+';background:'+C.card+';}',
+      '.i:hover{border-color:'+ac+';}',
+      '.i.cur{background:'+ac+';border-color:'+ac+';color:'+on+';}');
+    else if(st==='wall')css.push(
+      '.g{display:grid;grid-template-columns:repeat(auto-fill,minmax(13em,1fr));gap:.7em;}',
+      '.i{position:relative;min-height:4.6em;font-size:1.2em;padding:.7em 1em .7em 1.3em;border-radius:.6em;background:'+C.card+';border:1px solid '+C.line+';}',
+      '.i .s{position:absolute;left:0;top:0;bottom:0;width:.45em;background:'+ac+';border-radius:.6em 0 0 .6em;}',
+      '.i:hover{border-color:'+ac+';}',
+      '.i.cur{box-shadow:0 0 0 .15em '+ac+' inset;}');
+    else css.push(
+      '.g{display:grid;grid-template-columns:repeat(auto-fill,minmax(10.5em,1fr));gap:.55em;}',
+      '.i{min-height:3.1em;padding:.55em .85em;border-radius:.5em;background:'+C.card+';border:1px solid '+C.line+';}',
+      '.i:hover{border-color:'+ac+';}',
+      '.i.cur{background:'+ac+';border-color:'+ac+';color:'+on+';}');
+    o+='<style>'+css.join('\n')+'</style>\n<div class="md md-'+st+'">';
+    if(C.title)o+='<div class="t">'+e(C.title)+'</div>';
+    if(!rows.length)o+='<div class="none">'+e(C.empty||'No maps to show')+'</div>';
+    order.forEach(function(g){
+      if(g)o+='<div class="gh">'+e(g)+'</div>';
+      o+='<div class="g">';
+      G[g].forEach(function(r){
+        o+='\n<a class="i'+((C.showCur!==false&&r.id===cur)?' cur':'')+'" href="'+href(r.id)+'" target="'+(C.newtab?'_blank':'_top')+'" title="'+e(r.name)+'">'+(st==='wall'?'<span class="s"></span>':'')+'<span class="n">'+e(r.lab)+'</span></a>';
+      });
+      o+='</div>';
+    });
+    return o+'</div>';
+  }
+  /* View Map: which map is this (its id is in the address of the page or of the frame round it), then the live list of maps */
+  function mdRuntime(root,C,mk){
+    var host=root.querySelector('.md-host');
+    if(!host||!host.attachShadow)return;
+    var sh=host.shadowRoot||host.attachShadow({mode:'open'}), cur=0, W=[window], i, m, s;
+    try{W.push(window.parent,window.top);}catch(e){}
+    for(i=0;i<W.length&&!cur;i++){
+      try{s=String(W[i].location.href);m=/[?&]id=(\d+)/.exec(s)||/\/maps\/(\d+)/.exec(s);if(m)cur=+m[1];}catch(e){}
+    }
+    function show(list){sh.innerHTML=mk(C,list,cur);}
+    show(C.snap||[]);
+    try{
+      fetch('/api/table.json?content=maps&columns=objid,name&count=*',{credentials:'same-origin',headers:{'X-Requested-With':'XMLHttpRequest'}})
+        .then(function(r){return r.ok?r.json():null;})
+        .then(function(j){
+          if(j&&j.maps&&j.maps.length)show(j.maps.map(function(x){return {id:+x.objid,name:String(x.name)};}));
+        })['catch'](function(){});
+    }catch(e){}
+  }
+  function mdItemNew(){return {style:'index',title:'Maps',group:' - ',hide:'',nav:'show',theme:'light',accent:'',showCur:true,fs:14,bgOn:true,newtab:false,snap:[]};}
+  /* an item's settings -> what the runtime needs */
+  function mdItemCfg(f){
+    f=f||{};
+    var T=MDTHEMES[f.theme]||MDTHEMES.light, ac=f.accent||T.accent;
+    return {style:f.style||'index',title:f.title==null?'Maps':String(f.title),group:f.group==null?' - ':String(f.group),hide:String(f.hide||''),
+      nav:f.nav||'show',showCur:f.showCur!==false,fs:+f.fs||14,bgOn:f.bgOn!==false,newtab:!!f.newtab,
+      bg:T.bg,card:T.card,text:T.text,muted:T.muted,line:T.line,accent:ac,onAcc:readableOn(ac),
+      snap:(f.snap||[]).map(function(x){return {id:+x.id,name:String(x.name)};})};
+  }
+  function mdItemBefore(f){
+    var e=encodeURIComponent(JSON.stringify(mdItemCfg(f))), o=[], i;
+    for(i=0;i<e.length;i+=200)o.push(e.slice(i,i+200));
+    return '<i class="msd-cfg" style="display:none" data-c="'+o.join('\n')+'"></i>';
+  }
+  function mdItemFromBefore(h){
+    var m=/class=["']msd-cfg["'][^>]*data-c=(["'])([^"']*)\1/.exec(String(h||''));if(!m)return null;   /* PRTG stores HTML Before with single quotes */
+    var c;try{c=JSON.parse(decodeURIComponent(m[2].replace(/\s+/g,'')));}catch(e){return null;}
+    var f=mdItemNew(), k;
+    ['style','title','group','hide','nav','showCur','fs','bgOn','newtab','snap'].forEach(function(k){if(c[k]!=null)f[k]=c[k];});
+    for(k in MDTHEMES)if(MDTHEMES[k].bg===c.bg&&MDTHEMES[k].card===c.card)f.theme=k;
+    if(c.accent&&c.accent!==(MDTHEMES[f.theme]||MDTHEMES.light).accent)f.accent=c.accent;
+    return f;
+  }
+  var MD_MERGE='  try{var q=root.querySelector(".msd-cfg"),j=q?JSON.parse(decodeURIComponent((q.getAttribute("data-c")||"").replace(/\\s+/g,""))):null,k;if(j)for(k in j)CFG[k]=j[k];}catch(e){}\n';
+  function buildMapDir(){
+    var C=mdItemCfg(mdItemNew()), o=[];
+    o.push('<!'+'--Map Studio: Map Studio Map directory - links to every map-->');
+    o.push('');
+    o.push('<div class="map_object ms-mapdir" id="<@itemid>" objectid="<@objectid>" subid="<@subid>" style="<#mapobject type="coordinates" subid="<@subid>" mode="<@editmode>">">');
+    o.push('<#mapobject type="objectgrip" mode="<@editmode>">');
+    o.push('<#mapobject type="htmlbefore" subid="<@subid>">');
+    o.push('<div class="md-host" style="position:absolute;left:0;top:0;right:0;bottom:0;min-width:120px;min-height:40px">');
+    o.push('<div style="box-sizing:border-box;height:100%;padding:10px 12px;border:1px dashed #7b8cc4;border-radius:8px;background:#eef1fb;color:#2a3358;font:13px/1.35 Segoe UI,Arial,sans-serif">');
+    o.push('<b>Map directory</b><br>Links to every map. They show on the map itself (View Map).');
+    o.push('</div>');
+    o.push('</div>');
+    o.push('<#mapobject type="htmlafter" subid="<@subid>">');
+    o.push('</div>');
+    o.push('');
+    o.push('<scr'+'ipt>');
+    o.push('(function(){\n  var root=document.getElementById("<@itemid>");\n  if(!root)return;\n  var CFG='+JSON.stringify(C)+';\n'+MD_MERGE+
+      '  var mk='+mdMarkup.toString()+';\n  ('+mdRuntime.toString()+')(root,CFG,mk);\n})();');
+    o.push('<\/script>');
+    return o.join('\n')+'\n';
+  }
+  var MDSAMPLE=[{id:9001,name:'Home'},{id:9002,name:'Campus - Network core'},{id:9003,name:'Campus - Wi-Fi'},{id:9004,name:'Campus - Servers'},
+    {id:9005,name:'Plant - Line 1'},{id:9006,name:'Plant - Utilities'},{id:9007,name:'Cloud - AWS'},{id:9008,name:'Cloud - Microsoft 365'}];
+  OBJAPI.mapdir={
+    file:MD_FILE,cat:'Map Studio',name:'Map Studio Map directory - links to every map',styles:MDSTYLES,themes:MDTHEMES,
+    newItem:mdItemNew,before:mdItemBefore,fromBefore:mdItemFromBefore,fileText:buildMapDir,
+    /* the canvas preview: the same drawing, in a frame of the item's size, with the maps Map Studio knows (or samples) */
+    preview:function(f,w,h){
+      var C=mdItemCfg(f), maps=(C.snap&&C.snap.length)?C.snap:MDSAMPLE, cur=0;
+      if(window.PUSHAPI&&PUSHAPI.state&&document.getElementById('pushmap'))cur=parseInt(document.getElementById('pushmap').value,10)||0;
+      if(!maps.some(function(m){return m.id===cur;}))cur=(maps[1]||maps[0]||{}).id||0;
+      var doc='<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;height:100%;overflow:hidden;background:transparent}</style></head><body>'+mdMarkup(C,maps,cur)+'</body></html>';
+      return '<iframe sandbox="" scrolling="no" tabindex="-1" aria-hidden="true" title="Map directory" style="display:block;border:0;width:'+Math.round(w)+'px;height:'+Math.round(h)+'px;pointer-events:none;background:transparent" srcdoc="'+doc.replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'"></iframe>';
+    },
+    installScript:function(){
+      if(!window.LIBAPI)return;
+      var text=LIBAPI.installScript([{name:MD_FILE,text:buildMapDir()}],LIBAPI.mapDir?LIBAPI.mapDir():undefined).replace(/\n/g,'\r\n');
+      if(pkDownload('Install-map-studio-map-directory.ps1',new Blob(['﻿'+text],{type:'text/plain;charset=utf-8'})))toast('Saving Install-map-studio-map-directory.ps1');
+    }
+  };
   OBJAPI.fence={
     file:FENCE_FILE,cat:'Industrial',name:'Map Studio Fence - drawn in the Map designer',
     fileText:function(){return buildFence(fenceGenModel(),true);},
