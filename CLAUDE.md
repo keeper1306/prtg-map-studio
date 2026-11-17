@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.15.0 (2026-11-17). **Read "Start of every session" first.**
+Last updated at version 1.15.1 (2026-11-17). **Read "Start of every session" first.**
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -257,8 +257,9 @@ Also offered, not done: machine state in the floating bar (only the side panel h
   versions"), how to install, the check box `#updauto`, Close, Skip this version (`#updskip`), Download (`#upddl`, a link with
   `target=_blank` to `CFG.update.zip`, GitHub's ZIP of `main`; a new tab so the page's unsaved-changes question is not raised), or
   Check now (`#updnow`) when there is nothing newer.
-- **Every version pushed to `main` is now announced to every user** at their next check. The owner was told and offered to announce only
-  versions whose middle number changes (not done). GitHub Releases with a ZIP (which would also count downloads) were explained to the
+- 1.15.1 (owner's choice): the button only shows when the first or middle number is higher (`MSUPD.big`, e.g. 1.15.x -> 1.16.0). A fix
+  (last number only) is not announced; the window opened from the version number still offers it. So the version rule in Rules 4 now
+  decides what users are told: bump the middle number for something new the owner would tell people about. Test 18 checks it. GitHub Releases with a ZIP (which would also count downloads) were explained to the
   owner but not set up: the Download link would then change to the release's file.
 - README: the update paragraph and the Privacy section now say that GitHub is asked for the version. Test 17 answers GitHub's two files itself.
 - Checked: 17 tests; the window looked at (update found; up to date); `notesFrom` on this copy's real changelog (five entries since 1.13.1);

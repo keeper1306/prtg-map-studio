@@ -203,6 +203,13 @@ async function waitForServer() {
     await page.keyboard.press('Escape');
     const askedSoFar = ghAsked.length;
     const updOff = await page.evaluate(() => MSUPD.check(false).then((r) => ({ r, off: JSON.parse(localStorage.getItem('prtgMapTool.update')).off, win: !!document.querySelector('.updbox') })));
+    /* 1.15.1: a fix (only the last number higher) does not light the button, but the window from the version number still offers it */
+    const updSmall = await page.evaluate((cv) => { const p = cv.split('.'); const v = p[0] + '.' + p[1] + '.' + (Number(p[2]) + 1);
+      localStorage.setItem('prtgMapTool.update', JSON.stringify({ at: Date.now(), v, notes: [{ v, t: 'A fix.' }], more: 0 })); MSUPD.paint();
+      const hid = document.getElementById('updbtn').hidden; MSUPD.open(); const t = document.getElementById('updttl').textContent;
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })); return { hid, t, v, big: MSUPD.big('1.16.0', cv) && MSUPD.big('2.0.0', cv) && !MSUPD.big(v, cv) }; }, curVer);
+    check('new version notice: a fix is not announced, a new middle number is',
+      updSmall.hid && updSmall.t.indexOf(updSmall.v + ' is available') > -1 && updSmall.big, updSmall);
     check('new version notice: button, what changed, direct download, skip, switch off',
       updBefore.pill && !updBefore.stored && !updPill.hidden && /Update available/.test(updPill.text) && /99\.1\.0/.test(updPill.tip) &&
       /99\.1\.0 is available/.test(updWin.title) && updWin.notes.length === 2 && updWin.notes[0] === '99.1.0Newest thing’s here.' && updWin.notes[1] === '99.0.0An older thing.' &&
