@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.14.0 (2026-11-17). **Read "Start of every session" first.**
+Last updated at version 1.14.1 (2026-11-17). **Read "Start of every session" first.**
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -240,6 +240,27 @@ The owner asked to continue with 1.12.0 (done, below), then put the Map director
    engineering workstation; own drawings).
 3. Pipe flow direction on Line, instrument symbols on Process value. Geo map markers: not doable (PRTG draws them).
 Also offered, not done: machine state in the floating bar (only the side panel has it), and showing a fault channel on other symbols.
+
+## Five element fixes from the Pre-update maps (1.14.1, 2026-11-17)
+
+- The owner agreed to five of the fixes offered at 1.14.0 (all in 09-objects.js):
+  - Status counts: `SC.boxH` small/medium/large (64/96/140 px, `SBOXH`); `statusCss` then sets `grid-auto-rows` and
+    `align-content:center`. Absent = Fill, as before. "Box height" in the bar's Tiles menu (`pfSel`) and the side panel (`inSel`).
+  - Industrial lamps: `.in-lamps` gets `grid-auto-rows:minmax(auto,60px)`, `align-content:center` and `flex:1`, so in a tall box the
+    lamps grow up to 60 px and sit in the middle. The rule is in every Industrial file.
+  - Tables (`tableCss`, Map Studio looks only): `white-space:nowrap` on every cell except message, sensor, device, group, probe,
+    name, tags and comments, plus `tbody td a::before{display:none}`. PRTG puts a `prtg-icons` glyph in `::before` on the name
+    link (`a.sensg`, `a.sensr`, ...), seen on map 2244. Checked there by putting the two rules into the page: the glyph is gone and
+    the rows went from 54 to 39 px.
+  - Sparkline with value: the big number's size leaves room for the change figure (`cw`). `legend(only)` lists only the
+    channel drawn, with no click-to-hide.
+  - Sunburst labels: "(...)" at the end is dropped, and a host name shows only its first part. A name that does not fit shows its
+    first word, or is cut only when 7+ characters fit, otherwise nothing. The full name is in a `<title>` on the label (and the
+    slice's own title).
+- Checked: 16 tests; 444 files compared with 1.14.0: 10 identical, 434 changed only in the expected rules/runtime (tables, graph,
+  sunburst, every Industrial file); builder previews of status Medium, tall lamps, sparkline, sunburst. Not checked on the real
+  PRTG apart from the two table rules: the files were not installed.
+- Still offered, no answer: 2228's middle item is an old test sheet; Flexible tables still scale their title.
 
 ## Layout cells arrange their items; titles keep their size (1.14.0, 2026-11-17)
 
