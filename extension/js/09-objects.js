@@ -267,6 +267,7 @@ try{
        so the look's Row padding only lands with !important. Without it every table kept PRTG's spacing on a map. */
     c.push(r+' tbody td{padding:'+L.pad+'px '+L.cellX+'px !important;vertical-align:middle !important;line-height:1.4 !important;}');
     c.push(r+' .tabletitle{line-height:1.4 !important;}');
+    if(L.rowLines===false)c.push(r+' tbody td{border-top:0 !important;border-bottom:0 !important;}');   /* 1.13.2: lines between rows off */
     pagingCss(T,cls).forEach(function(x){c.push(x);});
     if(T.anyType)anyTabCss(T,cls,hasStatus).forEach(function(x){c.push(x);});
     if(L.tint&&hasStatus){
@@ -6835,6 +6836,7 @@ try{
       }));
       b.appendChild(obMenu('Row style','How the rows look: stripes, lines, hover, links and spacing',function(pop){
         pop.className+=' fb-wide';
+        pfChk(pop,'Lines between rows',function(){return L().rowLines!==false;},lkEd(function(l,v){if(v)delete l.rowLines;else l.rowLines=false;}));
         pfChk(pop,'Striped rows',function(){return L().zebra;},lkEd(function(l,v){l.zebra=v;}));
         var rc=h('div','pf-cols');pop.appendChild(rc);
         pfColor(rc,'Stripe',function(){return L().zebraBg;},lkEd(function(l,v){l.zebraBg=v;l.zebra=true;}));
@@ -8800,6 +8802,7 @@ try{
     g.appendChild(inColor('Header fill (filled style)',function(){return Lk().headBg;},function(v){Lk().headBg=v;}));
     g=grp('Rows',isTable);
     g.appendChild(pair(inColor('Link color',function(){return Lk().link;},function(v){Lk().link=v;}),inColor('Row hover',function(){return Lk().hover;},function(v){Lk().hover=v;})));
+    g.appendChild(inChk('Lines between rows',function(){return Lk().rowLines!==false;},function(v){if(v)delete Lk().rowLines;else Lk().rowLines=false;}));
     g.appendChild(pair(inColor('Row line',function(){return Lk().line;},function(v){Lk().line=v;}),inNum('Row padding',function(){return Lk().pad;},function(v){Lk().pad=v;},0,40)));
     g.appendChild(pair(inNum('Side padding',function(){return Lk().cellX;},function(v){Lk().cellX=v;},0,60),inChk('Striped rows',function(){return Lk().zebra;},function(v){Lk().zebra=v;})));
     g.appendChild(inColor('Stripe',function(){return Lk().zebraBg;},function(v){Lk().zebraBg=v;}));

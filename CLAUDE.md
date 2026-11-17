@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.13.1 (2026-11-16). **Read "Start of every session" first.**
+Last updated at version 1.13.2 (2026-11-16). **Read "Start of every session" first.**
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -240,6 +240,15 @@ The owner asked to continue with 1.12.0 (done, below), then put the Map director
    engineering workstation; own drawings).
 3. Pipe flow direction on Line, instrument symbols on Process value. Geo map markers: not doable (PRTG draws them).
 Also offered, not done: machine state in the floating bar (only the side panel has it), and showing a fault channel on other symbols.
+
+## Lines between rows on/off (1.13.2, 2026-11-16)
+
+- The owner found no way to remove the line between table rows. Look key `rowLines` (absent = on; `false` = off). `tableCss` then adds
+  `tbody td{border-top:0 !important;border-bottom:0 !important;}` (after the 1.5.103 padding rule), so files are unchanged unless it is off.
+  Floating bar: first check box of the table's Row style menu (`pfChk`, through `lkEd`); side panel: Look details › Rows (`inChk`).
+  Picking a look puts the lines back (the look replaces `rowLines`). The file name does not change with it.
+- Checked: 444 object files byte-identical; 16 tests; in the builder the line is 1.35 px with it on, 0 off, and the rule is in the file.
+  Not checked on the real PRTG (PRTG's own `.table` rules might draw another line; the `!important` rule should win).
 
 ## PRTG update test maps (1.13.1, 2026-11-16)
 
