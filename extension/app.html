@@ -982,6 +982,7 @@ h2 .nclash{font-size:12px;margin-top:6px}
 #ocanvas.nosel .edov,#obar.nosel{display:none!important}
 /* the bar lives on the page, outside the preview, so the canvas edge never cuts it off; it shows only on the Object builder tab */
 body:not(.objs) #obar{display:none!important}
+body:has(#prtgpop.gate:not([hidden])) #obar{display:none!important}   /* 1.15.4: not over the full-page Connect to PRTG window (the page starts on Table since 1.15.2) */
 #obar .fb-pop.up{top:auto;bottom:calc(100% + 6px)}
 #obar .fb-g{display:contents}
 #obar .fb-g[hidden]{display:none}

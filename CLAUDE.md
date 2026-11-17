@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.15.4 (2026-11-17). **Read "Start of every session" first.**
+Last updated at version 1.15.5 (2026-11-17). **Read "Start of every session" first.**
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -275,6 +275,21 @@ Also offered, not done: machine state in the floating bar (only the side panel h
   confirmed why; harmless for Map Studio.
 - Not checked: anything that writes (push, Undo, delete, background upload, new map; offered a throwaway test map, no answer yet), object
   types not installed there (tables, gauges, donuts, Industrial, fence, map directory), the new UI.
+
+## Floating bar hidden behind the Connect window (1.15.5, 2026-11-17)
+
+- The owner (screenshot, window 2312 x 948): the Table's floating bar showed over the full-page "Connect to PRTG" window. Caused by 1.15.2
+  (the page starts on Table; before, it started on the label tool, which has no bar). `#obar` is fixed on `body` with z-index 100000, the
+  gate (`#prtgpop.gate`) has 1000, and `obPlace` still finds `#ocanvas` with client rects while `#appMain` is hidden.
+- Fix, one CSS rule in app.html after `body:not(.objs) #obar`: `body:has(#prtgpop.gate:not([hidden])) #obar{display:none!important}`.
+  `openApp()` removes the class `gate` on the first successful connect, so the bar comes back then.
+- Checked: bar `display:none` at 2312x948, 1280x720, 1920x1080 before connecting; a point grid over the whole window lands only inside
+  `#prtgpop`; after connecting the bar shows (71 / 102 px tall); 1116 files identical; 18 tests. Not changed: the small re-auth popup
+  (no gate class) shown later when a session expires; whether the bar overlaps it was not checked.
+- Made first as "1.15.4" in this session; GitHub already had another session's 1.15.4 (rule 9), so it was redone on top as 1.15.5.
+- Also asked (no change yet): http:// connections are accepted with a warning (`httpWarn`), `normalize` adds https:// when no scheme is
+  typed, and the manifest's optional host permissions include `http://*/*`. Proposed to the owner: refuse http:// except localhost and
+  127.0.0.1, drop `http://*/*` from the manifest (needs a real reload), and decide separately about the camera tile's http:// address.
 
 ## The three Colors controls agree (1.15.3, 2026-11-17)
 
