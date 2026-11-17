@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.14.1 (2026-11-17). **Read "Start of every session" first.**
+Last updated at version 1.15.0 (2026-11-17). **Read "Start of every session" first.**
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -240,6 +240,33 @@ The owner asked to continue with 1.12.0 (done, below), then put the Map director
    engineering workstation; own drawings).
 3. Pipe flow direction on Line, instrument symbols on Process value. Geo map markers: not doable (PRTG draws them).
 Also offered, not done: machine state in the floating bar (only the side panel has it), and showing a fault channel on other symbols.
+
+## New version notice (1.15.0, 2026-11-17)
+
+- The owner asked how users could learn about updates. Chosen: a notice inside the tool, not intrusive ("optional"), whose click starts
+  the download. All of it is `window.MSUPD` in `js/01-config.js` (after the 1.6.1 refresh bar) plus `CFG.update` and the storage key
+  `CFG.keys.update` (`prtgMapTool.update`: `{at, v, notes, more, skip, off}`).
+- `MSUPD.check(force)` reads `extension/manifest.json` on `main` from raw.githubusercontent.com (it answers with
+  `access-control-allow-origin: *`, so no host permission is needed) and, only when that version is newer, this same file for the
+  changelog. `notesFrom(text,current)` takes the changelog string out as text (never run) and returns the entries newer than this copy;
+  everything is shown with `textContent`. At most once every `everyMin` (360) unless forced; never by itself when switched off.
+  Runs 2.5 s after the page opens and when the tab comes back into view, only as a real extension (`chrome.runtime`); a Web Store
+  copy (`update_url`) skips all of it.
+- Page: `#updbtn` ("Update available", after the h1, hidden unless a newer version is known, not skipped and the check is on) and the
+  version number `#ver` (now a button) both open the window `.updbox`: what changed (up to `maxNotes` 6 versions, "and N earlier
+  versions"), how to install, the check box `#updauto`, Close, Skip this version (`#updskip`), Download (`#upddl`, a link with
+  `target=_blank` to `CFG.update.zip`, GitHub's ZIP of `main`; a new tab so the page's unsaved-changes question is not raised), or
+  Check now (`#updnow`) when there is nothing newer.
+- **Every version pushed to `main` is now announced to every user** at their next check. The owner was told and offered to announce only
+  versions whose middle number changes (not done). GitHub Releases with a ZIP (which would also count downloads) were explained to the
+  owner but not set up: the Download link would then change to the release's file.
+- README: the update paragraph and the Privacy section now say that GitHub is asked for the version. Test 17 answers GitHub's two files itself.
+- Checked: 17 tests; the window looked at (update found; up to date); `notesFrom` on this copy's real changelog (five entries since 1.13.1);
+  with curl, the manifest address answers 200 with `access-control-allow-origin: *` and the ZIP address answers with
+  `Content-Disposition: attachment`. **Not checked**: the notice running as a real extension in Chrome against the real GitHub (only the
+  tests' web page with GitHub answered by the test), and the download click in the owner's Chrome.
+- **The VM extension folder was not updated in this session** (a chat session with no bridge to the VM): it stays at 1.14.1 until a
+  session with the bridge writes 1.15.0 there, or the owner replaces the files.
 
 ## Five element fixes from the Pre-update maps (1.14.1, 2026-11-17)
 

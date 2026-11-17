@@ -16,6 +16,7 @@ dependencies and no build step.
   not for history saved before 1.5.41 (1.5.41).
 - A push record that cannot be saved gives a red warning (1.5.43).
 - A background picture is cut and fitted in the editor, arrives at exactly the map's size, and Remove takes it off (1.5.93).
+- The new version notice shows its button, lists what changed, links straight to the download, and can be skipped or switched off (1.15.0). GitHub is not contacted: the test answers in its place.
 - The page shows no script errors while doing all of this.
 
 ## What they cannot check

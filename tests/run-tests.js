@@ -179,6 +179,38 @@ async function waitForServer() {
     s = await state();
     check('background picture removed', Object.keys(s.pic).length === 0 && /taken off/.test(await page.textContent('#mapbgimsg')), { pic: s.pic, msg: await page.textContent('#mapbgimsg') });
 
+    /* 17. 1.15.0: the new version notice. GitHub's two files are answered by the test itself, so nothing is asked for real. */
+    await start();
+    const curVer = await page.evaluate(() => CFG.version);
+    const ghAsked = [];
+    await page.route('https://raw.githubusercontent.com/**', (route) => {
+      const u = route.request().url(); ghAsked.push(u);
+      const headers = { 'access-control-allow-origin': '*' };
+      if (/manifest\.json$/.test(u)) return route.fulfill({ status: 200, contentType: 'application/json', headers, body: JSON.stringify({ version: '99.1.0' }) });
+      return route.fulfill({ status: 200, contentType: 'text/plain', headers, body: "var CFG={\n  version:'1.4.2',\n  changelog:'99.1.0: Newest thing\\u2019s here. 99.0.0: An older thing. " + curVer + ": This copy.',\n  canvas:{}};" });
+    });
+    const updBefore = await page.evaluate(() => ({ pill: document.getElementById('updbtn').hidden, stored: !!localStorage.getItem('prtgMapTool.update') }));
+    await page.evaluate(() => MSUPD.check(true));
+    const updPill = await page.evaluate(() => { const b = document.getElementById('updbtn'); return { hidden: b.hidden, text: b.textContent, tip: b.getAttribute('data-tip') }; });
+    await page.click('#updbtn');
+    const updWin = await page.evaluate(() => ({ title: document.getElementById('updttl').textContent, notes: [].map.call(document.querySelectorAll('.updnotes li'), (li) => li.textContent),
+      href: document.getElementById('upddl').getAttribute('href'), target: document.getElementById('upddl').target, auto: document.getElementById('updauto').checked, zip: CFG.update.zip }));
+    await page.click('#updskip');
+    const updSkipped = await page.evaluate(() => ({ pill: document.getElementById('updbtn').hidden, win: !!document.querySelector('.updbox') }));
+    await page.click('#ver');                 /* the version number opens the same window */
+    const updAgain = await page.evaluate(() => ({ win: !!document.querySelector('.updbox'), skip: document.getElementById('updskip').disabled }));
+    await page.uncheck('#updauto');           /* switched off: Map Studio no longer asks by itself */
+    await page.keyboard.press('Escape');
+    const askedSoFar = ghAsked.length;
+    const updOff = await page.evaluate(() => MSUPD.check(false).then((r) => ({ r, off: JSON.parse(localStorage.getItem('prtgMapTool.update')).off, win: !!document.querySelector('.updbox') })));
+    check('new version notice: button, what changed, direct download, skip, switch off',
+      updBefore.pill && !updBefore.stored && !updPill.hidden && /Update available/.test(updPill.text) && /99\.1\.0/.test(updPill.tip) &&
+      /99\.1\.0 is available/.test(updWin.title) && updWin.notes.length === 2 && updWin.notes[0] === '99.1.0Newest thing’s here.' && updWin.notes[1] === '99.0.0An older thing.' &&
+      updWin.href === 'https://github.com/keeper1306/prtg-map-studio/archive/refs/heads/main.zip' && updWin.href === updWin.zip && updWin.target === '_blank' && updWin.auto &&
+      updSkipped.pill && !updSkipped.win && updAgain.win && updAgain.skip && updOff.r === null && updOff.off === true && !updOff.win && ghAsked.length === askedSoFar && askedSoFar === 2,
+      { updBefore, updPill, updWin, updSkipped, updAgain, updOff, ghAsked });
+    await page.unroute('https://raw.githubusercontent.com/**');
+
     check('no errors in the page', pageErrors.length === 0, pageErrors);
   } finally {
     if (browser) await browser.close();

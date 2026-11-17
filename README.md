@@ -50,6 +50,13 @@ them. (In PRTG you can clone a map first.)
 To update later, replace the files with the new ones and press the round
 reload arrow on PRTG Map Studio in `chrome://extensions`.
 
+Map Studio tells you when there is a newer version: a small **Update
+available** button appears next to the version number at the top. It opens a
+window that lists what changed and has a **Download** button, which starts the
+download of the new copy. Nothing pops up by itself. In that window you can
+skip a version or switch the check off; click the version number to open it at
+any time.
+
 ### 2. Open it
 
 1. Click the PRTG Map Studio icon in the Chrome toolbar (use the puzzle-piece
@@ -161,7 +168,12 @@ public, so leave out server addresses, usernames, passhashes and customer names.
 ## Privacy and security
 
 - The extension talks only to the PRTG server you enter, using your username
-  and passhash. It sends no data anywhere else.
+  and passhash. It sends your data nowhere else.
+- To tell you about new versions, it reads two public files of this project
+  from GitHub (`raw.githubusercontent.com`): the version number and the list of
+  changes. Nothing about you or your PRTG is sent. You can switch this off:
+  click the version number at the top and untick **Look for a new version when
+  Map Studio opens**.
 - Page fonts are loaded from Google Fonts.
 - Credentials are saved only if you tick the Remember box, in this browser's
   local extension storage.
