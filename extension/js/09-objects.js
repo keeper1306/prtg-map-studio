@@ -7035,10 +7035,10 @@ try{
       sty.appendChild(q);
     });
     sty.appendChild(obSep());
-    sty.appendChild(obColor('Text color',function(){return L().text;},function(v){obSet(function(l){l.text=v;});}));
-    sty.appendChild(obColor('Secondary text color (smaller labels and captions)',function(){return L().muted||L().headColor;},function(v){obSet(function(l){l.muted=v;});}));
-    sty.appendChild(obColor('Fill color',function(){return L().cardBg;},function(v){obSet(function(l){l.card=true;l.cardBg=v;});}));
-    sty.appendChild(obColor('Border color',function(){return L().border;},function(v){obSet(function(l){l.card=true;l.border=v;if(!(l.bw>0))l.bw=1;});}));
+    sty.appendChild(obLab('Text',obColor('Text color',function(){return L().text;},function(v){obSet(function(l){l.text=v;});})));
+    sty.appendChild(obLab('Labels',obColor('Secondary text color (smaller labels and captions)',function(){return L().muted||L().headColor;},function(v){obSet(function(l){l.muted=v;});})));
+    sty.appendChild(obLab('Fill',obColor('Fill color',function(){return L().cardBg;},function(v){obSet(function(l){l.card=true;l.cardBg=v;});})));
+    sty.appendChild(obLab('Border',obColor('Border color',function(){return L().border;},function(v){obSet(function(l){l.card=true;l.border=v;if(!(l.bw>0))l.bw=1;});})));
     sty.appendChild(obLab('Corners',obNum('Corner roundness in px (0 = square)',function(){return L().radius;},function(v){obSet(function(l){l.card=true;l.radius=v;});},0,40)));
     b.appendChild(sty);
     var sp=h('span','fb-g');b.appendChild(sp);
@@ -8045,6 +8045,7 @@ try{
     });
   }
   var TLKEEP={tile:null,ind:null};
+  var START_LOOK=null;
   function setType(v){
     if(v==='ind'||v==='tile'){
       var want=(v==='ind')?'ind':'tile', have=(TL&&TL.fam==='ind')?'ind':'tile';
@@ -8054,6 +8055,8 @@ try{
     }
     if(v===TYPE){syncTypeSelects();return;}
     var wasLegacy=isLegacy(TYPE)||isPaste(), lk=wasLegacy?null:M().look;
+    if(START_LOOK&&TYPE==='table'&&JSON.stringify(T.look)===START_LOOK)lk=null;   /* 1.15.2: the table the page starts on hands on its look only once it is changed, so every type's first file is as when the page started on the Text label */
+    START_LOOK=null;
     TYPE=v;
     if(isLegacy(v)){
       document.body.classList.remove('objs');
@@ -9182,7 +9185,8 @@ try{
     legSel.addEventListener('change',function(){setType(legSel.value);});
     syncTypeSelects();
     render();
-    OBJAPI.enter();     /* the page opens on the Objects tab, showing the Text label tool as before */
+    OBJAPI.enter();     /* the page opens on the Objects tab */
+    setType('table');START_LOOK=JSON.stringify(T.look);   /* 1.15.2: with Table chosen, as a click on Table would (the Text label tool's code stays; it is just not where the page starts) */
   }catch(err){
   if(window.console)console.error('Objects tab failed to start',err);
   var b=document.getElementById('mObj');if(b)b.style.display='none';

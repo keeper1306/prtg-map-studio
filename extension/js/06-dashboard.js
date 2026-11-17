@@ -2067,11 +2067,11 @@ try{
   /* ---- 1.5.70: the layouts panel. Layouts are grouped (My layouts first), can be searched, and "Build my own" makes a new one:
      a number of boxes, columns and rows, joined and split, saved by name in this browser ---- */
   var LYGROUPS=[
-    ['PRTG update test maps',['Test 1: objects','Test 2: statuses','Test 3: lines','Test 4: OT room','Test 5: live data','Test 6: layout, links']],
     ['With a title banner',['Title and two columns','Title and three columns','Title and four columns','Title and five columns','Title and four squares','Title and six tiles','Title and nine tiles','Title, big left, two right','Title, sidebar and content','Title, hero and three below']],
     ['Simple',['One big cell','Two columns','Two rows','Three columns','Three rows','Four squares','Six tiles','Nine tiles','Five columns','Four rows']],
     ['One big, several small',['Big left, two right','Two left, big right','Big top, two below','Two above, big below','Hero and three below','Three stacked and big','Big and four small']],
-    ['Header or sidebar',['Header and three columns','Header and two columns','Banner, two, banner','Sidebar and content','Content and sidebar','Two thirds and one third','One third and two thirds']]
+    ['Header or sidebar',['Header and three columns','Header and two columns','Banner, two, banner','Sidebar and content','Content and sidebar','Two thirds and one third','One third and two thirds']],
+    ['PRTG update test maps',['Test 1: objects','Test 2: statuses','Test 3: lines','Test 4: OT room','Test 5: live data','Test 6: layout, links'],{last:true}]   /* 1.15.2: internal, so shown at the very end (after Other) */
   ];
   var LY={view:'list',q:'',b:null};
   function lyValid(o){return !!o&&typeof o.name==='string'&&o.name.length>0&&o.cols>=1&&o.cols<=24&&o.rows>=1&&o.rows<=24&&Array.isArray(o.cells)&&o.cells.length>=1&&o.cells.every(function(c){return Array.isArray(c)&&c.length===4&&c.every(function(v){return typeof v==='number'&&v>=0;});});}
@@ -2134,13 +2134,16 @@ try{
         layPopBuild();
       });
     }),q?'':'Layouts you build and save appear here.');
+    var lastG=[];
     LYGROUPS.forEach(function(G){
       var cards=[];
       G[1].forEach(function(n){var i;for(i=0;i<LAYOUTS.length;i++)if(LAYOUTS[i][0]===n)break;if(i>=LAYOUTS.length)return;used[i]=1;if(!hit(n))return;cards.push(lyCard(LAYOUTS[i],!!(L&&!L.custom&&L.id===i),(function(k){return function(){layApply(k);layPopBuild();};})(i)));});
+      if(G[2]&&G[2].last){lastG.push([G[0],cards]);return;}
       group(G[0],cards);
     });
     var rest=[];LAYOUTS.forEach(function(T,i){if(used[i]||!hit(T[0]))return;rest.push(lyCard(T,!!(L&&!L.custom&&L.id===i),function(){layApply(i);layPopBuild();}));});
     group('Other',rest);
+    lastG.forEach(function(x){group(x[0],x[1]);});
     if(q&&!any){var e=el_('p','gp-note');e.textContent='No layout has “'+LY.q.trim()+'” in its name.';box.appendChild(e);}
   }
   /* the layout on the canvas: its spacing, cells, frames and buttons (these were in the old Layouts pop-up) */

@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.15.1 (2026-11-17). **Read "Start of every session" first.**
+Last updated at version 1.15.2 (2026-11-17). **Read "Start of every session" first.**
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -258,6 +258,37 @@ Also offered, not done: machine state in the floating bar (only the side panel h
   confirmed why; harmless for Map Studio.
 - Not checked: anything that writes (push, Undo, delete, background upload, new map; offered a throwaway test map, no answer yet), object
   types not installed there (tables, gauges, donuts, Industrial, fence, map directory), the new UI.
+
+## Small interface fixes (1.15.2, 2026-11-17)
+
+- The owner asked for five small fixes, one at a time, with the 17 tests (18 checks) after each, before/after screenshots, no layout
+  change, no feature removed, and the object files byte-identical. Done: 1, 2 and 5. Reported only, waiting for the owner: 3 and 4.
+- 1 (09-objects.js): the page starts with Table chosen: `setType('table')` after `OBJAPI.enter()` at startup (the label tool's code is
+  untouched, `TYPE` still starts as 'label' and is switched like a click on Table). `START_LOOK` (the starting table's look as JSON):
+  `setType` does not carry that look to the next type while it is unchanged, so every type's first file is the one it was when the page
+  started on the label tool (without it Donut, Sunburst, Icon and Geo map got Corporate blue on their first click). A changed table look
+  is carried as before.
+- 2: `LYGROUPS`' "PRTG update test maps" moved last with `{last:true}`; `layPopBuild` draws such groups after "Other" (`lastG`).
+  app.html: `#objsamples`, its note and `#sampmsg` are inside `<details class="subsec" id="objadv"><summary>Advanced</summary>`.
+- 5: the bar's four colour boxes are wrapped in `obLab`: Text, Labels (secondary text), Fill, Border. Same bar height and rows at
+  1280x720, 1400x900, 1920x1080 (at 1920 the second row now starts after the first box, not the second).
+- 3, reported: the Colors picker above the preview (`#ocset`) shows `PS.cur` ('' = "The look’s own" = no set chosen); the side
+  panel's Status colors and the bar's Colors menu show `csetOf(look)`, the set the look's status colours match, which since 1.6.0 is
+  always PRTG UI. Choosing PRTG UI is not a no-op: in 32 of 140 type x look cases the file changes (graph series colours come from the
+  set instead of the look, the geo map's down-acknowledged colour, and the PRTG default look turns custom). Proposed: let the side panel
+  and the bar read `PS.cur` too and offer "The look’s own" (files unchanged). No answer yet.
+- 4, reported: `obPlace` puts the bar `bh+10` above the object; at 1280x720 the bar wraps to 3 rows (102 px) and rises over the preview's
+  Colors/Zoom/Background row (and at 1400x900 too). Smallest change proposed: `if(!below)top=Math.max(top,cr.top+4)` (never above the
+  preview; at 1280x720 it then covers ~40 px of the object's top). Tried and not proposed: flipping below when there is no room above
+  (at 1400x900 it covers Add to this list). No answer yet.
+- How the files were checked (rebuild this, it is not in the repo): a copy of the extension with `window.__OBX=function(s){return eval(s)};`
+  inserted right after `try{` at the top of 09-objects.js, served by `tests/mock-prtg.py`, driven by Playwright: (A) for each of the 11
+  types a fresh page and one click on the type; (B) every type x 14 looks (reset all models with the blank* functions, `setType`,
+  `lookSet`, `codeNow()`) plus `pkBuild('both')`; (C) every table template. 1116 files, deterministic between runs; identical to 1.15.1
+  after every fix. The `#prtgpop` connect gate covers the page until connected, so click through `element.click()`.
+- Step 1 of the request (update the VM folder from 1.14.1 to 1.15.0) was not needed: it already held 1.15.1, hash-identical to GitHub.
+- Not checked on the real PRTG: nothing here changes what PRTG receives; the screenshots are from Playwright with the stand-in server,
+  not the owner's Chrome.
 
 ## New version notice (1.15.0, 2026-11-17)
 

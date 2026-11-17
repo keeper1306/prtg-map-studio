@@ -1345,9 +1345,12 @@ body.pkopen #obar{visibility:hidden!important}
     <label style="display:flex;gap:8px;align-items:flex-start;margin-top:10px;font-size:12px;line-height:1.4"><input type="checkbox" id="objlive" checked style="margin-top:2px"><span>Show what PRTG itself draws for these objects, on the canvas</span></label>
     <div class="row" style="margin-top:6px"><button class="btn ghost" id="objlivego" type="button" disabled>Refresh previews</button></div>
     <p class="note pst" id="objmine" hidden></p>
+    <details class="subsec" id="objadv">
+      <summary>Advanced</summary>
     <div class="row" style="margin-top:8px"><button class="btn ghost" id="objsamples" type="button" disabled>Collect PRTG samples</button></div>
     <p class="note">Saves one file with how PRTG draws the objects on this canvas and on the selected map, and the settings of a few items already on it. It only reads from PRTG; nothing is changed.</p>
     <p class="note pst" id="sampmsg"></p>
+    </details>
   </fieldset>
     <fieldset>
       <legend>Selected</legend>
