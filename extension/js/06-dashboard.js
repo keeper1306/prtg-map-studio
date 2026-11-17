@@ -1819,7 +1819,14 @@ try{
     ['Title and nine tiles',3,10,[[0,0,3,1],[0,1,1,3],[1,1,1,3],[2,1,1,3],[0,4,1,3],[1,4,1,3],[2,4,1,3],[0,7,1,3],[1,7,1,3],[2,7,1,3]],{banner:true}],
     ['Title, big left, two right',2,9,[[0,0,2,1],[0,1,1,8],[1,1,1,4],[1,5,1,4]],{banner:true}],
     ['Title, sidebar and content',4,10,[[0,0,4,1],[0,1,1,9],[1,1,3,9]],{banner:true}],
-    ['Title, hero and three below',3,9,[[0,0,3,1],[0,1,3,4],[0,5,1,4],[1,5,1,4],[2,5,1,4]],{banner:true}]
+    ['Title, hero and three below',3,9,[[0,0,3,1],[0,1,3,4],[0,5,1,4],[1,5,1,4],[2,5,1,4]],{banner:true}],
+    /* 1.13.1: the six maps to check a PRTG update with (Design canvas "PRTG update test maps") */
+    ['Test 1: objects',5,9,[[0,0,5,1],[0,1,1,4],[1,1,1,4],[2,1,1,4],[3,1,1,4],[4,1,1,4],[0,5,1,4],[1,5,1,4],[2,5,1,4],[3,5,1,4],[4,5,1,4]],{banner:true}],
+    ['Test 2: statuses',11,10,[[0,0,11,1],[0,1,1,9],[1,1,2,9],[3,1,2,9],[5,1,2,9],[7,1,2,9],[9,1,2,9]],{banner:true}],
+    ['Test 3: lines',12,10,[[0,0,12,1],[1,3,2,1],[5,2,2,1],[9,3,2,1],[3,7,2,1],[7,7,2,1],[10,6,2,1]],{banner:true}],
+    ['Test 4: OT room',12,10,[[0,0,12,1],[0,1,3,3],[3,1,3,3],[6,1,3,3],[9,1,3,3],[0,4,3,6],[3,4,6,6],[9,4,3,3],[9,7,3,3]],{banner:true}],
+    ['Test 5: live data',12,10,[[0,0,12,1],[0,1,8,5],[8,1,4,5],[0,6,3,4],[3,6,3,4],[6,6,3,4],[9,6,3,4]],{banner:true}],
+    ['Test 6: layout, links',12,10,[[3,0,9,1],[0,0,3,10],[3,1,3,9],[6,1,3,9],[9,1,3,9]],{banner:true}]
   ];
   function layT(){var L=D.layout;return L?(L.custom||LAYOUTS[L.id]||null):null;}
   function layHasBanner(T){return !!(T&&T[4]&&T[4].banner);}
@@ -2019,6 +2026,7 @@ try{
   /* ---- 1.5.70: the layouts panel. Layouts are grouped (My layouts first), can be searched, and "Build my own" makes a new one:
      a number of boxes, columns and rows, joined and split, saved by name in this browser ---- */
   var LYGROUPS=[
+    ['PRTG update test maps',['Test 1: objects','Test 2: statuses','Test 3: lines','Test 4: OT room','Test 5: live data','Test 6: layout, links']],
     ['With a title banner',['Title and two columns','Title and three columns','Title and four columns','Title and five columns','Title and four squares','Title and six tiles','Title and nine tiles','Title, big left, two right','Title, sidebar and content','Title, hero and three below']],
     ['Simple',['One big cell','Two columns','Two rows','Three columns','Three rows','Four squares','Six tiles','Nine tiles','Five columns','Four rows']],
     ['One big, several small',['Big left, two right','Two left, big right','Big top, two below','Two above, big below','Hero and three below','Three stacked and big','Big and four small']],

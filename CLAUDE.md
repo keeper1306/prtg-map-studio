@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.13.0 (2026-11-15). **Read "Start of every session" first.**
+Last updated at version 1.13.1 (2026-11-16). **Read "Start of every session" first.**
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -240,6 +240,17 @@ The owner asked to continue with 1.12.0 (done, below), then put the Map director
    engineering workstation; own drawings).
 3. Pipe flow direction on Line, instrument symbols on Process value. Geo map markers: not doable (PRTG draws them).
 Also offered, not done: machine state in the floating bar (only the side panel has it), and showing a fault channel on other symbols.
+
+## PRTG update test maps (1.13.1, 2026-11-16)
+
+- The owner is about to update PRTG and asked for maps to check the extension afterwards. Mockups: Design canvas "PRTG update test maps"
+  (artifact JqXxXcMsJxqKsRcCT2a5A6): 1 every object type, 2 every status, 3 lines and connectors, 4 OT control room (sensors 2237-2240),
+  5 live data, 6 layout, background and links; each board lists what it checks. The owner asked for them as Map designer layouts:
+  six `LAYOUTS` entries appended ("Test 1: objects" ... "Test 6: layout, links", all with a title banner; Test 3 has gaps between
+  its cells, Test 6 has its banner over the content only, beside a full-height sidebar) and a first `LYGROUPS` group "PRTG update test maps".
+- Checked: 16 tests; the group and thumbnails in the Layouts panel; Test 4 applied on the canvas (banner + 8 cells). No object file changes.
+- Not done yet: building the six maps in PRTG, and the "before" list of files with hashes plus screenshots (proposed to the owner).
+  PRTG version before the update: 26.3.124.1728.
 
 ## Map directory in the Map designer (1.13.0, 2026-11-15)
 
