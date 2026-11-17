@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.15.3 (2026-11-17). **Read "Start of every session" first.**
+Last updated at version 1.15.4 (2026-11-17). **Read "Start of every session" first.**
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -137,6 +137,10 @@ How it was done, stage by stage:
    normally only `webroot\mapobjects` for object files. Never delete or replace anything PRTG itself put
    there. Before replacing a file Map Studio made, keep a copy of the old one. Check every file written by
    reading it back and comparing it byte for byte.
+9. This repository is public, and its ZIP (the update notice's Download) is what users get, this file included. Never write
+   server addresses, domain names, machine names or IP addresses of the owner's or Paessler's systems, people's names,
+   passwords or tokens into any file here. Write "the owner's lab PRTG", "the lab VM" or "a shared lab server" instead, and
+   ask the owner when the real value is needed (the owner's rule, 1.15.4).
 
 Line endings: every text file in the repo is LF and there is no `.gitattributes`. Git on the VM
 was installed with "Checkout as-is, commit as-is" (`core.autocrlf=false`). Keep it that way, or the
@@ -163,7 +167,7 @@ A full run takes about 5 seconds (16 seconds the very first time).
 
 ## What PRTG renders server-side, measured (2026-11-12, before 1.6.0)
 
-Measured on the real PRTG (26.3.124.1728, `WIN-38LNOU5G6LG`) with four throwaway probe files in
+Measured on the real PRTG (26.3.124.1728, the owner's lab VM) with four throwaway probe files in
 `mapobjects` (`map-studio-zz-probe-a/b/c/d.htm`, category "Map Studio Tests"), read through
 `/controls/mapobjectpreview.htm` against probe `1` and sensor `2106`, and through map 2231's own
 four items (probe, group, device, sensor) in classic View Map and the Map Designer canvas.
@@ -219,7 +223,8 @@ a Map Studio object must put the state into its **own** prefixed class, via `pre
 ## Start of every session: ask for all access first (owner's standing request, 2026-11-13)
 
 The owner wants every permission asked for **right away, in one go, at the start**, not in the middle of the work. Before anything else:
-1. Folders on the VM, in one `device_request_folder_access` call (the bridge is the VM `win-38lnou5g6lg`):
+1. Folders on the VM, in one `device_request_folder_access` call (the bridge is the owner's lab VM: pick it from the bridge's
+   list of connected computers, and ask the owner if more than one is listed):
    `C:\Users\Administrator\Desktop` (includes `PRTG Map Studio\extension` and the map folders),
    `C:\Program Files (x86)\PRTG Network Monitor\webroot` (for `mapobjects` and `images`),
    `C:\Program Files (x86)\PRTG Network Monitor\Custom Sensors\EXE` (test script sensors),
@@ -227,8 +232,9 @@ The owner wants every permission asked for **right away, in one go, at the start
    `C:\Program Files (x86)\PRTG Network Monitor\lookups` (PRTG's state words; read only).
    (`Documents\prtg-map-studio` is the stale repo: not needed.)
 2. GitHub: `add_repo` keeper1306/prtg-map-studio with push access, clone it, work on `connectors`.
-3. Chrome (Claude in Chrome) on `https://prtg.whatthehelbert.com` (the owner is signed in there; Claude never types credentials),
-   and the built-in browser if that is what the session offers. Open a tab and check the session is signed in.
+3. Chrome (Claude in Chrome) on the owner's lab PRTG, and the built-in browser if that is what the session offers. Its address is not
+   written in this public file: take it from the tab where the owner is already signed in to PRTG, or ask the owner. Claude never
+   types credentials. Open a tab and check the session is signed in.
 Then say in one line what was granted, and start.
 
 ## Next job (not started): the rest of the OT plan
@@ -241,9 +247,20 @@ The owner asked to continue with 1.12.0 (done, below), then put the Map director
 3. Pipe flow direction on Line, instrument symbols on Process value. Geo map markers: not doable (PRTG draws them).
 Also offered, not done: machine state in the floating bar (only the side panel has it), and showing a fault channel on other symbols.
 
-## PRTG 26.4 checked, read only, on amer.prtglab.com (2026-11-17, no extension change)
+## Internal details removed from the public repo (1.15.4, 2026-11-17)
 
-- The owner signed in to amer.prtglab.com in Chrome (PRTG 26.4.126.1824, a shared lab server: read only, change nothing without asking).
+- The owner asked to remove internal lab information. The lab PRTG's address, the lab VM's name, the shared lab server's address and a
+  colleague's name were replaced with plain descriptions in this file, in the 1.5.76 changelog entry (the update window shows changelog
+  text) and in a comment in `06-dashboard.js` (inside `connLiveRuntime`; comments are stripped before a connector is pushed, so no map
+  carried it). Rule 9 keeps such details out from now on. Nothing Map Studio does changed and no object file changed.
+- Older commits still contain the removed details. Rewriting the history was offered to the owner, not done: it cannot be undone, it breaks
+  every other session's clone, and a server with a valid certificate is listed in public certificate logs anyway.
+- The VM extension folder was not updated in this session (no bridge). 1.15.4 differs from 1.15.3 only in the changelog text and a comment.
+
+## PRTG 26.4 checked, read only, on a shared lab server (2026-11-17, no extension change)
+
+- The owner signed in to a shared Paessler lab server in Chrome (PRTG 26.4.126.1824; its address is not written here, ask the owner).
+  Read only: change nothing there without asking.
   Maps there with Map Studio objects: 4765 MSP Customer Status, 4973 Global Status, 4573, 4642, 4974, 4975. 30 Map Studio files in its
   object list (icons, sunburst, geo map, graphs, 20 link styles, status counts, bar gauge tile).
 - Same as 26.3: View Map lives in `/controls/maponly.htm` inside an iframe of `mapshow.htm`; all tags filled in, no page errors; the Link
@@ -1178,7 +1195,7 @@ Also offered, not done: machine state in the floating bar (only the side panel h
 
 - The owner asked for the Any object table to be the default when the Table button is clicked, to support probe, group, device and
   sensor, to have exactly the other tables' options, and to show fully in PRTG (the 1.5.71 Any table is drawn by a script, so PRTG's
-  Map Designer and the object list's hover preview showed nothing). Server: `https://prtg.whatthehelbert.com` (valid certificate).
+  Map Designer and the object list's hover preview showed nothing). Server: the owner's lab PRTG (valid certificate).
 - Seen on the real PRTG with test files through `/controls/mapobjectpreview.htm` (map 2229, `dependency_` = object): `<#checkobjecttype>`
   aborts the whole item on any other type ("The selected object cannot be used here."), so it can't be used to branch; `<#sensor
   type="colorclassofstate">` and `<#objectproperty name="primarychannel">` abort on non-sensors too. `content="sensors"` on a sensor gives one
@@ -1201,7 +1218,7 @@ Also offered, not done: machine state in the floating bar (only the side panel h
   table with `anyType` off and count 0 identical to the old blank table. On the real PRTG (test map 2231 "Map Studio test - default
   table", items on Local Probe 1, group 50, device 2095, sensor 2106, file `map-studio-zz-test.htm`, category "Map Studio Tests"): right
   table on all four in `mapobjectpreview`, in the Map Designer, in the object list's hover preview and in classic View Map; unchanged after
-  PRTG's refresh (40 s); paging one table leaves the others alone; the new UI (`https://prtg.whatthehelbert.com:1616`, the owner
+  PRTG's refresh (40 s); paging one table leaves the others alone; the new UI (the lab PRTG on port 1616, the owner
   signed in) View Map and Map Designer the same. Not checked: the public page.
   The test map and the test file are still there (no delete through the bridge).
 
@@ -1543,7 +1560,7 @@ Also offered, not done: machine state in the floating bar (only the side panel h
 
 ## Connector colours on Map Studio icons (1.5.76)
 
-- Seen on the real PRTG (amer.prtglab.com, map 4823 "Global Status", shield icons on groups/devices, three connectors with
+- Seen on the real PRTG (the shared lab server, map 4823 "Global Status", shield icons on groups/devices, three connectors with
   `colorMode:'status'`, look `beads`): every line drew in the fallback grey `#9aa4af`. A Map Studio icon on a probe, group or
   device carries PRTG's rollup flags on the item itself (`map_objectstate_hasred ... map_objectstate_hasgreen`, `hasno...`
   for the rest) and no inner label, and `statusColor()` in `connLiveRuntime` only read `map_objectstate_sens*` on the item and
@@ -1831,7 +1848,7 @@ Also offered, not done: machine state in the floating bar (only the side panel h
 - Ready but not in the builder: Radial gauge, Section backdrop, Text box, Weather widget.
   - Radial gauge: its maximum doubles when an error limit exists (90 becomes 200), and the
     value overlaps the ring.
-  - Weather widget: defaults to Benjamin's widget and New York, and needs weatherwidget.org
+  - Weather widget: defaults to a colleague's widget account and New York, and needs weatherwidget.org
     reachable.
 - Not ready: both NetFlow panels, SNMP Trap and Syslog. They contain `YOUR_READONLY_USER` /
   `YOUR_READONLY_PASSWORD` placeholders, and the NetFlow ones need the toplist ID in HTML Before.

@@ -3794,7 +3794,7 @@ try{
         if(k)return LCOL[k];
         /* 1.5.76: a Map Studio icon on a probe, group or device gets PRTG's rollup flags on the element itself
            ("map_objectstate_hasred ... map_objectstate_hasgreen", with "hasno..." for the others), not on an inner
-           label. Seen on map 4823 (amer.prtglab.com): every line between such icons stayed grey. Worst state wins. */
+           label. Seen on map 4823 (a shared lab server): every line between such icons stayed grey. Worst state wins. */
         var oc=String(elx.className||''), oi;
         for(oi=0;oi<ICOLORDER.length;oi++){
           if(new RegExp('\\bmap_objectstate_has'+ICOLORDER[oi]+'\\b').test(oc))return ICOLMAP[ICOLORDER[oi]];
