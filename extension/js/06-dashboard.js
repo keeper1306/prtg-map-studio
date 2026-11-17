@@ -1843,7 +1843,9 @@ try{
     });
     return out;
   }
-  function layItems(){return D.items.filter(function(x){return x.parent==null&&!(x.p&&(x.p.cellFrame||x.p.layLine))&&!(x.type==='frame'&&x.p.group===false&&!x.p.shape);});}
+  /* 1.13.4: an item inside a cell's own frame still counts as sitting in the layout */
+  function layFree(x){if(x.parent==null)return true;var f=byId(x.parent);return !!(f&&f.p&&f.p.cellFrame);}
+  function layItems(){return D.items.filter(function(x){return layFree(x)&&!(x.p&&(x.p.cellFrame||x.p.layLine))&&!(x.type==='frame'&&x.p.group===false&&!x.p.shape);});}
   /* the title banner a layout with a title row puts in its first cell (p.layBanner), so it can be edited right away */
   function layBanner(){var b=null;D.items.forEach(function(x){if(!b&&x.type==='banner'&&x.p&&x.p.layBanner)b=x;});return b;}
   var LAYBMADE=false;   /* set when layBannerEnsure() had to make the banner (not kept on the item, which is saved) */
@@ -1960,6 +1962,14 @@ try{
   }
   function layCellAt(cells,x,y){var i;for(i=0;i<cells.length;i++)if(x>=cells[i].x&&x<=cells[i].x+cells[i].w&&y>=cells[i].y&&y<=cells[i].y+cells[i].h)return i;return -1;}
   function layCellOf(cells,it){var s=laySize(it);return layCellAt(cells,it.x+s.w/2,it.y+s.h/2);}
+  /* 1.13.4: the cell an item sits in, or else the cell it covers most (its middle may fall in the gap between two cells) */
+  function layCellNear(cells,it){
+    var k=layCellOf(cells,it), s, best=-1, ba=0;
+    if(k>=0)return k;
+    s=laySize(it);
+    cells.forEach(function(c,i){var w=Math.min(c.x+c.w,it.x+s.w)-Math.max(c.x,it.x), h=Math.min(c.y+c.h,it.y+s.h)-Math.max(c.y,it.y);if(w>0&&h>0&&w*h>ba){ba=w*h;best=i;}});
+    return best;
+  }
   function layPaint(){
     var cells, occ={}, html='', i;
     if(!layOv)return;
@@ -2006,20 +2016,51 @@ try{
     renderAll();buildForm();commit();
   }
   function layRemove(){D.layout=null;layPaint();}
-  /* dropping an item on a cell puts it there; Alt places it freely */
+  /* 1.13.4: every item in cell k: one fills the cell (or is centred, if it keeps its own size); two or more share it in a grid,
+     the columns chosen so each piece is as large as it can be */
+  function layInCell(cells,k){return layItems().filter(function(x){return layCellOf(cells,x)===k;});}
+  function layArrange(k,cells){
+    cells=cells||layCells();
+    var c=cells[k], L, inn, g, n, best=null, cols, rows, w, h;
+    if(!c)return 0;
+    L=layInCell(cells,k);n=L.length;
+    if(!n)return 0;
+    if(n===1){layPut(L[0],c,k);return 1;}
+    inn=layInner(c,k);g=Math.max(8,Math.min((D.layout&&D.layout.gap)||16,24));
+    for(cols=1;cols<=n;cols++){
+      rows=Math.ceil(n/cols);w=(inn.w-g*(cols-1))/cols;h=(inn.h-g*(rows-1))/rows;
+      if(w<30||h<30)continue;
+      if(!best||Math.min(w,h)>Math.min(best.w,best.h))best={cols:cols,w:w,h:h};
+    }
+    if(!best)return 0;
+    L.sort(function(a,b){return (Math.abs(a.y-b.y)>20?a.y-b.y:0)||(a.x-b.x);});
+    L.forEach(function(it,i){
+      var r=Math.floor(i/best.cols), q=i%best.cols;
+      layPut(it,{x:Math.round(inn.x+q*(best.w+g)),y:Math.round(inn.y+r*(best.h+g)),w:Math.floor(best.w),h:Math.floor(best.h)},-1);
+    });
+    return n;
+  }
+  /* dropping an item on a cell puts it there (with the items already there, sharing the cell); Alt places it freely */
   function layDrop(d,wasFree){
-    var it=d.it, cells, s, k, k0, occ=null;
-    if(!D.layout||wasFree||it.parent!=null)return;
+    var it=d.it, cells, s, k, k0, others;
+    if(!D.layout||wasFree||!layFree(it))return;
     cells=layCells();k=layCellOf(cells,it);
     if(k<0)return;
-    if(!layFits(it,cells[k])){msMove(it,d.ox-it.x,d.oy-it.y,{});toastDash('That cell is too small for this item');return;}
-    layItems().forEach(function(x){if(x!==it&&layCellOf(cells,x)===k)occ=x;});
-    if(occ){
-      s=laySize(it);k0=layCellAt(cells,d.ox+s.w/2,d.oy+s.h/2);
-      if(k0>=0&&k0!==k&&layFits(occ,cells[k0]))layPut(occ,cells[k0]);
-      else{msMove(it,d.ox-it.x,d.oy-it.y,{});toastDash('That cell already has an item');return;}
-    }
-    layPut(it,cells[k],k);
+    others=layInCell(cells,k).filter(function(x){return x!==it;});
+    if(!others.length&&!layFits(it,cells[k])){msMove(it,d.ox-it.x,d.oy-it.y,{});toastDash('That cell is too small for this item');return;}
+    s=laySize(it);k0=layCellAt(cells,d.ox+s.w/2,d.oy+s.h/2);
+    layArrange(k,cells);
+    if(k0>=0&&k0!==k&&layInCell(cells,k0).length)layArrange(k0,cells);   /* the cell it came from shares its room again */
+    if(others.length)toastDash((others.length+1)+' items now share this cell');
+  }
+  /* an item added by dropping it from Build or from the PRTG object list goes into the cell it was dropped on */
+  function layAfterAdd(it,at){   /* the cell is the one under the pointer (the new item's corner sits there, its middle may not) */
+    var cells, k, s;
+    if(!D.layout||FREE||!layFree(it)||isLine(it))return;
+    cells=layCells();k=at?layCellAt(cells,at.x,at.y):layCellOf(cells,it);
+    if(k<0)return;
+    if(layCellOf(cells,it)!==k){s=laySize(it);msMove(it,Math.round(cells[k].x+cells[k].w/2-s.w/2)-it.x,Math.round(cells[k].y+cells[k].h/2-s.h/2)-it.y,{});}
+    layArrange(k,cells);
   }
   var _raLay=renderAll;renderAll=function(){_raLay.apply(this,arguments);layPaint();};
   var layPop=null, layBtn=document.getElementById('dlaybtn');
@@ -3085,6 +3126,7 @@ try{
         }
       }
     }
+    if(extra&&extra.at)layAfterAdd(it,extra.at);
     D.sel=it.id;renderAll();buildForm();commit();
   }
   function dup(it){
@@ -3354,6 +3396,13 @@ try{
     if(!n)return;
     var it=byId(parseInt(n.getAttribute('data-id'),10)), h=inlHost();
     if(it&&isFence(it)&&e.target.getAttribute&&e.target.getAttribute('data-fhit')){fenceAddAt(it,cvPt(e));e.preventDefault();return;}
+    /* 1.13.4: double-click a PRTG object (or a cell's frame) in a layout cell to fit it, and whatever shares the cell, to the cell.
+       Labels, buttons, tiles and banners keep double-click for typing their text */
+    if(it&&D.layout&&layFree(it)&&(it.type==='prtgobj'||(it.type==='frame'&&it.p&&it.p.cellFrame))&&!isFence(it)){
+      var lcs=layCells(), lk=layCellNear(lcs,it), ls;
+      if(lk>=0&&layCellOf(lcs,it)!==lk){ls=laySize(it);msMove(it,Math.round(lcs[lk].x+lcs[lk].w/2-ls.w/2)-it.x,Math.round(lcs[lk].y+lcs[lk].h/2-ls.h/2)-it.y,{});}
+      if(lk>=0){var ln=layArrange(lk,lcs);if(ln){renderAll();buildForm();commit();toastDash(ln===1?'Fitted to its cell':(ln+' items arranged in the cell'));e.preventDefault();return;}}
+    }
     var lg=e.target.closest?e.target.closest('[data-lbl]'):null;
     if(it&&lg&&isLine(it)&&it.p&&it.p.labelStyle){lblEdit(it,lg);e.preventDefault();return;}   /* the text on a Connector is typed right on the line */
     if(it&&(it.type==='label'||it.type==='button')&&teStart(it,n)){e.preventDefault();return;}

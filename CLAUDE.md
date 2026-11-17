@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.13.3 (2026-11-16). **Read "Start of every session" first.**
+Last updated at version 1.14.0 (2026-11-17). **Read "Start of every session" first.**
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -240,6 +240,29 @@ The owner asked to continue with 1.12.0 (done, below), then put the Map director
    engineering workstation; own drawings).
 3. Pipe flow direction on Line, instrument symbols on Process value. Geo map markers: not doable (PRTG draws them).
 Also offered, not done: machine state in the floating bar (only the side panel has it), and showing a fault channel on other symbols.
+
+## Layout cells arrange their items; titles keep their size (1.14.0, 2026-11-17)
+
+- The owner built maps 2244 "Pre-update", 2245 "Pre-Update-2", 2228 "Pre-Update-3" from the update test layouts and found objects not
+  fitting their cells and titles of different sizes. Measured on classic View Map (2244): titles 24, 31, 31, 35, 35, 37, 38, 45 px - every
+  Flexible object scaled its title with `--mss`, and table titles (line-height 1.4 forced at 1.5.103) were 3 px taller than the rest.
+- Layouts (06-dashboard.js): `layFree(x)` (no parent, or the parent is a cell frame: items dropped in a framed cell got the frame as parent
+  and were skipped by `layDrop`/`layItems`), `layInCell`, `layArrange(k,cells)` (one item: `layPut`; several: a grid inside `layInner`,
+  the column count that gives the largest min(w,h), gap = the layout gap clamped 8 to 24, reading order), `layCellNear` (the cell covered
+  most when the middle is in a gap), `layAfterAdd(it,at)` (from `addItem` when `extra.at`: Build drops and the PRTG object list drop;
+  the cell under the pointer). `layDrop` now arranges instead of swapping/refusing ("That cell already has an item" is gone) and re-arranges
+  the cell the item came from. Double-click on a PRTG object or a cell frame in a cell arranges that cell (labels, buttons, tiles, banners
+  keep double-click for typing).
+- Titles (09-objects.js): `tpx(n)` in `titleRules` = `calc(Npx)` (untouched by `flexCss`) unless `m.titleFlex`; `flexNorm` gives `tf`,
+  and `flexRuntime` leaves a fixed title's height out of the scale sum. Bar: "Title Fixed | Flexible" after Flexible | Fixed (`obTitleFlex`,
+  only while the object is Flexible, not tables); side panel: Flexible or fixed › Title. Every title rule gets `line-height:1.4` (not the
+  accent style), so all default titles are 40 px. Tables' own Flexible (transform) still scales their title: not changed.
+- Checked: 16 tests; 408 of 444 object files change, all only in title rules and the Flexible code (masked compare); titles 40 px for
+  8 defaults; Flexible graph/donut/status at 220x150 and 700x520 keep 40 px (titleFlex gives 17 to 82); stand-in Map designer: drops,
+  2 and 4 items in a cell, double-click fit, a framed cell. Not checked on the real PRTG (PRTG's CSS could still change the title height).
+- Seen on the owner's maps, offered as fixes, not done: status counts boxes stretch to the full cell height; Industrial lamps sit at the top
+  of a tall cell; the narrow table wraps values and shows PRTG's own tick icon before names; Sparkline-with-value's big number overlaps the
+  change figure; sunburst labels cut; 2228's middle item is an old Map Studio test sheet (14 gauge faces), not a real object.
 
 ## Corners 10 px by default (1.13.3, 2026-11-16)
 

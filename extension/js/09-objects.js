@@ -721,6 +721,8 @@ try{
   function isFlex(m){return !!(m&&m.fit)&&hasSize(m);}
   function flexOn(){return !!FLEXT[TYPE]&&TYPE!=='table'&&!isPaste()&&isFlex(M());}
   function fpx(n){return flexOn()?'calc('+n+'px * var(--mss,1))':n+'px';}
+  /* 1.13.4: the title keeps its size in a Flexible object unless "Title: Flexible" is picked (titleFlex). calc(Npx) is not touched by flexCss */
+  function tpx(n){return flexOn()?(M().titleFlex?'calc('+n+'px * var(--mss,1))':'calc('+n+'px)'):n+'px';}
   /* 1.5.71: the look's text size is 13 in every look but Wall display (18, for big screens). The words inside tiles, Industrial objects
      and graphs had fixed sizes, so Wall display only made the title bigger there; lookTs() is the factor they now follow (1 for the
      other looks, so their files do not change), and lookSet() gives the object's box (and its normal size) the same factor when the look
@@ -739,14 +741,15 @@ try{
     if(Math.abs(k-1)<0.01||!hasSize(m)||isPaste())return;
     ['initW','initH','fitW','fitH'].forEach(function(f){var v=parseInt(m[f],10);if(v>0)m[f]=String(Math.round(v*k));});
   }
-  function flexNorm(m){return {w:Math.max(40,parseInt(m.fitW,10)||parseInt(m.initW,10)||300),h:Math.max(30,parseInt(m.fitH,10)||parseInt(m.initH,10)||200)};}
+  function flexNorm(m){return {w:Math.max(40,parseInt(m.fitW,10)||parseInt(m.initW,10)||300),h:Math.max(30,parseInt(m.fitH,10)||parseInt(m.initH,10)||200),tf:m.titleFlex?0:1};}
   function flexRuntime(root,C){
     if(!root||root.__msflex)return;
     root.__msflex=1;
     function fit(){
-      var w=root.clientWidth, h=root.clientHeight;
+      var w=root.clientWidth, h=root.clientHeight, t=C.tf?root.querySelector('.gtitle'):null, th=(t&&t.offsetHeight)||0;
       if(!w||!h)return;
-      var s=Math.max(0.2,Math.min(6,Math.min(w/C.w,h/C.h)));
+      if(th>=C.h-20)th=0;   /* a title that keeps its size is left out of the sum */
+      var s=Math.max(0.2,Math.min(6,Math.min(w/C.w,(h-th)/(C.h-th))));
       root.style.setProperty('--mss',s.toFixed(4));root.setAttribute('data-scale',s.toFixed(3));
     }
     var queued=false;
@@ -778,7 +781,7 @@ try{
     if(!cls||!new RegExp('class="map_object[^"]*\\b'+cls+'\\b').test(text))return text;
     var C=flexNorm(M());
     text=text.replace(/(<style>)([\s\S]*?)(<\/style>)/g,function(a,o,css,c){return o+flexCss(css)+c;});
-    return text+'\n<scr'+'ipt>\n(function(){\n  var F='+flexRuntime.toString()+';\n  var C={w:'+C.w+',h:'+C.h+'};\n'
+    return text+'\n<scr'+'ipt>\n(function(){\n  var F='+flexRuntime.toString()+';\n  var C={w:'+C.w+',h:'+C.h+',tf:'+C.tf+'};\n'
       +'  function all(){[].forEach.call(document.querySelectorAll(".'+cls+'"),function(r){F(r,C);});}\n'
       +'  all();setTimeout(all,400);setTimeout(all,2000);\n})();\n<\/script>\n';
   }
@@ -792,12 +795,13 @@ try{
   function titleRules(L,sel,bar){
     var c=[],col=bar?L.titleColor:(L.titleText||L.text);
     if(bar){
-      c.push(sel+'{font-size:'+fpx(L.titleSize)+';font-weight:500;letter-spacing:.4px;color:'+L.titleColor+';background:'+L.titleBg+';padding:'+fpx(10)+' '+fpx(14)+';margin:0;text-transform:none;'+(L.card?'border-radius:'+L.radius+'px '+L.radius+'px 0 0;':'')+'}');
+      c.push(sel+'{font-size:'+tpx(L.titleSize)+';font-weight:500;letter-spacing:.4px;color:'+L.titleColor+';background:'+L.titleBg+';padding:'+tpx(10)+' '+tpx(14)+';margin:0;line-height:1.4;text-transform:none;'+(L.card?'border-radius:'+L.radius+'px '+L.radius+'px 0 0;':'')+'}');
     }else{
-      var tt='font-size:'+fpx(L.titleSize)+';font-weight:600;color:'+col+';text-transform:none;';
-      if(L.titleStyle==='divider')tt+='padding:0 0 '+fpx(12)+';margin:0 0 '+fpx(8)+';border-bottom:1px solid '+L.line+';';
-      else if(L.titleStyle==='accent')tt+='padding:'+fpx(2)+' 0 '+fpx(2)+' '+fpx(10)+';margin:0 0 '+fpx(12)+';border-left:3px solid '+L.accent+';line-height:1.2;';
-      else tt+='padding:0 0 '+fpx(10)+';margin:0;';
+      var tt='font-size:'+tpx(L.titleSize)+';font-weight:600;color:'+col+';text-transform:none;';
+      if(L.titleStyle==='divider')tt+='padding:0 0 '+tpx(12)+';margin:0 0 '+tpx(8)+';border-bottom:1px solid '+L.line+';';
+      else if(L.titleStyle==='accent')tt+='padding:'+tpx(2)+' 0 '+tpx(2)+' '+tpx(10)+';margin:0 0 '+tpx(12)+';border-left:3px solid '+L.accent+';line-height:1.2;';
+      else tt+='padding:0 0 '+tpx(10)+';margin:0;';
+      if(L.titleStyle!=='accent')tt+='line-height:1.4;';   /* 1.13.4: the same line height as a table\u2019s title, so titles match */
       c.push(sel+'{'+tt+'}');
     }
     if(L.align)c.push(sel+'{text-align:'+L.align+';}');
@@ -6526,6 +6530,18 @@ try{
     });
     return w;
   }
+  /* 1.13.4: the title's own Fixed | Flexible, shown while the object is Flexible */
+  function obTitleFlex(){
+    var w=h('span','fb-seg');w.title='Fixed: the title keeps its size however big the object is (the same on every object). Flexible: it grows and shrinks with the object.';
+    [['fixed','Fixed'],['flex','Flexible']].forEach(function(x){
+      var b=h('button','fb-t',x[1]);b.type='button';
+      b.addEventListener('click',function(){obDo(function(){var m=M();if(x[0]==='flex')m.titleFlex=true;else delete m.titleFlex;});});
+      OB.syncs.push(function(){b.classList.toggle('on',(x[0]==='flex')===!!M().titleFlex);});
+      w.appendChild(b);
+    });
+    var l=obLab('Title',w);OB.syncs.push(function(){l.hidden=!M().fit;});
+    return l;
+  }
   /* menus in the bar: a button that opens a small panel under it */
   function obCloseMenus(){
     if(!OB.el)return;
@@ -6981,7 +6997,7 @@ try{
     if(anyOn()||!(TYPE==='icon'&&!iHasBg(IC)))b.appendChild(mLooks);   /* on an icon without a background a look would only change the status colours, which Colors does */
     b.appendChild(mColors);
     b.appendChild(obSep());
-    if(FLEXT[TYPE]&&!isPaste()&&!(TYPE==='table'&&anyOn())){b.appendChild(obFlex());b.appendChild(obSep());}
+    if(FLEXT[TYPE]&&!isPaste()&&!(TYPE==='table'&&anyOn())){b.appendChild(obFlex());if(TYPE!=='table')b.appendChild(obTitleFlex());b.appendChild(obSep());}
     /* fonts, colours and corners */
     sty.appendChild(fs);
     /* two sizes: the title's and the text inside the object */
@@ -8757,6 +8773,8 @@ try{
 
     var sfx=section('Flexible or fixed');secIf(sfx,function(){return !!FLEXT[TYPE]&&TYPE!=='table'&&notPaste();});
     sfx.appendChild(inSel('Size',function(){return M().fit?'flex':'fixed';},function(v){setFlex(v==='flex');},[['flex','Flexible: everything grows and shrinks with the object'],['fixed','Fixed: PRTG\u2019s standard, the text keeps its size']]));
+    var sft=inSel('Title',function(){return M().titleFlex?'flex':'fixed';},function(v){var m=M();if(v==='flex')m.titleFlex=true;else delete m.titleFlex;},[['fixed','Fixed: the same size on every object'],['flex','Flexible: grows and shrinks with the object']]);
+    showIf(sft,function(){return !!M().fit;});sfx.appendChild(sft);
     var sfn=h('div');
     sfn.appendChild(pair(inNum('Normal width (px)',function(){return M().fitW;},function(v){M().fitW=v;},40,4000),inNum('Normal height (px)',function(){return M().fitH;},function(v){M().fitH=v;},30,4000)));
     var sfb=h('button','btn ghost','Make the current size normal');sfb.type='button';
