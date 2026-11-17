@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.13.2 (2026-11-16). **Read "Start of every session" first.**
+Last updated at version 1.13.3 (2026-11-16). **Read "Start of every session" first.**
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -240,6 +240,17 @@ The owner asked to continue with 1.12.0 (done, below), then put the Map director
    engineering workstation; own drawings).
 3. Pipe flow direction on Line, instrument symbols on Process value. Geo map markers: not doable (PRTG draws them).
 Also offered, not done: machine state in the floating bar (only the side panel has it), and showing a fault channel on other symbols.
+
+## Corners 10 px by default (1.13.3, 2026-11-16)
+
+- The owner asked for the mockups' 10 px corners as the default and a corner setting in the floating bar. Every `LOOKS` radius under 10
+  became 10 (PRTG new UI, Corporate blue, Slate fintech, Neon plum, Teal glass, Wall display) and `LOOKBASE.radius` 4 -> 10 (Light card,
+  Dark card, Minimal); Clean card and Indigo board were already 10, Executive dark keeps 14, PRTG default (PRTG's own look) untouched.
+  The bar already had an unlabelled corner number (the "2" box); it is now `obLab('Corners', ...)`.
+- 350 of the 444 compared files change, and only in numbers after `border-radius` (checked: with every number masked the texts and names
+  are identical); 94 unchanged (icons, links, looks already at 10). File names are the same, so reinstalling replaces the old file. Inner
+  parts that take the look's radius capped at 12 (tile tracks, chips, segments) are rounder too. 16 tests; previews of 7 defaults looked at.
+  Not checked on the real PRTG. Files already installed keep their old corners until made again and installed.
 
 ## Lines between rows on/off (1.13.2, 2026-11-16)
 
