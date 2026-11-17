@@ -265,8 +265,8 @@ Also offered, not done: machine state in the floating bar (only the side panel h
   with curl, the manifest address answers 200 with `access-control-allow-origin: *` and the ZIP address answers with
   `Content-Disposition: attachment`. **Not checked**: the notice running as a real extension in Chrome against the real GitHub (only the
   tests' web page with GitHub answered by the test), and the download click in the owner's Chrome.
-- **The VM extension folder was not updated in this session** (a chat session with no bridge to the VM): it stays at 1.14.1 until a
-  session with the bridge writes 1.15.0 there, or the owner replaces the files.
+- The VM extension folder got 1.15.0 from a later session (2026-11-17): `manifest.json`, `app.html` and `js/01-config.js` written and
+  hash-checked identical to GitHub (`js/09-objects.js` was already 1.14.1's, also identical). 17 tests passed on that copy.
 
 ## Five element fixes from the Pre-update maps (1.14.1, 2026-11-17)
 
