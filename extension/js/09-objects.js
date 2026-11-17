@@ -6674,6 +6674,16 @@ try{
     if(TYPE!=='geomap'&&M().look.mode==='prtg')M().look.mode='custom';
     csetPaint(id);
   }
+  /* 1.15.3: the three Colors controls (above the preview, side panel, floating bar) all show this: the set the object's status colors
+     match, so a new object shows PRTG UI. Picking PRTG UI puts the object back to those default colors with no set forced, as on a new
+     object (forcing it changed graph line colors, the Geo map's acknowledged-down color and PRTG's own look); any other set as before */
+  function csetShown(){return (TYPE==='geomap')?gmSetOf():csetOf(M().look);}
+  function csetChoose(id){
+    if(id!=='prtg'){csetApply(id);return;}
+    PS.cur='';PS.over={};
+    if(TYPE==='geomap'){GM.palette='prtg';GM.cols=blankGM().cols;}
+    else{var l=M().look;if(l)l.c=mix(LOOKBASE.c,{});}
+  }
   /* small pictures of what each ready-made object looks like, for the Presets menu in the bar */
   function presetObj(v){
     var src=(TYPE==='tile')?TLPRESETS:(TYPE==='status')?SPRESETS:(TYPE==='gauge')?GPRESETS:(TYPE==='graph')?GRPRESETS:(TYPE==='donut')?DPRESETS:(TYPE==='sunburst')?SBPRESETS:(TYPE==='icon')?ICPRESETS:PRESETS, r=null;
@@ -6819,9 +6829,9 @@ try{
       CSETS.forEach(function(x){
         var q=h('button','pf-set');q.type='button';q.setAttribute('data-set',x[0]);
         q.innerHTML='<span class="sw">'+['up','warning','down','unusual','paused','unknown'].map(function(k){return '<i style="background:'+x[2][k]+'"></i>';}).join('')+'</span><span>'+x[1]+'</span>';
-        q.addEventListener('click',function(){obDo(function(){csetApply(x[0]);});});g.appendChild(q);
+        q.addEventListener('click',function(){obDo(function(){csetChoose(x[0]);});});g.appendChild(q);
       });
-      OB.syncs.push(function(){var cur=csetOf(L());[].forEach.call(g.children,function(q){q.classList.toggle('on',q.getAttribute('data-set')===cur);});});
+      OB.syncs.push(function(){var cur=csetShown();[].forEach.call(g.children,function(q){q.classList.toggle('on',q.getAttribute('data-set')===cur);});});
       if(!notFrame())return;
       pop.appendChild(h('div','pf-h','Or each color on its own'));
       var cg=h('div','pf-cols');pop.appendChild(cg);
@@ -7129,9 +7139,9 @@ try{
       CSETS.forEach(function(x){
         var q=h('button','pf-set');q.type='button';q.setAttribute('data-set',x[0]);
         q.innerHTML='<span class="sw">'+['up','warning','down','unusual','paused','unknown'].map(function(k){return '<i style="background:'+x[2][k]+'"></i>';}).join('')+'</span><span>'+x[1]+'</span>';
-        q.addEventListener('click',function(){obDo(function(){csetApply(x[0]);});});g.appendChild(q);
+        q.addEventListener('click',function(){obDo(function(){csetChoose(x[0]);});});g.appendChild(q);
       });
-      OB.syncs.push(function(){var cur=gmSetOf();[].forEach.call(g.children,function(q){q.classList.toggle('on',q.getAttribute('data-set')===cur);});});
+      OB.syncs.push(function(){var cur=csetShown();[].forEach.call(g.children,function(q){q.classList.toggle('on',q.getAttribute('data-set')===cur);});});
       pop.appendChild(h('div','pf-h','Or pick each one'));
       GMSTATES.forEach(function(st){
         var w=h('div','pf pf-col'), i=h('input');i.type='color';w.appendChild(h('label',null,st.label));
@@ -8802,8 +8812,8 @@ try{
     var s8a=section('Appearance');secIf(s8a,function(){return notIcStock()&&notPaste()&&TYPE!=='links';});
     (function(){
       var w=h('div','dfld');w.appendChild(h('label',null,'Status colors'));
-      var cur=function(){return (TYPE==='geomap')?(function(){var r='custom';CSETS.forEach(function(x){var ok=true;GMSTATES.forEach(function(st){if(st.id!=='downack'&&String(gmColor(GM,st.id)).toLowerCase()!==x[2][st.id==='warn'?'warning':st.id].toLowerCase())ok=false;});if(ok)r=x[0];});return r;})():csetOf(M().look);};
-      var pk=PS.picker({get:cur,pick:function(v){if(v==='custom'){PS.cur='';PS.over={};}else csetApply(v);refreshUI();render();},extra:[['custom','My own mix']]});
+      var cur=csetShown;
+      var pk=PS.picker({get:cur,pick:function(v){if(v==='custom'){PS.cur='';PS.over={};}else csetChoose(v);refreshUI();render();},extra:[['custom','My own mix']]});
       syncs.push(function(){pk.sync();});w.appendChild(pk);s8a.appendChild(w);
     })();
     var g=h('div');s8a.appendChild(g);
@@ -8870,9 +8880,9 @@ try{
   (function(){
     var host=document.getElementById('ocset');
     if(!host)return;
-    var pk=PS.picker({get:function(){return PS.cur||(TYPE==='donut'?csetOf(DN.look):'');},pick:function(id){if(!id){PS.cur='';PS.over={};refreshUI();render();return;}obDo(function(){csetApply(id);});},extraFirst:[['','The look\u2019s own']],extra:[['custom','My own mix']]});
+    var pk=PS.picker({get:csetShown,pick:function(id){obDo(function(){csetChoose(id);});},extra:[['custom','My own mix']]});
     host.appendChild(pk);window.PMSHDR=pk;
-    var psync=pk.sync;pk.sync=function(){[].forEach.call(pk.querySelectorAll('.csp-row'),function(q){var id=q.getAttribute('data-set');if(id==='')q.hidden=(TYPE==='donut');if(id==='custom')q.hidden=true;});psync();};pk.sync();
+    var psync=pk.sync;pk.sync=function(){[].forEach.call(pk.querySelectorAll('.csp-row'),function(q){var id=q.getAttribute('data-set');if(id==='custom')q.hidden=true;});psync();};pk.sync();
   })();
   document.getElementById('ozoom').addEventListener('change',function(){drawPreview();});
   obWire();

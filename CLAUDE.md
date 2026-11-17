@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.15.2 (2026-11-17). **Read "Start of every session" first.**
+Last updated at version 1.15.3 (2026-11-17). **Read "Start of every session" first.**
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -259,6 +259,23 @@ Also offered, not done: machine state in the floating bar (only the side panel h
 - Not checked: anything that writes (push, Undo, delete, background upload, new map; offered a throwaway test map, no answer yet), object
   types not installed there (tables, gauges, donuts, Industrial, fence, map directory), the new UI.
 
+## The three Colors controls agree (1.15.3, 2026-11-17)
+
+- Fix 3 of 1.15.2, the owner's answer: show the same thing in all three, PRTG UI still the default, files byte-identical (asked with
+  the choice "PRTG UI = today's default" vs "force PRTG UI from the start", which would have changed 32 of 140 default files).
+- 09-objects.js, after `csetApply`: `csetShown()` = `gmSetOf()` for the Geo map, else `csetOf(M().look)` (the set the colours match;
+  PRTG UI on a new object). Used by the header picker `#ocset` (its "The look’s own" row is gone), the side panel's Status colors and
+  both bar Colors menus. `csetChoose(id)`: any set but PRTG UI = `csetApply` as before; PRTG UI = `PS.cur=''`, `PS.over={}` and the default
+  colours back (`look.c = mix(LOOKBASE.c,{})`, Geo map `palette 'prtg'` + `blankGM().cols`), i.e. no set forced. So forcing PRTG UI (graph
+  lines in status colours, Geo map acknowledged-down blend, PRTG default look made custom) is no longer reachable; the owner accepted that.
+- Checked: 1116 files identical to 1.15.1; 18 tests; clicking the real controls for 10 types x 4 looks: all three say PRTG UI at start,
+  follow Vivid and Color-blind safe, PRTG UI from each control gives the default file back; Vivid's file identical to 1.15.2's.
+  Exception, as before: on the PRTG default look a picked set turns PRTG's own styling into Map Studio's, and PRTG UI does not turn it back.
+  Left as it is: the Map designer's own Color set picker (`fbColorsFill`) sets `PS.cur='prtg'` when PRTG UI is picked there, which then
+  forces the set in the Object builder (labels still agree; files of graphs, Geo maps, PRTG-look objects would differ). Not reported as
+  a problem by the owner.
+- Fix 4: the owner said "Not now"; the bar is unchanged.
+
 ## Small interface fixes (1.15.2, 2026-11-17)
 
 - The owner asked for five small fixes, one at a time, with the 17 tests (18 checks) after each, before/after screenshots, no layout
@@ -272,12 +289,12 @@ Also offered, not done: machine state in the floating bar (only the side panel h
   app.html: `#objsamples`, its note and `#sampmsg` are inside `<details class="subsec" id="objadv"><summary>Advanced</summary>`.
 - 5: the bar's four colour boxes are wrapped in `obLab`: Text, Labels (secondary text), Fill, Border. Same bar height and rows at
   1280x720, 1400x900, 1920x1080 (at 1920 the second row now starts after the first box, not the second).
-- 3, reported: the Colors picker above the preview (`#ocset`) shows `PS.cur` ('' = "The look’s own" = no set chosen); the side
+- 3, reported (done at 1.15.3, above): the Colors picker above the preview (`#ocset`) shows `PS.cur` ('' = "The look’s own" = no set chosen); the side
   panel's Status colors and the bar's Colors menu show `csetOf(look)`, the set the look's status colours match, which since 1.6.0 is
   always PRTG UI. Choosing PRTG UI is not a no-op: in 32 of 140 type x look cases the file changes (graph series colours come from the
   set instead of the look, the geo map's down-acknowledged colour, and the PRTG default look turns custom). Proposed: let the side panel
   and the bar read `PS.cur` too and offer "The look’s own" (files unchanged). No answer yet.
-- 4, reported: `obPlace` puts the bar `bh+10` above the object; at 1280x720 the bar wraps to 3 rows (102 px) and rises over the preview's
+- 4, reported (owner: not now): `obPlace` puts the bar `bh+10` above the object; at 1280x720 the bar wraps to 3 rows (102 px) and rises over the preview's
   Colors/Zoom/Background row (and at 1400x900 too). Smallest change proposed: `if(!below)top=Math.max(top,cr.top+4)` (never above the
   preview; at 1280x720 it then covers ~40 px of the object's top). Tried and not proposed: flipping below when there is no room above
   (at 1400x900 it covers Add to this list). No answer yet.
