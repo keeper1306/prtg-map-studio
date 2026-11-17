@@ -241,6 +241,24 @@ The owner asked to continue with 1.12.0 (done, below), then put the Map director
 3. Pipe flow direction on Line, instrument symbols on Process value. Geo map markers: not doable (PRTG draws them).
 Also offered, not done: machine state in the floating bar (only the side panel has it), and showing a fault channel on other symbols.
 
+## PRTG 26.4 checked, read only, on amer.prtglab.com (2026-11-17, no extension change)
+
+- The owner signed in to amer.prtglab.com in Chrome (PRTG 26.4.126.1824, a shared lab server: read only, change nothing without asking).
+  Maps there with Map Studio objects: 4765 MSP Customer Status, 4973 Global Status, 4573, 4642, 4974, 4975. 30 Map Studio files in its
+  object list (icons, sunburst, geo map, graphs, 20 link styles, status counts, bar gauge tile).
+- Same as 26.3: View Map lives in `/controls/maponly.htm` inside an iframe of `mapshow.htm`; all tags filled in, no page errors; the Link
+  style takes over the 3 lines (`#mapsvg.mls-on`, PRTG lines hidden, one `g.mls-g`, SMIL running); shields carry `map_objectstate_*`;
+  `/controls/mapobjectpreview.htm` (in `/javascript/prtg.js`: count 5, dependency_, mapelements, maptitles, width/height, selected,
+  `.previewloading`, `_Prtg.initPlugins`) draws status counts, bar gauge, graph, shield, sunburst; `/api/tree.json` is one Root object
+  `{data,state,attr{objid,type},children}` (what `trParse` handles); channels `info=treejson` is `{data:[{lastvalueraw,graphminraw,
+  graphmaxraw,limitmode,primary,...}]}`; sensors columns `*_raw` as before; historicdata, `/api/mapobject.json`, `/api/mapsvg.htm`,
+  `/api/mapobjects.htm`, `/controls/mapdesigner.htm`, `/controls/objectdata.htm` (width_, height_, mapautoscale_, usebgimage_, upfile_,
+  bgcolor_) all answer; PRTG table rows `odd|even sr rowdown`, cells `12px 10px 3px baseline`, `prtg-plugin-initialized`, `.pagenavigation`.
+- Difference seen: during 40 s the map's `#mapsvg` was not replaced (26.3 replaces it about every 30 s), while the counts updated. Not
+  confirmed why; harmless for Map Studio.
+- Not checked: anything that writes (push, Undo, delete, background upload, new map; offered a throwaway test map, no answer yet), object
+  types not installed there (tables, gauges, donuts, Industrial, fence, map directory), the new UI.
+
 ## New version notice (1.15.0, 2026-11-17)
 
 - The owner asked how users could learn about updates. Chosen: a notice inside the tool, not intrusive ("optional"), whose click starts
