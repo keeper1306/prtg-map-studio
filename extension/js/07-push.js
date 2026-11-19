@@ -48,7 +48,9 @@ try{
   function say(msg,kind){var n=$('pushstatus'), m=$('pushmsg');n.textContent=msg;n.className='note pst'+(kind?' '+kind:'');if(m){m.textContent=msg;m.className='note pst'+(kind?' '+kind:'');}banner(msg,kind);}
   /* PRTG wants a login: say so and open the panel with the fields, ready to type */
   function authNeeded(){
+    var was=!!(S.maps&&S.objFile);
     $('pushauth').hidden=false;S.lastErr='login needed';S.authAsked=true;S.needLogin=true;
+    if(was)say('PRTG asked for a sign-in again (it answered 401: not authorised). Enter your username and passhash, then press Connect.','err');
     $('prtgpop').hidden=false;swSync();
     try{$('pushuser').focus();}catch(e){}
   }
@@ -369,7 +371,26 @@ try{
       lab.appendChild(cb);lab.appendChild(el('span','',c.removed.length===1?'Also delete the removed item from the map':'Also delete the '+c.removed.length+' removed items from the map'));
       box.appendChild(lab);
     }
+    reviewKinds(p,box);
     refreshGo();
+  }
+  /* 1.15.6: ask PRTG whether each object can show on its target (one small preview request per object and target, cached), and warn
+     under the list when PRTG says it cannot. A warning, not a block: the push still goes ahead if asked. */
+  function reviewKinds(p,box){
+    var seen={}, msgs=[], note=document.createElement('p');
+    note.className='note pst err';note.hidden=true;note.id='pushkindwarn';box.appendChild(note);
+    var NAMES={s:'a sensor',d:'a device',g:'a group',p:'a probe'};
+    Promise.all(p.filter(function(it){var tg=it.kind==='object'&&it.object&&it.object.target;return tg&&tg.id!==undefined&&tg.id!==null&&tg.id!=='';}).map(function(it){
+      var tg=it.object.target, k=it.object.value+'|'+tg.id;
+      if(seen[k])return null;seen[k]=1;
+      return pvGet({file:it.object.value,name:it.object.name,target:tg.id,w:200,h:120,mode:'box'}).then(function(){
+        var ks=KBAD[k];
+        if(ks)msgs.push('\u201C'+it.name+'\u201D cannot show on '+(tg.name||('ID '+tg.id))+': PRTG says it only works on '+ks.map(function(x){return NAMES[x];}).join(' or ')+'. Choose one as its target before pushing.');
+      },function(){});
+    })).then(function(){
+      if(!msgs.length||!note.isConnected)return;
+      note.textContent=msgs.join(' ');note.hidden=false;
+    });
   }
   /* the server address is arbitrary and only known once typed, so this extension
      declares no fixed host_permissions; instead it asks Chrome for permission on
@@ -467,7 +488,7 @@ try{
       }).then(function(t){
         if(gen!==CONN.gen)throw CONNCANCEL;
         var catj=parseJson(t,'The list of object files');
-        S.objFile=findCustomHtml(catj);S.catalog=parseCatalog(catj);pubObjs();S.tgt={};
+        S.objFile=findCustomHtml(catj);S.catalog=parseCatalog(catj);pubObjs();S.tgt={};S.needLogin=false;
         openApp();
         rememberConnection();
         if(!S.maps.length)say('Connected, but there are no maps. Create an empty map in PRTG first.','err');
@@ -702,8 +723,30 @@ try{
     var m=/subid\s*=\s*["']?(\d+)/i.exec(resp)||/mapelement_\d+_(\d+)/i.exec(resp);
     return m?m[1]:null;
   }
+  /* 1.15.6: PRTG turns every " it is sent in an item's HTML into ' (checked on the owner's lab PRTG: a label typed as "double" came
+     back as 'double'), while &quot; is kept and shows as ". So a " in text (outside tags) is sent as &quot;. Tags (where " only
+     wraps attribute values, and ' does the same job), comments and the insides of <script> and <style> are left as they are. */
+  function qfix(h){
+    h=String(h==null?'':h);
+    if(h.indexOf('"')<0)return h;
+    var out='', i=0, n=h.length, c, j, q, m, end;
+    while(i<n){
+      c=h.charAt(i);
+      if(c==='<'&&h.substr(i,4)==='<!--'){j=h.indexOf('-->',i+4);j=(j<0)?n:j+3;out+=h.slice(i,j);i=j;continue;}
+      if(c==='<'&&/[A-Za-z\/!?]/.test(h.charAt(i+1)||'')){
+        j=i+1;q='';
+        while(j<n){var d=h.charAt(j);if(q){if(d===q)q='';}else if(d==='"'||d==="'")q=d;else if(d==='>')break;j++;}
+        j=Math.min(n,j+1);out+=h.slice(i,j);
+        m=/^<(script|style)\b/i.exec(h.slice(i,j));
+        if(m){end=h.toLowerCase().indexOf('</'+m[1].toLowerCase(),j);end=(end<0)?n:end;out+=h.slice(j,end);j=end;}
+        i=j;continue;
+      }
+      out+=(c==='"')?'&quot;':c;i++;
+    }
+    return out;
+  }
   function editCall(id,sub,v){
-    return http('POST','/api/editmapobject.htm',{subid:sub,id:id,top:v.top!==undefined?v.top:v.top,left:v.left,width:v.width,height:v.height,zindex:v.z,htmlbefore_:v.html,htmlafter_:v.after||'',ElementLink:v.link||''});
+    return http('POST','/api/editmapobject.htm',{subid:sub,id:id,top:v.top!==undefined?v.top:v.top,left:v.left,width:v.width,height:v.height,zindex:v.z,htmlbefore_:qfix(v.html),htmlafter_:qfix(v.after||''),ElementLink:v.link||''});
   }
   /* the layout data carries the layout's identity: keep it, and the pushed items can be updated later */
   function offerLayout(){try{$('dlayout').value=DASHAPI.layoutText();DASHAPI.markSaved();}catch(e){}}
@@ -1226,6 +1269,10 @@ try{
     $('pushmap').addEventListener('change',scSync);
     document.addEventListener('prtgstate',scSync);
     document.addEventListener('canvassize',function(){setTimeout(scSync,0);});
+    /* 1.15.6: also when the canvas size changes another way (a map loaded or made), an item is added, or a step opens (the Push step
+       showed the old size and "Put something on the canvas first" until Review). Debounced: zooming fires dsize many times. */
+    var scT=null;function scLater(){clearTimeout(scT);scT=setTimeout(function(){try{scSync();}catch(e){}},120);}
+    ['dsize','secopen','builditemadded'].forEach(function(ev){document.addEventListener(ev,scLater);});
     $('scgo').addEventListener('click',scMake);
   })();
   /* PRTG's addmap2.htm, as createMap() does; the new map is found in the map list afterwards */
@@ -2216,7 +2263,7 @@ try{
   function xeBase(sub){return XE.cur[sub]?Promise.resolve(XE.cur[sub]):xeFetch(sub).then(function(b){XE.cur[sub]=b;return b;});}
   function xeSame(a,b){var k;for(k in a){if(a[k]!==b[k])return false;}return true;}
   function xeMerged(sub){var b=XE.cur[sub], s=XE.stage[sub]||{}, o={}, k;for(k in b)o[k]=(k in s)?s[k]:b[k];return o;}
-  function xeEditCall(sub,v){return http('POST','/api/editmapobject.htm',{subid:sub,id:mapId(),top:v.top,left:v.left,width:v.width,height:v.height,zindex:v.z,htmlbefore_:v.before,htmlafter_:v.after,ElementLink:v.link});}
+  function xeEditCall(sub,v){return http('POST','/api/editmapobject.htm',{subid:sub,id:mapId(),top:v.top,left:v.left,width:v.width,height:v.height,zindex:v.z,htmlbefore_:qfix(v.before),htmlafter_:qfix(v.after),ElementLink:v.link});}
   function xeHist(){try{var a=JSON.parse(localStorage.getItem(CFG.keys.mapEdits)||'[]');return Array.isArray(a)?a:[];}catch(e){return [];}}
   function xeSaveHist(a){try{localStorage.setItem(CFG.keys.mapEdits,JSON.stringify(a.slice(-20)));return true;}catch(e){S.storeFail=true;return false;}}
   function xeLast(){var h=xeHist(),i;for(i=h.length-1;i>=0;i--){if(sameTarget(h[i]))return h[i];}return null;}
@@ -2544,10 +2591,10 @@ try{
     try{document.dispatchEvent(new CustomEvent('prtgobjs'));}catch(e){}
   }
   function swSync(){
-    var connected=!!(S&&S.maps&&S.objFile), busy=!!$('pushconnect').disabled&&!connected, err=S&&S.lastErr;
-    $('prtgdot').className='pdot '+(connected?'ok':(busy?'busy':(err?'err':'off')));
-    $('prtgtxt').textContent=connected?('Connected to '+hostOf(base()||pageOrigin()||'PRTG')):(busy?'Connecting\u2026':(err?('Not connected \u00B7 '+String(err).slice(0,48)):'Not connected'));
-    $('prtgtxt').title=connected?('Connected to '+(base()||pageOrigin()||'PRTG')+' \u00B7 '+S.maps.length+(S.maps.length===1?' map':' maps')):String(err||'Not connected');
+    var connected=!!(S&&S.maps&&S.objFile), busy=!!$('pushconnect').disabled&&!connected, err=S&&S.lastErr, lost=connected&&!!S.needLogin;
+    $('prtgdot').className='pdot '+(lost?'err':(connected?'ok':(busy?'busy':(err?'err':'off'))));
+    $('prtgtxt').textContent=lost?('Sign-in needed \u00B7 '+hostOf(base()||pageOrigin()||'PRTG')):(connected?('Connected to '+hostOf(base()||pageOrigin()||'PRTG')):(busy?'Connecting\u2026':(err?('Not connected \u00B7 '+String(err).slice(0,48)):'Not connected')));
+    $('prtgtxt').title=lost?'PRTG answered 401 (not authorised): enter your username and passhash and press Connect':(connected?('Connected to '+(base()||pageOrigin()||'PRTG')+' \u00B7 '+S.maps.length+(S.maps.length===1?' map':' maps')):String(err||'Not connected'));
     $('prtgswitch').hidden=!connected;$('prtgrefresh').hidden=!connected;$('prtgdisconnect').hidden=!connected;$('prtgcog').hidden=connected;
     if(connected&&CSSX&&CSSX.origin!==(base()||pageOrigin()||''))try{prtgCss();}catch(e){}
     window.PRTGSTATE={connected:connected,map:connected&&!!$('pushmap').value};
@@ -2557,11 +2604,10 @@ try{
     $('mapbgcolor').disabled=!window.PRTGSTATE.map;try{bgPreSync();}catch(e){}$('mapbgbtn').disabled=!window.PRTGSTATE.map;$('mapbgbtn').dataset.tip=window.PRTGSTATE.map?'Change the map\u2019s background color or picture':'Connect and choose a map first';try{bgiSync();}catch(e){}
     try{document.dispatchEvent(new CustomEvent('prtgstate',{detail:window.PRTGSTATE}));}catch(e){}
     if(S.needLogin&&!connected&&!busy){$('prtgpop').hidden=false;}
-    if(connected)S.needLogin=false;
     if(connected&&!busy&&S.reauth){S.reauth=false;$('prtgpop').hidden=true;}   /* a connect that followed a refused login has worked: the panel has done its job */
   }
   function disconnect(){
-    S.maps=null;S.objFile=null;S.catalog=null;S.reviewed=null;S.cls=null;S.lastErr=null;S.tgt={};
+    S.maps=null;S.objFile=null;S.catalog=null;S.reviewed=null;S.cls=null;S.lastErr=null;S.needLogin=false;S.tgt={};
     $('pushmap').innerHTML='';$('pushgo').hidden=true;$('pushlist').hidden=true;
     mapMode('open');$('newmapname').value='';$('newmapmsg').textContent='';
     $('exfs').hidden=true;
@@ -2619,7 +2665,11 @@ try{
       say('Could not refresh: '+((err&&err.message)||'no answer from PRTG')+' Nothing was changed.','err');
     }).then(function(){b.classList.remove('busy');b.disabled=false;updateButtons();swSync();});
   });
-  document.addEventListener('click',function(e){var p=$('prtgpop');if(!p.hidden&&!p.classList.contains('gate')&&!(e.target.closest&&e.target.closest('#prtgbar, #prtgpop')))p.hidden=true;});
+  /* a click outside closes the panel. 1.15.6: only when the press started outside too: selecting text in a field and letting go of the
+     mouse past the panel's edge gives a click on the page behind it, which used to close the panel in the middle of the selection */
+  var popPressIn=false;
+  document.addEventListener('mousedown',function(e){popPressIn=!!(e.target&&e.target.closest&&e.target.closest('#prtgbar, #prtgpop'));},true);
+  document.addEventListener('click',function(e){var p=$('prtgpop'), inside=popPressIn;popPressIn=false;if(inside)return;if(!p.hidden&&!p.classList.contains('gate')&&!(e.target.closest&&e.target.closest('#prtgbar, #prtgpop')))p.hidden=true;});
   swSync();
   window.EXAPI={pvx:pvExtract,state:EX,edit:XE,parse:exParse,headers:exHeaders,load:exLoad,clear:exClear,pick:exPick,label:exLabel};
   /* ---- live previews: PRTG's own drawing of each object, with the target's real data.
@@ -2811,6 +2861,7 @@ try{
       if(r.error)return {state:'error',msg:r.error};
       if(r.status===401){authNeeded();return {state:'error',msg:'PRTG asked for a login'};}
       if(r.status<200||r.status>=300)return {state:'error',msg:'PRTG answered '+r.status};
+      kindLearn(o.file,o.target,r.body);
       x=pvExtract(r.body);
       return x?{state:'ok',inner:x.inner,content:x.content,iw:x.iw,ih:x.ih}:{state:'error',msg:'PRTG returned no object for this file'};
     });
@@ -2880,6 +2931,24 @@ try{
   function selEntry(){var i;if(!S.catalog||!OBJSEL)return null;for(i=0;i<S.catalog.length;i++)if(S.catalog[i].value===OBJSEL)return S.catalog[i];return null;}
   /* what an object reads from: a sensor, or a group, device or probe. Your own files say so in their code; PRTG's stock files are known; anything else is tried as a group first. */
   function kindStore(){try{return JSON.parse(localStorage.getItem(CFG.keys.kindOf)||'{}')||{};}catch(e){return {};}}
+  /* 1.15.6: a file shown with the wrong kind of object makes PRTG answer "Incompatible object type. This object only supports: Sensor"
+     (seen on PRTG 26.3 with a sensor-only gauge on a device). Every preview answer is read for it, so a file whose code we do not have
+     (not in Your objects in this browser) is learned from PRTG itself: it then starts on the right kind, and Review can warn. */
+  var KLKEY=CFG.keys.kindOf+'.learned', KBAD={};
+  function klearn(){try{return JSON.parse(localStorage.getItem(KLKEY)||'{}')||{};}catch(e){return {};}}
+  function kindsIn(body){
+    var m=/Incompatible object type[\s\S]{0,300}?only supports:?\s*([A-Za-z ,]+)/i.exec(String(body||'')), t, k=[];
+    if(!m)return null;t=m[1].toLowerCase();
+    if(/device/.test(t))k.push('d');if(/group/.test(t))k.push('g');if(/probe/.test(t))k.push('p');if(/sensor/.test(t))k.push('s');
+    return k.length?k:null;   /* most specific first, as kindOf picks: device, group, probe, sensor */
+  }
+  function kindLearn(file,target,body){
+    var ks=kindsIn(body), st, was;
+    if(!ks||!file)return;
+    KBAD[file+'|'+target]=ks;
+    st=klearn();was=st[file];st[file]=ks[0];
+    if(was!==ks[0]){try{localStorage.setItem(KLKEY,JSON.stringify(st));}catch(e){}if(OBJSEL===file)pvPaneSchedule();}
+  }
   function libCodeFor(e){var lib=libLoad(), k=keyOf(e.cat,e.name), f;for(f in lib)if(keyOf(lib[f].cat,lib[f].name)===k)return lib[f].code;return null;}
   /* Which single kind of object a file is best started on: PRTG's own declaration where the file carries
      one, else the known stock lists. PRTG's vocabulary here is probenode, group, device and sensor, and a
@@ -2902,6 +2971,7 @@ try{
         if(has('sensor'))return 's';
       }
     }
+    if(klearn()[e.value])return klearn()[e.value];   /* 1.15.6: what PRTG said this file takes */
     if(SENSOR_FILES.indexOf(e.value)>=0)return 's';
     if(/^graphs$/i.test(e.cat))return 's';
     return 'd';   /* the stock files take a probe, group or device; a device is the most specific of those */
@@ -3115,7 +3185,7 @@ try{
     missing=Object.keys(lib).filter(function(f){return !S.catalog.some(function(c){return keyOf(c.cat,c.name)===keyOf(lib[f].cat,lib[f].name);});});
     if(missing.length){
       n.hidden=false;n.className='note pst err';
-      n.textContent='Not in PRTG yet: '+missing.map(function(f){return f+' ('+lib[f].cat+': '+lib[f].name+')';}).join(', ')+'. Copy '+(missing.length===1?'the file':'the files')+' into PRTG’s mapobjects folder (Download ZIP in the Object builder tab gives you a zip), then press Connect again.';
+      n.textContent='Not in PRTG yet: '+missing.map(function(f){return f+' ('+lib[f].cat+': '+lib[f].name+')';}).join(', ')+'. Copy '+(missing.length===1?'the file':'the files')+' into PRTG’s mapobjects folder (Download ZIP in the Object builder tab gives you a zip), then press \u201CRefresh object list\u201D under PRTG Server Objects.';
     }else if(Object.keys(lib).length){n.hidden=false;n.className='note pst ok';n.textContent='Every object you designed here is in PRTG’s list.';}
     else n.hidden=true;
     box.scrollTop=top;
@@ -3438,10 +3508,15 @@ try{
   }
   function pickHead(){
     var h=$('tgthead'), u=$('tgtuse'), sel=DASHAPI.selected(), has=!!(sel&&sel.type==='prtgobj');
-    if(PICK.mode==='g'){h.innerHTML='<strong>Choose what previews and new group or device objects show.</strong> Each object can still be given its own target.';u.textContent='Use as default';}
-    else if(PICK.mode==='s'){h.innerHTML='<strong>Choose the sensor that previews and new sensor objects show.</strong>';u.textContent='Use as default';}
-    else if(has){h.innerHTML='<strong>What should the selected object show?</strong> Pick a device, group or sensor, or drag one onto any object on the canvas.';u.textContent='Use as target';}
-    else{h.innerHTML='<strong>Targets.</strong> Drag a device, group or sensor onto an object on the canvas to make it that object\u2019s target.';u.textContent='Use as target';}
+    if(PICK.mode==='g'){h.innerHTML='<strong>Choose what previews and new group or device objects show.</strong> Each object can still be given its own target.';u.textContent='Use as default';u.title='';}
+    else if(PICK.mode==='s'){h.innerHTML='<strong>Choose the sensor that previews and new sensor objects show.</strong>';u.textContent='Use as default';u.title='';}
+    else if(has){   /* 1.15.6: say which item the button sets the target of */
+      var nm=String(sel.name||'').trim()||'the selected object';if(nm.length>36)nm=nm.slice(0,35)+'\u2026';
+      h.innerHTML='';var st=document.createElement('strong');st.textContent='What should \u201C'+nm+'\u201D show?';h.appendChild(st);
+      h.appendChild(document.createTextNode(' Pick a device, group or sensor, or drag one onto any object on the canvas.'));
+      u.textContent='Use as target for \u201C'+nm+'\u201D';u.title='Sets the target of the item selected on the canvas: '+(sel.name||'');
+    }
+    else{h.innerHTML='<strong>Targets.</strong> Drag a device, group or sensor onto an object on the canvas to make it that object\u2019s target.';u.textContent='Use as target';u.title='';}
     $('tgttype').disabled=(PICK.mode==='s');
     $('tgtcancel').hidden=(PICK.mode==='item');
   }

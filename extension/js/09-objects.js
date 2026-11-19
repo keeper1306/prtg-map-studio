@@ -5123,6 +5123,16 @@ try{
     var v=String((I.labels&&I.labels[s.id])||'').replace(/[\\"<>]/g,'').replace(/\s+/g,' ').trim().slice(0,24);
     return v||s.label;
   }
+  /* 1.15.6: a long status word (Down (Acknowledged), or a word of your own) shrinks to fit the pill or the status bar instead of being
+     cut off, but never below 9 px (or the look's own size, if that is smaller); past that it is cut as before. No script: .pst is a
+     size container, and each state sets --wn, the number of letters of its word, so the size is worked out in CSS from the width. */
+  function iFitWord(c,r,I,k){
+    var per=(k==='pill')?0.72:0.64, rest=(k==='pill')?2.9:2.3, edge=(k==='pill')?0:8;
+    c.push(r+' .pst{container-type:inline-size;}');
+    c.push(r+'{--wn:'+iLabel(I,ISTATES[1]).length+';}');
+    ISTATES.forEach(function(s){c.push(sSel(r,s,'')+'{--wn:'+iLabel(I,s).length+';}');});
+    c.push(r+' .pst-'+k+'{font-size:max(min(1em,9px),min(1em,calc((100cqw - '+edge+'px) / ('+rest+' + '+per+' * var(--wn)))));}');
+  }
   function sSel(r,s,tail){return s.sens.concat(s.has).map(function(k){return r+'.map_objectstate_'+k+(tail||'');}).join(',');}
   function iconCss(I,cls){
     var L=iEffLook(I), st=iStyle(I.style), r='.'+cls, c=[], P=iconPalette(I,L), muted=(L.muted||L.headColor), txt=(I.text!=='none');
@@ -5177,6 +5187,7 @@ try{
       c.push(r+' .pst-sbar{display:inline-flex;align-items:center;gap:.5em;height:100%;max-height:100%;box-sizing:border-box;padding:0 1em 0 .8em;border:1px solid '+blend(soft,'#FFFFFF',0.4)+';border-left:6px solid var(--c);border-radius:4px;background:'+(cf&&String(cf).charAt(0)==='#'?cf:'#FFFFFF')+';color:'+ink+';font-weight:600;white-space:nowrap;overflow:hidden;}');
       c.push(r+' .pst-sbar .pst-n,'+r+' .pst-sbar .pst-w{color:inherit;font-size:1em;}');
       c.push(r+' .pst-sbar .pst-n{font-weight:400;}');
+      iFitWord(c,r,I,'sbar');
     }
     if(st.gl==='hb'){
       c.push(r+' .gl{display:none;fill:none;stroke:var(--c);stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round;}');
@@ -5189,6 +5200,7 @@ try{
       c.push(r+' .pst-pill i{display:block;width:.55em;height:.55em;border-radius:50%;background:currentColor;opacity:.9;flex:0 0 auto;}');
       c.push(r+' .pst-pill .pst-n,'+r+' .pst-pill .pst-w{color:inherit;font-size:1em;}');
       c.push(r+' .pst-pill .pst-w{text-transform:uppercase;letter-spacing:.4px;}');
+      iFitWord(c,r,I,'pill');
     }
     /* the states, mildest first so the worst one wins when an object carries several state classes */
     ISTATES.forEach(function(s){

@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.15.5 (2026-11-17). **Read "Start of every session" first.**
+Last updated at version 1.15.6 (2026-11-18). **Read "Start of every session" first.**
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -275,6 +275,43 @@ Also offered, not done: machine state in the floating bar (only the side panel h
   confirmed why; harmless for Map Studio.
 - Not checked: anything that writes (push, Undo, delete, background upload, new map; offered a throwaway test map, no answer yet), object
   types not installed there (tables, gauges, donuts, Industrial, fence, map directory), the new UI.
+
+## Fixes from an outside test run (1.15.6, 2026-11-18)
+
+- The owner had another AI test a temporary web copy of the tool (kept only on the lab VM, not in this repo, and not of interest any
+  more: "only the extension") and asked which findings hold. Agreed and fixed, each checked with the 18 tests and the 1116-file comparison:
+  - Target kind (07-push.js): `kindsIn(body)` reads PRTG's preview answer "Incompatible object type ... only supports: Sensor";
+    `kindLearn` keeps it in localStorage `CFG.keys.kindOf+'.learned'` (file -> kind) and `KBAD[file|target]`; `kindOf` uses the learned
+    kind before `SENSOR_FILES`. `reviewKinds` (end of `review()`) asks the preview for each object item and shows `#pushkindwarn`.
+  - Scaled copy: `scSync` also runs (120 ms later) on `dsize`, `secopen` and `builditemadded`, so its size and button are current.
+  - After a 401 while connected: `authNeeded` says so in the status, `swSync` shows "Sign-in needed" with a red dot (`lost`);
+    `S.needLogin` is cleared only by a successful connect (and by Disconnect), not merely because maps are loaded.
+  - The missing-file message says to press "Refresh object list" (under PRTG Server Objects), not Connect again.
+  - Canvas size (06-dashboard.js): `layCells(cw,ch)` takes another size; `layReflow(ow,oh)` (from `sizeChange` and
+    `DASHAPI.setCanvasSize`) maps every layout item from its old cell's inner box to the new one (boxes scale, others keep size), syncs
+    frames and dividing lines, and moves items in no cell in proportion. `DASHAPI.newMapCanvas` sets a new layout and is unchanged.
+  - Quotes: measured on the owner's lab PRTG (throwaway map 2252 "Map Studio test - quotes (safe to delete)", six Custom HTML items,
+    left there): PRTG turns every raw `"` in HTML Before into `'` (attribute quotes too, harmless), and keeps `&quot;`, `&#34;`,
+    `&#x22;` and typographic quotes, which then show as written. Map Studio's own builders already send `&quot;`; text typed on the
+    canvas (kept as HTML, with `<br>`) did not, which is how the test map 2249 got 'double'. `qfix(h)` in 07-push.js turns `"` in
+    text into `&quot;` for every `editmapobject` call (`editCall`, `xeEditCall`), leaving tags, comments, `<script>` and `<style>` alone.
+    Checked: an edit with the fixed text on 2252 is stored with `&quot;` and View Map shows "double".
+  - Status pill and Status bar (09-objects.js, `iFitWord`): `.pst` is a size container; every state sets `--wn` (letters of its word);
+    the pill/bar font is `max(min(1em,9px),min(1em,(100cqw - edge) / (rest + per * --wn)))`. At 160 x 32 "Down (Acknowledged)" is 9.7 px
+    in the pill and 10.5 px in the bar, the other words keep the look's size. No script, so it works in PRTG's previews too. Only status
+    bar and pill files change (14 files of the comparison set, all status bars; pills are not in it). The name, when shown as well, is not
+    counted: it is cut with "..." as before.
+  - A double-clicked object (`DASHAPI.addObject` without a place) goes to the first empty layout cell (title row skipped) through
+    `extra.at` and `layAfterAdd`.
+  - `LAYBSIG` keeps, for this session only, how a layout-made banner looked; `layApply` to a layout without a title row removes it
+    when unchanged and no line is glued to it (Undo brings it back). After a reload nothing is removed.
+  - `DASHAPI.selected()` returns `name` (`itemName`); the target button reads "Use as target for <name>" and the heading names it.
+- The owner, during this work: the small Connect to PRTG panel closed when selecting text in a field and letting go outside it. The
+  outside-click closer now ignores a click whose press started in the panel or its bar (`popPressIn`). Headless Chromium sends no click
+  for such a drag, so it was checked by sending the events Chrome sends (press in the field, click on the page): closed before, stays now.
+- Not agreed with: the 401 on connect (the web copy took its token from a page without one) and the version label (web copy only).
+- Not checked on the real PRTG: the reflow, the pill sizes, the Review warning and the learned kinds, the double-click placement,
+  the banner removal, the target button text and the panel fix (all with the stand-in server); only the quotes were measured there.
 
 ## Floating bar hidden behind the Connect window (1.15.5, 2026-11-17)
 

@@ -1832,10 +1832,10 @@ try{
   function layHasBanner(T){return !!(T&&T[4]&&T[4].banner);}
   D.layout=null;D.layShow=true;D.layFrames=false;D.layFrameLook='Light card';D.layLook='';D.layLines=false;D.layLineColor='#3B82F6';D.layLineW=3;D.layLineMode='all';
   var layOv=document.createElement('div');layOv.id='dlayov';wrap.appendChild(layOv);
-  function layCells(){
+  function layCells(cw,ch){   /* cw, ch: the cells of another canvas size (1.15.6, layReflow); the canvas's own size by default */
     var L=D.layout, T, m, g, W, H, out=[];
     if(!L||!(T=(L.custom||LAYOUTS[L.id])))return out;
-    m=L.margin;g=L.gap;W=D.w-2*m;H=D.h-2*m;
+    m=L.margin;g=L.gap;W=(cw||D.w)-2*m;H=(ch||D.h)-2*m;
     T[3].forEach(function(c){
       var x0=c[0]/T[1], x1=(c[0]+c[2])/T[1], y0=c[1]/T[2], y1=(c[1]+c[3])/T[2];
       var l=Math.round(m+x0*W+(x0>0?g/2:0)), r=Math.round(m+x1*W-(x1<1?g/2:0)), t=Math.round(m+y0*H+(y0>0?g/2:0)), b=Math.round(m+y1*H-(y1<1?g/2:0));
@@ -1849,6 +1849,13 @@ try{
   /* the title banner a layout with a title row puts in its first cell (p.layBanner), so it can be edited right away */
   function layBanner(){var b=null;D.items.forEach(function(x){if(!b&&x.type==='banner'&&x.p&&x.p.layBanner)b=x;});return b;}
   var LAYBMADE=false;   /* set when layBannerEnsure() had to make the banner (not kept on the item, which is saved) */
+  /* 1.15.6: how each banner a layout made looked when it was made (only in this session): one that was never changed goes away again
+     when you switch to a layout without a title row; one you have edited, moved into use or glued a line to stays */
+  var LAYBSIG={};
+  function layBUntouched(b){
+    if(!b||LAYBSIG[b.id]==null||JSON.stringify(b.p)!==LAYBSIG[b.id])return false;
+    return !D.items.some(function(l){return l.p&&((l.p.ga&&l.p.ga.id===b.id)||(l.p.gb&&l.p.gb.id===b.id));});
+  }
   function layBannerEnsure(){
     var b=layBanner(), made=false;LAYBMADE=false;
     if(!layHasBanner(layT()))return null;
@@ -1857,6 +1864,7 @@ try{
       b.p.title='Dashboard title';b.p.layBanner=true;b.ord=layerOf(b)*100000+(++D.ordSeq);D.items.push(b);made=true;
       if(D.layLook){var MLb=mapLookOf(D.layLook);if(MLb)layLookBanner(b,MLb);}
     }
+    if(made)LAYBSIG[b.id]=JSON.stringify(b.p);
     LAYBMADE=made;return b;
   }
   /* dividing lines between the cells (p.layLine), in the middle of the gaps, like the lines between the columns of a wall dashboard */
@@ -1895,7 +1903,8 @@ try{
     bgSet(JSON.parse(JSON.stringify(ML.bg)),true);
     D.layFrames=true;if(D.layout)layFramesSync();
     layCellFrames().forEach(function(f){layLookFrame(f,ML);});
-    layLookBanner(layBanner(),ML);
+    var lb=layBanner(), lbu=layBUntouched(lb);
+    layLookBanner(lb,ML);if(lbu)LAYBSIG[lb.id]=JSON.stringify(lb.p);
     D.layLineColor=ML.accent;layLineItems().forEach(function(x){x.p.color=ML.accent;});
     renderAll();buildForm();commit();
     toastDash((ML.outline?ML.label+', outlined':n)+': background, frames'+(layBanner()?', title banner':'')+(layLineItems().length?' and lines':'')+' in this look');
@@ -1998,12 +2007,15 @@ try{
   function layApply(id,custom,gap,margin){   /* custom: a layout of your own, [name,cols,rows,cells] like LAYOUTS (id is then -1) */
     var old=D.layout;
     D.layout={id:id,gap:gap!=null?gap:(old?old.gap:20),margin:margin!=null?margin:(old?old.margin:20),custom:custom||null};
+    var ob=layHasBanner(layT())?null:layBanner(), gone=false;
+    if(ob&&layBUntouched(ob)){D.items=D.items.filter(function(x){return x!==ob;});delete LAYBSIG[ob.id];if(D.sel===ob.id)D.sel=null;gone=true;}
     if(D.layFrames)layFramesSync();
     if(D.layLines||layLineItems().length)layLinesSync();
     var bn=layBannerEnsure(), made=LAYBMADE;
     if(bn&&made)D.sel=bn.id;   /* selected before the fill saves, so the panel opens on it */
     layFill();
     if(bn&&made)toastDash('A title banner is in the top row, ready to edit: double-click its text');
+    else if(gone)toastDash('This layout has no title row, so the title banner it had put there (still unchanged) was taken away. Undo brings it back');
   }
   function laySpacing(gap,margin){
     var before=layCells(), map=[], after;
@@ -2016,6 +2028,40 @@ try{
     renderAll();buildForm();commit();
   }
   function layRemove(){D.layout=null;layPaint();}
+  /* 1.15.6: the canvas changed size (from ow x oh to D.w x D.h). The cells follow, their frames and dividing lines with them,
+     and every item keeps its place in its cell: its position (and a box's size) is scaled from the old cell to the new one, so an
+     item that filled its cell fills it again and items sharing a cell keep their arrangement. Items in no cell move in proportion. */
+  function layReflow(ow,oh){
+    var before, groups={}, loose=[], after, n=0;
+    if(!D.layout||!(ow>0&&oh>0)||(ow===D.w&&oh===D.h))return 0;
+    before=layCells(ow,oh);
+    layItems().forEach(function(x){
+      var k=layCellNear(before,x), s=laySize(x), snap={it:x,x:x.x,y:x.y,w:s.w,h:s.h,box:isBox(x)&&!isLine(x)};
+      if(isLine(x))return;   /* lines glued to items follow them; a free line stays */
+      if(k>=0)(groups[k]=groups[k]||{inner:layInner(before[k],k),items:[]}).items.push(snap);else loose.push(snap);
+    });
+    if(D.layFrames)layFramesSync();
+    if(D.layLines||layLineItems().length)layLinesSync();
+    after=layCells();
+    Object.keys(groups).forEach(function(k){
+      var g=groups[k], ib=g.inner, c=after[k], ia, sx, sy;
+      if(!c)return;
+      ia=layInner(c,+k);sx=ia.w/Math.max(1,ib.w);sy=ia.h/Math.max(1,ib.h);
+      g.items.forEach(function(q){
+        var nx, ny;
+        if(q.box){nx=Math.round(ia.x+(q.x-ib.x)*sx);ny=Math.round(ia.y+(q.y-ib.y)*sy);q.it.w=Math.max(20,Math.round(q.w*sx));q.it.h=Math.max(20,Math.round(q.h*sy));}
+        else{nx=Math.round(ia.x+(q.x+q.w/2-ib.x)*sx-q.w/2);ny=Math.round(ia.y+(q.y+q.h/2-ib.y)*sy-q.h/2);}
+        msMove(q.it,nx-q.it.x,ny-q.it.y,{});n++;
+      });
+    });
+    loose.forEach(function(q){
+      var nx=Math.round((q.x+q.w/2)*D.w/ow-q.w/2), ny=Math.round((q.y+q.h/2)*D.h/oh-q.h/2);
+      nx=Math.max(0,Math.min(D.w-Math.min(q.w,D.w),nx));ny=Math.max(0,Math.min(D.h-Math.min(q.h,D.h),ny));
+      msMove(q.it,nx-q.it.x,ny-q.it.y,{});n++;
+    });
+    renderAll();
+    return n;
+  }
   /* 1.13.4: every item in cell k: one fills the cell (or is centred, if it keeps its own size); two or more share it in a grid,
      the columns chosen so each piece is as large as it can be */
   function layInCell(cells,k){return layItems().filter(function(x){return layCellOf(cells,x)===k;});}
@@ -3601,7 +3647,8 @@ try{
   function sizeChange(){
     var w=parseInt(document.getElementById('dw').value,10), h=parseInt(document.getElementById('dh').value,10);
     if(!(w>=320&&h>=240))return;
-    D.w=w;D.h=h;applyScale();commit();
+    var ow=D.w, oh=D.h;
+    D.w=w;D.h=h;layReflow(ow,oh);applyScale();commit();
     try{document.dispatchEvent(new CustomEvent('canvassize',{detail:{w:w,h:h}}));}catch(e){}   /* the Map step sends it to the selected PRTG map */
   }
   document.getElementById('dw').addEventListener('change',sizeChange);
@@ -3643,7 +3690,19 @@ try{
     DASHAPI.markSaved=function(){savedSnap=snapModel();};
     DASHAPI.isDirty=function(){return D.items.length>0&&snapModel()!==savedSnap;};
     window.addEventListener('beforeunload',function(e){if(DASHAPI.isDirty()){e.preventDefault();e.returnValue='';return '';}});   /* the browser asks before an unsaved layout is lost */
-    DASHAPI.addObject=function(entry){addItem('prtgobj',entry);};
+    /* 1.15.6: an object added by a double-click (no place given) goes into the first empty layout cell, not on top of whatever
+       sits at the canvas's top-left corner (often inside a cell's frame) */
+    DASHAPI.addObject=function(entry){
+      var cells, used={}, k, e=entry;
+      if(D.layout&&!FREE&&!(entry&&entry.at)){
+        cells=layCells();
+        if(layHasBanner(layT()))used[0]=1;
+        layItems().forEach(function(x){var c=layCellOf(cells,x);if(c>=0)used[c]=1;});
+        for(k=0;k<cells.length;k++)if(!used[k])break;
+        if(k<cells.length){e={};Object.keys(entry||{}).forEach(function(n){e[n]=entry[n];});e.at={x:Math.round(cells[k].x+cells[k].w/2),y:Math.round(cells[k].y+cells[k].h/2)};}
+      }
+      addItem('prtgobj',e);
+    };
     /* items from a copied map: exact place, size and stacking order, no snapping, one undo step */
     DASHAPI.addCopies=function(list){
       var ids=[];
@@ -3668,7 +3727,7 @@ try{
     DASHAPI.setNatural=function(id,w,h){var it=byId(id);if(!it||it.type!=='prtgobj'||objMode(it)!=='content')return;w=Math.max(1,Math.round(w));h=Math.max(1,Math.round(h));if(it.w===w&&it.h===h)return;it.w=w;it.h=h;var n=nodeOf(id);if(n){n.style.width=w+'px';n.style.height=h+'px';}var gf={};gf[id]=1;glueFollowers(gf);updateSel();buildList();if(D.sel===id)buildForm();};
     DASHAPI.applyInitial=function(id,w,h){var it=byId(id);if(!it||it.type!=='prtgobj'||objMode(it)!=='box'||!(it.w===320&&it.h===200))return false;it.w=w;it.h=h;renderAll();var gf2={};gf2[id]=1;glueFollowers(gf2);return true;};   /* the size the object file itself asks for, if you have not changed the default */
     DASHAPI.rerender=function(){renderAll();};
-    DASHAPI.selected=function(){var it=byId(D.sel);return it?{id:it.id,type:it.type,p:it.p}:null;};
+    DASHAPI.selected=function(){var it=byId(D.sel);return it?{id:it.id,type:it.type,p:it.p,name:itemName(it)}:null;};
     DASHAPI.setTarget=function(id,tgt){var it=byId(id);if(!it||it.type!=='prtgobj')return false;it.p.target={id:parseInt(tgt.id,10)||0,name:tgt.name||''};it.p.targetDefault=false;refreshItem(it);buildForm();commit();return true;};
     DASHAPI.layoutText=function(){return snapModel();};
     /* for the Map step's New map form: the layouts, a picture of one at a given size, and starting a new map's canvas */
@@ -3681,8 +3740,9 @@ try{
     };
     DASHAPI.setCanvasSize=function(w,h){   /* the selected PRTG map's size: taken, not sent back */
       if(!(w>=320&&h>=240)||(D.w===w&&D.h===h))return false;
+      var ow=D.w, oh=D.h;
       D.w=w;D.h=h;var iw=document.getElementById('dw'),ih=document.getElementById('dh');if(iw)iw.value=String(w);if(ih)ih.value=String(h);
-      applyScale();if(D.layout)layPaint();commit();return true;
+      layReflow(ow,oh);applyScale();if(D.layout)layPaint();commit();return true;
     };
     DASHAPI.toast=function(m){toastDash(m);};
     DASHAPI.newMapCanvas=function(w,h,lay){
