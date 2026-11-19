@@ -1,7 +1,7 @@
 # PRTG Map Studio – notes for Claude
 
 A browser extension (Manifest V3) that builds and pushes PRTG map objects and dashboards.
-Last updated at version 1.15.6 (2026-11-18). **Read "Start of every session" first.**
+Last updated at version 1.15.7 (2026-11-19). **Read "Start of every session" first.**
 
 The owner is not technical. Explain things in plain words and give step-by-step instructions
 when they need to do something themselves.
@@ -275,6 +275,26 @@ Also offered, not done: machine state in the floating bar (only the side panel h
   confirmed why; harmless for Map Studio.
 - Not checked: anything that writes (push, Undo, delete, background upload, new map; offered a throwaway test map, no answer yet), object
   types not installed there (tables, gauges, donuts, Industrial, fence, map directory), the new UI.
+
+## Every object starts bound to a default it supports (1.15.7, 2026-11-19)
+
+- The owner asked that every object added to the canvas be bound by default to a probe, group, device or sensor, depending on what it
+  supports. Most of it existed (double-click and drag used `defFor(kindOf(c))`); the gaps were a single kind per file, the one
+  "group or device" default given to every non-sensor object (a device default on a probe/group-only sunburst), files whose kind was
+  only guessed (made elsewhere, not in Your objects), and objects with no target at all.
+- 07-push.js: `kindsOf(e)` gives every kind a file takes, best first (`kindOf` = its first). The learned store
+  (`CFG.keys.kindOf+'.learned'`) now keeps the whole list (`klearnOf` also reads 1.15.6's single letters). The user's group-or-device
+  default keeps its kind (`type` from the tree or the list's Devices/Groups); `defFits`, `autoFor`, `bindFor(ks)`: your default when it
+  fits a kind the object takes (an old saved default without a kind counts for every non-sensor kind, as before), else the server's
+  first device / group / Local Probe / sensor in the object's order, else `defFor` as before. Used by double-click, drag and the
+  object list's preview pane. `rebindLearned` (from `kindLearn`): when PRTG's preview says "only supports ...", every canvas item of that
+  file still on that default target moves to `bindFor` of what PRTG said, with a toast. `bindUnbound` (when the defaults are found after
+  connecting): items with target 0 and no name and not marked default get `bindFor`; an item on Root keeps it (Root has a name).
+- 06-dashboard.js: `objectLayout` also gives `tname` and `dflt`; `DASHAPI.setTargetDefault(id,tgt)` keeps the item marked as default.
+- Not changed: choosing a new default does not move items already on the old default; fence, line and map directory items have no target.
+- Checked: 18 tests; 1116 files identical to 1.15.6; stand-in server with routed answers: an item added before connecting got device 40
+  after connecting; a sensor-only file put on device 40 was moved to the default sensor as soon as the canvas asked PRTG for its preview,
+  and the file was learned as sensor-only. Not checked on the real PRTG.
 
 ## Fixes from an outside test run (1.15.6, 2026-11-18)
 

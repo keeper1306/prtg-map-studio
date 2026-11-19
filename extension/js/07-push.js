@@ -2946,35 +2946,37 @@ try{
     var ks=kindsIn(body), st, was;
     if(!ks||!file)return;
     KBAD[file+'|'+target]=ks;
-    st=klearn();was=st[file];st[file]=ks[0];
-    if(was!==ks[0]){try{localStorage.setItem(KLKEY,JSON.stringify(st));}catch(e){}if(OBJSEL===file)pvPaneSchedule();}
+    st=klearn();was=JSON.stringify(st[file]||null);st[file]=ks;
+    if(was!==JSON.stringify(ks)){try{localStorage.setItem(KLKEY,JSON.stringify(st));}catch(e){}if(OBJSEL===file)pvPaneSchedule();}
+    rebindLearned(file,target,ks);
   }
+  function klearnOf(file){var v=klearn()[file];if(typeof v==='string')v=[v];return (Array.isArray(v)&&v.length)?v.filter(function(k){return /^[pgds]$/.test(k);}):null;}
   function libCodeFor(e){var lib=libLoad(), k=keyOf(e.cat,e.name), f;for(f in lib)if(keyOf(lib[f].cat,lib[f].name)===k)return lib[f].code;return null;}
   /* Which single kind of object a file is best started on: PRTG's own declaration where the file carries
      one, else the known stock lists. PRTG's vocabulary here is probenode, group, device and sensor, and a
      file may name several -- our own generated objects declare "probenode,group,device". A file that
      names several is matched to the most specific of them, device before group before probe, so a tile
      that can read any of the three starts on a real device rather than on the Local Probe. */
-  function kindOf(e){
-    var ov=kindStore()[e.value], code, m, ts, has;
-    if(ov==='p'||ov==='g'||ov==='d'||ov==='s')return ov;
+  function kindOf(e){return kindsOf(e)[0];}
+  /* 1.15.7: every kind of object a file can be put on, best first (device, group, probe, then sensor; a sensor first when only a
+     sensor will do), so a new object can be bound to a default it really supports */
+  function kindsOf(e){
+    var ov=kindStore()[e.value], code, m, ts, out=[], lk;
+    if(ov==='p'||ov==='g'||ov==='d'||ov==='s')return [ov];
     code=libCodeFor(e);
     if(code){
       m=/<#checkobjecttype[^>]*objecttype="([^"]*)"/.exec(code);
       if(m){
         ts=m[1].toLowerCase().split(/\s*,\s*/);
-        has=function(x){return ts.indexOf(x)>=0;};
-        if(ts.length===1&&has('sensor'))return 's';   /* only a sensor will do */
-        if(has('device'))return 'd';
-        if(has('group'))return 'g';
-        if(has('probenode'))return 'p';
-        if(has('sensor'))return 's';
+        if(ts.length===1&&ts[0]==='sensor')return ['s'];   /* only a sensor will do */
+        [['device','d'],['group','g'],['probenode','p'],['sensor','s']].forEach(function(x){if(ts.indexOf(x[0])>=0)out.push(x[1]);});
+        if(out.length)return out;
       }
     }
-    if(klearn()[e.value])return klearn()[e.value];   /* 1.15.6: what PRTG said this file takes */
-    if(SENSOR_FILES.indexOf(e.value)>=0)return 's';
-    if(/^graphs$/i.test(e.cat))return 's';
-    return 'd';   /* the stock files take a probe, group or device; a device is the most specific of those */
+    lk=klearnOf(e.value);if(lk)return lk;   /* 1.15.6: what PRTG said this file takes */
+    if(SENSOR_FILES.indexOf(e.value)>=0)return ['s'];
+    if(/^graphs$/i.test(e.cat))return ['s'];
+    return ['d','g','p'];   /* the stock files take a probe, group or device; a device is the most specific of those */
   }
   var KINDNAME={p:'probe',g:'group',d:'device',s:'sensor'};
   function defFor(kind){
@@ -2983,6 +2985,38 @@ try{
     if(kind==='d')return DEF.dAuto||DEF.gAuto||BUILTIN_G;
     if(kind==='g')return DEF.gAuto||BUILTIN_G;
     return BUILTIN_G;                                      /* a probe: PRTG's Local Probe is always there */
+  }
+  /* 1.15.7: the default an object is bound to, from the kinds it supports: your own default when it is of a kind the object takes
+     (a group-or-device default saved before 1.15.7 has no kind and counts for every non-sensor kind, as before), else the one
+     found on the server for the first kind that has one */
+  var KTYPE={probe:'p',group:'g',device:'d',sensor:'s'};
+  function defFits(u,k){if(!u)return false;if(k==='s')return true;return !u.type||KTYPE[u.type]===k;}
+  function autoFor(k){return k==='s'?DEF.sAuto:(k==='d'?DEF.dAuto:(k==='g'?DEF.gAuto:BUILTIN_G));}
+  function bindFor(ks){
+    var i, k, u;
+    ks=(ks&&ks.length)?ks:['d','g','p'];
+    for(i=0;i<ks.length;i++){k=ks[i];u=(k==='s')?DEF.sUser:DEF.gUser;if(defFits(u,k))return u;}
+    for(i=0;i<ks.length;i++){u=autoFor(ks[i]);if(u)return u;}
+    return defFor(ks[0]);
+  }
+  /* PRTG said an object cannot show on the default it was given: move every canvas item still on that default to one it supports */
+  function rebindLearned(file,target,ks){
+    var tg=bindFor(ks), n=0;
+    if(!tg||String(tg.id)===String(target)||!window.DASHAPI||!DASHAPI.objectLayout)return;
+    DASHAPI.objectLayout().forEach(function(o){if(o.file===file&&String(o.target)===String(target)&&o.dflt){DASHAPI.setTargetDefault(o.id,tg);n++;}});
+    if(n)try{DASHAPI.toast(n+(n===1?' object was':' objects were')+' moved to '+tg.name+': PRTG says '+(n===1?'it only works':'they only work')+' on a '+ks.map(function(k){return KINDNAME[k];}).join(' or ')+'.');}catch(e){}
+  }
+  /* objects on the canvas with no target at all (added before connecting, or copied from another server) get the default */
+  function bindUnbound(){
+    var n=0;
+    if(!S.catalog||!window.DASHAPI||!DASHAPI.objectLayout)return;
+    DASHAPI.objectLayout().forEach(function(o){
+      var e, tg;
+      if(o.target||o.tname||o.dflt)return;
+      e=catEntry(o.file)||{value:o.file,cat:o.cat,name:o.name};tg=bindFor(kindsOf(e));
+      if(tg){DASHAPI.setTargetDefault(o.id,tg);n++;}
+    });
+    if(n)try{DASHAPI.toast(n+(n===1?' object without a target now shows its default':' objects without a target now show their defaults')+'. Choose the real one under Objects already in PRTG.');}catch(e){}
   }
   function defKey(){return CFG.keys.previewWith+'|'+(base()||pageOrigin()||'');}
   function defSave(){try{localStorage.setItem(defKey(),JSON.stringify({g:DEF.gUser,s:DEF.sUser}));}catch(e){}}
@@ -3000,7 +3034,7 @@ try{
     DEF.gUser=sv.g||null;DEF.sUser=sv.s||null;DEF.sAuto=null;DEF.dAuto=null;DEF.gAuto=null;
     if(!S.catalog){DEF.looking=false;defShow();pvPaneShow();return;}
     DEF.looking=true;defShow();
-    function done(){if(--pending<=0){DEF.looking=false;defShow();pvPaneShow();}}
+    function done(){if(--pending<=0){DEF.looking=false;defShow();pvPaneShow();bindUnbound();}}
     /* the first device and the first group this server has, so an object that reads one of those starts on
        something of its own kind instead of on the Local Probe */
     function firstOf(type,set){
@@ -3023,7 +3057,7 @@ try{
     }
     if(!DEF.gUser){firstOf('devices',function(v){DEF.dAuto=v;});firstOf('groups',function(v){DEF.gAuto=v;});}
     if(!DEF.sUser){pending++;nextSensor();}
-    if(!pending){DEF.looking=false;defShow();pvPaneShow();}
+    if(!pending){DEF.looking=false;defShow();pvPaneShow();bindUnbound();}
   }
   function objVisible(){return objShown.filter(function(x){return !x.el.hidden;});}
   function objSelect(value,scroll){
@@ -3195,11 +3229,11 @@ try{
   function objAdd(){
     var c=selEntry(), tg;
     if(!c)return;
-    tg=defFor(kindOf(c));
+    tg=bindFor(kindsOf(c));
     DASHAPI.addObject({cat:c.cat,name:c.name,value:c.value,target:tg?{id:tg.id,name:tg.name}:null});   /* it starts with the preview default, so it shows data straight away */
   }
   function objDragStart(ev,c){
-    var tg=defFor(kindOf(c)), g=document.createElement('div');
+    var tg=bindFor(kindsOf(c)), g=document.createElement('div');
     ev.dataTransfer.setData('application/x-prtg-object',JSON.stringify({cat:c.cat,name:c.name,value:c.value,target:tg?{id:tg.id,name:tg.name}:null}));
     ev.dataTransfer.setData('text/plain',c.cat+': '+c.name);ev.dataTransfer.effectAllowed='copy';
     objSelect(c.value,false);
@@ -3220,7 +3254,7 @@ try{
   function pvPaneShow(){
     var e=selEntry(), pane=$('objpv'), msg=$('objpvmsg'), kind, tg, tok;
     if(!e||!S.catalog){pane.hidden=true;return;}
-    pane.hidden=false;kind=kindOf(e);tg=defFor(kind);tok=++PP.tok;
+    pane.hidden=false;kind=kindOf(e);tg=bindFor(kindsOf(e));tok=++PP.tok;
     $('objpvkind').value=kind;$('objpvcap').textContent=e.cat+': '+e.name;
     if(!pvOn()){msg.className='note pst';msg.textContent=$('objlive').checked?'Choose a map under Existing PRTG maps (Add tab) to see previews.':'Previews are switched off.';pvPaneClear();return;}
     if(!tg){msg.className='note pst err';msg.textContent='No default sensor was found on this server. Choose one with Change\u2026 above.';pvPaneClear();return;}
@@ -3532,11 +3566,11 @@ try{
   function tgtPicked(){
     var n, r;
     if(TGT.view==='tree'){n=TR.sel;return (n&&trValid(n))?{id:n.id,name:trLabel(n),type:n.type}:null;}
-    r=tgtShown[parseInt($('tgtlist').value,10)];return r?{id:r.id,name:r.name}:null;
+    r=tgtShown[parseInt($('tgtlist').value,10)];return r?{id:r.id,name:r.name,type:{devices:'device',groups:'group',sensors:'sensor'}[$('tgttype').value]||''}:null;
   }
   function setDefault(kind,r){
     var m=$('tgtmsg');
-    if(kind==='g')DEF.gUser={id:r.id,name:r.name};else DEF.sUser={id:r.id,name:r.name};
+    if(kind==='g')DEF.gUser={id:r.id,name:r.name,type:r.type||''};else DEF.sUser={id:r.id,name:r.name};
     defSave();defShow();pvPaneShow();
     if(PICK.mode!=='item'){if(PICK.mode==='s')$('tgttype').value='devices';PICK.mode='item';pickHead();trRender();}   /* done: back to choosing a target */
     m.className='note pst ok';m.textContent='Previews and new objects now use '+r.name+'.';
