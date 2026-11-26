@@ -225,9 +225,9 @@ makes Map Studio see two servers; Review shows pushed items as new and Undo is n
 ## 8. Open questions for the owner
 
 Answered: Claude Code runs on VM 102 itself (section 3); the self-styling sources are in
-`experiments/self-styling/` (2026-11-26).
+`experiments/self-styling/`; Chrome loads the extension unpacked from the Desktop folder (checked in
+Chrome's profile, 2026-11-26).
 
-- Is the extension in Chrome added with "Load unpacked" from the Desktop folder? (Never confirmed.)
 - "Option B" for pictures: what was option A? What should the server-side script do - list the files in
   `webroot\images` for a picker, copy chosen pictures there, or both? How does it run (an admin PowerShell
   script like the install script, a scheduled task, a PRTG script sensor)?
