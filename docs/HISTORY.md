@@ -284,6 +284,11 @@ Also offered, not done: machine state in the floating bar (only the side panel h
   Checked on the lab PRTG: the default and Neon glass on the dial, Zones and needle on the ring (32 %, from the real channel),
   Flexible (scale 1.26, title 14 px), outline 340 x 300 -> 441 x 367, Save for everyone (ring face) back after PRTG's refresh
   and a reload, Map Designer canvas (ring, no gear), hover preview with the sensor selected (dial, script ran, no gear).
+- Donut (item 4, the local probe): Map Studio's ring donut (PRTG new UI look, Flexible). Every Donut-menu choice changes on the
+  map; the legend's place is a class on `.dbody`. Checked on the lab PRTG: 77 sensors drawn; Indigo board, Alarms only (14: 11
+  down, 3 warning), legend below, outline 340 x 220 -> 424 x 287, Save for everyone back after PRTG's refresh and a reload
+  (scale 1.25, title 18 px as the look has it), Map Designer canvas (no gear), hover preview on the probe (80 sensors: the 1.9.2
+  full count works; the map's own count is 77, the same for Map Studio's donut: not looked into).
 - In the designer, PRTG's red "Change Default Password" notice covers the "Map Studio Tests" heading in the object list; a click
   there opens edituser.htm (nothing changed). Click the heading's left end.
 
