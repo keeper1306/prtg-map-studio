@@ -89,7 +89,7 @@
     while((m=re.exec(t)))p.css.push(m[1]);
     re=/<link href="([^"]+)" rel="stylesheet">/g;while((m=re.exec(t)))p.links.push(m[1].replace(/&amp;/g,'&'));
     re=/<script>([\s\S]*?)<\/script>/g;while((m=re.exec(t)))p.scripts.push(m[1]);
-    m=/<div class="(map_object[^"]*?)"\s+id=/.exec(t.replace(/<#[^>]*>/g,''));if(m)p.cls=noTags(m[1]).split(' ').filter(Boolean);
+    m=/<div class="(map_object[^"]*?)"\s+id=/.exec(t.replace(/<@\w+>/g,'@').replace(/<#[^>]*>/g,''));if(m)p.cls=noTags(m[1]).split(' ').filter(Boolean);
     return p;
   }
   /* each script in a Map Studio file calls one drawing function with its settings: find which, and with what */

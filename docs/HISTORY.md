@@ -277,6 +277,13 @@ Also offered, not done: machine state in the floating bar (only the side panel h
   PRTG kept it), Save for everyone (stored in HTML Before), after 38 s and after a full reload the same look from PRTG (nothing in
   localStorage), Map Designer canvas (drawn with the saved look, no gear), the designer's hover preview (6 rows, script ran, no gear).
   Not checked there: public map links (the map is not public), the new UI.
+- Gauge (item 3, the disk free sensor): Map Studio's default file (Flat minimalist on PRTG's dial, Corporate blue). All 13 faces
+  in the bar: PRTG's dial ones restyle the dial; Map Studio's ring ones need a drawing area the dial file lacks, so the file
+  carries one more (`.gwrap` + `svg.gsvg`, hidden) with a second copy of the channel table (PRTG fills that tag twice per
+  refresh: the cost of having every face). "All channels" only on ring faces (PRTG's dial reads data-mapview when it draws).
+  Checked on the lab PRTG: the default and Neon glass on the dial, Zones and needle on the ring (32 %, from the real channel),
+  Flexible (scale 1.26, title 14 px), outline 340 x 300 -> 441 x 367, Save for everyone (ring face) back after PRTG's refresh
+  and a reload, Map Designer canvas (ring, no gear), hover preview with the sensor selected (dial, script ran, no gear).
 - In the designer, PRTG's red "Change Default Password" notice covers the "Map Studio Tests" heading in the object list; a click
   there opens edituser.htm (nothing changed). Click the heading's left end.
 
