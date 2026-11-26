@@ -1,0 +1,107 @@
+const fs=require('fs');
+const looks=JSON.parse(fs.readFileSync('/tmp/looks.json','utf8'));
+const order=['Corporate blue','PRTG new UI','Clean card','Light card','Minimal','Executive dark','Indigo board','Slate fintech','Neon plum','Teal glass','Dark card','Wall display','Brand navy'];
+const lookTxt='{\n'+order.map(n=>'    '+JSON.stringify(n)+':'+JSON.stringify(looks[n])).join(',\n')+'\n  }';
+const GEAR=JSON.stringify('<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>');
+const PCSS=[
+ ':host{all:initial}',
+ '.bar{position:fixed;z-index:2147483000;display:flex;flex-direction:column;gap:3px;padding:4px 6px;background:#fff;border:1px solid #DDE1E8;border-radius:10px;box-shadow:0 4px 16px rgba(15,23,42,.16);font:12px/1.3 "Segoe UI",Roboto,Arial,sans-serif;color:#1d2433;width:max-content;max-width:calc(100vw - 16px);box-sizing:border-box}',
+ '.r{display:flex;align-items:center;flex-wrap:wrap;gap:3px}',
+ 'button,select,input{font:inherit}',
+ '.t{height:28px;padding:0 9px;border:1px solid transparent;border-radius:7px;background:transparent;color:#1d2433;cursor:pointer;white-space:nowrap}',
+ '.t:hover{background:#F2F6FA;color:#007DB8}.t.on,.t.open{background:#E6F3FA;border-color:#9BD0E8;color:#007DB8}',
+ '.t i{font-style:normal;font-size:10px}.t.save{font-weight:600}',
+ '.t.save.dirty::after{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:#E8590C;margin-left:6px;vertical-align:middle}',
+ '.t.x{font-size:18px;padding:0 8px;color:#5F6674}',
+ '.sep{width:1px;height:20px;background:#DDE1E8;margin:0 4px}',
+ '.lab{display:inline-flex;align-items:center;gap:4px}.lab>b{font-size:10.5px;font-weight:500;color:#6c7183}',
+ '.s{height:28px;width:118px;padding:0 4px;border:1px solid #DDE1E8;border-radius:7px;background:#fff;color:#1d2433}',
+ '.n{width:54px;height:28px;padding:0 4px;text-align:center;border:1px solid #DDE1E8;border-radius:7px;box-sizing:border-box;background:#fff;color:#1d2433}',
+ '.m{position:relative;display:inline-flex}',
+ '.pop{position:absolute;left:0;top:calc(100% + 6px);z-index:2;width:290px;overflow:auto;padding:10px 12px;background:#fff;border:1px solid #DDE1E8;border-radius:10px;box-shadow:0 6px 24px rgba(15,23,42,.2);box-sizing:border-box}',
+ '.pop.up{top:auto;bottom:calc(100% + 6px)}.t.wide~.pop{width:340px}.pop[hidden]{display:none}',
+ '.pf{margin:8px 0}.pl{color:#6c7183;font-size:11px;margin:0 0 3px}',
+ '.ph{margin:10px 0 4px;color:#6c7183;font-size:11px;font-weight:600}',
+ '.ps{width:100%;height:28px;padding:0 6px;border:1px solid #DDE1E8;border-radius:7px;box-sizing:border-box;background:#fff;color:#1d2433}',
+ '.pc{display:flex;align-items:center;gap:7px;margin:6px 0;cursor:pointer}.pc input{margin:0}',
+ '.rg{display:flex;align-items:center;gap:8px}.rg input{flex:1;min-width:0}.rg output{flex:0 0 40px;text-align:right;color:#6c7183}',
+ '.seg{display:flex;flex-wrap:wrap;gap:4px}',
+ '.seg button{padding:4px 8px;border:1px solid #DDE1E8;border-radius:6px;background:#fff;color:#1d2433;cursor:pointer}',
+ '.seg button.on{background:#E6F3FA;border-color:#007DB8;color:#007DB8}',
+ '.looks{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}',
+ '.lk{display:flex;flex-direction:column;align-items:stretch;gap:3px;padding:4px;border:1px solid #DDE1E8;border-radius:7px;background:#fff;font-size:11px;line-height:1.2;color:#1d2433;cursor:pointer;text-align:center}',
+ '.lk i{display:block;height:26px;border-radius:4px;position:relative;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(0,0,0,.1)}',
+ '.lk i b{position:absolute;left:0;right:0;top:0;height:7px}.lk i u{position:absolute;left:5px;right:5px;height:2px;border-radius:1px}',
+ '.lk.on{border-color:#007DB8;background:#E6F3FA}',
+ '.cols2{display:grid;grid-template-columns:1fr 1fr;gap:2px 12px;margin:6px 0}.sw{display:flex;align-items:center;gap:6px;margin:2px 0;cursor:pointer}',
+ '.pr{display:flex;align-items:center;gap:6px;padding:3px 0}.pr span{flex:1}',
+ 'input[type=color]{width:30px;height:24px;padding:1px 2px;border:1px solid #DDE1E8;border-radius:6px;background:#fff;cursor:pointer}',
+ '.cp{flex:none;border:1px solid #DDE1E8;background:#fff;border-radius:4px;font-size:10px;padding:2px 6px;cursor:pointer;color:#1d2433}',
+ '.cr{display:flex;align-items:center;gap:4px;padding:2px 0}.cr label{flex:1;display:flex;gap:7px;align-items:center;cursor:pointer}.cr.off{color:#8A93A3}',
+ '.cr button{width:24px;height:22px;border:1px solid #DDE1E8;border-radius:5px;background:#fff;cursor:pointer;color:#1d2433}',
+ '.b{display:block;width:100%;margin:0 0 6px;font-weight:600;padding:8px 11px;border-radius:7px;border:1px solid #DDE1E8;background:#fff;color:#1d2433;cursor:pointer;text-align:left}',
+ '.b.pri{background:#007DB8;border-color:#007DB8;color:#fff}.b:disabled{opacity:.5}',
+ '.mini{background:none;border:0;color:#007DB8;cursor:pointer;padding:0;margin:4px 0}',
+ '.msg{margin-top:8px;font-size:12px;color:#3a4457}.msg.err{color:#B42318}.msg.ok{color:#1E7B34}',
+ '.note{font-size:11.5px;color:#6c7183;margin:4px 0;line-height:1.4}'
+];
+const pcssTxt='[\n'+PCSS.map(x=>'    '+JSON.stringify(x)).join(',\n')+'\n  ].join("\\n")';
+let js=fs.readFileSync('runtime.js','utf8').replace('__LOOKS__',lookTxt).replace('__LOOKNAMES__',JSON.stringify(order)).replace('__GEAR__',GEAR).replace('__BCSS__',pcssTxt);
+if(/<[#@]/.test(js))throw new Error('script contains a PRTG tag');
+js=js.replace('__ITEMID__','<@itemid>');
+js=js.replace(/[^\x00-\x7f]/g,ch=>'\\u'+ch.charCodeAt(0).toString(16).padStart(4,'0'));
+const css=fs.readFileSync('style.css','utf8');
+const file=`<!--Map Studio Tests: Map Studio Table - restyle it on the map (test 2)-->
+
+<div class="map_object map_table msst mst-t-bar mst-h-line mst-hcaps mst-st-dot mst-tint" id="<@itemid>" objectid="<@objectid>" subid="<@subid>" initialwidth="1100" initialheight="598" style="overflow:auto;<#mapobject type="coordinates" subid="<@subid>" mode="<@editmode>">">
+  <#mapobject type="objectgrip" mode="<@editmode>">
+  <#mapobject type="htmlbefore" subid="<@subid>">
+  <#checkobjecttype objecttype="probenode,group,device,sensor" nicemessage="true" id="<@objectid>">
+
+<style>
+${css}</style>
+
+  <div class="maptablecontainer" style="overflow:visible;width:max-content;min-width:100%">
+    <div class="ms-box-prtg-plugin">
+    <div class="ms-sens">
+    <div class="prtg-plugin" data-plugin="prtg-table">
+      <#table tableid="sensortable"
+      id="<@objectid>"
+      content="sensors"
+      columns="status,device,sensor,group,message,lastvalue,minigraph,downtimesince,uptime"
+      sortby="status"
+      infoheader="true"
+      links="true"
+      sortable="true"
+      refreshable="true"
+      filter_tags="@tag(<@tagfilterstring>)"
+      tabletitle="Sensors"
+      count="10"
+      >
+    </div>
+    </div>
+    <div class="ms-ch">
+    <div class="prtg-plugin" data-plugin="prtg-table">
+      <#table tableid="channeltable_map"
+      id="<@objectid>"
+      content="channels"
+      columns="name,lastvalue_"
+      sortby="name"
+      links="true"
+      sortable="true"
+      refreshable="true"
+      tabletitle="Channels"
+      count="10"
+      >
+    </div>
+    </div>
+    </div>
+  </div>
+  <#mapobject type="htmlafter" subid="<@subid>">
+<script>
+${js}</script>
+</div>
+`;
+if(/[^\x00-\x7f]/.test(file))throw new Error('non-ASCII left in the file');
+fs.writeFileSync('map-studio-zz-table-self-styling.htm',file);
+const lens=file.split('\n').map(l=>l.length);console.log('bytes',file.length,'longest',Math.max(...lens));
