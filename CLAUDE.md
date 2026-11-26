@@ -185,14 +185,18 @@ Pictures from `webroot\images` with a server-side script ("option B"): PRTG serv
 picture is uploaded through PRTG's own Map settings (1.5.93). Parked by the owner on 2026-11-26 ("not
 needed now"): the Map settings upload is enough. Don't start it unasked.
 
-Self-styling objects (test files in `experiments/self-styling/`, see its README): a table and a graph object with a gear that
-opens Map Studio's floating bar on the map itself, saves the look into the item's HTML Before
-(`editmapobject`), keeps a per-object choice for public links, and (v4) resizes the item with an
-outline and 8 handles. Not checked on the real PRTG. Asked next: the gear in PRTG's Map Designer too
-(risk: the designer may send back its old copy of HTML Before), moving the item, Fixed/Flexible for the
-table. The copy of the table in `webroot\mapobjects` is older than the one in the repo.
+Self-styling objects (test files in `experiments/self-styling/`, see its README; not in the extension): table, graph, gauge,
+donut, status counts, tile, Industrial, icon, sunburst. A gear opens a floating bar on the map; the look is saved in the item's
+HTML Before (`editmapobject`) or in this browser; public links get the gear only if allowed; an 8-handle outline resizes the
+item. The new types carry Map Studio's own builder code (copied from 09-objects.js at build time, checked byte for byte), so
+`tools/build.js` must be run again after a change to those builders. All nine checked on the lab PRTG (map 2254, notes in
+`docs/HISTORY.md`, "Self-styling test objects"); not checked: public links on the real PRTG, the new UI. Still open: the gear
+in PRTG's Map Designer (off on purpose; risk: the designer may send back its old copy of HTML Before), moving the item.
 
 Offered, no answer yet:
+- Found with the self-styling objects, for the extension itself: status counts are 0 px high (empty) in PRTG's hover preview;
+  the sunburst draws only 5 rows there (no full fetch as the donut has); PRTG's Map Designer runs object scripts through
+  jQuery, which rewrites `<x ... />` shapes inside scripts (Map Studio's own files not checked for it).
 - Refuse http:// connections except localhost, drop `http://*/*` from the manifest (needs a reload),
   decide about the camera tile's http:// address.
 - Build the six "PRTG update test maps" in PRTG and record a "before" list of files with hashes.

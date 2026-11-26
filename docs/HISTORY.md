@@ -327,6 +327,15 @@ Also offered, not done: machine state in the floating bar (only the side panel h
 - Found and fixed: PRTG's tooltip moves the link's title into `data-original-title` once hovered (the name came out empty), and the
   tooltip box opened over a small object's handles so the outline could not be dragged; while the outline shows, tooltips let
   the pointer through (`html.mst-sizing .tooltip`, in `common/sizer.js`, so every object has it).
+- Sunburst (item 9, the local probe): Map Studio's four own faces (Solid, Separated, Glow, Soft pastel) and every Sunburst-menu
+  choice switch on the map (the legend's place is a class on `.sbbody`); PRTG classic left out (PRTG's own drawing, other markup).
+  Checked on the lab PRTG: 22 slices; Glow, percent up in the middle, legend right, Executive dark; outline 330 x 360 -> 430 x 410;
+  Save for everyone back after PRTG's refresh and a reload; Map Designer canvas (all 9 items' scripts parse and run); hover
+  preview drawn without the gear, but with 4 slices: PRTG's preview gives 5 rows and Map Studio's sunburst, unlike the donut and
+  status counts (1.9.2), does not ask for the full list there. Not changed (it is Map Studio's own drawing code): offered.
+- Not checked on the real PRTG for any of the nine: public map links (the test map is not public; checked on the stand-in only),
+  PRTG's new UI, other browsers than Chrome. Map 2254 and its 9 items are left on the lab PRTG; earlier copies of the replaced
+  test files are in the VM's `Desktop\Claude outputs\mapobjects-backup-2026-11-26\`.
 - In the designer, PRTG's red "Change Default Password" notice covers the "Map Studio Tests" heading in the object list; a click
   there opens edituser.htm (nothing changed). Click the heading's left end.
 
