@@ -118,7 +118,8 @@ function reset(before){store={left:40,top:60,width:+(/initialwidth="(\d+)"/.exec
     const n=await inBar("var pop=[].find.call(sh.querySelectorAll('.pop'),function(x){return !x.hidden;});if(!pop)return 0;var k=0;"+
       "[].forEach.call(pop.querySelectorAll('select'),function(s){if(s.options.length>1){s.selectedIndex=(s.selectedIndex+1)%s.options.length;s.dispatchEvent(new Event('change'));k++;}});"+
       "[].forEach.call(pop.querySelectorAll('input[type=checkbox]'),function(c,i){if(i<4){c.click();k++;}});"+
-      "[].forEach.call(pop.querySelectorAll('.seg button:not(.on)'),function(b,i){if(i<1){b.click();k++;}});return k;");
+      "[].forEach.call(pop.querySelectorAll('.seg button:not(.on)'),function(b,i){if(i<1){b.click();k++;}});"+
+      "var sh2=[].filter.call(pop.querySelectorAll('.shots .shot:not(.on)'),function(b){return b.offsetParent;});if(sh2.length){sh2[sh2.length>1?1:0].click();k++;}return k;");
     await p.waitForTimeout(300);
     check('menu '+m+': '+n+' controls changed, no errors',errs.length===0,errs);
   }

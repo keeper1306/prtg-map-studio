@@ -297,6 +297,18 @@ Also offered, not done: machine state in the floating bar (only the side panel h
   same (checked: "Map Studio Status counts - Dark card - up, warning, down, paused", 0 px). `previewHeight()` in `common/kit.js`
   gives the object its initial height scaled to the preview's width, in the preview only (status counts: 111 px, drawn, 80
   sensors, no gear). Map Studio itself is not changed: offer the same fix for the extension.
+- Tile (item 6, the traffic sensor): Stat, String, Bar gauge, Interface, Channel chips and chips (fit) all switch on the map
+  (the String tile's hidden message line `.tmsg` is always in the file); Camera left out (it needs a camera address). The kind's
+  own fields from the side panel are in the Tile menu. Checked on the lab PRTG: every kind drawn from the real channels, Teal
+  glass, outline 260 x 170 -> 360 x 220, Save for everyone (Interface) back after PRTG's refresh and a reload (scale 1.37),
+  Map Designer canvas, hover preview (stat tile, no gear).
+- Found and fixed: **in the Map Designer the tile's script did not run** (SyntaxError "Unexpected token '>'"). The designer puts
+  items on its canvas with jQuery's `.html()`; that jQuery's htmlPrefilter turns anything shaped like `<name ... />` into
+  `<name ...></name>`, inside scripts too, and the copied code had `i<list.length ... replace(/>/g` (eqsRuntime) shaped like that.
+  View Map loads the file directly, so it was fine there. `jqSafe()` in `tools/build.js` puts a space after `<` in code and writes
+  `/>` as `\x2f>` in strings and regexes; the build fails if jQuery's pattern still matches anywhere, and checks the finished copy
+  still builds Map Studio's files (default + 14 looks per type; scripts compared by function and settings). After it, all six
+  items' scripts parse and run in the designer. Map Studio's own files may meet the same jQuery rule: not checked.
 - In the designer, PRTG's red "Change Default Password" notice covers the "Map Studio Tests" heading in the object list; a click
   there opens edituser.htm (nothing changed). Click the heading's left end.
 

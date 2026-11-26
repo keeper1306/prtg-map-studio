@@ -1,5 +1,25 @@
   /* ---------- the bar of the new types: Looks, Colors, the type's own menu, Title; quick settings as in Map Studio's bar ---------- */
   var DETAILKEYS=['font','size','tsize','radius','shadow','border','ts','talign','ov'];
+  /* a text box in a menu: the value is kept when the box loses focus or Enter is pressed (clean() checks it) */
+  function pfText(U,pop,text,key,ph,max){
+    var w=U.pf(pop,text), i=el('input','ps');i.type='text';i.maxLength=max||80;if(ph)i.placeholder=ph;w.appendChild(i);
+    i.addEventListener('change',function(){U.d[key]=i.value;U.change();U.sync();});
+    U.syncs.push(function(){if(TOPDOC.activeElement!==U.host)i.value=U.E()[key]==null?'':String(U.E()[key]);});
+    return w;
+  }
+  /* a grid of pictures (Map Studio's own), one per choice */
+  function pfPics(U,pop,text,list,pic,key,onPick){
+    var w=U.pf(pop,text), g=el('div','shots');w.appendChild(g);
+    list.forEach(function(f){
+      var b=el('button','shot','<i>'+pic(f[0])+'</i><span>'+esc(f[1])+'</span>');b.type='button';b.setAttribute('data-v',f[0]);b.title=f[1];
+      b.addEventListener('click',function(){if(onPick)onPick(f[0]);else U.d[key]=f[0];U.change();U.sync();});
+      g.appendChild(b);
+    });
+    U.syncs.push(function(){var v=String(U.E()[key]);[].forEach.call(g.children,function(b){b.classList.toggle('on',b.getAttribute('data-v')===v);});});
+    return g;
+  }
+  /* parts of a menu shown only for some choices */
+  function showWhen(U,node,test){U.syncs.push(function(){node.style.display=test(U.E())?'':'none';});return node;}
   function barMenus(U){
     var d=U.d, E=U.E, sync=U.sync, change=U.change, syncs=U.syncs, r1=U.r1, host=U.host, menu=U.menu, pf=U.pf, pfRange=U.pfRange,
       pfCheck=U.pfCheck, pfSeg=U.pfSeg, pfSelect=U.pfSelect, pfColor=U.pfColor, note=U.note;

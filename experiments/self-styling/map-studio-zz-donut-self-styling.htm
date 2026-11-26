@@ -144,7 +144,7 @@
   function cleanTag(s){return String(s||'').replace(/[^A-Za-z0-9_\-]/g,'');}
   function cleanTags(str){
     var parts=String(str||'').split(/[\s,]+/),out=[];
-    parts.forEach(function(x){x=cleanTag(x);if(x&&out.indexOf(x)<0)out.push(x);});
+    parts.forEach(function(x){x=cleanTag(x);if(x&&out.indexOf(x)< 0)out.push(x);});
     return out;
   }
   function tagFilters(T){
@@ -172,7 +172,7 @@
   function blend(a,b,t){
     var x=String(a).replace('#',''),y=String(b).replace('#','');
     if(x.length!==6||y.length!==6)return a;
-    var r=[0,2,4].map(function(i){var v=Math.round(parseInt(x.substr(i,2),16)*(1-t)+parseInt(y.substr(i,2),16)*t);var s=v.toString(16);return s.length<2?'0'+s:s;});
+    var r=[0,2,4].map(function(i){var v=Math.round(parseInt(x.substr(i,2),16)*(1-t)+parseInt(y.substr(i,2),16)*t);var s=v.toString(16);return s.length< 2?'0'+s:s;});
     return '#'+r.join('');
   }
   function gClassOf(G){return 'pgau_'+slugOf(G.name);}
@@ -205,7 +205,7 @@
     var out='', i=0, j, d, a, k, parts;
     while((j=css.indexOf('clamp(',i))>-1){
       out+=css.slice(i,j+6);d=1;a=j+6;parts=[];
-      for(k=a;k<css.length&&d>0;k++){var ch=css.charAt(k);if(ch==='(')d++;else if(ch===')'){d--;if(!d)break;}else if(ch===','&&d===1){parts.push(css.slice(a,k));a=k+1;}}
+      for(k=a;k< css.length&&d>0;k++){var ch=css.charAt(k);if(ch==='(')d++;else if(ch===')'){d--;if(!d)break;}else if(ch===','&&d===1){parts.push(css.slice(a,k));a=k+1;}}
       if(d){out+=css.slice(j+6);return out;}
       parts.push(css.slice(a,k));
       out+=parts.map(function(p,n){var t=p.trim();return ((n===0||n===parts.length-1)&&/^\d+(?:\.\d+)?px$/.test(t))?'calc('+t+' * var(--mss,1))':p;}).join(',')+')';
@@ -242,7 +242,7 @@
   function gFrameCss(G,cls,L){
     var r='.'+cls, c=[], bar=(L.titleStyle==='bar');
     var fillA=(L.cardA==null?100:L.cardA);
-    var cardFill=(fillA<100)?tint(L.cardBg,fillA/100):L.cardBg;
+    var cardFill=(fillA< 100)?tint(L.cardBg,fillA/100):L.cardBg;
     var root='font-family:'+familyStack(L.font)+';font-size:'+fpx(L.size)+';color:'+L.text+';';
     /* no padding and no border on the object itself: see the note in tableCss */
     if(L.card){
@@ -277,14 +277,14 @@
     return L;
   }
   function dClassOf(D){return 'pdn_'+slugOf(D.name);}
-  function dDark(L){return !!L.card&&lum(L.cardBg)<0.35;}
+  function dDark(L){return !!L.card&&lum(L.cardBg)< 0.35;}
   function donutPalette(L){
     var c=L.c;
     return {down:c.down,warning:c.warning,unusual:(c.unusual&&c.unusual!==c.warning)?c.unusual:blend(c.warning,c.down,0.5),up:c.up,paused:c.paused,unknown:(c.unknown&&c.unknown!==c.paused&&String(c.unknown).toUpperCase()!==String(c.paused).toUpperCase())?c.unknown:blend(c.paused,L.text,0.5),ack:c.ack||blend(c.down,'#FFFFFF',0.35)};
   }
   function donutCssRing(D,cls,L){
     var r='.'+cls, c=gFrameCss({engine:'ring'},cls,L), bar=(L.titleStyle==='bar'), muted=(L.muted||L.headColor);
-    var fillA=(L.cardA==null?100:L.cardA), cardFill=(L.card)?((fillA<100)?tint(L.cardBg,fillA/100):L.cardBg):'#FFFFFF';
+    var fillA=(L.cardA==null?100:L.cardA), cardFill=(L.card)?((fillA< 100)?tint(L.cardBg,fillA/100):L.cardBg):'#FFFFFF';
     var track=blend(cardFill.charAt(0)==='#'?cardFill:'#FFFFFF',L.text,0.14), P=donutPalette(L);
     c.push(r+' .dbody{flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;gap:18px;'+(bar?'margin:10px 14px;':'')+'}');
     c.push(r+' .dbody.lg-below{flex-direction:column;gap:10px;}');
@@ -381,7 +381,7 @@
       var list=C.full||(box&&box.sensors);
       if(!list||typeof list.length!=='number'){say('No sensor data');return;}
       var counts={down:0,ack:0,warning:0,unusual:0,up:0,paused:0,unknown:0}, parsed=0, i;
-      for(i=0;i<list.length;i++){var k=classify(list[i]);if(k){counts[k]++;parsed++;}}
+      for(i=0;i< list.length;i++){var k=classify(list[i]);if(k){counts[k]++;parsed++;}}
       if(list.length>0&&parsed===0){say('Could not read sensor states');return;}
       var alarms=(C.mode==='alarms'), shown=[], total=0;
       ORDER.forEach(function(o){if(alarms&&!ALARM[o[0]])return;shown.push([o[0],o[1],counts[o[0]]]);total+=counts[o[0]];});
@@ -545,7 +545,7 @@ function hex(v){
   m=v.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
   if(m){
     return '#'+[m[1],m[2],m[3]].map(function(n){
-      var s=parseInt(n,10).toString(16);return s.length<2?'0'+s:s;
+      var s=parseInt(n,10).toString(16);return s.length< 2?'0'+s:s;
     }).join('');
   }
   return null;
@@ -634,10 +634,10 @@ function hex(v){
   function keysOf(list){return list.map(function(x){return x[0];});}
   function has(list,v){return keysOf(list).indexOf(v)>=0;}
   function hex(v){return (typeof v==='string'&&/^#[0-9a-fA-F]{6}$/.test(v))?v:undefined;}
-  function int(v,lo,hi){var n=parseInt(v,10);return (isNaN(n)||n<lo||n>hi)?undefined:n;}
+  function int(v,lo,hi){var n=parseInt(v,10);return (isNaN(n)||n< lo||n>hi)?undefined:n;}
   function bool(v){return typeof v==='boolean'?v:undefined;}
   function txt(v,max){if(typeof v!=='string')return undefined;return v.replace(/[\u0000-\u001F\u007F<>\\]/g,'').slice(0,max);}
-  function mix(){var o={},i,k,a;for(i=0;i<arguments.length;i++){a=arguments[i];if(a)for(k in a)if(Object.prototype.hasOwnProperty.call(a,k))o[k]=a[k];}return o;}
+  function mix(){var o={},i,k,a;for(i=0;i< arguments.length;i++){a=arguments[i];if(a)for(k in a)if(Object.prototype.hasOwnProperty.call(a,k))o[k]=a[k];}return o;}
   function inPreview(){return !!(root.closest&&root.closest('.previewloading'));}
   function inDesigner(){return /mapdesigner|mapeditor/i.test(location.pathname)||!!(root.closest&&root.closest('#mapeditor'));}
   function isPublic(){try{if(/\/public\//i.test(window.top.location.pathname))return true;}catch(e){return true;}return /\/public\//i.test(location.pathname);}
@@ -645,7 +645,7 @@ function hex(v){
     var hrefs=[location.href],m,i;
     try{hrefs.push(window.parent.location.href);}catch(e){}
     try{hrefs.push(window.top.location.href);}catch(e){}
-    for(i=0;i<hrefs.length;i++){m=/[?&]id=(\d+)/.exec(hrefs[i])||/\/maps\/(\d+)/.exec(hrefs[i]);if(m)return m[1];}
+    for(i=0;i< hrefs.length;i++){m=/[?&]id=(\d+)/.exec(hrefs[i])||/\/maps\/(\d+)/.exec(hrefs[i]);if(m)return m[1];}
     return '';
   }
   var MAP=mapId(), KEY=PFX+MAP+'.'+SUB;
@@ -713,7 +713,7 @@ function hex(v){
       else if(s[0]==='int')r=int(v,s[1],s[2]);
       else if(s[0]==='bool')r=bool(v);
       else if(s[0]==='text'){r=txt(v,s[1]);if(r!==undefined)r=r.replace(/["]/g,'').trim();}
-      else if(s[0]==='list'){if(Array.isArray(v)){r=[];v.forEach(function(x){if(s[1].indexOf(x)>=0&&r.indexOf(x)<0)r.push(x);});if(!r.length&&!s[2])r=undefined;}}
+      else if(s[0]==='list'){if(Array.isArray(v)){r=[];v.forEach(function(x){if(s[1].indexOf(x)>=0&&r.indexOf(x)< 0)r.push(x);});if(!r.length&&!s[2])r=undefined;}}
       else if(s[0]==='hex')r=hex(v);
       if(r!==undefined)c[k]=r;
     });
@@ -804,7 +804,7 @@ function hex(v){
     if(st&&css!==KL.css){st.textContent=css;KL.css=css;}
     p.links.forEach(loadFontHref);
     /* classes: what the new file has and the last one had not, and the other way round (PRTG's own classes stay) */
-    KL.cls.forEach(function(k){if(p.cls.indexOf(k)<0)r.classList.remove(k);});
+    KL.cls.forEach(function(k){if(p.cls.indexOf(k)< 0)r.classList.remove(k);});
     p.cls.forEach(function(k){if(!r.classList.contains(k))r.classList.add(k);});
     KL.cls=p.cls;
     titleApply(m);
@@ -853,7 +853,7 @@ function hex(v){
     var docs=[document],i,m;
     try{docs.push(window.parent.document);}catch(e){}
     try{docs.push(window.top.document);}catch(e){}
-    for(i=0;i<docs.length;i++){m=docs[i].querySelector('meta[name="csrf-token"]');if(m&&m.content)return Promise.resolve(m.content);}
+    for(i=0;i< docs.length;i++){m=docs[i].querySelector('meta[name="csrf-token"]');if(m&&m.content)return Promise.resolve(m.content);}
     return api('/welcome.htm').then(function(t){
       var d=new DOMParser().parseFromString(t,'text/html'), mm=d.querySelector('meta[name="csrf-token"]');
       if(!mm||!mm.content)throw new Error('Could not find PRTG\u2019s security token');
@@ -861,17 +861,17 @@ function hex(v){
     });
   }
   function qfix(h){
-    h=String(h==null?'':h);if(h.indexOf('"')<0)return h;
+    h=String(h==null?'':h);if(h.indexOf('"')< 0)return h;
     var out='',i=0,n=h.length,c,j,q,m,end,d;
-    while(i<n){
+    while(i< n){
       c=h.charAt(i);
-      if(c==='<'&&h.substr(i,4)==='<!--'){j=h.indexOf('-->',i+4);j=(j<0)?n:j+3;out+=h.slice(i,j);i=j;continue;}
+      if(c==='<'&&h.substr(i,4)==='<!--'){j=h.indexOf('-->',i+4);j=(j< 0)?n:j+3;out+=h.slice(i,j);i=j;continue;}
       if(c==='<'&&/[A-Za-z\/!?]/.test(h.charAt(i+1)||'')){
         j=i+1;q='';
-        while(j<n){d=h.charAt(j);if(q){if(d===q)q='';}else if(d==='"'||d==="'")q=d;else if(d==='>')break;j++;}
+        while(j< n){d=h.charAt(j);if(q){if(d===q)q='';}else if(d==='"'||d==="'")q=d;else if(d==='>')break;j++;}
         j=Math.min(n,j+1);out+=h.slice(i,j);
         m=/^<(script|style)\b/i.exec(h.slice(i,j));
-        if(m){end=h.toLowerCase().indexOf('</'+m[1].toLowerCase(),j);end=(end<0)?n:end;out+=h.slice(j,end);j=end;}
+        if(m){end=h.toLowerCase().indexOf('</'+m[1].toLowerCase(),j);end=(end< 0)?n:end;out+=h.slice(j,end);j=end;}
         i=j;continue;
       }
       out+=(c==='"')?'&quot;':c;i++;
@@ -881,7 +881,7 @@ function hex(v){
   function packed(c){return encodeURIComponent(JSON.stringify(clean(c)));}
   function cfgTag(c){
     var s=packed(c), parts=[],i;
-    for(i=0;i<s.length;i+=200)parts.push(s.slice(i,i+200));
+    for(i=0;i< s.length;i+=200)parts.push(s.slice(i,i+200));
     return '<i class="mst-cfg" data-c="'+parts.join('\n')+'"></i>';
   }
   var CFGRE=/<i\s+class=["']mst-cfg["'][^>]*>\s*<\/i>/i;
@@ -905,7 +905,7 @@ function hex(v){
       });
     }).then(function(){return api('/api/mapsettings.htm?'+q);}).then(function(t){
       var j=JSON.parse(t);
-      if(String(j.htmlbefore||'').indexOf('mst-cfg')<0)throw new Error('PRTG did not keep the new look');
+      if(String(j.htmlbefore||'').indexOf('mst-cfg')< 0)throw new Error('PRTG did not keep the new look');
       if(SZ&&(parseInt(j.width,10)!==SZ.w||parseInt(j.height,10)!==SZ.h))throw new Error('PRTG did not keep the new size');
       sizeSaved();
       var el=root.querySelector('.mst-cfg');
@@ -980,7 +980,7 @@ function hex(v){
 
 
   /* ---------- the floating bar (built like Map Studio's): shared frame, Save menu and placement; each type adds its own menus ---------- */
-  var GEAR="<svg viewBox=\"0 0 24 24\"><circle cx=\"12\" cy=\"12\" r=\"3.2\"/><path d=\"M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z\"/></svg>";
+  var GEAR="<svg viewBox=\"0 0 24 24\"><circle cx=\"12\" cy=\"12\" r=\"3.2\"\x2f><path d=\"M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z\"\x2f></svg>";
   var BCSS=[
     ":host{all:initial}",
     ".bar{position:fixed;z-index:2147483000;display:flex;flex-direction:column;gap:3px;padding:4px 6px;background:#fff;border:1px solid #DDE1E8;border-radius:10px;box-shadow:0 4px 16px rgba(15,23,42,.16);font:12px/1.3 \"Segoe UI\",Roboto,Arial,sans-serif;color:#1d2433;width:max-content;max-width:calc(100vw - 16px);box-sizing:border-box}",
@@ -1107,7 +1107,7 @@ function hex(v){
     function placePop(pop,b){
       pop.classList.remove('up');pop.style.left='0px';pop.style.maxHeight='';
       var vh=view.innerHeight, vw=view.innerWidth, br=b.getBoundingClientRect(), below=vh-br.bottom-14, above=br.top-14;
-      if(below<260&&above>below){pop.classList.add('up');pop.style.maxHeight=Math.max(160,above)+'px';}
+      if(below< 260&&above>below){pop.classList.add('up');pop.style.maxHeight=Math.max(160,above)+'px';}
       else pop.style.maxHeight=Math.max(160,below)+'px';
       var pr=pop.getBoundingClientRect();
       if(pr.right>vw-8)pop.style.left=Math.round(vw-8-pr.right)+'px';
@@ -1237,6 +1237,26 @@ function hex(v){
 
   /* ---------- the bar of the new types: Looks, Colors, the type's own menu, Title; quick settings as in Map Studio's bar ---------- */
   var DETAILKEYS=['font','size','tsize','radius','shadow','border','ts','talign','ov'];
+  /* a text box in a menu: the value is kept when the box loses focus or Enter is pressed (clean() checks it) */
+  function pfText(U,pop,text,key,ph,max){
+    var w=U.pf(pop,text), i=el('input','ps');i.type='text';i.maxLength=max||80;if(ph)i.placeholder=ph;w.appendChild(i);
+    i.addEventListener('change',function(){U.d[key]=i.value;U.change();U.sync();});
+    U.syncs.push(function(){if(TOPDOC.activeElement!==U.host)i.value=U.E()[key]==null?'':String(U.E()[key]);});
+    return w;
+  }
+  /* a grid of pictures (Map Studio's own), one per choice */
+  function pfPics(U,pop,text,list,pic,key,onPick){
+    var w=U.pf(pop,text), g=el('div','shots');w.appendChild(g);
+    list.forEach(function(f){
+      var b=el('button','shot','<i>'+pic(f[0])+'</i><span>'+esc(f[1])+'</span>');b.type='button';b.setAttribute('data-v',f[0]);b.title=f[1];
+      b.addEventListener('click',function(){if(onPick)onPick(f[0]);else U.d[key]=f[0];U.change();U.sync();});
+      g.appendChild(b);
+    });
+    U.syncs.push(function(){var v=String(U.E()[key]);[].forEach.call(g.children,function(b){b.classList.toggle('on',b.getAttribute('data-v')===v);});});
+    return g;
+  }
+  /* parts of a menu shown only for some choices */
+  function showWhen(U,node,test){U.syncs.push(function(){node.style.display=test(U.E())?'':'none';});return node;}
   function barMenus(U){
     var d=U.d, E=U.E, sync=U.sync, change=U.change, syncs=U.syncs, r1=U.r1, host=U.host, menu=U.menu, pf=U.pf, pfRange=U.pfRange,
       pfCheck=U.pfCheck, pfSeg=U.pfSeg, pfSelect=U.pfSelect, pfColor=U.pfColor, note=U.note;
