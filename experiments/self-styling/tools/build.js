@@ -78,13 +78,13 @@ function kitSource(k,T,type){
     '  var KIT=(function(){\n'+
     '  var TYPE='+JSON.stringify(type)+',__m=null,G,GR,DN,SB,IC,SC,TL,GM,LK,T;function M(){return __m;}function isPaste(){return false;}function anyOn(){return false;}\n'+
     '  '+K.PMS+'\n'+k.__kit.text+'\n'+
-    '  return {BUILD:function(m){__m=G=GR=DN=SB=IC=SC=TL=GM=LK=T=m;return '+T.build+'(m);},flexAppend:flexAppend,lookOf:lookOf,LOOKORDER:LOOKORDER,PMS:__PMS,\n'+
+    '  return {BUILD:function(m){__m=G=GR=DN=SB=IC=SC=TL=GM=LK=T=m;return '+T.build+'(m);},flexAppend:flexAppend,lookOf:lookOf,LOOKORDER:LOOKORDER,PMS:__PMS,FLEXT:FLEXT,\n'+
     '    RT:{'+rts.map(n=>n+':'+n).join(',')+'},EXP:{'+(T.expose||[]).map(n=>n+':'+n).join(',')+'}};\n  })();\n'+
     '  var BUILD=KIT.BUILD, flexAppend=KIT.flexAppend, lookOf=KIT.lookOf, RT=KIT.RT, __PMS=KIT.PMS, EXP=KIT.EXP;\n';
 }
 function buildKit(t){
   const T=require(path.join(DIR,'types',t,'type.js'));
-  const k=K.make(T.mstype,[T.build,T.blank,'flexAppend','lookOf','LOOKORDER'].concat(T.roots||[],T.expose||[]));
+  const k=K.make(T.mstype,[T.build,T.blank,'flexAppend','lookOf','LOOKORDER','FLEXT'].concat(T.roots||[],T.expose||[]));
   let M0=k.use(k[T.blank]());
   if(T.defaults)M0=k.use(T.defaults(M0,k)||M0);
   const base=k.flexAppend(k[T.build](M0));

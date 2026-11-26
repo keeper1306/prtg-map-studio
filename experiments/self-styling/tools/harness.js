@@ -126,12 +126,13 @@ function reset(before){store={left:40,top:60,width:+(/initialwidth="(\d+)"/.exec
   if(SHOTS)await p.screenshot({path:path.join(SHOTS,TYPE+'-2-changed.png')});
   await p.keyboard.press('Escape');await p.waitForTimeout(100);   /* close the open menu, as a user would before dragging */
   /* 3: Flexible */
-  await inBar("var b=[].find.call(sh.querySelectorAll('.seg2 .t'),function(x){return x.textContent==='Flexible';});if(b)b.click();");
+  const hasFlex=await inBar("var b=[].find.call(sh.querySelectorAll('.seg2 .t'),function(x){return x.textContent==='Flexible';});if(b)b.click();return !!b;");
   await p.waitForTimeout(300);
+  if(!hasFlex)console.log('  (no Fixed | Flexible for this type, as in Map Studio)');
   await frame().evaluate(()=>{const r=document.getElementById('mapitem_7');r.style.width=Math.round(r.offsetWidth*1.5)+'px';r.style.height=Math.round(r.offsetHeight*1.5)+'px';});
   await p.waitForTimeout(500);
   const sf=await S();
-  check('Flexible grows with the box (scale '+(sf.scale||sf.mss)+')',parseFloat(sf.scale||sf.mss)>1.2,sf);
+  if(hasFlex)check('Flexible grows with the box (scale '+(sf.scale||sf.mss)+')',parseFloat(sf.scale||sf.mss)>1.2,sf);
   const title=()=>frame().evaluate(()=>{const t=document.querySelector('#mapitem_7 .tabletitle,#mapitem_7 .gtitle');return t?getComputedStyle(t).fontSize:'';});
   const tBig=await title();
   await frame().evaluate(()=>{const r=document.getElementById('mapitem_7');r.style.width=Math.round(r.offsetWidth/1.5)+'px';r.style.height=Math.round(r.offsetHeight/1.5)+'px';});

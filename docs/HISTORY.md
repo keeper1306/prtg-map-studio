@@ -318,6 +318,15 @@ Also offered, not done: machine state in the floating bar (only the side panel h
 - Found and fixed: machine state's settings are pretty JSON over several lines, which the on-map code did not read, so the symbol
   stayed a plain pump/"Up". The reader takes several lines now, the build fails on any script whose settings it cannot read, and
   its byte check also builds each type's listed variants (Industrial: PLC with machine state and health).
+- Icon (item 8, "Probe Health", Down): Map Studio's custom icons (CSS only, state from PRTG's class); PRTG's stock icons left out.
+  All 27 styles (pictures drawn by the icon's own CSS in up/warning/down), text next to it, animate, card, colours. A style is a
+  different svg and the text is a different span: the script copies them from the built file and fills the name from the link's
+  tooltip. As in Map Studio: no Fixed | Flexible (FLEXT has no icon), no Title, Looks only with the card on. Checked on the lab
+  PRTG: red dot; horizontal traffic light, name and word, card, Indigo board; outline 60 x 60 -> 244 x 76; Save for everyone back
+  after PRTG's refresh and a reload; Map Designer canvas (all 8 items' scripts parse and run); hover preview (red, no gear).
+- Found and fixed: PRTG's tooltip moves the link's title into `data-original-title` once hovered (the name came out empty), and the
+  tooltip box opened over a small object's handles so the outline could not be dragged; while the outline shows, tooltips let
+  the pointer through (`html.mst-sizing .tooltip`, in `common/sizer.js`, so every object has it).
 - In the designer, PRTG's red "Change Default Password" notice covers the "Map Studio Tests" heading in the object list; a click
   there opens edituser.htm (nothing changed). Click the heading's left end.
 

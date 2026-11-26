@@ -1,5 +1,7 @@
   /* ---------- the bar of the new types: Looks, Colors, the type's own menu, Title; quick settings as in Map Studio's bar ---------- */
   var DETAILKEYS=['font','size','tsize','radius','shadow','border','ts','talign','ov'];
+  /* as in Map Studio's bar: title controls only for objects with a title, Fixed | Flexible only for the types it makes flexible */
+  var HASTITLE=('titleMode' in M0), CANFLEX=!!KIT.FLEXT[M0.type];
   /* a text box in a menu: the value is kept when the box loses focus or Enter is pressed (clean() checks it) */
   function pfText(U,pop,text,key,ph,max){
     var w=U.pf(pop,text), i=el('input','ps');i.type='text';i.maxLength=max||80;if(ph)i.placeholder=ph;w.appendChild(i);
@@ -23,7 +25,7 @@
   function barMenus(U){
     var d=U.d, E=U.E, sync=U.sync, change=U.change, syncs=U.syncs, r1=U.r1, host=U.host, menu=U.menu, pf=U.pf, pfRange=U.pfRange,
       pfCheck=U.pfCheck, pfSeg=U.pfSeg, pfSelect=U.pfSelect, pfColor=U.pfColor, note=U.note;
-    if(LOOKNAMES.length)menu(r1,'Looks',function(pop){
+    var lb=LOOKNAMES.length&&menu(r1,'Looks',function(pop){
       var g=el('div','looks');pop.appendChild(g);
       LOOKNAMES.forEach(function(n){
         var L=lookOf(n), b=el('button','lk');b.type='button';b.setAttribute('data-v',n);
@@ -37,6 +39,7 @@
       pfSelect(pop,'Shadow',KSHADOWS,'shadow');
       pfCheck(pop,'Border round the card','border');
     },'wide');
+    if(lb&&typeof lookShown==='function')syncs.push(function(){lb.parentNode.style.display=lookShown(E())?'':'none';});
     menu(r1,'Colors',function(pop){
       pfSelect(pop,'Status colours',KSETS.map(function(s){return [s[0],s[1]];}),'set');
       note(pop,'Up, warning, down and the other states, as in Map Studio’s Colors menu.');
@@ -47,7 +50,7 @@
       });
     },'wide');
     typeMenus(U);
-    menu(r1,'Title',function(pop){
+    if(HASTITLE)menu(r1,'Title',function(pop){
       var w=pf(pop,'Text'), i=el('input','ps');i.type='text';i.maxLength=80;i.placeholder='The object’s name';w.appendChild(i);
       i.addEventListener('input',function(){d.title=i.value;change();});syncs.push(function(){if(TOPDOC.activeElement!==host)i.value=E().title||'';});
       pfSeg(pop,'Style',KTS,'ts');
@@ -60,13 +63,15 @@
     var r2=U.r2, lab=U.lab, sel=U.sel, numBox=U.numBox, toggle=U.toggle, sep=U.sep;
     lab(r2,'Font',sel(FONTS.map(function(f){return [f[0],f[1]];}),'font','s'));
     numBox(r2,'Text','size',8,40);
-    numBox(r2,'Title','tsize',8,60);
+    if(HASTITLE)numBox(r2,'Title','tsize',8,60);
     numBox(r2,'Corners','radius',0,40);
     sep(r2);
-    U.flexSeg(r2,'Keeps its size: a smaller box shows less room for the drawing',
-      'Text and drawing grow and shrink with the box; the title keeps its size. The size it has now counts as normal');
-    sep(r2);
-    toggle(r2,'Title','showTitle','Show the title');
+    if(CANFLEX){
+      U.flexSeg(r2,'Keeps its size: a smaller box shows less room for the drawing',
+        'Text and drawing grow and shrink with the box; the title keeps its size. The size it has now counts as normal');
+      sep(r2);
+    }
+    if(HASTITLE)toggle(r2,'Title','showTitle','Show the title');
     if(typeof typeQuick==='function')typeQuick(U);
   }
 

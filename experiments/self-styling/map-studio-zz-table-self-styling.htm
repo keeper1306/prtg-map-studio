@@ -495,13 +495,16 @@
 
 
   /* ---------- the selection outline: drag a handle to change the item's size (saved with "Save for everyone") ---------- */
-  var SELCSS='.mst-sel{position:absolute;box-sizing:border-box;border:1.5px solid #1A9FD9;pointer-events:none;z-index:2147483000}'+
+  /* PRTG's tooltip (the object's name) opens over a small object and covered its handles: while the outline shows, tooltips let the
+     pointer through */
+  var SELCSS='html.mst-sizing .tooltip{pointer-events:none !important}'+
+    '.mst-sel{position:absolute;box-sizing:border-box;border:1.5px solid #1A9FD9;pointer-events:none;z-index:2147483000}'+
     '.mst-sel i{position:absolute;width:10px;height:10px;margin:-6px 0 0 -6px;box-sizing:border-box;border:1.5px solid #1A9FD9;border-radius:50%;background:#fff;pointer-events:auto;touch-action:none}'+
     '.mst-sel i:hover{background:#E6F3FA}'+
     '.mst-sel b{position:absolute;left:50%;top:100%;transform:translate(-50%,8px);padding:2px 7px;border-radius:4px;background:#0E7CB0;color:#fff;font:600 11px/1.4 "Segoe UI",Roboto,Arial,sans-serif;white-space:nowrap;pointer-events:none}';
   var SELH=[['nw',0,0],['n',.5,0],['ne',1,0],['e',1,.5],['se',1,1],['s',.5,1],['sw',0,1],['w',0,.5]];
   function selId(){return 'mst-sel-'+KEY.replace(/[^\w-]/g,'_');}
-  function selRemove(){var o=document.getElementById(selId());if(o)o.remove();}
+  function selRemove(){var o=document.getElementById(selId());if(o)o.remove();if(!document.querySelector('.mst-sel'))document.documentElement.classList.remove('mst-sizing');}
   function px(v,alt){var n=parseFloat(v);return (/px$/.test(String(v))&&!isNaN(n))?Math.round(n):Math.round(alt);}
   function sizeNow(){var r=liveRoot(),s=r.style;return {l:px(s.left,r.offsetLeft),t:px(s.top,r.offsetTop),w:px(s.width,r.offsetWidth),h:px(s.height,r.offsetHeight)};}
   function sizeApply(){
@@ -530,6 +533,7 @@
     selRemove();
     if(!document.getElementById('mst-sel-css')){var st=document.createElement('style');st.id='mst-sel-css';st.textContent=SELCSS;document.head.appendChild(st);}
     if(!R.size0)R.size0=sizeNow();
+    document.documentElement.classList.add('mst-sizing');
     var o=document.createElement('div');o.className='mst-sel';o.id=selId();
     SELH.forEach(function(h){
       var i=document.createElement('i');i.style.left=(h[1]*100)+'%';i.style.top=(h[2]*100)+'%';i.style.cursor=h[0]+'-resize';
