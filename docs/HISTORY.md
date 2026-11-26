@@ -289,6 +289,14 @@ Also offered, not done: machine state in the floating bar (only the side panel h
   down, 3 warning), legend below, outline 340 x 220 -> 424 x 287, Save for everyone back after PRTG's refresh and a reload
   (scale 1.25, title 18 px as the look has it), Map Designer canvas (no gear), hover preview on the probe (80 sensors: the 1.9.2
   full count works; the map's own count is 77, the same for Map Studio's donut: not looked into).
+- Status counts (item 5, the probe device): every Tiles-menu choice changes on the map. Checked on the lab PRTG: Up 8 / Warning 0 /
+  Down 2 / Paused 0 of 11; Slate fintech, Total and Percent up added, Paused taken out, no caption; outline 420 x 200 -> 520 x
+  250; Save for everyone back after PRTG's refresh and a reload (scale 1.24); Map Designer canvas (no gear).
+- Found and fixed (in the test objects only): in PRTG's hover preview a status counts object is 0 px high and shows nothing,
+  because PRTG gives the preview a width and no height and the drawing fills the box. Map Studio's own status counts files do the
+  same (checked: "Map Studio Status counts - Dark card - up, warning, down, paused", 0 px). `previewHeight()` in `common/kit.js`
+  gives the object its initial height scaled to the preview's width, in the preview only (status counts: 111 px, drawn, 80
+  sensors, no gear). Map Studio itself is not changed: offer the same fix for the extension.
 - In the designer, PRTG's red "Change Default Password" notice covers the "Map Studio Tests" heading in the object list; a click
   there opens edituser.htm (nothing changed). Click the heading's left end.
 

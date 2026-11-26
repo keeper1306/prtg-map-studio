@@ -825,7 +825,15 @@ function hex(v){
     if(b.__orig==null)b.__orig=b.innerHTML;
     if(m.titleMode==='custom')b.textContent=m.title;else if(b.innerHTML!==b.__orig)b.innerHTML=b.__orig;
   }
-  function apply(d){kitApply(modelOf(eff(clean(d))));}
+  /* PRTG's hover preview gives the object a width but no height; objects whose drawing fills the box (status counts, and Map
+     Studio's own too) then collapse to 0 px. In the preview only, such an object gets its normal height, scaled to the width. */
+  function previewHeight(){
+    if(!inPreview()||root.offsetHeight>0)return;
+    var iw=parseInt(root.getAttribute('initialwidth'),10)||parseInt(M0.initW,10)||0, ih=parseInt(root.getAttribute('initialheight'),10)||parseInt(M0.initH,10)||0;
+    if(!(iw>0&&ih>0))return;
+    root.style.height=Math.round(ih*(root.offsetWidth||iw)/iw)+'px';
+  }
+  function apply(d){kitApply(modelOf(eff(clean(d))));previewHeight();}
 
   /* the legend's place is a class on the donut's body (lg-right, lg-below, lg-none) */
   function markupApply(m){
