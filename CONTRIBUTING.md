@@ -4,6 +4,9 @@ Thanks for helping with PRTG Map Studio.
 
 ## How to contribute
 
+These steps are for outside contributors. The maintainer releases directly to
+the `connectors` and `main` branches.
+
 1. Never commit directly to `main`.
 2. Create a branch from `main` (for example `fix-login-message`).
 3. Make your change and test it by loading the `extension/` folder unpacked in

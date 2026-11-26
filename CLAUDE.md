@@ -182,7 +182,8 @@ Agreed order of the OT plan (ask before starting each):
 
 Pictures from `webroot\images` with a server-side script ("option B"): PRTG serves files from
 `webroot\images` (seen at `/images/<file>`) but not from `webroot\mapobjects`. Today a map background
-picture is uploaded through PRTG's own Map settings (1.5.93). Open questions are in section 8.
+picture is uploaded through PRTG's own Map settings (1.5.93). Parked by the owner on 2026-11-26 ("not
+needed now"): the Map settings upload is enough. Don't start it unasked.
 
 Self-styling objects (test files in `experiments/self-styling/`, see its README): a table and a graph object with a gear that
 opens Map Studio's floating bar on the map itself, saves the look into the item's HTML Before
@@ -226,11 +227,9 @@ makes Map Studio see two servers; Review shows pushed items as new and Undo is n
 
 Answered: Claude Code runs on VM 102 itself (section 3); the self-styling sources are in
 `experiments/self-styling/`; Chrome loads the extension unpacked from the Desktop folder (checked in
-Chrome's profile, 2026-11-26).
+Chrome's profile, 2026-11-26); pictures "option B" is parked (section 6); `CONTRIBUTING.md`'s pull request
+rules are for outside contributors only, and this project's own releases stay direct (2026-11-26).
+For demos the owner picked all four groups as equally important: tables; gauges and graphs (with donuts
+and sunbursts); tiles and status counts; Industrial (OT). No order among them, and no maps named yet.
 
-- "Option B" for pictures: what was option A? What should the server-side script do - list the files in
-  `webroot\images` for a picker, copy chosen pictures there, or both? How does it run (an admin PowerShell
-  script like the install script, a scheduled task, a PRTG script sensor)?
-- `CONTRIBUTING.md` says never commit to `main` and use pull requests with one approval, which is not how
-  this project is worked today. Update it, or keep it for outside contributors only?
-- Which object types and maps matter most for the customer demos, so testing on the real PRTG starts there?
+None open right now. Add new questions here.
