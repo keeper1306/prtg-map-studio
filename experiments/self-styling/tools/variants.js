@@ -7,6 +7,7 @@ const k=K.make(T.mstype,[T.build,T.blank,'flexAppend','lookOf','LOOKORDER']);
 let M0=k.use(k[T.blank]());if(T.defaults)M0=k.use(T.defaults(M0,k)||M0);
 function markup(m){
   k.use(m);let s=k.flexAppend(k[T.build](m));
+  if(T.fileTweak&&T.tweakEvery)s=T.fileTweak(s);   /* lines the file always carries (they then count as the same) */
   s=s.replace(/<style>[\s\S]*?<\/style>/g,'<style/>').replace(/<script>[\s\S]*?<\/script>/g,'<script/>').replace(/<link [^>]*>/g,'');
   s=s.replace(/<div class="map_object[^"]*"/,'<div class="ROOT"').replace(/^<!--[^\n]*-->/,'');
   s=s.replace(/<div class="gtitle"><b>[^<]*<\/b><\/div>/,'<div class="gtitle"><b>TITLE</b></div>');

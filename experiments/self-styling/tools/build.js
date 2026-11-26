@@ -101,11 +101,11 @@ function buildKit(t){
   {
     const a=js.indexOf('  var KIT=(function(){'), b=js.indexOf('\n  })();\n',a);
     const KIT=new Function(js.slice(a,b+8).replace('var KIT=','return '))();
-    [null].concat(k.LOOKORDER).forEach(lk=>{
-      const m=JSON.parse(JSON.stringify(M0));if(lk)m.look=k.lookOf(lk);
+    [null].concat(k.LOOKORDER,(T.variants||[]).map(v=>v.patch)).forEach(lk=>{
+      const m=Object.assign(JSON.parse(JSON.stringify(M0)),(lk&&typeof lk==='object')?lk:{});if(typeof lk==='string')m.look=k.lookOf(lk);
       /* scripts are compared by what the on-map code reads from them (the drawing function and its settings); their copy of
          the drawing code's own text differs by the spaces jqSafe adds, and is never run from there */
-      const norm=s=>s.replace(/<script>([\s\S]*?)<\/script>/g,(x,b)=>'<script>'+[(/\(function (\w+)\(root,C\)\{/.exec(b)||[])[1],(/\n\s*var CFG=(\{.*\});\n/.exec(b)||[])[1],(/\n\s*var C=(\{w:\d+,h:\d+,tf:\d\});/.exec(b)||[])[1]].join('|')+'</script>');
+      const norm=s=>s.replace(/<script>([\s\S]*?)<\/script>/g,(x,b)=>{if(!/var C=\{w:/.test(b)&&!/\n\s*var CFG=(\{[\s\S]*?\});\n\s*\(function \w+\(root,C\)\{/.test(b))throw new Error(t+': a script whose settings the on-map code cannot read');return x;}).replace(/<script>([\s\S]*?)<\/script>/g,(x,b)=>'<script>'+[(/\(function (\w+)\(root,C\)\{/.exec(b)||[])[1],(/\n\s*var CFG=(\{[\s\S]*?\});\n\s*\(function \w+\(root,C\)\{/.exec(b)||[])[1],(/\n\s*var C=(\{w:\d+,h:\d+,tf:\d\});/.exec(b)||[])[1]].join('|')+'</script>');
       k.use(m);const want=norm(k.flexAppend(k[T.build](m))), got=norm(KIT.flexAppend(KIT.BUILD(JSON.parse(JSON.stringify(m)))));
       if(got!==want){let i=0;while(got[i]===want[i])i++;
         throw new Error(t+': the finished script builds a different file than Map Studio’s code ('+(lk||'default')+') at '+i+':\n want '+JSON.stringify(want.slice(i-60,i+60))+'\n got  '+JSON.stringify(got.slice(i-60,i+60)));}

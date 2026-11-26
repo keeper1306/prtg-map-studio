@@ -671,7 +671,8 @@ function hex(v){
   function jobsOf(scripts){
     var out=[];
     scripts.forEach(function(s){
-      var f=/\(function (\w+)\(root,C\)\{/.exec(s), c=/\n\s*var CFG=(\{.*\});\n/.exec(s), x=/\n\s*var C=\{w:(\d+),h:(\d+),tf:(\d)\};/.exec(s);
+      /* the settings are one line of JSON, or several (Map Studio writes machine state's as pretty JSON, to keep lines short) */
+      var f=/\(function (\w+)\(root,C\)\{/.exec(s), c=/\n\s*var CFG=(\{[\s\S]*?\});\n\s*\(function \w+\(root,C\)\{/.exec(s), x=/\n\s*var C=\{w:(\d+),h:(\d+),tf:(\d)\};/.exec(s);
       if(x)out.push(['flexRuntime',{w:+x[1],h:+x[2],tf:+x[3]}]);
       else if(f&&c&&RT[f[1]]){try{out.push([f[1],JSON.parse(c[1])]);}catch(e){}}
     });

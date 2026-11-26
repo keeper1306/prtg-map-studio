@@ -1,4 +1,4 @@
-/* Tile (one sensor: what it reports, in the colour of its state). Options as in Map Studio's Tile menu and side panel.
+﻿/* Tile (one sensor: what it reports, in the colour of its state). Options as in Map Studio's Tile menu and side panel.
    Camera is left out: it needs a camera's address, which this object has no place to keep safely.
    The String tile reads the sensor's message from a hidden line the other kinds do not have; this file always carries it. */
 module.exports={
@@ -15,6 +15,7 @@ module.exports={
     chipw:['int',60,400],
     cols:['text',4], ratio:['text',8]
   },
+  tweakEvery:true,
   fileTweak:function(file){
     if(/class="tmsg"/.test(file))return file;
     const at='<div class="tbody"></div>';

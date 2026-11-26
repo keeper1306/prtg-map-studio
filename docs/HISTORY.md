@@ -309,6 +309,15 @@ Also offered, not done: machine state in the floating bar (only the side panel h
   `/>` as `\x2f>` in strings and regexes; the build fails if jQuery's pattern still matches anywhere, and checks the finished copy
   still builds Map Studio's files (default + 14 looks per type; scripts compared by function and settings). After it, all six
   items' scripts parse and run in the designer. Map Studio's own files may meet the same jQuery rule: not checked.
+- Industrial (item 7, "Test PLC" 2237): State lamps, On/Off, Tank (and silo), Equipment (all 9 symbols, machine state, health
+  badge), Process value and Countdown switch on the map (the three hidden lines machine state reads, `.eqs-lc/.eqs-iv/.eqs-msg`, are
+  always in the file); Fence and Line left out as asked. The side panel's fields per kind are in the Industrial menu; picking PLC,
+  Drive, Breaker or UPS turns machine state and health on, as Map Studio does. Checked on the lab PRTG: every kind drawn from the
+  real sensor; PLC machine state RUN / "RUN (solo mode)" / "Updated 22 s ago"; Dark card; outline 280 x 230 -> 330 x 281; Save for
+  everyone back after PRTG's refresh and a reload; Map Designer canvas (machine state, no gear); hover preview (lamps, no gear).
+- Found and fixed: machine state's settings are pretty JSON over several lines, which the on-map code did not read, so the symbol
+  stayed a plain pump/"Up". The reader takes several lines now, the build fails on any script whose settings it cannot read, and
+  its byte check also builds each type's listed variants (Industrial: PLC with machine state and health).
 - In the designer, PRTG's red "Change Default Password" notice covers the "Map Studio Tests" heading in the object list; a click
   there opens edituser.htm (nothing changed). Click the heading's left end.
 
