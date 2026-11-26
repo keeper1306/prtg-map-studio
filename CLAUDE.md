@@ -83,8 +83,10 @@ The lab VM runs PRTG and Chrome. Paths there:
 - Extension folder Chrome loads: `C:\Users\Administrator\Desktop\PRTG Map Studio\extension` (not a git repo).
 - PRTG: `C:\Program Files (x86)\PRTG Network Monitor` (`webroot\mapobjects` for object files,
   `webroot\images` for pictures, `Custom Sensors\EXE` and `EXEXML` for test sensors, `lookups` read only).
-- `C:\Users\Administrator\Documents\prtg-map-studio` is a **stale** clone (stopped at 1.5.53). Don't copy
-  from it. To use it: `git fetch origin`, `git checkout connectors`, `git reset --hard origin/connectors`.
+- Claude Code runs on this VM itself, with a real shell: it can run git and the tests here and copy files
+  straight into the extension folder and `webroot\mapobjects`.
+- The git clone is `C:\Users\Administrator\Documents\prtg-map-studio`, on `connectors` (brought up to date
+  on 2026-11-26). Run `git fetch origin` before starting work; another session may have pushed meanwhile.
 - The old `app.js` is still in the extension folder, unused. Ask the owner before deleting it.
 
 **Releasing a change to the extension** (done directly, no pull request, no asking first):
@@ -182,12 +184,12 @@ Pictures from `webroot\images` with a server-side script ("option B"): PRTG serv
 `webroot\images` (seen at `/images/<file>`) but not from `webroot\mapobjects`. Today a map background
 picture is uploaded through PRTG's own Map settings (1.5.93). Open questions are in section 8.
 
-Self-styling objects (test files, **not in the repo yet**): a table and a graph object with a gear that
+Self-styling objects (test files in `experiments/self-styling/`, see its README): a table and a graph object with a gear that
 opens Map Studio's floating bar on the map itself, saves the look into the item's HTML Before
 (`editmapobject`), keeps a per-object choice for public links, and (v4) resizes the item with an
 outline and 8 handles. Not checked on the real PRTG. Asked next: the gear in PRTG's Map Designer too
 (risk: the designer may send back its old copy of HTML Before), moving the item, Fixed/Flexible for the
-table. Their source files must be added to the repo before they are lost (see section 8).
+table. The copy of the table in `webroot\mapobjects` is older than the one in the repo.
 
 Offered, no answer yet:
 - Refuse http:// connections except localhost, drop `http://*/*` from the manifest (needs a reload),
@@ -222,13 +224,13 @@ makes Map Studio see two servers; Review shows pushed items as new and Undo is n
 
 ## 8. Open questions for the owner
 
-- Where will Claude Code run: on VM 102 itself (a real shell, so it can copy files and run the tests
-  there) or on another machine (then how do changed files reach the VM)?
+Answered: Claude Code runs on VM 102 itself (section 3); the self-styling sources are in
+`experiments/self-styling/` (2026-11-26).
+
 - Is the extension in Chrome added with "Load unpacked" from the Desktop folder? (Never confirmed.)
 - "Option B" for pictures: what was option A? What should the server-side script do - list the files in
   `webroot\images` for a picker, copy chosen pictures there, or both? How does it run (an admin PowerShell
   script like the install script, a scheduled task, a PRTG script sensor)?
-- Should the self-styling test objects' sources go into the repo (for example `experiments/self-styling/`)?
 - `CONTRIBUTING.md` says never commit to `main` and use pull requests with one approval, which is not how
   this project is worked today. Update it, or keep it for outside contributors only?
 - Which object types and maps matter most for the customer demos, so testing on the real PRTG starts there?
