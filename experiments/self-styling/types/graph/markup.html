@@ -1,0 +1,20 @@
+<!--Map Studio Tests: Map Studio Graph - restyle it on the map (test)-->
+
+<div class="map_object map_graph msgr mst-t-bar" id="<@itemid>" objectid="<@objectid>" subid="<@subid>" initialwidth="520" initialheight="300" style="overflow:hidden;<#mapobject type="coordinates" subid="<@subid>" mode="<@editmode>">">
+<#mapobject type="objectgrip" mode="<@editmode>">
+<#mapobject type="htmlbefore" subid="<@subid>">
+<#checkobjecttype objecttype="sensor" nicemessage="true" id="<@objectid>">
+<style>
+${css}</style>
+
+  <div class="gbox">
+    <div class="gtitle"><#objectproperty name="Name" id="<@objectid>"></div>
+    <div class="ggraph">
+      <div class="gown" data-g="loading"></div>
+      <template class="gfall"><#object type="graph" id="<@objectid>" graphid="0" width="<@width>" height="<@height>" tooltexts="0" graphstyling="baseFontSize='12'%20showLegend='1'" ></template>
+    </div>
+  </div>
+<#mapobject type="htmlafter" subid="<@subid>">
+<script>
+${js}</script>
+</div>

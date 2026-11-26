@@ -257,6 +257,29 @@ The owner asked to continue with 1.12.0 (done, below), then put the Map director
 3. Pipe flow direction on Line, instrument symbols on Process value. Geo map markers: not doable (PRTG draws them).
 Also offered, not done: machine state in the floating bar (only the side panel has it), and showing a fault channel on other symbols.
 
+## Self-styling test objects, every type (experiments/self-styling, 2026-11-26, no extension change)
+
+- The owner asked to bring the self-styling table up to the graph (at least Fixed | Flexible), then build the same for gauge, donut,
+  status counts, tile, Industrial, icon, sunburst, testing each on the stand-in and on the lab PRTG; still test objects, not in the
+  extension. How it is built: `experiments/self-styling/README.md`.
+- Shared parts moved to `common/` (core, save, sizer, bar, tail; kit and kitbar for the new types). The new types carry Map Studio's
+  own builder code, copied from the PURE2 region of `09-objects.js` (plus `readableOn`, 04-page's font helpers and `PMSSETS`) by
+  `tools/extract.js`; `tools/compare.js` checks it builds byte-identical files to the extension (gauge, donut, status, tile, icon,
+  sunburst, graph, table x 15 looks: all identical), using the 1.15.2 `__OBX` hook on a temporary copy.
+- Fixed along the way (table and graph too): with the map in View Map's frame, a click on the map or Escape did not close an open
+  bar menu (the bar only listened on the top page), so a menu could stay open over the object and its handles. The gear icon in the
+  first build of the shared files was escaped twice (fixed before anything was installed).
+- Table: Fixed | Flexible (text, row spacing, dots follow the box against the size it had when Flexible was chosen; title keeps
+  its size; text never under 12 px, then the box scrolls); after PRTG's refresh a dragged size is put back while the bar is open.
+- Lab PRTG, throwaway map 2254 "Map Studio test - self-styling (safe to delete)" (created with addmap2.htm; item 1 table on a
+  device with 16 sensors, item 2 graph on a traffic sensor). Table, checked: classic View Map (map in maponly.htm's frame, scaled to
+  the window), gear and bar, a look, Flexible (title stays 14 px, text 15.9 px at scale 1.22), the outline (760 x 430 -> 927 x 531,
+  PRTG kept it), Save for everyone (stored in HTML Before), after 38 s and after a full reload the same look from PRTG (nothing in
+  localStorage), Map Designer canvas (drawn with the saved look, no gear), the designer's hover preview (6 rows, script ran, no gear).
+  Not checked there: public map links (the map is not public), the new UI.
+- In the designer, PRTG's red "Change Default Password" notice covers the "Map Studio Tests" heading in the object list; a click
+  there opens edituser.htm (nothing changed). Click the heading's left end.
+
 ## Internal details removed from the public repo (1.15.4, 2026-11-17)
 
 - The owner asked to remove internal lab information. The lab PRTG's address, the lab VM's name, the shared lab server's address and a

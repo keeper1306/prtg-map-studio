@@ -1,9 +1,3 @@
-(function(){
-  var root=document.getElementById("__ITEMID__");
-  if(!root||root.__mst)return;
-  root.__mst=1;
-  var SUB=root.getAttribute('subid')||'';
-
   /* ---------- what can be chosen (everything read from a saved setting is checked against these) ---------- */
   var LOOKS=__LOOKS__;
   var LOOKNAMES=__LOOKNAMES__;
@@ -37,12 +31,6 @@
   var DATAKEYS=['cols','sortBy','sortDir','count','statuses','mapTags','reqTag','nameHas','onlyValue','onlyFav','links','sortable','infoheader'];
   var DETAILKEYS=['font','size','tsize','pad','cellx','radius','dot','shadow','border','ts','talign','hs','caps','head','status','tint','stripes','lines','hover','ov'];
 
-  function keysOf(list){return list.map(function(x){return x[0];});}
-  function has(list,v){return keysOf(list).indexOf(v)>=0;}
-  function hex(v){return (typeof v==='string'&&/^#[0-9a-fA-F]{6}$/.test(v))?v:undefined;}
-  function int(v,lo,hi){var n=parseInt(v,10);return (isNaN(n)||n<lo||n>hi)?undefined:n;}
-  function bool(v){return typeof v==='boolean'?v:undefined;}
-  function txt(v,max){if(typeof v!=='string')return undefined;return v.replace(/[\u0000-\u001F\u007F<>\\]/g,'').slice(0,max);}
   /* a saved setting is used only if it is one of the known values; anything else is ignored */
   function clean(o){
     var c={}, v, k;
@@ -61,7 +49,8 @@
     put('status',has(SHAPES,o.status)?o.status:undefined);
     put('sortBy',has(SORTS,o.sortBy)?o.sortBy:undefined);
     put('sortDir',(o.sortDir==='asc'||o.sortDir==='desc')?o.sortDir:undefined);
-    ['border','showTitle','caps','head','tint','stripes','lines','hover','mapTags','onlyValue','onlyFav','links','sortable','infoheader','publicGear'].forEach(function(b){put(b,bool(o[b]));});
+    ['border','showTitle','caps','head','tint','stripes','lines','hover','mapTags','onlyValue','onlyFav','links','sortable','infoheader','publicGear','flex'].forEach(function(b){put(b,bool(o[b]));});
+    put('fw',int(o.fw,80,6000));put('fh',int(o.fh,50,6000));
     put('title',txt(o.title,80));
     v=txt(o.nameHas,40);if(v!==undefined)put('nameHas',v.replace(/["()]/g,'').trim());
     if(typeof o.reqTag==='string'){
@@ -81,51 +70,30 @@
     return {font:L.font,size:L.size,tsize:L.tsize,pad:L.pad,cellx:L.cellx,radius:L.radius,dot:L.dot,shadow:L.shadow,border:L.bw>0,
       ts:L.ts,talign:'left',hs:L.hs,caps:L.caps,head:true,status:L.status==='pill'?'pill':'dot',tint:true,stripes:false,lines:true,hover:true};
   }
-  var BASE={look:'Corporate blue',set:'prtg',showTitle:true,title:'',publicGear:false};
+  var BASE={look:'Corporate blue',set:'prtg',showTitle:true,title:'',publicGear:false,flex:false};
   function eff(d){var look=(d&&d.look)||BASE.look;return mix(BASE,lookDef(look),FILE,d);}
 
-  function mix(){var o={},i,k,a;for(i=0;i<arguments.length;i++){a=arguments[i];if(a)for(k in a)if(Object.prototype.hasOwnProperty.call(a,k))o[k]=a[k];}return o;}
-  function inPreview(){return !!(root.closest&&root.closest('.previewloading'));}
-  function inDesigner(){return /mapdesigner|mapeditor/i.test(location.pathname)||!!(root.closest&&root.closest('#mapeditor'));}
-  function isPublic(){try{if(/\/public\//i.test(window.top.location.pathname))return true;}catch(e){return true;}return /\/public\//i.test(location.pathname);}
-  function mapId(){
-    var hrefs=[location.href],m,i;
-    try{hrefs.push(window.parent.location.href);}catch(e){}
-    try{hrefs.push(window.top.location.href);}catch(e){}
-    for(i=0;i<hrefs.length;i++){m=/[?&]id=(\d+)/.exec(hrefs[i])||/\/maps\/(\d+)/.exec(hrefs[i]);if(m)return m[1];}
-    return '';
-  }
-  var MAP=mapId(), KEY='mst.'+MAP+'.'+SUB;
-  var REG;try{REG=window.top.__mstReg||(window.top.__mstReg={});}catch(e){REG=window.__mstReg||(window.__mstReg={});}
-  var R=REG[KEY]||(REG[KEY]={open:false,draft:null,cache:{}});
-  if(!R.cache)R.cache={};
-
-  function readShared(){
-    var el=root.querySelector('.mst-cfg'), c;
-    if(!el)return {};
-    try{c=JSON.parse(decodeURIComponent((el.getAttribute('data-c')||'').replace(/\s+/g,'')));}catch(e){return {};}
-    return clean(c);
-  }
-  function readLocal(){try{var v=localStorage.getItem(KEY);return v?clean(JSON.parse(v)):null;}catch(e){return null;}}
-  function writeLocal(c){try{if(c)localStorage.setItem(KEY,JSON.stringify(clean(c)));else localStorage.removeItem(KEY);return true;}catch(e){return false;}}
-  /* what this screen shows: the shared look, then this browser's own (its sharing choice never overrides the shared one) */
-  function savedRaw(){var s=readShared(), l=readLocal();if(l){delete l.publicGear;}return mix(s,l);}
-  function cssStr(s){return '"'+String(s).replace(/\\/g,'\\\\').replace(/"/g,'\\"').replace(/[\r\n]+/g,' ')+'"';}
-  function fontStack(f){return '"'+f+'","Segoe UI",Roboto,Arial,sans-serif';}
-  function loadFont(f){
-    var F=null;FONTS.forEach(function(x){if(x[0]===f)F=x;});
-    if(!F||!F[2]||f==='Roboto')return;
-    var id='mst-font-'+f.replace(/\W+/g,'-');
-    if(document.getElementById(id))return;
-    var l=document.createElement('link');l.id=id;l.rel='stylesheet';
-    l.href='https://fonts.googleapis.com/css2?family='+encodeURIComponent(f).replace(/%20/g,'+')+':wght@400;500;600;700&display=swap';
-    document.head.appendChild(l);
-  }
-  function shadowCss(s,acc){
-    if(s==='soft')return '0 1px 3px rgba(15,23,42,.12),0 4px 12px rgba(15,23,42,.06)';
-    if(s==='strong')return '0 10px 28px rgba(0,0,0,.35)';
-    if(s==='glow')return '0 0 0 1px color-mix(in srgb,'+acc+' 35%,transparent),0 8px 26px color-mix(in srgb,'+acc+' 20%,transparent)';
-    return 'none';
+  /* ---------- Fixed | Flexible ----------
+     Flexible, as Map Studio's tables (1.5.99) and titles (1.14): the text, the row spacing and the dots follow the box, measured
+     against the size the box had when Flexible was chosen; the title keeps its size; the text never gets smaller than 12 px
+     (below that the box scrolls, as a Fixed table does). */
+  var TMIN=12, TFX={ro:null,w:0,h:0,last:null};
+  function tableScale(c){
+    if(!c.flex||!c.fw||!c.fh){if(TFX.ro){TFX.ro.disconnect();TFX.ro=null;}root.removeAttribute('data-scale');return 1;}
+    if(!TFX.ro&&window.ResizeObserver){
+      TFX.ro=new ResizeObserver(function(){
+        var w=root.clientWidth, h=root.clientHeight;if(w===TFX.w&&h===TFX.h)return;TFX.w=w;TFX.h=h;
+        if(TFX.last)apply(TFX.last);
+      });
+      TFX.ro.observe(root);
+    }
+    var w=root.clientWidth, h=root.clientHeight, t=c.showTitle?root.querySelector('.ms-sens .tabletitle,.ms-ch .tabletitle'):null, th=(t&&t.offsetHeight)||0;
+    if(!w||!h)return 1;
+    if(th>=c.fh-40)th=0;   /* a title that keeps its size is left out of the sum */
+    var s=Math.min(w/c.fw,(h-th)/(c.fh-th));
+    s=Math.max(Math.min(1,TMIN/c.size),Math.min(6,s));
+    root.setAttribute('data-scale',s.toFixed(3));
+    return s;
   }
 
   /* ---------- the look ---------- */
@@ -133,9 +101,12 @@
     var c=eff(clean(d)), L=LOOKS[c.look]||LOOKS['Corporate blue'], ov=c.ov||{}, st=root.style, S=SETS[c.set]||SETS.prtg, own=c.own||{};
     var acc=ov.accent||L.accent, cls=root.classList, k;
     function v(n,val){st.setProperty(n,val);}
+    TFX.last=d;
+    var s=tableScale(c);
+    function z(n){return (Math.round(n*s*10)/10)+'px';}
     loadFont(c.font);
-    v('--ms-font',fontStack(c.font));v('--ms-size',c.size+'px');v('--ms-head',Math.max(9,Math.round(c.size*10/13))+'px');
-    v('--ms-tsize',c.tsize+'px');v('--ms-pad',c.pad+'px');v('--ms-cellx',c.cellx+'px');v('--ms-radius',c.radius+'px');v('--ms-dot',c.dot+'px');
+    v('--ms-font',fontStack(c.font));v('--ms-size',z(c.size));v('--ms-head',z(Math.max(9,Math.round(c.size*10/13))));
+    v('--ms-tsize',c.tsize+'px');v('--ms-pad',z(c.pad));v('--ms-cellx',z(c.cellx));v('--ms-radius',c.radius+'px');v('--ms-dot',z(c.dot));
     v('--ms-talign',c.talign);
     var card=L.card?(ov.bg||L.bg):'transparent';
     v('--c-card',card);v('--c-border',L.card&&c.border?(ov.border||L.border):'transparent');v('--ms-bw',L.card&&c.border?'1px':'0px');
@@ -245,75 +216,5 @@
       }
     }
     tag.textContent=css.join('\n');
-  }
-
-  /* ---------- saving the look into the map item (PRTG keeps it in the item's HTML Before) ---------- */
-  function api(path,opt){
-    opt=opt||{};opt.credentials='same-origin';
-    opt.headers=mix({'X-Requested-With':'XMLHttpRequest'},opt.headers);
-    return fetch(path,opt).then(function(r){
-      return r.text().then(function(t){if(!r.ok){var e=new Error('PRTG answered '+r.status);e.status=r.status;throw e;}return t;});
-    });
-  }
-  function token(){
-    var docs=[document],i,m;
-    try{docs.push(window.parent.document);}catch(e){}
-    try{docs.push(window.top.document);}catch(e){}
-    for(i=0;i<docs.length;i++){m=docs[i].querySelector('meta[name="csrf-token"]');if(m&&m.content)return Promise.resolve(m.content);}
-    return api('/welcome.htm').then(function(t){
-      var d=new DOMParser().parseFromString(t,'text/html'), mm=d.querySelector('meta[name="csrf-token"]');
-      if(!mm||!mm.content)throw new Error('Could not find PRTG\u2019s security token');
-      return mm.content;
-    });
-  }
-  function qfix(h){
-    h=String(h==null?'':h);if(h.indexOf('"')<0)return h;
-    var out='',i=0,n=h.length,c,j,q,m,end,d;
-    while(i<n){
-      c=h.charAt(i);
-      if(c==='<'&&h.substr(i,4)==='<!--'){j=h.indexOf('-->',i+4);j=(j<0)?n:j+3;out+=h.slice(i,j);i=j;continue;}
-      if(c==='<'&&/[A-Za-z\/!?]/.test(h.charAt(i+1)||'')){
-        j=i+1;q='';
-        while(j<n){d=h.charAt(j);if(q){if(d===q)q='';}else if(d==='"'||d==="'")q=d;else if(d==='>')break;j++;}
-        j=Math.min(n,j+1);out+=h.slice(i,j);
-        m=/^<(script|style)\b/i.exec(h.slice(i,j));
-        if(m){end=h.toLowerCase().indexOf('</'+m[1].toLowerCase(),j);end=(end<0)?n:end;out+=h.slice(j,end);j=end;}
-        i=j;continue;
-      }
-      out+=(c==='"')?'&quot;':c;i++;
-    }
-    return out;
-  }
-  function packed(c){return encodeURIComponent(JSON.stringify(clean(c)));}
-  function cfgTag(c){
-    var s=packed(c), parts=[],i;
-    for(i=0;i<s.length;i+=200)parts.push(s.slice(i,i+200));
-    return '<i class="mst-cfg" data-c="'+parts.join('\n')+'"></i>';
-  }
-  var CFGRE=/<i\s+class=["']mst-cfg["'][^>]*>\s*<\/i>/i;
-  function saveShared(c){
-    if(!MAP||!SUB)return Promise.reject(new Error('Could not tell which map and item this is'));
-    var q='id='+encodeURIComponent(MAP)+'&subid='+encodeURIComponent(SUB)+'&type=objectproperties';
-    return api('/api/mapsettings.htm?'+q).then(function(t){
-      var j=JSON.parse(t), un=function(v){return (v==null?'':String(v)).replace(/&apos;/g,'"');};
-      var before=un(j.htmlbefore).replace(CFGRE,'').replace(/^\s+/,'');
-      before=cfgTag(c)+(before?'\n'+before:'');
-      return token().then(function(tk){
-        var p=new URLSearchParams();
-        p.set('subid',SUB);p.set('id',MAP);
-        p.set('top',String(parseInt(j.top,10)||0));p.set('left',String(parseInt(j.left,10)||0));
-        p.set('width',String(parseInt(j.width,10)||0));p.set('height',String(parseInt(j.height,10)||0));
-        p.set('zindex',String(parseInt(j.zindex,10)||0));
-        p.set('htmlbefore_',qfix(before));p.set('htmlafter_',qfix(un(j.htmlafter)));
-        p.set('ElementLink',j.externallink==null?'':String(j.externallink));
-        return api('/api/editmapobject.htm',{method:'POST',headers:{'anti-csrf-token':tk,'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8'},body:p.toString()});
-      });
-    }).then(function(){return api('/api/mapsettings.htm?'+q);}).then(function(t){
-      var j=JSON.parse(t);
-      if(String(j.htmlbefore||'').indexOf('mst-cfg')<0)throw new Error('PRTG did not keep the new look');
-      var el=root.querySelector('.mst-cfg');
-      if(!el){el=document.createElement('i');el.className='mst-cfg';root.insertBefore(el,root.firstChild);}
-      el.setAttribute('data-c',packed(c));
-    });
   }
 

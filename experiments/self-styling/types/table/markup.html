@@ -1,0 +1,50 @@
+<!--Map Studio Tests: Map Studio Table - restyle it on the map (test 2)-->
+
+<div class="map_object map_table msst mst-t-bar mst-h-line mst-hcaps mst-st-dot mst-tint" id="<@itemid>" objectid="<@objectid>" subid="<@subid>" initialwidth="1100" initialheight="598" style="overflow:auto;<#mapobject type="coordinates" subid="<@subid>" mode="<@editmode>">">
+  <#mapobject type="objectgrip" mode="<@editmode>">
+  <#mapobject type="htmlbefore" subid="<@subid>">
+  <#checkobjecttype objecttype="probenode,group,device,sensor" nicemessage="true" id="<@objectid>">
+
+<style>
+${css}</style>
+
+  <div class="maptablecontainer" style="overflow:visible;width:max-content;min-width:100%">
+    <div class="ms-box-prtg-plugin">
+    <div class="ms-sens">
+    <div class="prtg-plugin" data-plugin="prtg-table">
+      <#table tableid="sensortable"
+      id="<@objectid>"
+      content="sensors"
+      columns="status,device,sensor,group,message,lastvalue,minigraph,downtimesince,uptime"
+      sortby="status"
+      infoheader="true"
+      links="true"
+      sortable="true"
+      refreshable="true"
+      filter_tags="@tag(<@tagfilterstring>)"
+      tabletitle="Sensors"
+      count="10"
+      >
+    </div>
+    </div>
+    <div class="ms-ch">
+    <div class="prtg-plugin" data-plugin="prtg-table">
+      <#table tableid="channeltable_map"
+      id="<@objectid>"
+      content="channels"
+      columns="name,lastvalue_"
+      sortby="name"
+      links="true"
+      sortable="true"
+      refreshable="true"
+      tabletitle="Channels"
+      count="10"
+      >
+    </div>
+    </div>
+    </div>
+  </div>
+  <#mapobject type="htmlafter" subid="<@subid>">
+<script>
+${js}</script>
+</div>

@@ -1,3 +1,26 @@
+  /* the Chart menu's pictures: each style drawn by the graph engine itself with sample data, in this graph's look and colours */
+  var SHOTS={key:'',svg:{}};
+  function shots(c){
+    var key=JSON.stringify([c.look,c.set,c.series,c.ov,c.lw,c.fillA,c.dots,c.gridOn,c.bradius,c.maxCh,c.font]);
+    if(SHOTS.key===key)return SHOTS.svg;
+    var out={}, host=document.createElement('div'), RO=window.ResizeObserver;
+    host.style.cssText='position:fixed;left:-10000px;top:0;width:210px;height:82px;visibility:hidden;font-family:'+fontStack(c.font)+';';
+    document.body.appendChild(host);
+    try{
+      window.ResizeObserver=undefined;   /* a picture is drawn once: no watcher is left behind */
+      CSTYLES.forEach(function(x){
+        var gc=graphCfg(mix(c,{cstyle:x[0],axis:false,legend:false,names:'',flex:false,size:13}));
+        gc.sample=true;gc.sampleN=(x[0]==='heatmap'||x[0]==='ring'||x[0]==='band')?0:18;gc.tips=false;gc.refresh=0;gc.legendValues=false;
+        host.innerHTML='<div><div class="gown" style="width:210px;height:82px"></div></div>';
+        try{graphRuntime(host.firstChild,gc);var sv=host.querySelector('svg');
+          out[x[0]]=sv?'<span style="display:block;width:100%;height:100%;background:'+gc.card+'">'+sv.outerHTML.replace(/ width="[^"]*" height="[^"]*"/,' width="100%" height="100%"')+'</span>':'';}catch(e){out[x[0]]='';}
+      });
+    }finally{window.ResizeObserver=RO;if(host.parentNode)host.parentNode.removeChild(host);}
+    SHOTS={key:key,svg:out};return out;
+  }
+  function barMenus(U){
+    var d=U.d, E=U.E, sync=U.sync, change=U.change, syncs=U.syncs, r1=U.r1, host=U.host, menu=U.menu, pf=U.pf, pfRange=U.pfRange,
+      pfCheck=U.pfCheck, pfSeg=U.pfSeg, pfSelect=U.pfSelect, pfColor=U.pfColor, note=U.note, sep=U.sep;
     /* ---- row 1: the menus ---- */
     menu(r1,'Looks',function(pop){
       var g=el('div','looks');pop.appendChild(g);
@@ -14,12 +37,15 @@
       pfCheck(pop,'Border round the card','border');
     },'wide');
     menu(r1,'Chart',function(pop){
-      var w=pf(pop,'Chart style'), g=el('div','seg');w.appendChild(g);
-      CSTYLES.forEach(function(o){var b=el('button','',esc(o[1]));b.type='button';b.setAttribute('data-v',o[0]);
+      var w=pf(pop,'Chart style'), g=el('div','shots');w.appendChild(g);
+      CSTYLES.forEach(function(o){var b=el('button','shot','<i></i><span>'+esc(o[1])+'</span>');b.type='button';b.setAttribute('data-v',o[0]);b.title=o[1];
         b.addEventListener('click',function(){d.cstyle=o[0];change();sync();});g.appendChild(b);});
-      syncs.push(function(){[].forEach.call(g.children,function(b){b.classList.toggle('on',b.getAttribute('data-v')===E().cstyle);});});
+      syncs.push(function(){
+        [].forEach.call(g.children,function(b){b.classList.toggle('on',b.getAttribute('data-v')===E().cstyle);});
+        var p=shots(E());[].forEach.call(g.children,function(b){var i=b.firstChild,h=p[b.getAttribute('data-v')]||'';if(i.__h!==h){i.__h=h;i.innerHTML=h;}});
+      });
       pfSeg(pop,'Time span',PERIODS,'period');
-    },'wide');
+    },'shotsw');
     menu(r1,'Channels',function(pop){
       note(pop,'Tick the channels to draw. None ticked = the ones that change most.');
       var box=el('div','colist');pop.appendChild(box);box.appendChild(el('div','note','Asking PRTG for the channels…'));
@@ -82,3 +108,28 @@
       pfSeg(pop,'Align',[['left','Left'],['center','Centre'],['right','Right']],'talign');
       pfRange(pop,'Size','tsize',10,30);
     });
+  }
+  function barQuick(U){
+    var r2=U.r2, lab=U.lab, sel=U.sel, numBox=U.numBox, toggle=U.toggle, sep=U.sep, flexSeg=U.flexSeg, d=U.d, E=U.E, change=U.change, sync=U.sync, syncs=U.syncs;
+    lab(r2,'Font',sel(FONTS.map(function(f){return [f[0],f[1]];}),'font','s'));
+    numBox(r2,'Text','size',10,24);
+    numBox(r2,'Title','tsize',10,30);
+    numBox(r2,'Corners','radius',0,24);
+    lab(r2,'Span',sel(PERIODS,'period','s short'));
+    sep(r2);
+    var fxw=el('span','seg2');
+    [['fixed','Fixed','Keeps its size; a smaller box shows less room for the drawing'],['flex','Flexible','Text and drawing grow and shrink with the box. The size it has now counts as normal']].forEach(function(o){
+      var b=el('button','t',esc(o[1]));b.type='button';b.title=o[2];b.setAttribute('data-v',o[0]);
+      b.addEventListener('click',function(){
+        if(o[0]==='flex'){var lr=liveRoot();d.flex=true;d.fw=lr.clientWidth||520;d.fh=lr.clientHeight||300;}else{d.flex=false;delete d.fw;delete d.fh;}
+        change();sync();
+      });
+      fxw.appendChild(b);
+    });
+    syncs.push(function(){[].forEach.call(fxw.children,function(b){b.classList.toggle('on',(b.getAttribute('data-v')==='flex')===!!E().flex);});});
+    r2.appendChild(fxw);sep(r2);
+    toggle(r2,'Title','showTitle','Show the title');
+    toggle(r2,'Legend','legend','Show the legend');
+    toggle(r2,'Axis','axis','Axis numbers');
+    toggle(r2,'Grid','gridOn','Grid lines');
+  }

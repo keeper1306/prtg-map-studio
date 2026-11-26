@@ -1,4 +1,4 @@
-  /* ---------- the bar (built like Map Studio's floating bar) ---------- */
+  /* ---------- the floating bar (built like Map Studio's): shared frame, Save menu and placement; each type adds its own menus ---------- */
   var GEAR=__GEAR__;
   var BCSS=__BCSS__;
   /* the bar goes on the top page, so the map's frame cannot cut it off */
@@ -10,23 +10,22 @@
   function applyLive(c){if(R.apply)R.apply(c);else apply(c);}
   function closeBar(keepDraft){
     var h=barHost();if(h){if(h.__stop)h.__stop();h.remove();}
-    R.open=false;if(!keepDraft)R.draft=null;
+    R.open=false;if(!keepDraft){R.draft=null;sizeRevert();}selRemove();
     var r=liveRoot();if(r)r.classList.remove('mst-open');
   }
   function reopen(){closeBar(true);if(R.openFn)R.openFn();else openBar();}
-  /* where the table is on the top page */
+  /* where the object is on the top page */
   function topRect(){
     var r=liveRoot().getBoundingClientRect(), x=r.left, y=r.top, w=window, fe;
     try{while(w!==w.top&&(fe=w.frameElement)){var f=fe.getBoundingClientRect();x+=f.left+fe.clientLeft;y+=f.top+fe.clientTop;w=w.parent;}}catch(e){}
     return {left:x,top:y,right:x+r.width,bottom:y+r.height,width:r.width,height:r.height};
   }
-
   function openBar(){
     if(barHost())return;
     R.open=true;
     if(!R.draft)R.draft=savedRaw();
     var d=R.draft, pub=isPublic(), view=TOPDOC.defaultView||window;
-    liveRoot().classList.add('mst-open');
+    liveRoot().classList.add('mst-open');if(!pub)selShow();
     var host=el('div');host.setAttribute('data-mst-bar',KEY);TOPDOC.body.appendChild(host);
     var sh=host.attachShadow({mode:'open'});
     var stl=el('style');stl.textContent=BCSS;sh.appendChild(stl);
@@ -55,7 +54,7 @@
       var s=el('select',cls||'s');
       opts.forEach(function(o){var op=el('option');op.value=o[0];op.textContent=o[1];s.appendChild(op);});
       s.addEventListener('change',function(){d[key]=s.value;change();sync();});
-      syncs.push(function(){s.value=E()[key];});return s;
+      syncs.push(function(){s.value=String(E()[key]);});return s;
     }
 
     /* ---- menus ---- */
@@ -83,11 +82,11 @@
       if(pr.right>vw-8)pop.style.left=Math.round(vw-8-pr.right)+'px';
     }
     function pf(pop,text){var w=el('div','pf');if(text)w.appendChild(el('div','pl',esc(text)));pop.appendChild(w);return w;}
-    function pfRange(pop,text,key,min,max){
+    function pfRange(pop,text,key,min,max,unit){
       var w=pf(pop,text), g=el('div','rg','<input type="range" min="'+min+'" max="'+max+'" step="1"><output></output>');w.appendChild(g);
-      var i=g.querySelector('input'), o=g.querySelector('output');
-      function show(){i.value=E()[key];o.textContent=E()[key]+' px';}
-      i.addEventListener('input',function(){d[key]=parseInt(i.value,10);o.textContent=d[key]+' px';change();});
+      var i=g.querySelector('input'), o=g.querySelector('output'), u=unit==null?' px':unit;
+      function show(){i.value=E()[key];o.textContent=E()[key]+u;}
+      i.addEventListener('input',function(){d[key]=parseInt(i.value,10);o.textContent=d[key]+u;change();});
       syncs.push(show);
     }
     function pfCheck(pop,text,key){
@@ -99,9 +98,10 @@
       var w=pf(pop,text), g=el('div','seg');w.appendChild(g);
       opts.forEach(function(o){var b=el('button','',esc(o[1]));b.type='button';b.setAttribute('data-v',o[0]);
         b.addEventListener('click',function(){d[key]=o[0];change();sync();});g.appendChild(b);});
-      syncs.push(function(){[].forEach.call(g.children,function(b){b.classList.toggle('on',b.getAttribute('data-v')===E()[key]);});});
+      syncs.push(function(){[].forEach.call(g.children,function(b){b.classList.toggle('on',b.getAttribute('data-v')===String(E()[key]));});});
+      return g;
     }
-    function pfSelect(pop,text,opts,key){var w=pf(pop,text);w.appendChild(sel(opts,key,'ps'));}
+    function pfSelect(pop,text,opts,key){var w=pf(pop,text), s=sel(opts,key,'ps');w.appendChild(s);return s;}
     function pfColor(pop,text,get,set,reset){
       var w=el('div','pr','<span>'+esc(text)+'</span><input type="color"><button type="button" class="cp" title="Back to the look’s colour">Look’s</button>');
       var i=w.querySelector('input');
@@ -110,118 +110,27 @@
       syncs.push(function(){i.value=get();});pop.appendChild(w);
     }
     function note(pop,text){pop.appendChild(el('div','note',esc(text)));}
-
-    /* ---- row 1: the menus ---- */
-    menu(r1,'Looks',function(pop){
-      var g=el('div','looks');pop.appendChild(g);
-      LOOKNAMES.forEach(function(n){
-        var L=LOOKS[n], b=el('button','lk');b.type='button';b.setAttribute('data-v',n);
-        var bg=L.card?L.bg:'#F2F4F7', top=L.ts==='bar'?L.tbg:bg;
-        b.innerHTML='<i style="background:'+bg+'"><b style="background:'+top+'"></b><u style="top:13px;background:'+L.line+'"></u>'+
-          '<u style="top:19px;background:'+L.link+';right:45%"></u></i><span>'+esc(n)+'</span>';
-        b.addEventListener('click',function(){DETAILKEYS.forEach(function(k){delete d[k];});d.look=n;change();sync();});
-        g.appendChild(b);
-      });
-      syncs.push(function(){[].forEach.call(g.children,function(b){b.classList.toggle('on',b.getAttribute('data-v')===E().look);});});
-      pfSelect(pop,'Shadow',SHADOWS,'shadow');
-      pfCheck(pop,'Border round the card','border');
-    },'wide');
-    menu(r1,'Colors',function(pop){
-      pfSelect(pop,'Status colours',Object.keys(SETS).map(function(k){return [k,SETS[k][0]];}).concat([['own','My own']]),'set');
-      var g=el('div','cols2');pop.appendChild(g);
-      STKEYS.forEach(function(s,i){
-        var w=el('label','sw','<input type="color"><span>'+esc(s[1])+'</span>'), inp=w.querySelector('input');
-        inp.addEventListener('input',function(){var e=E(), S=SETS[e.set]||SETS.prtg, o=mix(e.own);
-          if(e.set!=='own')STKEYS.forEach(function(x,j){if(!o[x[0]])o[x[0]]=S[j+1];});
-          o[s[0]]=inp.value;d.own=o;d.set='own';change();sync();});
-        syncs.push(function(){var e=E(), S=SETS[e.set]||SETS.prtg;inp.value=(e.set==='own'&&e.own&&e.own[s[0]])||S[i+1];});
-        g.appendChild(w);
-      });
-      pop.appendChild(el('div','ph','Or each colour of the look on its own'));
-      OV.forEach(function(o){
-        pfColor(pop,o[1],function(){var e=E(), L=LOOKS[e.look];return (e.ov&&e.ov[o[0]])||(o[0]==='stripe'?(L.zebra||'#F8FAFC'):L[o[0]])||'#000000';},
-          function(v){d.ov=mix(d.ov);d.ov[o[0]]=v;},function(){if(d.ov){d.ov=mix(d.ov);delete d.ov[o[0]];}});
-      });
-    },'wide');
-    menu(r1,'Title',function(pop){
-      var w=pf(pop,'Text'), i=el('input','ps');i.type='text';i.maxLength=80;i.placeholder='PRTG’s own title';w.appendChild(i);
-      i.addEventListener('input',function(){d.title=i.value;change();});syncs.push(function(){if(TOPDOC.activeElement!==host)i.value=E().title||'';});
-      pfSeg(pop,'Style',TSTYLES,'ts');
-      pfSeg(pop,'Align',[['left','Left'],['center','Centre'],['right','Right']],'talign');
-      pfRange(pop,'Size','tsize',10,30);
-    });
-    menu(r1,'Header',function(pop){
-      pfCheck(pop,'Show the header row','head');
-      pfSeg(pop,'Style',HSTYLES,'hs');
-      pfCheck(pop,'Capital letters','caps');
-    });
-    menu(r1,'Row style',function(pop){
-      pfCheck(pop,'Stripes on every other row','stripes');
-      pfCheck(pop,'Lines between rows','lines');
-      pfCheck(pop,'Highlight the row under the mouse','hover');
-      pfRange(pop,'Row spacing','pad',2,20);
-      pfRange(pop,'Side spacing','cellx',4,28);
-    });
-    menu(r1,'Status',function(pop){
-      var w=pf(pop,'Shown as'), g=el('div','seg');w.appendChild(g);
-      SHAPES.forEach(function(o){var b=el('button','',esc(o[1]));b.type='button';b.setAttribute('data-v',o[0]);
-        b.addEventListener('click',function(){d.status=o[0];change();sync();});g.appendChild(b);});
-      syncs.push(function(){[].forEach.call(g.children,function(b){b.classList.toggle('on',b.getAttribute('data-v')===E().status);});});
-      pfRange(pop,'Dot size','dot',6,20);
-      pfCheck(pop,'Tint rows that are down or warning','tint');
-    });
-    sep(r1);
-    menu(r1,'Columns',function(pop){
-      note(pop,'Tick the columns to show; the arrows change their order.');
-      var cl=el('div','colist');pop.appendChild(cl);
-      function draw(){
-        cl.innerHTML='';
-        var cur=E().cols.slice(), all=cur.concat(keysOf(COLS).filter(function(k){return cur.indexOf(k)<0;}));
-        all.forEach(function(k){
-          var on=cur.indexOf(k)>=0, name='';COLS.forEach(function(x){if(x[0]===k)name=x[1];});
-          var r=el('div','cr'+(on?'':' off'),'<label><input type="checkbox"'+(on?' checked':'')+'><span>'+esc(name)+'</span></label>'+
-            (on?'<button type="button" data-m="-1" title="Move up">↑</button><button type="button" data-m="1" title="Move down">↓</button>':''));
-          r.querySelector('input').addEventListener('change',function(){
-            var c=E().cols.slice(), i=c.indexOf(k);
-            if(this.checked&&i<0)c.push(k);else if(!this.checked&&i>=0){if(c.length<2){this.checked=true;return;}c.splice(i,1);}
-            d.cols=c;change();draw();
-          });
-          [].forEach.call(r.querySelectorAll('button'),function(b){b.addEventListener('click',function(){
-            var c=E().cols.slice(), i=c.indexOf(k), j=i+parseInt(b.getAttribute('data-m'),10);
-            if(j<0||j>=c.length)return;c.splice(i,1);c.splice(j,0,k);d.cols=c;change();draw();
-          });});
-          cl.appendChild(r);
+    /* Fixed | Flexible: Flexible remembers the size the item has now as its normal size */
+    function flexSeg(row,tipFixed,tipFlex,keys){
+      keys=keys||{on:'flex',w:'fw',h:'fh'};
+      var w=el('span','seg2');
+      [['fixed','Fixed',tipFixed],['flex','Flexible',tipFlex]].forEach(function(o){
+        var b=el('button','t',esc(o[1]));b.type='button';b.title=o[2];b.setAttribute('data-v',o[0]);
+        b.addEventListener('click',function(){
+          if(o[0]==='flex'){var lr=liveRoot();d[keys.on]=true;d[keys.w]=lr.clientWidth||400;d[keys.h]=lr.clientHeight||300;}
+          else{d[keys.on]=false;delete d[keys.w];delete d[keys.h];}
+          change();sync();
         });
-      }
-      syncs.push(draw);
-    });
-    menu(r1,'Sort and rows',function(pop){
-      pfSelect(pop,'Sort by',SORTS,'sortBy');
-      pfSeg(pop,'Order',[['asc','A to Z, low to high'],['desc','Z to A, high to low']],'sortDir');
-      var w=pf(pop,'Rows (0 = PRTG’s paging)'), i=el('input','ps');i.type='number';i.min=0;i.max=500;w.appendChild(i);
-      i.addEventListener('change',function(){var n=int(i.value,0,500);if(n===undefined){i.value=E().count;return;}d.count=n;change();});
-      syncs.push(function(){i.value=E().count;});
-      pop.appendChild(el('div','ph','Behaviour'));
-      pfCheck(pop,'Names link to PRTG','links');
-      pfCheck(pop,'Click a heading to sort','sortable');
-      pfCheck(pop,'Show PRTG’s “Items” line','infoheader');
-    });
-    menu(r1,'Filters',function(pop){
-      pop.appendChild(el('div','ph','Status (none ticked = all)'));
-      var g=el('div','cols2');pop.appendChild(g);
-      STATUSDEF.forEach(function(sd){
-        var w=el('label','pc','<input type="checkbox"><span>'+esc(sd[1])+'</span>'), c=w.querySelector('input');
-        c.addEventListener('change',function(){var l=(E().statuses||[]).filter(function(x){return x!==sd[0];});if(c.checked)l.push(sd[0]);d.statuses=l;change();});
-        syncs.push(function(){c.checked=(E().statuses||[]).indexOf(sd[0])>=0;});g.appendChild(w);
+        w.appendChild(b);
       });
-      pfCheck(pop,'Follow the map’s tag filter','mapTags');
-      var w1=pf(pop,'Only sensors with the tag'), t=el('input','ps');t.type='text';t.placeholder='e.g. ping firewall';w1.appendChild(t);
-      t.addEventListener('change',function(){d.reqTag=t.value;change();sync();});syncs.push(function(){t.value=E().reqTag||'';});
-      var w2=pf(pop,'Name contains'), n=el('input','ps');n.type='text';n.maxLength=40;w2.appendChild(n);
-      n.addEventListener('change',function(){d.nameHas=n.value;change();sync();});syncs.push(function(){n.value=E().nameHas||'';});
-      pfCheck(pop,'Only sensors with a value','onlyValue');
-      pfCheck(pop,'Only favourites','onlyFav');
-    });
+      syncs.push(function(){[].forEach.call(w.children,function(b){b.classList.toggle('on',(b.getAttribute('data-v')==='flex')===!!E()[keys.on]);});});
+      row.appendChild(w);return w;
+    }
+    var U={d:d,E:E,sync:sync,change:change,syncs:syncs,r1:r1,r2:r2,host:host,view:view,pub:pub,sep:sep,lab:lab,numBox:numBox,toggle:toggle,sel:sel,
+      menu:menu,pf:pf,pfRange:pfRange,pfCheck:pfCheck,pfSeg:pfSeg,pfSelect:pfSelect,pfColor:pfColor,note:note,flexSeg:flexSeg};
+
+    /* ---- row 1: the type's menus, then Save and close ---- */
+    barMenus(U);
     sep(r1);
     var saveBtn=menu(r1,'Save',function(pop){
       var b1=el('button','b pri','Save for everyone'), b2=el('button','b',pub?'Only on this screen':'Only on this browser'), b3=el('button','b','Start over');
@@ -241,7 +150,7 @@
       b3.addEventListener('click',function(){R.draft={};applyLive(R.draft);reopen();});
       b2.addEventListener('click',function(){
         var mine=clean(d);delete mine.publicGear;
-        if(writeLocal(mine)){say('Saved on this '+(pub?'screen':'browser')+' only.','ok');R.savedSig=sig(d);dirtyShow();}
+        if(writeLocal(mine)){say('Saved on this '+(pub?'screen':'browser')+' only.'+(sizeDirty()?' A new size is kept only with “Save for everyone”.':''),'ok');R.savedSig=sig(d);dirtyShow();}
         else say('This browser would not keep it (storage is full or blocked).','err');
       });
       b1.addEventListener('click',function(){
@@ -261,28 +170,21 @@
     var x=el('button','t x','×');x.type='button';x.title='Close (changes not saved are dropped)';r1.appendChild(x);
     x.addEventListener('click',function(){closeBar(false);applyLive(savedRaw());});
 
-    /* ---- row 2: quick settings ---- */
-    lab(r2,'Font',sel(FONTS.map(function(f){return [f[0],f[1]];}),'font','s'));
-    numBox(r2,'Text','size',10,24);
-    numBox(r2,'Title','tsize',10,30);
-    numBox(r2,'Corners','radius',0,24);
-    sep(r2);
-    toggle(r2,'Title','showTitle','Show the title');
-    toggle(r2,'Header','head','Show the header row');
-    toggle(r2,'Stripes','stripes','Stripes on every other row');
-    toggle(r2,'Lines','lines','Lines between rows');
-    toggle(r2,'Tint','tint','Tint rows that are down or warning');
+    /* ---- row 2: the type's quick settings ---- */
+    barQuick(U);
 
     function sig(c){return JSON.stringify(clean(c));}
     if(R.savedSig==null)R.savedSig=sig(savedRaw());
-    function dirtyShow(){var dirty=sig(d)!==R.savedSig;saveBtn.classList.toggle('dirty',dirty);saveBtn.title=dirty?'Changes not saved yet':'';}
+    R.onSize=function(){dirtyShow();};
+    function dirtyShow(){var dirty=sig(d)!==R.savedSig||sizeDirty();saveBtn.classList.toggle('dirty',dirty);saveBtn.title=dirty?'Changes not saved yet':'';}
     sync();
 
-    /* keep the bar next to the table: above it, or below it, or over it when neither has room */
+    /* keep the bar next to the object: above it, or below it, or over it when neither has room */
     function place(){
       if(!host.isConnected)return;
       var rt=topRect(), vw=view.innerWidth, vh=view.innerHeight, bw=bar.offsetWidth, bh=bar.offsetHeight, y, xx;
-      if(rt.top-bh-10>=8)y=rt.top-bh-10;else if(rt.bottom+10+bh<=vh-8)y=rt.bottom+10;else y=Math.max(8,rt.top+8);
+      var gb=document.getElementById(selId())?38:10;   /* leave the size label under the outline free */
+      if(rt.top-bh-10>=8)y=rt.top-bh-10;else if(rt.bottom+gb+bh<=vh-8)y=rt.bottom+gb;else y=Math.max(8,rt.top+8);
       xx=Math.min(Math.max(8,rt.left),Math.max(8,vw-bw-8));
       bar.style.left=Math.round(xx)+'px';bar.style.top=Math.round(y)+'px';
     }
@@ -290,12 +192,14 @@
     var tick=setInterval(function(){
       if(!host.isConnected){clearInterval(tick);return;}
       if(!document.documentElement.contains(liveRoot())&&!R.apply){closeBar(true);return;}
-      if(!openPop)place();
+      if(!openPop)place();selPlace();
     },300);
-    host.__stop=function(){clearInterval(tick);TOPDOC.removeEventListener('mousedown',outside,true);TOPDOC.removeEventListener('keydown',keys,true);};
+    /* a click elsewhere or Escape closes an open menu: on the top page and on the map's own page (View Map shows the map in a frame) */
+    var DOCS=(document===TOPDOC)?[TOPDOC]:[TOPDOC,document];
+    host.__stop=function(){clearInterval(tick);DOCS.forEach(function(dc){dc.removeEventListener('mousedown',outside,true);dc.removeEventListener('keydown',keys,true);});};
     function outside(e){if(openPop&&!(e.composedPath&&e.composedPath().indexOf(host)>=0))closePops();}
     function keys(e){if(e.key==='Escape'&&openPop){closePops();e.stopPropagation();}}
-    TOPDOC.addEventListener('mousedown',outside,true);TOPDOC.addEventListener('keydown',keys,true);
+    DOCS.forEach(function(dc){dc.addEventListener('mousedown',outside,true);dc.addEventListener('keydown',keys,true);});
     ['mousedown','click','dblclick','keydown','wheel'].forEach(function(ev){host.addEventListener(ev,function(e){e.stopPropagation();});});
   }
 

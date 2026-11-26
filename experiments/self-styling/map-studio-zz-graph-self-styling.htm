@@ -57,7 +57,7 @@
   if(!root||root.__mst)return;
   root.__mst=1;
   var SUB=root.getAttribute('subid')||'';
-
+  var PFX="msg.", NOUN="graph";
   var graphRuntime=function graphRuntime(root,C,src){   /* Map Studio's own graph drawing (1.15.7), unchanged */
     var NS='http://www.w3.org/2000/svg', box=root.querySelector('.gown'), wrap, svg, leg, tip, ro=null, timer=null, D=null, lastv={}, off={}, ALLS=null, lims={}, HV=null;
     if(!box)return;
@@ -423,7 +423,6 @@
     if(!C.sample&&C.refresh>0)timer=setInterval(function(){if(!document.body.contains(box)){stop();return;}load();},C.refresh*1000);
   };
 
-
   /* ---------- what can be chosen (everything read from a saved setting is checked against these) ---------- */
   var LOOKS={
     "Corporate blue":{"font":"Roboto","size":13,"card":true,"bg":"#FFFFFF","border":"#E1E6EC","bw":1,"radius":10,"shadow":"soft","ts":"bar","tbg":"#1F3864","tfg":"#FFFFFF","tsize":14,"hs":"line","hbg":"#F7F8FA","hfg":"#1F3864","caps":true,"text":"#2B3A55","muted":"#5F6674","link":"#2F5C9E","line":"#E8ECF2","hover":"#F2F6FC","zebra":"","pad":10,"cellx":14,"dot":12,"accent":"#2F5C9E","status":"dot"},
@@ -460,12 +459,6 @@
   var OV=[['bg','Card'],['border','Border'],['text','Text'],['muted','Secondary text'],['tbg','Title bar'],['tfg','Title text'],['accent','Accent'],['grid','Grid lines']];
   var DETAILKEYS=['font','size','tsize','radius','shadow','border','ts','talign','ov','lineCols'];
 
-  function keysOf(list){return list.map(function(x){return x[0];});}
-  function has(list,v){return keysOf(list).indexOf(v)>=0;}
-  function hex(v){return (typeof v==='string'&&/^#[0-9a-fA-F]{6}$/.test(v))?v:undefined;}
-  function int(v,lo,hi){var n=parseInt(v,10);return (isNaN(n)||n<lo||n>hi)?undefined:n;}
-  function bool(v){return typeof v==='boolean'?v:undefined;}
-  function txt(v,max){if(typeof v!=='string')return undefined;return v.replace(/[\u0000-\u001F\u007F<>\\]/g,'').slice(0,max);}
   /* a saved setting is used only if it is one of the known values; anything else is ignored */
   function clean(o){
     var c={}, v;
@@ -498,47 +491,7 @@
     cstyle:'area',period:'0',flex:false,names:'',maxCh:3,lw:2,fillA:28,bradius:3,dots:false,gridOn:true,axis:true,legend:true,legendValues:true};
   function eff(d){var look=(d&&d.look)||BASE.look;return mix(BASE,lookDef(look),d);}
 
-  function mix(){var o={},i,k,a;for(i=0;i<arguments.length;i++){a=arguments[i];if(a)for(k in a)if(Object.prototype.hasOwnProperty.call(a,k))o[k]=a[k];}return o;}
-  function inPreview(){return !!(root.closest&&root.closest('.previewloading'));}
-  function inDesigner(){return /mapdesigner|mapeditor/i.test(location.pathname)||!!(root.closest&&root.closest('#mapeditor'));}
-  function isPublic(){try{if(/\/public\//i.test(window.top.location.pathname))return true;}catch(e){return true;}return /\/public\//i.test(location.pathname);}
-  function mapId(){
-    var hrefs=[location.href],m,i;
-    try{hrefs.push(window.parent.location.href);}catch(e){}
-    try{hrefs.push(window.top.location.href);}catch(e){}
-    for(i=0;i<hrefs.length;i++){m=/[?&]id=(\d+)/.exec(hrefs[i])||/\/maps\/(\d+)/.exec(hrefs[i]);if(m)return m[1];}
-    return '';
-  }
-  var MAP=mapId(), KEY='msg.'+MAP+'.'+SUB;
-  var REG;try{REG=window.top.__mstReg||(window.top.__mstReg={});}catch(e){REG=window.__mstReg||(window.__mstReg={});}
-  var R=REG[KEY]||(REG[KEY]={open:false,draft:null});
 
-  function readShared(){
-    var el=root.querySelector('.mst-cfg'), c;
-    if(!el)return {};
-    try{c=JSON.parse(decodeURIComponent((el.getAttribute('data-c')||'').replace(/\s+/g,'')));}catch(e){return {};}
-    return clean(c);
-  }
-  function readLocal(){try{var v=localStorage.getItem(KEY);return v?clean(JSON.parse(v)):null;}catch(e){return null;}}
-  function writeLocal(c){try{if(c)localStorage.setItem(KEY,JSON.stringify(clean(c)));else localStorage.removeItem(KEY);return true;}catch(e){return false;}}
-  function savedRaw(){var s=readShared(), l=readLocal();if(l){delete l.publicGear;}return mix(s,l);}
-  function cssStr(s){return '"'+String(s).replace(/\\/g,'\\\\').replace(/"/g,'\\"').replace(/[\r\n]+/g,' ')+'"';}
-  function fontStack(f){return '"'+f+'","Segoe UI",Roboto,Arial,sans-serif';}
-  function loadFont(f){
-    var F=null;FONTS.forEach(function(x){if(x[0]===f)F=x;});
-    if(!F||!F[2]||f==='Roboto')return;
-    var id='mst-font-'+f.replace(/\W+/g,'-');
-    if(document.getElementById(id))return;
-    var l=document.createElement('link');l.id=id;l.rel='stylesheet';
-    l.href='https://fonts.googleapis.com/css2?family='+encodeURIComponent(f).replace(/%20/g,'+')+':wght@400;500;600;700&display=swap';
-    document.head.appendChild(l);
-  }
-  function shadowCss(s,acc){
-    if(s==='soft')return '0 1px 3px rgba(15,23,42,.12),0 4px 12px rgba(15,23,42,.06)';
-    if(s==='strong')return '0 10px 28px rgba(0,0,0,.35)';
-    if(s==='glow')return '0 0 0 1px color-mix(in srgb,'+acc+' 35%,transparent),0 8px 26px color-mix(in srgb,'+acc+' 20%,transparent)';
-    return 'none';
-  }
   function hexRgb(h){h=String(h).replace('#','');return [parseInt(h.substr(0,2),16)||0,parseInt(h.substr(2,2),16)||0,parseInt(h.substr(4,2),16)||0];}
   function blend(a,b,t){var x=hexRgb(a), y=hexRgb(b);return '#'+x.map(function(v,i){var n=Math.round(v+(y[i]-v)*t);return (n<16?'0':'')+n.toString(16);}).join('');}
   function cardOf(L,ov){return L.card?(ov.bg||L.bg):'#FFFFFF';}
@@ -619,6 +572,67 @@
       .catch(function(){return [];});
   }
 
+
+  /* ---------- shared by every self-styling object: which item this is, its saved settings, and the checks they pass ---------- */
+  function keysOf(list){return list.map(function(x){return x[0];});}
+  function has(list,v){return keysOf(list).indexOf(v)>=0;}
+  function hex(v){return (typeof v==='string'&&/^#[0-9a-fA-F]{6}$/.test(v))?v:undefined;}
+  function int(v,lo,hi){var n=parseInt(v,10);return (isNaN(n)||n<lo||n>hi)?undefined:n;}
+  function bool(v){return typeof v==='boolean'?v:undefined;}
+  function txt(v,max){if(typeof v!=='string')return undefined;return v.replace(/[\u0000-\u001F\u007F<>\\]/g,'').slice(0,max);}
+  function mix(){var o={},i,k,a;for(i=0;i<arguments.length;i++){a=arguments[i];if(a)for(k in a)if(Object.prototype.hasOwnProperty.call(a,k))o[k]=a[k];}return o;}
+  function inPreview(){return !!(root.closest&&root.closest('.previewloading'));}
+  function inDesigner(){return /mapdesigner|mapeditor/i.test(location.pathname)||!!(root.closest&&root.closest('#mapeditor'));}
+  function isPublic(){try{if(/\/public\//i.test(window.top.location.pathname))return true;}catch(e){return true;}return /\/public\//i.test(location.pathname);}
+  function mapId(){
+    var hrefs=[location.href],m,i;
+    try{hrefs.push(window.parent.location.href);}catch(e){}
+    try{hrefs.push(window.top.location.href);}catch(e){}
+    for(i=0;i<hrefs.length;i++){m=/[?&]id=(\d+)/.exec(hrefs[i])||/\/maps\/(\d+)/.exec(hrefs[i]);if(m)return m[1];}
+    return '';
+  }
+  var MAP=mapId(), KEY=PFX+MAP+'.'+SUB;
+  /* what is open survives PRTG's refresh of the map (about every 30 s): it is kept on the top page, per map item */
+  var REG;try{REG=window.top.__mstReg||(window.top.__mstReg={});}catch(e){REG=window.__mstReg||(window.__mstReg={});}
+  var R=REG[KEY]||(REG[KEY]={open:false,draft:null,cache:{}});
+  if(!R.cache)R.cache={};
+
+  /* the shared settings live in the item's HTML Before as <i class="mst-cfg" data-c="...">; this browser's own in localStorage.
+     Both pass clean(), which keeps only known values: anything else is ignored */
+  function readShared(){
+    var el=root.querySelector('.mst-cfg'), c;
+    if(!el)return {};
+    try{c=JSON.parse(decodeURIComponent((el.getAttribute('data-c')||'').replace(/\s+/g,'')));}catch(e){return {};}
+    return clean(c);
+  }
+  function readLocal(){try{var v=localStorage.getItem(KEY);return v?clean(JSON.parse(v)):null;}catch(e){return null;}}
+  function writeLocal(c){try{if(c)localStorage.setItem(KEY,JSON.stringify(clean(c)));else localStorage.removeItem(KEY);return true;}catch(e){return false;}}
+  /* what this screen shows: the shared settings, then this browser's own (its public-link choice never overrides the shared one) */
+  function savedRaw(){var s=readShared(), l=readLocal();if(l){delete l.publicGear;}return mix(s,l);}
+  function cssStr(s){return '"'+String(s).replace(/\\/g,'\\\\').replace(/"/g,'\\"').replace(/[\r\n]+/g,' ')+'"';}
+  function fontStack(f){return '"'+f+'","Segoe UI",Roboto,Arial,sans-serif';}
+  function loadFont(f){
+    var F=null;FONTS.forEach(function(x){if(x[0]===f)F=x;});
+    if(!F||!F[2]||f==='Roboto')return;
+    loadFontHref('https://fonts.googleapis.com/css2?family='+encodeURIComponent(f).replace(/%20/g,'+')+':wght@400;500;600;700&display=swap');
+  }
+  function loadFontHref(href){
+    if(!/^https:\/\/fonts\.googleapis\.com\/css2\?family=[\w+]+(:wght@[\d;]+)?&display=swap$/.test(href))return;
+    var id='mst-font-'+href.replace(/^.*family=([\w+]+).*$/,'$1').replace(/\W+/g,'-'), d;
+    try{d=window.top.document;d.head.appendChild;}catch(e){d=document;}
+    [document,d].forEach(function(doc){
+      if(doc.getElementById(id))return;
+      var l=doc.createElement('link');l.id=id;l.rel='stylesheet';l.href=href;doc.head.appendChild(l);
+    });
+  }
+  function shadowCss(s,acc){
+    if(s==='soft')return '0 1px 3px rgba(15,23,42,.12),0 4px 12px rgba(15,23,42,.06)';
+    if(s==='strong')return '0 10px 28px rgba(0,0,0,.35)';
+    if(s==='glow')return '0 0 0 1px color-mix(in srgb,'+acc+' 35%,transparent),0 8px 26px color-mix(in srgb,'+acc+' 20%,transparent)';
+    return 'none';
+  }
+
+
   /* ---------- saving the look into the map item (PRTG keeps it in the item's HTML Before) ---------- */
   function api(path,opt){
     opt=opt||{};opt.credentials='same-origin';
@@ -693,7 +707,71 @@
   }
 
 
-  /* ---------- the bar (built like Map Studio's floating bar) ---------- */
+  /* ---------- the selection outline: drag a handle to change the item's size (saved with "Save for everyone") ---------- */
+  var SELCSS='.mst-sel{position:absolute;box-sizing:border-box;border:1.5px solid #1A9FD9;pointer-events:none;z-index:2147483000}'+
+    '.mst-sel i{position:absolute;width:10px;height:10px;margin:-6px 0 0 -6px;box-sizing:border-box;border:1.5px solid #1A9FD9;border-radius:50%;background:#fff;pointer-events:auto;touch-action:none}'+
+    '.mst-sel i:hover{background:#E6F3FA}'+
+    '.mst-sel b{position:absolute;left:50%;top:100%;transform:translate(-50%,8px);padding:2px 7px;border-radius:4px;background:#0E7CB0;color:#fff;font:600 11px/1.4 "Segoe UI",Roboto,Arial,sans-serif;white-space:nowrap;pointer-events:none}';
+  var SELH=[['nw',0,0],['n',.5,0],['ne',1,0],['e',1,.5],['se',1,1],['s',.5,1],['sw',0,1],['w',0,.5]];
+  function selId(){return 'mst-sel-'+KEY.replace(/[^\w-]/g,'_');}
+  function selRemove(){var o=document.getElementById(selId());if(o)o.remove();}
+  function px(v,alt){var n=parseFloat(v);return (/px$/.test(String(v))&&!isNaN(n))?Math.round(n):Math.round(alt);}
+  function sizeNow(){var r=liveRoot(),s=r.style;return {l:px(s.left,r.offsetLeft),t:px(s.top,r.offsetTop),w:px(s.width,r.offsetWidth),h:px(s.height,r.offsetHeight)};}
+  function sizeApply(){
+    if(!R.size)return;var s=liveRoot().style;
+    s.left=R.size.l+'px';s.top=R.size.t+'px';s.width=R.size.w+'px';s.height=R.size.h+'px';
+  }
+  function sizeDirty(){var a=R.size,b=R.size0;return !!(a&&b&&(a.l!==b.l||a.t!==b.t||a.w!==b.w||a.h!==b.h));}
+  function sizeRevert(){if(R.size&&R.size0){R.size=R.size0;sizeApply();}R.size=null;R.size0=null;}
+  function sizeFor(j){   /* what to send to PRTG: its own numbers, moved by what was dragged */
+    var o={l:parseInt(j.left,10)||0,t:parseInt(j.top,10)||0,w:parseInt(j.width,10)||0,h:parseInt(j.height,10)||0};
+    if(sizeDirty()){o.l+=R.size.l-R.size0.l;o.t+=R.size.t-R.size0.t;o.w=R.size.w;o.h=R.size.h;}
+    return o;
+  }
+  function sizeSaved(){if(R.size){R.size0={l:R.size.l,t:R.size.t,w:R.size.w,h:R.size.h};}}
+  function selPlace(){
+    var o=document.getElementById(selId()), r=liveRoot();
+    if(!o)return;
+    if(!document.documentElement.contains(r)){o.remove();return;}
+    var par=r.offsetParent||r.parentNode;
+    if(o.parentNode!==par)par.appendChild(o);
+    o.style.left=r.offsetLeft+'px';o.style.top=r.offsetTop+'px';o.style.width=r.offsetWidth+'px';o.style.height=r.offsetHeight+'px';
+    var z=parseInt(getComputedStyle(r).zIndex,10);o.style.zIndex=String(isNaN(z)?2147483000:z+1);
+    var sz=R.size||sizeNow();o.querySelector('b').textContent=sz.w+' \u00d7 '+sz.h+' px';
+  }
+  function selShow(){
+    selRemove();
+    if(!document.getElementById('mst-sel-css')){var st=document.createElement('style');st.id='mst-sel-css';st.textContent=SELCSS;document.head.appendChild(st);}
+    if(!R.size0)R.size0=sizeNow();
+    var o=document.createElement('div');o.className='mst-sel';o.id=selId();
+    SELH.forEach(function(h){
+      var i=document.createElement('i');i.style.left=(h[1]*100)+'%';i.style.top=(h[2]*100)+'%';i.style.cursor=h[0]+'-resize';
+      i.title='Drag to change the size';
+      ['mousedown','click','dblclick'].forEach(function(ev){i.addEventListener(ev,function(e){e.preventDefault();e.stopPropagation();});});
+      i.addEventListener('pointerdown',function(e){
+        e.preventDefault();e.stopPropagation();
+        var r=liveRoot(), k=(r.getBoundingClientRect().width/(r.offsetWidth||1))||1, s0=R.size||sizeNow(), x0=e.clientX, y0=e.clientY;
+        try{i.setPointerCapture(e.pointerId);}catch(er){}
+        function mv(ev){
+          var dx=(ev.clientX-x0)/k, dy=(ev.clientY-y0)/k, s={l:s0.l,t:s0.t,w:s0.w,h:s0.h};
+          if(h[1]===1)s.w=Math.max(80,Math.round(s0.w+dx));
+          if(h[1]===0){s.w=Math.max(80,Math.round(s0.w-dx));s.l=s0.l+s0.w-s.w;}
+          if(h[2]===1)s.h=Math.max(50,Math.round(s0.h+dy));
+          if(h[2]===0){s.h=Math.max(50,Math.round(s0.h-dy));s.t=s0.t+s0.h-s.h;}
+          R.size=s;sizeApply();selPlace();if(R.onSize)R.onSize();
+        }
+        function up(){i.removeEventListener('pointermove',mv);i.removeEventListener('pointerup',up);i.removeEventListener('pointercancel',up);}
+        i.addEventListener('pointermove',mv);i.addEventListener('pointerup',up);i.addEventListener('pointercancel',up);
+      });
+      o.appendChild(i);
+    });
+    o.appendChild(document.createElement('b'));
+    (liveRoot().offsetParent||liveRoot().parentNode).appendChild(o);
+    selPlace();
+  }
+
+
+  /* ---------- the floating bar (built like Map Studio's): shared frame, Save menu and placement; each type adds its own menus ---------- */
   var GEAR="<svg viewBox=\"0 0 24 24\"><circle cx=\"12\" cy=\"12\" r=\"3.2\"/><path d=\"M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z\"/></svg>";
   var BCSS=[
     ":host{all:initial}",
@@ -759,95 +837,11 @@
     var r=liveRoot();if(r)r.classList.remove('mst-open');
   }
   function reopen(){closeBar(true);if(R.openFn)R.openFn();else openBar();}
-  /* where the table is on the top page */
+  /* where the object is on the top page */
   function topRect(){
     var r=liveRoot().getBoundingClientRect(), x=r.left, y=r.top, w=window, fe;
     try{while(w!==w.top&&(fe=w.frameElement)){var f=fe.getBoundingClientRect();x+=f.left+fe.clientLeft;y+=f.top+fe.clientTop;w=w.parent;}}catch(e){}
     return {left:x,top:y,right:x+r.width,bottom:y+r.height,width:r.width,height:r.height};
-  }
-
-  /* ---------- the selection outline: drag a handle to change the item's size (saved with "Save for everyone") ---------- */
-  var SELCSS='.mst-sel{position:absolute;box-sizing:border-box;border:1.5px solid #1A9FD9;pointer-events:none;z-index:2147483000}'+
-    '.mst-sel i{position:absolute;width:10px;height:10px;margin:-6px 0 0 -6px;box-sizing:border-box;border:1.5px solid #1A9FD9;border-radius:50%;background:#fff;pointer-events:auto;touch-action:none}'+
-    '.mst-sel i:hover{background:#E6F3FA}'+
-    '.mst-sel b{position:absolute;left:50%;top:100%;transform:translate(-50%,8px);padding:2px 7px;border-radius:4px;background:#0E7CB0;color:#fff;font:600 11px/1.4 "Segoe UI",Roboto,Arial,sans-serif;white-space:nowrap;pointer-events:none}';
-  var SELH=[['nw',0,0],['n',.5,0],['ne',1,0],['e',1,.5],['se',1,1],['s',.5,1],['sw',0,1],['w',0,.5]];
-  function selId(){return 'mst-sel-'+KEY.replace(/[^\w-]/g,'_');}
-  function selRemove(){var o=document.getElementById(selId());if(o)o.remove();}
-  function px(v,alt){var n=parseFloat(v);return (/px$/.test(String(v))&&!isNaN(n))?Math.round(n):Math.round(alt);}
-  function sizeNow(){var r=liveRoot(),s=r.style;return {l:px(s.left,r.offsetLeft),t:px(s.top,r.offsetTop),w:px(s.width,r.offsetWidth),h:px(s.height,r.offsetHeight)};}
-  function sizeApply(){
-    if(!R.size)return;var s=liveRoot().style;
-    s.left=R.size.l+'px';s.top=R.size.t+'px';s.width=R.size.w+'px';s.height=R.size.h+'px';
-  }
-  function sizeDirty(){var a=R.size,b=R.size0;return !!(a&&b&&(a.l!==b.l||a.t!==b.t||a.w!==b.w||a.h!==b.h));}
-  function sizeRevert(){if(R.size&&R.size0){R.size=R.size0;sizeApply();}R.size=null;R.size0=null;}
-  function sizeFor(j){   /* what to send to PRTG: its own numbers, moved by what was dragged */
-    var o={l:parseInt(j.left,10)||0,t:parseInt(j.top,10)||0,w:parseInt(j.width,10)||0,h:parseInt(j.height,10)||0};
-    if(sizeDirty()){o.l+=R.size.l-R.size0.l;o.t+=R.size.t-R.size0.t;o.w=R.size.w;o.h=R.size.h;}
-    return o;
-  }
-  function sizeSaved(){if(R.size){R.size0={l:R.size.l,t:R.size.t,w:R.size.w,h:R.size.h};}}
-  function selPlace(){
-    var o=document.getElementById(selId()), r=liveRoot();
-    if(!o)return;
-    if(!document.documentElement.contains(r)){o.remove();return;}
-    var par=r.offsetParent||r.parentNode;
-    if(o.parentNode!==par)par.appendChild(o);
-    o.style.left=r.offsetLeft+'px';o.style.top=r.offsetTop+'px';o.style.width=r.offsetWidth+'px';o.style.height=r.offsetHeight+'px';
-    var z=parseInt(getComputedStyle(r).zIndex,10);o.style.zIndex=String(isNaN(z)?2147483000:z+1);
-    var sz=R.size||sizeNow();o.querySelector('b').textContent=sz.w+' \u00d7 '+sz.h+' px';
-  }
-  function selShow(){
-    selRemove();
-    if(!document.getElementById('mst-sel-css')){var st=document.createElement('style');st.id='mst-sel-css';st.textContent=SELCSS;document.head.appendChild(st);}
-    if(!R.size0)R.size0=sizeNow();
-    var o=document.createElement('div');o.className='mst-sel';o.id=selId();
-    SELH.forEach(function(h){
-      var i=document.createElement('i');i.style.left=(h[1]*100)+'%';i.style.top=(h[2]*100)+'%';i.style.cursor=h[0]+'-resize';
-      i.title='Drag to change the size';
-      ['mousedown','click','dblclick'].forEach(function(ev){i.addEventListener(ev,function(e){e.preventDefault();e.stopPropagation();});});
-      i.addEventListener('pointerdown',function(e){
-        e.preventDefault();e.stopPropagation();
-        var r=liveRoot(), k=(r.getBoundingClientRect().width/(r.offsetWidth||1))||1, s0=R.size||sizeNow(), x0=e.clientX, y0=e.clientY;
-        try{i.setPointerCapture(e.pointerId);}catch(er){}
-        function mv(ev){
-          var dx=(ev.clientX-x0)/k, dy=(ev.clientY-y0)/k, s={l:s0.l,t:s0.t,w:s0.w,h:s0.h};
-          if(h[1]===1)s.w=Math.max(80,Math.round(s0.w+dx));
-          if(h[1]===0){s.w=Math.max(80,Math.round(s0.w-dx));s.l=s0.l+s0.w-s.w;}
-          if(h[2]===1)s.h=Math.max(50,Math.round(s0.h+dy));
-          if(h[2]===0){s.h=Math.max(50,Math.round(s0.h-dy));s.t=s0.t+s0.h-s.h;}
-          R.size=s;sizeApply();selPlace();if(R.onSize)R.onSize();
-        }
-        function up(){i.removeEventListener('pointermove',mv);i.removeEventListener('pointerup',up);i.removeEventListener('pointercancel',up);}
-        i.addEventListener('pointermove',mv);i.addEventListener('pointerup',up);i.addEventListener('pointercancel',up);
-      });
-      o.appendChild(i);
-    });
-    o.appendChild(document.createElement('b'));
-    (liveRoot().offsetParent||liveRoot().parentNode).appendChild(o);
-    selPlace();
-  }
-
-  /* the Chart menu's pictures: each style drawn by the graph engine itself with sample data, in this graph's look and colours */
-  var SHOTS={key:'',svg:{}};
-  function shots(c){
-    var key=JSON.stringify([c.look,c.set,c.series,c.ov,c.lw,c.fillA,c.dots,c.gridOn,c.bradius,c.maxCh,c.font]);
-    if(SHOTS.key===key)return SHOTS.svg;
-    var out={}, host=document.createElement('div'), RO=window.ResizeObserver;
-    host.style.cssText='position:fixed;left:-10000px;top:0;width:210px;height:82px;visibility:hidden;font-family:'+fontStack(c.font)+';';
-    document.body.appendChild(host);
-    try{
-      window.ResizeObserver=undefined;   /* a picture is drawn once: no watcher is left behind */
-      CSTYLES.forEach(function(x){
-        var gc=graphCfg(mix(c,{cstyle:x[0],axis:false,legend:false,names:'',flex:false,size:13}));
-        gc.sample=true;gc.sampleN=(x[0]==='heatmap'||x[0]==='ring'||x[0]==='band')?0:18;gc.tips=false;gc.refresh=0;gc.legendValues=false;
-        host.innerHTML='<div><div class="gown" style="width:210px;height:82px"></div></div>';
-        try{graphRuntime(host.firstChild,gc);var sv=host.querySelector('svg');
-          out[x[0]]=sv?'<span style="display:block;width:100%;height:100%;background:'+gc.card+'">'+sv.outerHTML.replace(/ width="[^"]*" height="[^"]*"/,' width="100%" height="100%"')+'</span>':'';}catch(e){out[x[0]]='';}
-      });
-    }finally{window.ResizeObserver=RO;if(host.parentNode)host.parentNode.removeChild(host);}
-    SHOTS={key:key,svg:out};return out;
   }
   function openBar(){
     if(barHost())return;
@@ -883,7 +877,7 @@
       var s=el('select',cls||'s');
       opts.forEach(function(o){var op=el('option');op.value=o[0];op.textContent=o[1];s.appendChild(op);});
       s.addEventListener('change',function(){d[key]=s.value;change();sync();});
-      syncs.push(function(){s.value=E()[key];});return s;
+      syncs.push(function(){s.value=String(E()[key]);});return s;
     }
 
     /* ---- menus ---- */
@@ -911,11 +905,11 @@
       if(pr.right>vw-8)pop.style.left=Math.round(vw-8-pr.right)+'px';
     }
     function pf(pop,text){var w=el('div','pf');if(text)w.appendChild(el('div','pl',esc(text)));pop.appendChild(w);return w;}
-    function pfRange(pop,text,key,min,max){
+    function pfRange(pop,text,key,min,max,unit){
       var w=pf(pop,text), g=el('div','rg','<input type="range" min="'+min+'" max="'+max+'" step="1"><output></output>');w.appendChild(g);
-      var i=g.querySelector('input'), o=g.querySelector('output');
-      function show(){i.value=E()[key];o.textContent=E()[key]+' px';}
-      i.addEventListener('input',function(){d[key]=parseInt(i.value,10);o.textContent=d[key]+' px';change();});
+      var i=g.querySelector('input'), o=g.querySelector('output'), u=unit==null?' px':unit;
+      function show(){i.value=E()[key];o.textContent=E()[key]+u;}
+      i.addEventListener('input',function(){d[key]=parseInt(i.value,10);o.textContent=d[key]+u;change();});
       syncs.push(show);
     }
     function pfCheck(pop,text,key){
@@ -927,9 +921,10 @@
       var w=pf(pop,text), g=el('div','seg');w.appendChild(g);
       opts.forEach(function(o){var b=el('button','',esc(o[1]));b.type='button';b.setAttribute('data-v',o[0]);
         b.addEventListener('click',function(){d[key]=o[0];change();sync();});g.appendChild(b);});
-      syncs.push(function(){[].forEach.call(g.children,function(b){b.classList.toggle('on',b.getAttribute('data-v')===E()[key]);});});
+      syncs.push(function(){[].forEach.call(g.children,function(b){b.classList.toggle('on',b.getAttribute('data-v')===String(E()[key]));});});
+      return g;
     }
-    function pfSelect(pop,text,opts,key){var w=pf(pop,text);w.appendChild(sel(opts,key,'ps'));}
+    function pfSelect(pop,text,opts,key){var w=pf(pop,text), s=sel(opts,key,'ps');w.appendChild(s);return s;}
     function pfColor(pop,text,get,set,reset){
       var w=el('div','pr','<span>'+esc(text)+'</span><input type="color"><button type="button" class="cp" title="Back to the look\u2019s colour">Look\u2019s</button>');
       var i=w.querySelector('input');
@@ -938,7 +933,122 @@
       syncs.push(function(){i.value=get();});pop.appendChild(w);
     }
     function note(pop,text){pop.appendChild(el('div','note',esc(text)));}
+    /* Fixed | Flexible: Flexible remembers the size the item has now as its normal size */
+    function flexSeg(row,tipFixed,tipFlex,keys){
+      keys=keys||{on:'flex',w:'fw',h:'fh'};
+      var w=el('span','seg2');
+      [['fixed','Fixed',tipFixed],['flex','Flexible',tipFlex]].forEach(function(o){
+        var b=el('button','t',esc(o[1]));b.type='button';b.title=o[2];b.setAttribute('data-v',o[0]);
+        b.addEventListener('click',function(){
+          if(o[0]==='flex'){var lr=liveRoot();d[keys.on]=true;d[keys.w]=lr.clientWidth||400;d[keys.h]=lr.clientHeight||300;}
+          else{d[keys.on]=false;delete d[keys.w];delete d[keys.h];}
+          change();sync();
+        });
+        w.appendChild(b);
+      });
+      syncs.push(function(){[].forEach.call(w.children,function(b){b.classList.toggle('on',(b.getAttribute('data-v')==='flex')===!!E()[keys.on]);});});
+      row.appendChild(w);return w;
+    }
+    var U={d:d,E:E,sync:sync,change:change,syncs:syncs,r1:r1,r2:r2,host:host,view:view,pub:pub,sep:sep,lab:lab,numBox:numBox,toggle:toggle,sel:sel,
+      menu:menu,pf:pf,pfRange:pfRange,pfCheck:pfCheck,pfSeg:pfSeg,pfSelect:pfSelect,pfColor:pfColor,note:note,flexSeg:flexSeg};
 
+    /* ---- row 1: the type's menus, then Save and close ---- */
+    barMenus(U);
+    sep(r1);
+    var saveBtn=menu(r1,'Save',function(pop){
+      var b1=el('button','b pri','Save for everyone'), b2=el('button','b',pub?'Only on this screen':'Only on this browser'), b3=el('button','b','Start over');
+      [b1,b2,b3].forEach(function(b){b.type='button';});
+      if(!pub)pop.appendChild(b1);pop.appendChild(b2);pop.appendChild(b3);
+      note(pop,pub?'Only your screen changes. The shared look stays as it was saved in PRTG.':
+        '\u201cSave for everyone\u201d stores the look in this map item in PRTG. \u201cOnly on this browser\u201d keeps it just for you.');
+      if(readLocal()){var fg=el('button','mini','Forget this browser\u2019s own look');fg.type='button';pop.appendChild(fg);
+        fg.addEventListener('click',function(){writeLocal(null);R.draft=readShared();applyLive(R.draft);reopen();});}
+      if(!pub){
+        pop.appendChild(el('div','ph','Public links'));
+        pfCheck(pop,'Show the gear on public links','publicGear');
+        note(pop,'Visitors of a public link can then change only their own screen. Nobody can change the shared look without signing in to PRTG.');
+      }
+      var msg=el('div','msg');msg.setAttribute('aria-live','polite');pop.appendChild(msg);
+      function say(t,k){msg.textContent=t;msg.className='msg'+(k?' '+k:'');}
+      b3.addEventListener('click',function(){R.draft={};applyLive(R.draft);reopen();});
+      b2.addEventListener('click',function(){
+        var mine=clean(d);delete mine.publicGear;
+        if(writeLocal(mine)){say('Saved on this '+(pub?'screen':'browser')+' only.'+(sizeDirty()?' A new size is kept only with \u201cSave for everyone\u201d.':''),'ok');R.savedSig=sig(d);dirtyShow();}
+        else say('This browser would not keep it (storage is full or blocked).','err');
+      });
+      b1.addEventListener('click',function(){
+        b1.disabled=true;say('Saving in PRTG\u2026');
+        saveShared(d).then(function(){
+          var hadLocal=!!readLocal();writeLocal(null);R.savedSig=sig(d);dirtyShow();
+          say('Saved for everyone. Other screens show it after PRTG\u2019s next refresh (about 30 s).'+(hadLocal?' This browser\u2019s own look was cleared.':''),'ok');
+          b1.disabled=false;
+        },function(err){
+          b1.disabled=false;
+          var t=String(err&&err.message||err);
+          if(err&&(err.status===401||err.status===403))t='PRTG did not allow it: your account may not have permission to edit this map. Use \u201cOnly on this browser\u201d instead.';
+          say('Not saved: '+t,'err');
+        });
+      });
+    },'save');
+    var x=el('button','t x','\u00d7');x.type='button';x.title='Close (changes not saved are dropped)';r1.appendChild(x);
+    x.addEventListener('click',function(){closeBar(false);applyLive(savedRaw());});
+
+    /* ---- row 2: the type's quick settings ---- */
+    barQuick(U);
+
+    function sig(c){return JSON.stringify(clean(c));}
+    if(R.savedSig==null)R.savedSig=sig(savedRaw());
+    R.onSize=function(){dirtyShow();};
+    function dirtyShow(){var dirty=sig(d)!==R.savedSig||sizeDirty();saveBtn.classList.toggle('dirty',dirty);saveBtn.title=dirty?'Changes not saved yet':'';}
+    sync();
+
+    /* keep the bar next to the object: above it, or below it, or over it when neither has room */
+    function place(){
+      if(!host.isConnected)return;
+      var rt=topRect(), vw=view.innerWidth, vh=view.innerHeight, bw=bar.offsetWidth, bh=bar.offsetHeight, y, xx;
+      var gb=document.getElementById(selId())?38:10;   /* leave the size label under the outline free */
+      if(rt.top-bh-10>=8)y=rt.top-bh-10;else if(rt.bottom+gb+bh<=vh-8)y=rt.bottom+gb;else y=Math.max(8,rt.top+8);
+      xx=Math.min(Math.max(8,rt.left),Math.max(8,vw-bw-8));
+      bar.style.left=Math.round(xx)+'px';bar.style.top=Math.round(y)+'px';
+    }
+    place();
+    var tick=setInterval(function(){
+      if(!host.isConnected){clearInterval(tick);return;}
+      if(!document.documentElement.contains(liveRoot())&&!R.apply){closeBar(true);return;}
+      if(!openPop)place();selPlace();
+    },300);
+    /* a click elsewhere or Escape closes an open menu: on the top page and on the map's own page (View Map shows the map in a frame) */
+    var DOCS=(document===TOPDOC)?[TOPDOC]:[TOPDOC,document];
+    host.__stop=function(){clearInterval(tick);DOCS.forEach(function(dc){dc.removeEventListener('mousedown',outside,true);dc.removeEventListener('keydown',keys,true);});};
+    function outside(e){if(openPop&&!(e.composedPath&&e.composedPath().indexOf(host)>=0))closePops();}
+    function keys(e){if(e.key==='Escape'&&openPop){closePops();e.stopPropagation();}}
+    DOCS.forEach(function(dc){dc.addEventListener('mousedown',outside,true);dc.addEventListener('keydown',keys,true);});
+    ['mousedown','click','dblclick','keydown','wheel'].forEach(function(ev){host.addEventListener(ev,function(e){e.stopPropagation();});});
+  }
+
+  /* the Chart menu's pictures: each style drawn by the graph engine itself with sample data, in this graph's look and colours */
+  var SHOTS={key:'',svg:{}};
+  function shots(c){
+    var key=JSON.stringify([c.look,c.set,c.series,c.ov,c.lw,c.fillA,c.dots,c.gridOn,c.bradius,c.maxCh,c.font]);
+    if(SHOTS.key===key)return SHOTS.svg;
+    var out={}, host=document.createElement('div'), RO=window.ResizeObserver;
+    host.style.cssText='position:fixed;left:-10000px;top:0;width:210px;height:82px;visibility:hidden;font-family:'+fontStack(c.font)+';';
+    document.body.appendChild(host);
+    try{
+      window.ResizeObserver=undefined;   /* a picture is drawn once: no watcher is left behind */
+      CSTYLES.forEach(function(x){
+        var gc=graphCfg(mix(c,{cstyle:x[0],axis:false,legend:false,names:'',flex:false,size:13}));
+        gc.sample=true;gc.sampleN=(x[0]==='heatmap'||x[0]==='ring'||x[0]==='band')?0:18;gc.tips=false;gc.refresh=0;gc.legendValues=false;
+        host.innerHTML='<div><div class="gown" style="width:210px;height:82px"></div></div>';
+        try{graphRuntime(host.firstChild,gc);var sv=host.querySelector('svg');
+          out[x[0]]=sv?'<span style="display:block;width:100%;height:100%;background:'+gc.card+'">'+sv.outerHTML.replace(/ width="[^"]*" height="[^"]*"/,' width="100%" height="100%"')+'</span>':'';}catch(e){out[x[0]]='';}
+      });
+    }finally{window.ResizeObserver=RO;if(host.parentNode)host.parentNode.removeChild(host);}
+    SHOTS={key:key,svg:out};return out;
+  }
+  function barMenus(U){
+    var d=U.d, E=U.E, sync=U.sync, change=U.change, syncs=U.syncs, r1=U.r1, host=U.host, menu=U.menu, pf=U.pf, pfRange=U.pfRange,
+      pfCheck=U.pfCheck, pfSeg=U.pfSeg, pfSelect=U.pfSelect, pfColor=U.pfColor, note=U.note, sep=U.sep;
     /* ---- row 1: the menus ---- */
     menu(r1,'Looks',function(pop){
       var g=el('div','looks');pop.appendChild(g);
@@ -1026,46 +1136,9 @@
       pfSeg(pop,'Align',[['left','Left'],['center','Centre'],['right','Right']],'talign');
       pfRange(pop,'Size','tsize',10,30);
     });
-    sep(r1);
-    var saveBtn=menu(r1,'Save',function(pop){
-      var b1=el('button','b pri','Save for everyone'), b2=el('button','b',pub?'Only on this screen':'Only on this browser'), b3=el('button','b','Start over');
-      [b1,b2,b3].forEach(function(b){b.type='button';});
-      if(!pub)pop.appendChild(b1);pop.appendChild(b2);pop.appendChild(b3);
-      note(pop,pub?'Only your screen changes. The shared look stays as it was saved in PRTG.':
-        '\u201cSave for everyone\u201d stores the look in this map item in PRTG. \u201cOnly on this browser\u201d keeps it just for you.');
-      if(readLocal()){var fg=el('button','mini','Forget this browser\u2019s own look');fg.type='button';pop.appendChild(fg);
-        fg.addEventListener('click',function(){writeLocal(null);R.draft=readShared();applyLive(R.draft);reopen();});}
-      if(!pub){
-        pop.appendChild(el('div','ph','Public links'));
-        pfCheck(pop,'Show the gear on public links','publicGear');
-        note(pop,'Visitors of a public link can then change only their own screen. Nobody can change the shared look without signing in to PRTG.');
-      }
-      var msg=el('div','msg');msg.setAttribute('aria-live','polite');pop.appendChild(msg);
-      function say(t,k){msg.textContent=t;msg.className='msg'+(k?' '+k:'');}
-      b3.addEventListener('click',function(){R.draft={};applyLive(R.draft);reopen();});
-      b2.addEventListener('click',function(){
-        var mine=clean(d);delete mine.publicGear;
-        if(writeLocal(mine)){say('Saved on this '+(pub?'screen':'browser')+' only.'+(sizeDirty()?' A new size is kept only with \u201cSave for everyone\u201d.':''),'ok');R.savedSig=sig(d);dirtyShow();}
-        else say('This browser would not keep it (storage is full or blocked).','err');
-      });
-      b1.addEventListener('click',function(){
-        b1.disabled=true;say('Saving in PRTG\u2026');
-        saveShared(d).then(function(){
-          var hadLocal=!!readLocal();writeLocal(null);R.savedSig=sig(d);dirtyShow();
-          say('Saved for everyone. Other screens show it after PRTG\u2019s next refresh (about 30 s).'+(hadLocal?' This browser\u2019s own look was cleared.':''),'ok');
-          b1.disabled=false;
-        },function(err){
-          b1.disabled=false;
-          var t=String(err&&err.message||err);
-          if(err&&(err.status===401||err.status===403))t='PRTG did not allow it: your account may not have permission to edit this map. Use \u201cOnly on this browser\u201d instead.';
-          say('Not saved: '+t,'err');
-        });
-      });
-    },'save');
-    var x=el('button','t x','\u00d7');x.type='button';x.title='Close (changes not saved are dropped)';r1.appendChild(x);
-    x.addEventListener('click',function(){closeBar(false);applyLive(savedRaw());});
-
-    /* ---- row 2: quick settings ---- */
+  }
+  function barQuick(U){
+    var r2=U.r2, lab=U.lab, sel=U.sel, numBox=U.numBox, toggle=U.toggle, sep=U.sep, flexSeg=U.flexSeg, d=U.d, E=U.E, change=U.change, sync=U.sync, syncs=U.syncs;
     lab(r2,'Font',sel(FONTS.map(function(f){return [f[0],f[1]];}),'font','s'));
     numBox(r2,'Text','size',10,24);
     numBox(r2,'Title','tsize',10,30);
@@ -1087,41 +1160,20 @@
     toggle(r2,'Legend','legend','Show the legend');
     toggle(r2,'Axis','axis','Axis numbers');
     toggle(r2,'Grid','gridOn','Grid lines');
-
-    function sig(c){return JSON.stringify(clean(c));}
-    if(R.savedSig==null)R.savedSig=sig(savedRaw());
-    R.onSize=function(){dirtyShow();};
-    function dirtyShow(){var dirty=sig(d)!==R.savedSig||sizeDirty();saveBtn.classList.toggle('dirty',dirty);saveBtn.title=dirty?'Changes not saved yet':'';}
-    sync();
-
-    /* keep the bar next to the table: above it, or below it, or over it when neither has room */
-    function place(){
-      if(!host.isConnected)return;
-      var rt=topRect(), vw=view.innerWidth, vh=view.innerHeight, bw=bar.offsetWidth, bh=bar.offsetHeight, y, xx;
-      var gb=document.getElementById(selId())?38:10;   /* leave the size label under the outline free */
-      if(rt.top-bh-10>=8)y=rt.top-bh-10;else if(rt.bottom+gb+bh<=vh-8)y=rt.bottom+gb;else y=Math.max(8,rt.top+8);
-      xx=Math.min(Math.max(8,rt.left),Math.max(8,vw-bw-8));
-      bar.style.left=Math.round(xx)+'px';bar.style.top=Math.round(y)+'px';
-    }
-    place();
-    var tick=setInterval(function(){
-      if(!host.isConnected){clearInterval(tick);return;}
-      if(!document.documentElement.contains(liveRoot())&&!R.apply){closeBar(true);return;}
-      if(!openPop)place();selPlace();
-    },300);
-    host.__stop=function(){clearInterval(tick);TOPDOC.removeEventListener('mousedown',outside,true);TOPDOC.removeEventListener('keydown',keys,true);};
-    function outside(e){if(openPop&&!(e.composedPath&&e.composedPath().indexOf(host)>=0))closePops();}
-    function keys(e){if(e.key==='Escape'&&openPop){closePops();e.stopPropagation();}}
-    TOPDOC.addEventListener('mousedown',outside,true);TOPDOC.addEventListener('keydown',keys,true);
-    ['mousedown','click','dblclick','keydown','wheel'].forEach(function(ev){host.addEventListener(ev,function(e){e.stopPropagation();});});
   }
-
-  /* ---------- start ---------- */
+  /* ---------- start: draw with the saved settings, then the gear (not in PRTG's Map Designer or its hover preview) ---------- */
   R.apply=apply;R.openFn=openBar;
   apply(R.open&&R.draft?R.draft:savedRaw());
+  if(typeof onMutate==='function'&&window.MutationObserver){
+    var mq=false, mo=new MutationObserver(function(){
+      if(mq)return;mq=true;
+      setTimeout(function(){mq=false;if(!document.documentElement.contains(root)){mo.disconnect();return;}onMutate();},300);
+    });
+    mo.observe(root,{childList:true,subtree:true});
+  }
   if(inPreview()||inDesigner())return;
   if(isPublic()&&!readShared().publicGear)return;
-  var g=el('button','mst-gear',GEAR,document);g.type='button';g.title='Change how this graph looks';g.setAttribute('aria-label','Change how this graph looks');
+  var g=el('button','mst-gear',GEAR,document);g.type='button';g.title='Change how this '+NOUN+' looks';g.setAttribute('aria-label','Change how this '+NOUN+' looks');
   ['mousedown','dblclick'].forEach(function(ev){g.addEventListener(ev,function(e){e.stopPropagation();});});
   g.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();if(barHost()){closeBar(false);apply(savedRaw());}else openBar();});
   root.appendChild(g);

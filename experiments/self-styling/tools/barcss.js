@@ -1,7 +1,4 @@
-const fs=require('fs');
-const looks=JSON.parse(fs.readFileSync('/tmp/looks.json','utf8'));
-const order=['Corporate blue','PRTG new UI','Clean card','Light card','Minimal','Executive dark','Indigo board','Slate fintech','Neon plum','Teal glass','Dark card','Wall display','Brand navy'];
-const lookTxt='{\n'+order.map(n=>'    '+JSON.stringify(n)+':'+JSON.stringify(looks[n])).join(',\n')+'\n  }';
+/* the floating bar’s CSS and the gear, shared by every self-styling object (moved here from the first build scripts) */
 const GEAR=JSON.stringify('<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>');
 const PCSS=[
  ':host{all:initial}',
@@ -45,63 +42,12 @@ const PCSS=[
  '.msg{margin-top:8px;font-size:12px;color:#3a4457}.msg.err{color:#B42318}.msg.ok{color:#1E7B34}',
  '.note{font-size:11.5px;color:#6c7183;margin:4px 0;line-height:1.4}'
 ];
-const pcssTxt='[\n'+PCSS.map(x=>'    '+JSON.stringify(x)).join(',\n')+'\n  ].join("\\n")';
-let js=fs.readFileSync('runtime.js','utf8').replace('__LOOKS__',lookTxt).replace('__LOOKNAMES__',JSON.stringify(order)).replace('__GEAR__',GEAR).replace('__BCSS__',pcssTxt);
-if(/<[#@]/.test(js))throw new Error('script contains a PRTG tag');
-js=js.replace('__ITEMID__','<@itemid>');
-js=js.replace(/[^\x00-\x7f]/g,ch=>'\\u'+ch.charCodeAt(0).toString(16).padStart(4,'0'));
-const css=fs.readFileSync('style.css','utf8');
-const file=`<!--Map Studio Tests: Map Studio Table - restyle it on the map (test 2)-->
-
-<div class="map_object map_table msst mst-t-bar mst-h-line mst-hcaps mst-st-dot mst-tint" id="<@itemid>" objectid="<@objectid>" subid="<@subid>" initialwidth="1100" initialheight="598" style="overflow:auto;<#mapobject type="coordinates" subid="<@subid>" mode="<@editmode>">">
-  <#mapobject type="objectgrip" mode="<@editmode>">
-  <#mapobject type="htmlbefore" subid="<@subid>">
-  <#checkobjecttype objecttype="probenode,group,device,sensor" nicemessage="true" id="<@objectid>">
-
-<style>
-${css}</style>
-
-  <div class="maptablecontainer" style="overflow:visible;width:max-content;min-width:100%">
-    <div class="ms-box-prtg-plugin">
-    <div class="ms-sens">
-    <div class="prtg-plugin" data-plugin="prtg-table">
-      <#table tableid="sensortable"
-      id="<@objectid>"
-      content="sensors"
-      columns="status,device,sensor,group,message,lastvalue,minigraph,downtimesince,uptime"
-      sortby="status"
-      infoheader="true"
-      links="true"
-      sortable="true"
-      refreshable="true"
-      filter_tags="@tag(<@tagfilterstring>)"
-      tabletitle="Sensors"
-      count="10"
-      >
-    </div>
-    </div>
-    <div class="ms-ch">
-    <div class="prtg-plugin" data-plugin="prtg-table">
-      <#table tableid="channeltable_map"
-      id="<@objectid>"
-      content="channels"
-      columns="name,lastvalue_"
-      sortby="name"
-      links="true"
-      sortable="true"
-      refreshable="true"
-      tabletitle="Channels"
-      count="10"
-      >
-    </div>
-    </div>
-    </div>
-  </div>
-  <#mapobject type="htmlafter" subid="<@subid>">
-<script>
-${js}</script>
-</div>
-`;
-if(/[^\x00-\x7f]/.test(file))throw new Error('non-ASCII left in the file');
-fs.writeFileSync('map-studio-zz-table-self-styling.htm',file);
-const lens=file.split('\n').map(l=>l.length);console.log('bytes',file.length,'longest',Math.max(...lens));
+/* extra rules the graph’s Chart menu added; every object has them now */
+const EXTRA=['.seg2{display:inline-flex;gap:2px}','.s.short{width:92px}',
+ '.shots{display:grid;grid-template-columns:repeat(4,116px);gap:6px}',
+ '.shot{display:flex;flex-direction:column;align-items:stretch;gap:4px;padding:4px;border:1px solid #DDE1E8;border-radius:7px;background:#fff;color:#1d2433;font:inherit;font-size:11px;line-height:1.2;text-align:center;cursor:pointer}',
+ '.shot i{display:block;height:42px;border-radius:4px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}',
+ '.shot i svg{display:block}','.t.shotsw~.pop{width:max-content}',
+ '.shot:hover{border-color:#9FB3C8}',
+ '.shot.on{border-color:#007DB8;background:#E6F3FA;box-shadow:0 0 0 1px #007DB8}'];
+module.exports={GEAR,PCSS,EXTRA};
